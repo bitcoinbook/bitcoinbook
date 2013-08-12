@@ -179,13 +179,36 @@ Crypto-currencies are digital currencies based on cryptography. The development 
 
 ==== Public key cryptography and crypto-currency
 
-Public-key cryptography, or assymetric cryptography, solves a key problem of a purely digital currency, by allowing /..../
+Public-key cryptography, or assymetric cryptography, is a key part of a crypto-currency. Surprisingly, the cryptographic keys are not actually stored inside the bitcoin blockchain or the network. Instead, the blockchain only records transactions with digital signatures (hashes) of keys. The keys themselves are completely independent and can be generated and managed by the end users. This enables many of the interesting properties of bitcoin, including de-centralized trust and control. 
+
+In a nutshell, public-key cryptography is like a digital padlock, which can only be opened by the owner of a secret key. The owner of that key can hand out as many copies of the padlock as they want, and others can use it to "lock" bitcoins inside transactions recorded on the blockchain. Only the owner of the key can then unlock and "redeem" these transactions, as only they can open the digital padlock. 
+
+In more specific terms, bitcoin uses Elliptic Curve Cryptography (ECC) on the secp256k1 curve, defined by link:$$http://www.secg.org/index.php?action=secg,docs_secg$$[SEC 2: Recommended Elliptic Curve Domain Parameters version 2.0]. The name secp256k1 indicates a curve whose points are a prime field, with a 256-bit prime and the k indicating a Koblitz curve variant.
+
+The end-user, or the wallet application they are using, will generate a new key-pair using a random seed. The key pair consists of a secret part the _private key_ and a public part, the _public key_. 
+
+In bitcoin, the public key is represented as a _bitcoin address_, which looks like this **`1HvHT6B3ZVT8nWCdVx3CKr8PRUMCNhZTqD`**. 
+
+The address itself is encoded in a format known as +Base58Check+, which is +Base58+ with a checksum. Base58 encoding is similar to a commonly used +Base64+ encoding used in HTTP and other protocols, but with a reduced 58-character set, removing ambiguous characters such as +O,0,o,I,i,l,1|+. 
+
+The Base58Check address includes a checksum, composed of the last 4 digits of the SHA256 of the address, appended to the address. The resulting 27-34 character string starts with the number **`1`**, which is the "main" network prefix. We will see examples of other prefixes on addresses, such as **`3`** for the test-net bitcoin test network as well as those denoting alternative crypto-currencies. 
+
+By sharing this bitcoin address (eg. 1HvHT6B3ZVT8nWCdVx3CKr8PRUMCNhZTqD), the owner of this address can request payments from others. When others "send" bitcoin to this address, essentially they are creating a transaction assigning ownership of pre-existing bitcoin in the blockchain to this address. This makes it possible for the owner of this address to create future transactions "spending" some or all of those pre-existing bitcoins, by using the secret key to sign a spending transaction. 
 
 
 ==== Peer-to-Peer networks
 
+Bitcoin is more than just a currency, it is also the payment network that carries all of the transactions of that currency. Well, almost all, as we will see in examining "off-blockchain" transactions later in this book. 
 
+The bitcoin network is a peer-to-peer network, which is formed by all the bitcoin clients that are running a full-node client. At any moment, the bitcoin network can range in size anywhere from a tens of thousands to hundreds of thousands of nodes. Only a tiny subset of those is required to operate, but good network propagation and distribution ensures resillience and survivability of the overall bitcoin network. 
 
+You can see a graphical representation of the nodes seen on the bitcoin network by visiting a popular chart on blockchain.info link:$$https://blockchain.info/nodes-globe$$[]
+
+In the bitcoin peer-to-peer network, the nodes are much more sophisticated than most p2p networks. All nodes can validate the basic information inside a block for themselves and confirm the transactions. A full-node client can independently confirm each and every bitcoin in every transaction, in an unbroken chain all the way back to it's genesis in a newly minted block. The network therefore plays a subordinate role. It propagates transactions, but those transactions are independently verified by the nodes. The network is not trusted per-se, as each node does not depend on any third-party for trust. Instead, the network facilitates the propagation of blocks so that nodes that are mining can create new blocks and all nodes can verify them. 
+
+The bitcoin network essentially carries two types of data: unconfirmed transactions and mined blocks. The bitcoin network is used to propagate transactions between bitcoin users, ensuring that they are included in the blockchain when the next new block is mined. The networks gets the transactions to the miners and propagates newly mined blocks to all the clients. 
+
+A new bitcoin client can join the network and request any block, reconstructing the blockchain from the first (Genesis) block, all the way to the most recently mined block. Since each client also contains a static digital copy of the first block embedded in the source code, it can independently verify the entire blockchain. For example, a new client would request block with height "1", and verify that it is correct and contains the correct signature for block "0", the genesis block. Now, the client has bootstrapped the blockchain, independently verifying block "1", and now has a blockchain of height "1". From here, the client can request a block with height "2" from the network. If that can be validated as a valid block that can be added, then the blockchain is confirmed to height "2" etc. After a day or more, several hundred thousand blocks later, the network node can catch up and find that it has the same height as the majority of the network. Since the node has independently verified all of the blocks, it can confirm each transaction and bitcoin ever spent as valid without reference to any external authority. The only block trusted is the genesis block embedded within, the rest of the trust is derived experientially and independently. 
 
 ==== Why would I use bitcoin
 
