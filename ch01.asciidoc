@@ -41,8 +41,158 @@ genesis.nNonce = 2083236893;
 <3> Unix time equivalent to - Sat, 03 Jan 2009 18:15:05 UTC
 ====
 
-=== Bitcoin mining
+=== Bitcoin Proof-of-Work (Mining)
+
+Bitcoin is secured through computation and consensus. For a new block of transactions to be added to the network, someone must first find a solution to a specific mathematical problem called the _proof of work_. Bitcoin's proof-of-work algorithm is based on the Secure Hash Algorithm (SHA-256) and consists of trying to generate a block whose hash is less than a specific number. Let's see how this works in practice.
+
+A hashing algorithm is a cryptographic function that takes an arbitrary length input (a text message or binary file), and produce a fixed-size output called the _hash_ or _digest_. It is trivial to verify the hash of any input, but it is computationally infeasible to predict or select an input to produce a desired hash. It's a one-way function, so it can easily work one way but is impossible to reverse. 
+
+With SHA-256, the output is always 256 bits long, regardless of the size of the input. In the example below, we will use the Python interpreter to calculate the SHA256 hash of the phrase "I am Satoshi Nakamoto". 
+
+[[sha256_example1]]
+.SHA256 Example
+====
+[source, python]
+----
+$ python <1>
+Python 2.7.1 (r271:86832, Jul 31 2011, 19:30:53) 
+[GCC 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+
+>>> import hashlib <2>
+>>> print hashlib.sha256("I am Satoshi Nakamoto").hexdigest() <3>
+5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e <4>
+
+----
+<1> Start the python interpreter
+<2> Python's hashlib package provides hashing algorithms
+<3> The python command to show the hash of our example phrase
+<4> The resulting hash, in hexadecimal notation
+====
+
+The example shows that if we calculate the hash of the phrase +"I am Satoshi Nakamoto"+, it will produce +5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e+. This 256-bit number is the _hash_ or _digest_ of the phrase and depends on every part of the phrase. Adding a single letter, punctuation mark or any character will produce a different hash.
+
+Now, if we vary the phrase, we will expect to see completely different hashes. Let's try that by adding a number to the end of our phrase:
+
+[[sha256_example2]]
+.SHA256 Iterating on a Nonce
+====
+[source, python]
+----
+>>> print hashlib.sha256("I am Satoshi Nakamoto1").hexdigest()
+f7bc9a6304a4647bb41241a677b5345fe3cd30db882c8281cf24fbb7645b6240
+>>> print hashlib.sha256("I am Satoshi Nakamoto2").hexdigest()
+ea758a8134b115298a1583ffb80ae62939a2d086273ef5a7b14fbfe7fb8a799e
+>>> print hashlib.sha256("I am Satoshi Nakamoto3").hexdigest()
+bfa9779618ff072c903d773de30c99bd6e2fd70bb8f2cbb929400e0976a5c6f4
+>>> print hashlib.sha256("I am Satoshi Nakamoto4").hexdigest()
+bce8564de9a83c18c31944a66bde992ff1a77513f888e91c185bd08ab9c831d5
+>>> print hashlib.sha256("I am Satoshi Nakamoto5").hexdigest()
+eb362c3cf3479be0a97a20163589038e4dbead49f915e96e8f983f99efa3ef0a
+>>> print hashlib.sha256("I am Satoshi Nakamoto6").hexdigest()
+4a2fd48e3be420d0d28e202360cfbaba410beddeebb8ec07a669cd8928a8ba0e
+>>> print hashlib.sha256("I am Satoshi Nakamoto7").hexdigest()
+790b5a1349a5f2b909bf74d0d166b17a333c7fd80c0f0eeabf29c4564ada8351
+>>> print hashlib.sha256("I am Satoshi Nakamoto8").hexdigest()
+702c45e5b15aa54b625d68dd947f1597b1fa571d00ac6c3dedfa499f425e7369
+>>> print hashlib.sha256("I am Satoshi Nakamoto9").hexdigest()
+7007cf7dd40f5e933cd89fff5b791ff0614d9c6017fbe831d63d392583564f74
+>>> print hashlib.sha256("I am Satoshi Nakamoto10").hexdigest()
+c2f38c81992f4614206a21537bd634af717896430ff1de6fc1ee44a949737705
+>>> print hashlib.sha256("I am Satoshi Nakamoto11").hexdigest()
+7045da6ed8a914690f087690e1e8d662cf9e56f76b445d9dc99c68354c83c102
+>>> print hashlib.sha256("I am Satoshi Nakamoto12").hexdigest()
+60f01db30c1a0d4cbce2b4b22e88b9b93f58f10555a8f0f4f5da97c3926981c0
+>>> print hashlib.sha256("I am Satoshi Nakamoto13").hexdigest()
+0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5
+----
+====
+
+Each phrase produces a completely different hash result. They seem completely random, but you can re-produce the exact results in this example on any computer with Python and see the same exact hashes. 
+
+To make a challenge out of this algorithm, let's set an arbitrary target: find a phrase starting with "I am Satoshi Nakamoto" which produces a hash that starts with a zero. In numerical terms, that means finding a hash value that is less than +0x1000000000000000000000000000000000000000000000000000000000000000+. Fortunately, this isn't so difficult! If you notice above, we can see that the phrase "I am Satoshi Nakamoto13" produces the hash 0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5, which fits our criteria. It only took 13 attempts to find it. 
+
+Bitcoin's proof-of-work is very similar to the problem above. First, a miner will generate a new block, containing:
+
+* Transactions waiting to be included in a block
+* The hash from the previous block
+* A _nonce_
+
+The only part a miner can modify is the nonce. Now, the miner will calculate the hash of this block's header and see if it is smaller than the current _target difficulty_. The miner will likely have to try many nonces before finding one that results in a low enough hash. 
+
+A very simplified proof-of-work algorithm is implemented in Python here:
+
+[[pow_example1]]
+.Simplified Proof-Of-Work Implementation
+====
+[source, python]
+----
+include::code/proof-of-work-example.py[]
+----
+====
+
+Running the code above, you can set the desired difficulty (in bits, how many of the leading bits must be zero) and see how long it takes for your computer to find a solution. In the following examples, you can see how it works on an average laptop:
+
+[[pow_example_outputs]]
+.Running the proof-of-work example for various difficulties
+====
+[source, shell]
+----
+$ python proof-of-work-example.py
+
+Difficulty: 0
+Starting search...
+Success with nonce 0
+Hash is 98cd2f814c0ed03661dbc058fa129225b321e9a04a2533b214741c52efa21381
+Elapsed Time: 0.00 seconds
+Hashing Power: 0 hashes per second
+
+Difficulty: 4
+Starting search...
+Success with nonce 3
+Hash is 1fde99fb8d1e48daaa231c16d1e69e979cd6e8808111e720d78c0adba2c56a34
+Elapsed Time: 0.00 seconds
+Hashing Power: 31223 hashes per second
+
+Difficulty: 8
+Starting search...
+Success with nonce 17
+Hash is 0174309cb459c93ff5fb21f7b3e6869d36ea20abb6c18ff1dda1dc9b4c93ecf4
+Elapsed Time: 0.00 seconds
+Hashing Power: 76505 hashes per second
+
+Difficulty: 12
+Starting search...
+Success with nonce 9945
+Hash is 0010738d68590778770be0211d0e17a66979fd435d778b64400c0b97c5fe0c7b
+Elapsed Time: 0.06 seconds
+Hashing Power: 155838 hashes per second
+
+Difficulty: 16
+Starting search...
+Success with nonce 41807
+Hash is 00010a05e26c4cefd0c7bb1591f90870009212645f9cd4a7b8e7d0dfaafcc757
+Elapsed Time: 0.24 seconds
+Hashing Power: 176696 hashes per second
+
+Difficulty: 20
+Starting search...
+Success with nonce 840322
+Hash is 000005a5312680389e451a65fed9c3885bfe35afb446a0971d5c13ce471c3712
+Elapsed Time: 4.69 seconds
+Hashing Power: 179120 hashes per second
+
+----
+====
+
+
+At the time of writing this, the network is attempting to find a block whose header hash is less than +000000000000004c296e6376db3a241271f43fd3f5de7ba18986e517a243baa7+. As you can see, there are a lot of zeroes at the beginning of that hash, meaning that the acceptable range of hashes is much smaller, hence more difficult to find a valid hash. It will take on average more than 10 minutes of searching at more than 500 trillion hash calculations per second for the network to discover the next block. 
+
+
 === Transaction Fees
+
+
+
 === Currency exchange
 
 [[complex_transactions]]
