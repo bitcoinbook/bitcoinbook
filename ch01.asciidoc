@@ -52,7 +52,7 @@ With SHA-256, the output is always 256 bits long, regardless of the size of the 
 [[sha256_example1]]
 .SHA256 Example
 ====
-[source, python]
+[source, shell]
 ----
 $ python <1>
 Python 2.7.1 (r271:86832, Jul 31 2011, 19:30:53) 
@@ -72,39 +72,47 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 The example shows that if we calculate the hash of the phrase +"I am Satoshi Nakamoto"+, it will produce +5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e+. This 256-bit number is the _hash_ or _digest_ of the phrase and depends on every part of the phrase. Adding a single letter, punctuation mark or any character will produce a different hash.
 
-Now, if we vary the phrase, we will expect to see completely different hashes. Let's try that by adding a number to the end of our phrase:
+Now, if we vary the phrase, we will expect to see completely different hashes. Let's try that by adding a number to the end of our phrase, using this simple Python script
 
-[[sha256_example2]]
-.SHA256 Iterating on a Nonce
+[[sha256_example_generator]]
+.SHA256 A script for generating many hashes by iterating on a nonce
 ====
 [source, python]
 ----
->>> print hashlib.sha256("I am Satoshi Nakamoto1").hexdigest()
-f7bc9a6304a4647bb41241a677b5345fe3cd30db882c8281cf24fbb7645b6240
->>> print hashlib.sha256("I am Satoshi Nakamoto2").hexdigest()
-ea758a8134b115298a1583ffb80ae62939a2d086273ef5a7b14fbfe7fb8a799e
->>> print hashlib.sha256("I am Satoshi Nakamoto3").hexdigest()
-bfa9779618ff072c903d773de30c99bd6e2fd70bb8f2cbb929400e0976a5c6f4
->>> print hashlib.sha256("I am Satoshi Nakamoto4").hexdigest()
-bce8564de9a83c18c31944a66bde992ff1a77513f888e91c185bd08ab9c831d5
->>> print hashlib.sha256("I am Satoshi Nakamoto5").hexdigest()
-eb362c3cf3479be0a97a20163589038e4dbead49f915e96e8f983f99efa3ef0a
->>> print hashlib.sha256("I am Satoshi Nakamoto6").hexdigest()
-4a2fd48e3be420d0d28e202360cfbaba410beddeebb8ec07a669cd8928a8ba0e
->>> print hashlib.sha256("I am Satoshi Nakamoto7").hexdigest()
-790b5a1349a5f2b909bf74d0d166b17a333c7fd80c0f0eeabf29c4564ada8351
->>> print hashlib.sha256("I am Satoshi Nakamoto8").hexdigest()
-702c45e5b15aa54b625d68dd947f1597b1fa571d00ac6c3dedfa499f425e7369
->>> print hashlib.sha256("I am Satoshi Nakamoto9").hexdigest()
-7007cf7dd40f5e933cd89fff5b791ff0614d9c6017fbe831d63d392583564f74
->>> print hashlib.sha256("I am Satoshi Nakamoto10").hexdigest()
-c2f38c81992f4614206a21537bd634af717896430ff1de6fc1ee44a949737705
->>> print hashlib.sha256("I am Satoshi Nakamoto11").hexdigest()
-7045da6ed8a914690f087690e1e8d662cf9e56f76b445d9dc99c68354c83c102
->>> print hashlib.sha256("I am Satoshi Nakamoto12").hexdigest()
-60f01db30c1a0d4cbce2b4b22e88b9b93f58f10555a8f0f4f5da97c3926981c0
->>> print hashlib.sha256("I am Satoshi Nakamoto13").hexdigest()
-0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5
+include::code/hash_example.py[]
+----
+====
+
+Running this will produce the hashes of several phrases, made different by adding a unique number, called a _nonce_ at the end of the text. By incrementing the nonce, we can get different hadhes.
+
+[[sha256_example_generator_output]]
+.SHA256 Output of a script for generating many hashes by iterating on a nonce
+====
+[source, shell]
+----
+$  python hash_example.py 
+I am Satoshi Nakamoto0 => a80a81401765c8eddee25df36728d732acb6d135bcdee6c2f87a3784279cfaed
+I am Satoshi Nakamoto1 => f7bc9a6304a4647bb41241a677b5345fe3cd30db882c8281cf24fbb7645b6240
+I am Satoshi Nakamoto2 => ea758a8134b115298a1583ffb80ae62939a2d086273ef5a7b14fbfe7fb8a799e
+I am Satoshi Nakamoto3 => bfa9779618ff072c903d773de30c99bd6e2fd70bb8f2cbb929400e0976a5c6f4
+I am Satoshi Nakamoto4 => bce8564de9a83c18c31944a66bde992ff1a77513f888e91c185bd08ab9c831d5
+I am Satoshi Nakamoto5 => eb362c3cf3479be0a97a20163589038e4dbead49f915e96e8f983f99efa3ef0a
+I am Satoshi Nakamoto6 => 4a2fd48e3be420d0d28e202360cfbaba410beddeebb8ec07a669cd8928a8ba0e
+I am Satoshi Nakamoto7 => 790b5a1349a5f2b909bf74d0d166b17a333c7fd80c0f0eeabf29c4564ada8351
+I am Satoshi Nakamoto8 => 702c45e5b15aa54b625d68dd947f1597b1fa571d00ac6c3dedfa499f425e7369
+I am Satoshi Nakamoto9 => 7007cf7dd40f5e933cd89fff5b791ff0614d9c6017fbe831d63d392583564f74
+I am Satoshi Nakamoto10 => c2f38c81992f4614206a21537bd634af717896430ff1de6fc1ee44a949737705
+I am Satoshi Nakamoto11 => 7045da6ed8a914690f087690e1e8d662cf9e56f76b445d9dc99c68354c83c102
+I am Satoshi Nakamoto12 => 60f01db30c1a0d4cbce2b4b22e88b9b93f58f10555a8f0f4f5da97c3926981c0
+I am Satoshi Nakamoto13 => 0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5
+I am Satoshi Nakamoto14 => 27ead1ca85da66981fd9da01a8c6816f54cfa0d4834e68a3e2a5477e865164c4
+I am Satoshi Nakamoto15 => 394809fb809c5f83ce97ab554a2812cd901d3b164ae93492d5718e15006b1db2
+I am Satoshi Nakamoto16 => 8fa4992219df33f50834465d30474298a7d5ec7c7418e642ba6eae6a7b3785b7
+I am Satoshi Nakamoto17 => dca9b8b4f8d8e1521fa4eaa46f4f0cdf9ae0e6939477e1c6d89442b121b8a58e
+I am Satoshi Nakamoto18 => 9989a401b2a3a318b01e9ca9a22b0f39d82e48bb51e0d324aaa44ecaba836252
+I am Satoshi Nakamoto19 => cda56022ecb5b67b2bc93a2d764e75fc6ec6e6e79ff6c39e21d03b45aa5b303a
+
+$
 ----
 ====
 
@@ -182,12 +190,29 @@ Hash is 000005a5312680389e451a65fed9c3885bfe35afb446a0971d5c13ce471c3712
 Elapsed Time: 4.69 seconds
 Hashing Power: 179120 hashes per second
 
+Difficulty: 24
+Starting search...
+Success with nonce 18779387
+Hash is 000000a7e616c6968f22435687aae9e071cd5a8cb5b704ef2bff67bd258e4aab
+Elapsed Time: 106.63 seconds
+Hashing Power: 176122 hashes per second
 ----
 ====
 
+As you can see, increasing the difficulty by 4 bits causes an exponential increase in the time it takes to find a solution. If you think of the entire 256-bit number space, each time you constrain one more bit to zero, you decrease the search space by half. In the example above, it takes 18 million hash attempts to find a nonce that produces a hash with 24 leading bits as zero. Even at a speed of more than 170 thousand hashes per second, it almost two minutes to find this solution. 
 
-At the time of writing this, the network is attempting to find a block whose header hash is less than +000000000000004c296e6376db3a241271f43fd3f5de7ba18986e517a243baa7+. As you can see, there are a lot of zeroes at the beginning of that hash, meaning that the acceptable range of hashes is much smaller, hence more difficult to find a valid hash. It will take on average more than 10 minutes of searching at more than 500 trillion hash calculations per second for the network to discover the next block. 
+At the time of writing this, the network is attempting to find a block whose header hash is less than +000000000000004c296e6376db3a241271f43fd3f5de7ba18986e517a243baa7+. As you can see, there are a lot of zeroes at the beginning of that hash, meaning that the acceptable range of hashes is much smaller, hence more difficult to find a valid hash. It will take on average more 150 quadrillion hash calculations per second for the network to discover the next block. That seems like an impossible task, but fortunately the network is bringing 500 TH/sec of processing power to bear, which will be able to find a block in about 10 minutes on average. 
 
+==== Diificulty Adjustment
+
+Bitcoin is tuned to generate blocks approximately every 10 minutes. This is achieved by automatically adjusting the target difficulty to account for increases and decreases in the available computing power on the network. This process occurs automatically and on every node independently. Each node recalculates the expected difficulty every 2106 blocks, based on the time it took to hash the previous 2106 blocks. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty will decrease. 
+
+[TIP]
+====
+The difficulty of finding a bitcoin block is approximately '10 minutes of processing' for the entire network, based on the time it took to find the previous 2106 blocks, adjusted every 2106 blocks. If you know the processing power of the network in hashes per second, you can calculate how many hashes per 10 minutes, which is how many on avergae to find a block, ie. the current difficulty.
+====
+
+===
 
 === Transaction Fees
 
