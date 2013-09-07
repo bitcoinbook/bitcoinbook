@@ -3,6 +3,112 @@
 
 === Bitcoin currency and units
 === Bitcoin addresses and public key crypto
+
+Bitcoin uses Elliptic Curve public key cryptography for its default algorithm for signing transactions. 
+
+==== Public Key Cryptography
+
+Public key, or assymetric cryptography, is a type of cryptography that uses a pair of digital keys. A user has a private and a public key. The public key is derived from the private key with a mathematical function that is difficult to reverse. 
+
+[[pubcrypto_colors]]
+.Public Key Cryptography: Irreversible Function as Color Mixing
+image::images/pubcrypto-colors.png["Public Key Cryptography: Irreversible Function as Color Mixing"]
+
+As an example, think of mixing a shade of yellow with a shade of blue. Mixing the two colors is simple. However, figuring out exactly which two shades went into the final mix is not so easy, unless you have one of the two shades. If you have one of the colors you can easily filter it out and get the other. Whereas mixing colors is easy, "un-mixing" them is hard. The mathematical equivalent most often used in cryptography is the Discrete Logarith Problem link$$https://en.wikipedia.org/wiki/Discrete_logarithm_problem#Cryptography$$[Discrete Logarithm Problem in Cryptography]
+
+To use public key cryptography, Alice will ask Bob for his public key. Then, Alice can encrypt messages with Bob's public key, knowing that only Bob can read those messages, since only Bob has the equivalent private key. 
+
+==== Elliptic Curve Cryptography
+
+Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by multiplication on the the points of an elliptic curve over a finite prime field. 
+
+In elliptic curve cryptography, a predetermined _generator_ point on an elliptic curve is multiplied by a _private key_, which is simply a 256-bit number, to produce another point somewhere else on the curve, which is the corresponding public key. In most implementations, the private and public keys are stored together as a _key pair_. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
+
+
+[[ecc_addition]]
+.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
+image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
+
+[TIP]
+====
+The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256-bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
+====
+
+==== Generating bitcoin keys
+
+The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter, as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256-bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the trully paranoid, nothing beats dice, pencil and paper.
+
+[TIP]
+====
+The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
+====
+
+
+[[privkey_gen]]
+.Private key generation: From random mouse movements to a 256-bit number used as the private key
+image::images/privkey-gen.png["Private key generation"]
+
+Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the Elliptic Curve (link:$$https://www.openssl.org/docs/crypto/ec.html#$$[] library and supporting utilities. 
+
+Here's an example from the reference implementation, generating a public key from an existing private key
+
+[[genesis_block_cpp]]
+.The Genesis Block, statically encoded in the source code of the reference client
+link:$$https://github.com/bitcoin/bitcoin/blob/0.8.4/src/key.cpp#L31$$[
+bitcoin / src / key.cpp : 31 ]
+====
+[source, c++]
+----
+#include <map>
+
+#include <openssl/ecdsa.h>
+#include <openssl/obj_mac.h>
+
+#include "key.h"
+
+// Generate a private key from just the secret parameter
+int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
+{
+    int ok = 0;
+    BN_CTX *ctx = NULL;
+    EC_POINT *pub_key = NULL;
+
+    if (!eckey) return 0;
+
+    const EC_GROUP *group = EC_KEY_get0_group(eckey);
+
+    if ((ctx = BN_CTX_new()) == NULL)
+        goto err;
+
+    pub_key = EC_POINT_new(group);
+
+    if (pub_key == NULL)
+        goto err;
+
+    if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx)) <1>
+        goto err;
+
+    EC_KEY_set_private_key(eckey,priv_key);
+    EC_KEY_set_public_key(eckey,pub_key);
+
+    ok = 1;
+
+err:
+
+    if (pub_key)
+        EC_POINT_free(pub_key);
+    if (ctx != NULL)
+        BN_CTX_free(ctx);
+
+    return(ok);
+}
+----
+<1> Multiplying the priv_key by the generator point of the elliptic curve group, produces the pub_key
+====
+
+
+
+
 === Simple Transactions
 === Wallets, addresses and coins
 === The Blockchain
