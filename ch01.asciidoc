@@ -22,6 +22,9 @@ To use public key cryptography, Alice will ask Bob for his public key. Then, Ali
 
 Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by multiplication on the the points of an elliptic curve over a finite prime field. 
 
+
+In elliptic curve cryptography, a predetermined _generator_ point on an elliptic curve is multiplied by a _private key_, which is simply a 256-bit number, to produce another point somewhere else on the curve, which is the corresponding public key. In most implementations, the private and public keys are stored together as a _key pair_. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
+
 [latexmath]
 ++++
 \begin{equation}
@@ -29,19 +32,34 @@ Elliptic Curve Cryptography is a type of assymetric or public-key cryptography b
 \end{equation}
 ++++
 
-[latexmath]
-++++
-\begin{equation}
-{y^2 \mod p = (x^3 + 7) \mod p}
-\end{equation}
-++++
-
-In elliptic curve cryptography, a predetermined _generator_ point on an elliptic curve is multiplied by a _private key_, which is simply a 256-bit number, to produce another point somewhere else on the curve, which is the corresponding public key. In most implementations, the private and public keys are stored together as a _key pair_. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
-
+where +k+ is the private key, +G+ is the fixed generator point (a constant) and +K+ is the resulting public key, a point on the curve. 
+Elliptic curve multiplication can be visualized on a curve as drawing a line connecting between two points on the curve (G and kG) to produce a third point (K). The third point is the public key. 
 
 [[ecc_addition]]
 .Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
 image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
+
+Bitcoin specifically uses the +secp256k1+ elliptic curve which is a standardized curve on a group field of large prime order:
+
+[latexmath]
+++++
+\begin{equation}
+{y^2 = (x^3 + 7)} over \mathbb{F}_p
+
+or 
+
+{y^2 \mod p = (x^3 + 7) \mod p}
+
+where p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F, a very large prime. 
+
+\end{equation}
+++++
+
+The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as F(p). The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
+
+[[ecc-over-F37-math]]
+.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve over F(p)
+image::images/ecc-over-F37-math.png["Addition operator on points of an elliptic curve over F(p)"]
 
 [TIP]
 ====
