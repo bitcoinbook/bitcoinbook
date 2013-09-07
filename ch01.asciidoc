@@ -7,7 +7,7 @@
 Bitcoin uses Elliptic Curve public key cryptography for its default algorithm for signing transactions. 
 
 ==== Public Key Cryptography
-
+((("public key", "private key")))
 Public key, or assymetric cryptography, is a type of cryptography that uses a pair of digital keys. A user has a private and a public key. The public key is derived from the private key with a mathematical function that is difficult to reverse. 
 
 [[pubcrypto_colors]]
@@ -19,10 +19,10 @@ As an example, think of mixing a shade of yellow with a shade of blue. Mixing th
 To use public key cryptography, Alice will ask Bob for his public key. Then, Alice can encrypt messages with Bob's public key, knowing that only Bob can read those messages, since only Bob has the equivalent private key. 
 
 ==== Elliptic Curve Cryptography
-
+((("elliptic curve cryptography", "ECC")))
 Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by multiplication on the the points of an elliptic curve over a finite prime field. 
 
-
+((("generator point")))
 In elliptic curve cryptography, a predetermined _generator_ point on an elliptic curve is multiplied by a _private key_, which is simply a 256-bit number, to produce another point somewhere else on the curve, which is the corresponding public key. In most implementations, the private and public keys are stored together as a _key pair_. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
 
 [latexmath]
@@ -40,7 +40,7 @@ Elliptic curve multiplication can be visualized on a curve as drawing a line con
 image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
 
 Bitcoin specifically uses the +secp256k1+ elliptic curve:
-
+((("secp256k1")))
 [latexmath]
 ++++
 \begin{equation}
@@ -117,8 +117,10 @@ The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is 
 === The Blockchain
 
 ==== The Genesis Block
+((("genesis block")))
 
 The very first block mined, by Satoshi Nakamoto on Sat, 03 Jan 2009, is included in the source code of any "full node" client, as the basis for validating the entire blockchain.
+((("blockchain")))
 
 [TIP]
 ====
@@ -154,7 +156,7 @@ genesis.nNonce = 2083236893;
 ====
 
 === Bitcoin Proof-of-Work (Mining)
-
+((("Mining", "Proof of Work", "SHA256", "hashing power", "difficulty", "nonce")))
 Bitcoin is secured through computation and consensus. For a new block of transactions to be added to the network, someone must first find a solution to a specific mathematical problem called the _proof of work_. Bitcoin's proof-of-work algorithm is based on the Secure Hash Algorithm (SHA-256) and consists of trying to generate a block whose hash is less than a specific number. Let's see how this works in practice.
 
 A hashing algorithm is a cryptographic function that takes an arbitrary length input (a text message or binary file), and produce a fixed-size output called the _hash_ or _digest_. It is trivial to verify the hash of any input, but it is computationally infeasible to predict or select an input to produce a desired hash. It's a one-way function, so it can easily work one way but is impossible to reverse.
@@ -192,7 +194,7 @@ include::code/hash_example.py[]
 ====
 
 Running this will produce the hashes of several phrases, made different by adding a unique number, called a _nonce_ at the end of the text. By incrementing the nonce, we can get different hadhes.
-
+((("nonce")))
 [[sha256_example_generator_output]]
 .SHA256 Output of a script for generating many hashes by iterating on a nonce
 ====
@@ -228,7 +230,7 @@ Each phrase produces a completely different hash result. They seem completely ra
 To make a challenge out of this algorithm, let's set an arbitrary target: find a phrase starting with "I am Satoshi Nakamoto" which produces a hash that starts with a zero. In numerical terms, that means finding a hash value that is less than +0x1000000000000000000000000000000000000000000000000000000000000000+. Fortunately, this isn't so difficult! If you notice above, we can see that the phrase "I am Satoshi Nakamoto13" produces the hash 0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5, which fits our criteria. It only took 13 attempts to find it. 
 
 Bitcoin's proof-of-work is very similar to the problem above. First, a miner will generate a new block, containing:
-
+((("block")))
 * Transactions waiting to be included in a block
 * The hash from the previous block
 * A _nonce_
@@ -236,7 +238,7 @@ Bitcoin's proof-of-work is very similar to the problem above. First, a miner wil
 The only part a miner can modify is the nonce. Now, the miner will calculate the hash of this block's header and see if it is smaller than the current _target difficulty_. The miner will likely have to try many nonces before finding one that results in a low enough hash. 
 
 A very simplified proof-of-work algorithm is implemented in Python here:
-
+((("proof of work")))
 [[pow_example1]]
 .Simplified Proof-Of-Work Implementation
 ====
