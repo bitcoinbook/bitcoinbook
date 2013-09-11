@@ -18,22 +18,27 @@ As an example, think of mixing a shade of yellow with a shade of blue. Mixing th
 
 To use public key cryptography, Alice will ask Bob for his public key. Then, Alice can encrypt messages with Bob's public key, knowing that only Bob can read those messages, since only Bob has the equivalent private key. 
 
+[TIP]
+====
+In most implementations, the private and public keys are stored together as a _key pair_, for convenience. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
+====
+
 ==== Elliptic Curve Cryptography
 ((("elliptic curve cryptography", "ECC")))
-Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by multiplication on the the points of an elliptic curve over a finite prime field. 
+Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
 
-((("generator point")))
-In elliptic curve cryptography, a predetermined _generator_ point on an elliptic curve is multiplied by a _private key_, which is simply a 256-bit number, to produce another point somewhere else on the curve, which is the corresponding public key. In most implementations, the private and public keys are stored together as a _key pair_. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
+Starting with a private key in the form of a randomly generator number +k+, we multiply it with a predetermined point on the curve called the _generator point_ to produce another point somewhere else on the curve, which is the corresponding public key. 
 
 [latexmath]
 ++++
 \begin{equation}
-{K = G \bigotimes k}
+{K = k G}
 \end{equation}
 ++++
 
-where +k+ is the private key, +G+ is the fixed generator point (a constant) and +K+ is the resulting public key, a point on the curve. 
-Elliptic curve multiplication can be visualized on a curve as drawing a line connecting between two points on the curve (G and kG) to produce a third point (K). The third point is the public key. 
+where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. 
+
+Elliptic curve multiplication can be visualized geometrically as drawing a line connecting two points on the curve (G and kG) to produce a third point (K). The third point is the public key. 
 
 [[ecc_addition]]
 .Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
@@ -58,7 +63,7 @@ or
 
 where +p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F+, a very large prime. 
 
-The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as F(p). The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
+The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)]. The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
 
 [[ecc-over-F37-math]]
 .Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve over F(p)
@@ -67,18 +72,20 @@ image::images/ecc-over-F37-math.png["Addition operator on points of an elliptic 
 
 ==== Generating bitcoin keys
 
+===== Type-0 or non-deterministic (random) keys
+
 The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter, as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256-bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the trully paranoid, nothing beats dice, pencil and paper.
+
+
+[[Type0_keygen]]
+.Private key generation: From random mouse movements to a 256-bit number used as the private key
+image::images/Type-0 keygen.png["Private key generation"]
+
 
 [TIP]
 ====
 The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256-bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
 ====
-
-
-
-[[privkey_gen]]
-.Private key generation: From random mouse movements to a 256-bit number used as the private key
-image::images/privkey-gen.png["Private key generation"]
 
 Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the https://www.openssl.org/docs/crypto/ec.html[Elliptic Curve library]. 
 
@@ -111,6 +118,32 @@ int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
 ====
 The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
 ====
+
+This most basic form of key generation, generates what are known as _Type-0_ or _Non-Deterministic_ (ie. random) keys. When a sequence of keys is generated for a single user's wallet, each key is randomly generated when needed
+
+[[Type0_chain]]
+.Type-0 or Non-Deterministic Keys are randomly generated as needed
+image::images/Type-0 chain.png["Key generation"]
+
+===== Type-1 deterministic (non-random) key chains
+
+[Type1_chain]]
+.Type-1 Deterministic Keys are generated from a phrase and index number
+image::images/Type-1 chain.png["Key generation"]
+
+===== Type-2 chained deterministic keys
+
+[Type2_chain]]
+.Type-2 Chained Deterministic Keys are generated from a binary seed and index number
+image::images/Type-1 chain.png["Key generation"]
+
+===== Type-2 hierarchical deterministic keys
+
+[Type2_tree]]
+.Type-2 Hierarchical Deterministic Keys are derived from a master seed using a tree structure
+image::images/BIP32-derivation.png["Key generation"]
+
+
 
 === Simple Transactions
 === Wallets, addresses and coins
