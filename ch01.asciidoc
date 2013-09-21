@@ -2,6 +2,14 @@
 == How Does Bitcoin Work?
 
 === Bitcoin currency and units
+
+Internally, all values are stored in _satoshi_, the base unit of the bitcoin currency, equal to 100th of a millionth of a bitcoin latexmath:[\( 1 satoshi = 1/100,000,000 bitcoin\)]. For example, Alice's transaction transferring 0.015 bitcoin to Bob for a cup of coffee, will be encoded in the blockchain with a value of one and a half million (1,500,000) satoshi.
+
+[TIP]
+====
+All value references in the book will indicate satoshi or bitcoin units as appropriate. Code segments showing encoded value should be assumed to be satoshi unless otherwise specified
+====
+
 === Bitcoin addresses and public key crypto
 
 Bitcoin uses Elliptic Curve public key cryptography for its default algorithm for signing transactions. 
@@ -143,10 +151,92 @@ image::images/type2_chain.png["Key generation"]
 .Type-2 Hierarchical Deterministic Keys are derived from a master seed using a tree structure
 image::images/BIP32-derivation.png["Key generation"]
 
+=== Transactions
+
+In simple terms, a transaction tells the network that the owner of a number bitcoins has authorized the transfer of some of those bitcoins to another owner. The new owner can now spend these bitcoins by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
+
+The transaction contains proof of ownership for each amount of bitcoin whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner. 
+
+At this point you may begin to wonder: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. Miners will assign an output to this generation transaction that transfers ownership of the reward coins to a bitcoin address, the miners' wallet. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined. 
+	
+A transaction, in bitcoin terminology, also refers to the signed data structure that contains a series of inputs and outputs transferring value, as encoded in the blockchain or propagatin on the bitcoin network. 
+
+These signed transactions are created by end-users of the currency, or more precisely, their wallet applications, and are propagted on to the bitcoin network. Miners aggregate these unconfirmed transactions into a block and attempt to find a valid nonce for the block by running the proof-of-work algorithm (see <<mining>>). Once a proof-of-work solution is found and included in the block, the now-valid block is propagated for all to include in the blockchain. Additional blocks mined thereafter serve as confirmations of the transactions. Customarily, a transaction with more than six confirmations is considered "confirmed" by the majority of network nodes. [note - check this in the code as per input validity for spending, threshold on confirms?]
+	
+Logically, a transaction moves value from _transaction inputs_ to _transaction outputs_. The inputs specify where the transfered value comes from. 
+
+In the blockchain, a transaction is stored as a variable-lenght data structure, that contains an array of _transaction inputs_ and an array of _transaction outputs_. 
+
+.A transaction data structure, as stored in the blockchain
+[options="header"]
+|=======
+|Part|Size|Description
+|Version| 4 bytes | The transaction type version (default and only type value is 1) 
+|Number of Inputs | VarInt | How many inputs are listed below
+|Inputs | List of Tx_In | One or more inputs, specifying where the value will come from
+|Number of Outputs | VarInt | How many outputs are listed below
+|Outputs | List of Tx_Out | One or more outputs, specifying where to "send" the value
+|=======
+
+From the perspective of Alice and Bob's transaction for the cup of coffee, the input would be Alice's coins from previous transactions and the output would be 0.015 BTC (or 1.5m satoshi) that would be "sent" to Bob's bitcoin address for payment of the coffee. Bob could then spend this bitcoin by creating transactions whose inputs refer to this transaction
+s output. Each transaction's outputs become possible inputs for future transactions. What changes is who controls the keys that unlock them. For that we have to delve in a bit deeper into the data structure of the inputs and outputs themselves. 
+
+The input always refers to a previous transaction. In the case of Alice's coffee purchase, he wallet software would find a previous transaction that has a similar value, to minimize the need for generating change. Let's assume that Alice had previously been paid 0.02BTC by someone else. Her wallet will use that previous transaction to pay Bob for the coffee.
 
 
-=== Simple Transactions
-=== Wallets, addresses and coins
+.Alice's transaction input
+[options="header"]
+|=======
+|Part|Value|Description
+|Previous Tx Hash| 643b0b82c0e88ffdfec6b64e3e6ba35e7ba5fdd7d5d6cc8d25c6b241501 | a hash used to identify a previous transaction
+|Previous Tx Index| 0 | The first output of that transaction is 0
+|Script Signature | 30450...6b241501 | A signature from Alice's key to unlock this value
+|=======
+
+In the input above, Alice sources the funds to pya for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from thousands of inputs, aggregating the value. A transaction can also have thousands of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output. 
+
+You may notice that there is no value field in the input. That is because the *entire* value of the referenced output is consumed. You cannot use only part of an output, you must use the entire value. All the value from all the inputs listed in a transaction is aggregated and then disbursed to the various outputs, according to the value defined in those outputs. In attempting to pay Bob for coffee, Alice must create a transaction for the exact amount, even though she may not have "exact change" in the form of previous transactions that perfectly match. Alice will therefore have to either aggregate many smaller inputs (previous unspent outputs) to reach the price of the coffee, or use a larger input and then make some change back to her wallet. This is all done automatically by the wallet software, so Alice just sees the exact amount transacted, but behind the scenes there may be a flurry of inputs being aggregated and change returned. 
+
+For simplicity, Alice was lucky enough to have a perfectly matching previous transaction, so her wallet only needs one input for this coffee transaction. 
+
+[TIP]
+====
+Inputs don't have a value field. That is because the outputs of a previous transaction can either be spent or unspent as a whole. You cannot use part of an output, you must use all of it. If you only need part of the value of a previous output, you must spend all of it and generate "change", by creating an new output for the excess value back to your own wallet. 
+====
+
+
+.Alice's transaction output
+[options="header"]
+|=======
+|Part|Value|Description
+|Value| 1,500,000 | The value in satoshi to transfer to this output
+|Script| OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG | A script for spending this output
+|=======
+
+The second part of the transaction, is where Alice effectively pays Bob for the coffee. This is achieved by creating an output _that only Bob can spend_. In bitcoin, the script used to "lock" an output to a specific bitcoin address is +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+, with +<public key hash>+ replaced by the public key of the recipient, in this case Bob's public key.
+
+While this script looks rather complicated and confusing, it will be explained in great detail below (see <<script>>). This exact script is used in 99.99% of bitcoin transactions, as it expresses the simple goal of _"payable to whoever can generate a signature with the private key of this bitcoin address"_. With this output, Alice establishes a value of 0.015BTC "payable to Bob". Once this transaction is propagated on the network, included in a block and confirmed, Bob will be able to spend this output by constructing a transaction of his own. 
+	
+[[script]]
+==== Transaction Script
+
+One of bitcoin's most powerful features is the ability to define the beneficiary of a transaction with a transaction scripting language that allows for very complex transactions and future enhancements. The bitcoin script language is Forth-like which means that it is a stack-based language. A stack is a logical construct that can be visualized as a stack of books. You can add one to the top, you can take one off the top. In a stack based language, values are added to a stack and then mathematical operations are applied to the items on that stack. 
+
+Here's a simple example, using a stack-language as a calculator. The script is evaluated from left to right. Numbers are added to the stack and operators manipulate them. 
+
+
+.Example of a calculator using a stack-based language
+[options="header"]
+|=======
+| Stack| Script |
+| empty | latexmath:[\(2 3 + 4 *\)]
+| 2 |latexmath:[\(3 + 4 *\)]
+| latexmath:[\begin{matrix}3\\2\end{matrix}]|latexmath:[\(+ 4 *\)]
+| 5 |latexmath:[\(4 *\)]
+| latexmath:[\begin{matrix}4\\5\end{matrix}]|latexmath:[\(3 + 4 *\)]
+|=======
+
+
 === The Blockchain
 
 ==== The Genesis Block
@@ -188,6 +278,7 @@ genesis.nNonce = 2083236893;
 <3> Unix time equivalent to - Sat, 03 Jan 2009 18:15:05 UTC
 ====
 
+[[mining]]
 === Bitcoin Proof-of-Work (Mining)
 ((("Mining", "Proof of Work", "SHA256", "hashing power", "difficulty", "nonce")))
 Bitcoin is secured through computation and consensus. For a new block of transactions to be added to the network, someone must first find a solution to a specific mathematical problem called the _proof of work_. Bitcoin's proof-of-work algorithm is based on the Secure Hash Algorithm (SHA-256) and consists of trying to generate a block whose hash is less than a specific number. Let's see how this works in practice.
