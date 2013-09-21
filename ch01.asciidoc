@@ -155,17 +155,16 @@ image::images/BIP32-derivation.png["Key generation"]
 
 In simple terms, a transaction tells the network that the owner of a number bitcoins has authorized the transfer of some of those bitcoins to another owner. The new owner can now spend these bitcoins by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
 
+[TIP]
+====
+_Transactions_ move value from _transaction inputs_ to _transaction outputs_. An input is where the coins (value) is coming from, either a previous transaction's output or a miner's reward. An output "sends" value to a new owner by locking it with their key. 
+====
+
 The transaction contains proof of ownership for each amount of bitcoin whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner. 
 
-At this point you may begin to wonder: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. Miners will assign an output to this generation transaction that transfers ownership of the reward coins to a bitcoin address, the miners' wallet. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined. 
+At this point you may begin to wonder: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined. 
 	
-A transaction, in bitcoin terminology, also refers to the signed data structure that contains a series of inputs and outputs transferring value, as encoded in the blockchain or propagatin on the bitcoin network. 
-
-These signed transactions are created by end-users of the currency, or more precisely, their wallet applications, and are propagted on to the bitcoin network. Miners aggregate these unconfirmed transactions into a block and attempt to find a valid nonce for the block by running the proof-of-work algorithm (see <<mining>>). Once a proof-of-work solution is found and included in the block, the now-valid block is propagated for all to include in the blockchain. Additional blocks mined thereafter serve as confirmations of the transactions. Customarily, a transaction with more than six confirmations is considered "confirmed" by the majority of network nodes. [note - check this in the code as per input validity for spending, threshold on confirms?]
-	
-Logically, a transaction moves value from _transaction inputs_ to _transaction outputs_. The inputs specify where the transfered value comes from. 
-
-In the blockchain, a transaction is stored as a variable-lenght data structure, that contains an array of _transaction inputs_ and an array of _transaction outputs_. 
+A transaction, in bitcoin terminology, also refers to the signed data structure that contains a series of inputs and outputs transferring value, as encoded in the blockchain or propagating on the bitcoin network. In the blockchain, a transaction is stored as a variable-lenght data structure, that contains an array of _transaction inputs_ and an array of _transaction outputs_. 
 
 .A transaction data structure, as stored in the blockchain
 [options="header"]
@@ -193,7 +192,7 @@ The input always refers to a previous transaction. In the case of Alice's coffee
 |Script Signature | 30450...6b241501 | A signature from Alice's key to unlock this value
 |=======
 
-In the input above, Alice sources the funds to pya for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from thousands of inputs, aggregating the value. A transaction can also have thousands of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output. 
+In the input above, Alice sources the funds to pay for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from thousands of inputs, aggregating the value. A transaction can also have thousands of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output. 
 
 You may notice that there is no value field in the input. That is because the *entire* value of the referenced output is consumed. You cannot use only part of an output, you must use the entire value. All the value from all the inputs listed in a transaction is aggregated and then disbursed to the various outputs, according to the value defined in those outputs. In attempting to pay Bob for coffee, Alice must create a transaction for the exact amount, even though she may not have "exact change" in the form of previous transactions that perfectly match. Alice will therefore have to either aggregate many smaller inputs (previous unspent outputs) to reach the price of the coffee, or use a larger input and then make some change back to her wallet. This is all done automatically by the wallet software, so Alice just sees the exact amount transacted, but behind the scenes there may be a flurry of inputs being aggregated and change returned. 
 
@@ -228,15 +227,44 @@ Here's a simple example, using a stack-language as a calculator. The script is e
 .Example of a calculator using a stack-based language
 [options="header"]
 |=======
-| Stack| Script |
-| empty | latexmath:[\(2 3 + 4 *\)]
-| 2 |latexmath:[\(3 + 4 *\)]
-| latexmath:[\begin{matrix}3\\2\end{matrix}]|latexmath:[\(+ 4 *\)]
-| 5 |latexmath:[\(4 *\)]
-| latexmath:[\begin{matrix}4\\5\end{matrix}]|latexmath:[\(3 + 4 *\)]
+| Stack| Script | Description
+| empty | latexmath:[\(2 3 + 4 *\)] | Start
+| 2 |latexmath:[\(3 + 4 *\)] | Number added to stack
+| latexmath:[\(\begin{matrix}3\\2\end{matrix}\)]|latexmath:[\(+ 4 *\)] | Another number added to stack
+| 5 |latexmath:[\(4 *\)] | Addition operator replaces top-two items with result
+| latexmath:[\(\begin{matrix}4\\5\end{matrix}\)]|latexmath:[\(*\)]| Another number added to stack
+| 20 | empty | Multiplication operator replaces top-two items with result
 |=======
 
+When the script starts, the number 2 is pushed onto the stack. In the second step, the number 3 is pushed on top of the stack. In the third step, the script reaches the oprator "+", which removes the two top values from the stack and replaces them with their sum. As we reach the fifth step, the stack contains the result of the previous calculations and the number 4 is added on top. Finally, the multiplier operator in the sixth step will remove the two topmost values and multiply them, putting the result on the top of the stack.
 
+In bitcoin, the transaction script language has more complex operators than addition and multiplication, but otherwise operates in exactly the same way as the simple calculator example above. Examining the transaction above we see that Bob has an unspent output that is locked with the script +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+. Bob must provide a _script signature_ or _scriptSig_ to unlock this output and spend it. 
+	
+	When a transaction is being validated, each of its inputs will be validated in turn to confirm that they are unspent and that they script signatures provided unlock these inputs. Each node in the bitcoin network can independently validate any transaction by combining the script signature and script and evaluating them using the stack processing language. If the end result evaluates as +TRUE+, then the transaction is valid. 
+	
+		
+	Script signature: +<sig> <pubkey>+
+		
+	Script: +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+
+	
+	
+.Evaluating a transaction input by combining the script signature and script
+[options="header"]
+|=======
+| Stack| Script | Description
+| empty | +<sig> <pubkey> OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+ | Start
+| +<sig>+ | +<pubkey> OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+ | Push +<sig>+
+| +<sig> <pubkey>+ | +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+ | Push +<pubkey>+
+| +<sig> <pubkey> <pubkey>+ | +OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+ | Duplicate last item
+| +<sig> <pubkey> <pubkey hash>+ | +<public key hash> OP_EQUALVERIFY OP_CHECKSIG+ | Hash last item
+| +<sig> <pubkey> <pubkey hash> <public key hash>+ | +OP_EQUALVERIFY OP_CHECKSIG+ | Push +<public key hash>+
+| +<sig> <pubkey>+ | +OP_CHECKSIG+ | Verify they are equal or stop (fail)
+| +True+ | empty | Verify signature matches public key
+|=======
+	
+
+The stack process above will first make a copy of the supplied public key and compare it's hash to the public key hash that was used to lock the previous output. If those match, the signature is verified by against the public key. This proves that the owner of the public key created this signature, therefore is authorised to spend the output.
+	
 === The Blockchain
 
 ==== The Genesis Block
@@ -451,7 +479,6 @@ The difficulty of finding a bitcoin block is approximately '10 minutes of proces
 ====
 
 === Transaction Fees
-
 
 
 === Currency exchange
