@@ -15,7 +15,7 @@ image::images/Bitcoin Overview.png["Bitcoin Overview"]
 
 ==== A simple transaction
 
-Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. Now she will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, as advertised by a sign declaring _"Bitcoin Accepted Here"_ in the window. At the counter, the prices are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction on his point-of-sale system that has been adapted to convert each price to bitcoins at the prevailing market rate. The register displays the prices in both currencies, as well as showing a QR code containing a payment request for this transaction:
+Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. Now she will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, as advertised by a sign declaring _"Bitcoin Accepted Here"_ in the window. At the counter, the prices are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction on his point-of-sale system that has been adapted to convert each price to bitcoins at the prevailing market rate. The register displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
 
 ----
 Total:
@@ -23,9 +23,16 @@ $1.50 USD
 0.015 BTC
 ----
 
+[TIP]
+====
+Unlike a QR code that simply contains a destination bitcoin address, a "payment request" is a QR encoded URL that contains a destination address, a payment amount and a generic description such as "Bob's Cafe". This allows a bitcoin wallet application to pre-fill the information to send the payment while showing a human-readable description to the user. See <<payment request URL>>
+====
+
 Bob says _"That's one-dollar-fifty, or fifteen milibits"_.
 
 Alice uses her smartphone to scan the barcode on display. Her smartphone shows a payment of +0.0150 BTC+ to +Bob's Cafe+ and she selects +Send+ to authorize the payment. Within a few seconds (about the same time as a credit card authorization), Bob would see the transaction on the register, completing the transaction.
+
+In the following sections we will examine this transaction in more detail, see how Alice's wallet constructed it, how it was propagated across the network, how it was verified and finally how Bob, the owner of the cafe, can spend that amount in subsequent transactions
 
 === Transactions
 
@@ -33,19 +40,24 @@ In simple terms, a transaction tells the network that the owner of a number bitc
 
 [TIP]
 ====
-_Transactions_ move value from _transaction inputs_ to _transaction outputs_. An input is where the coins (value) is coming from, either a previous transaction's output or a miner's reward. An output "sends" value to a new owner by locking it with their key. 
+_Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_. An input is where the coins (value) is coming from, either a previous transaction's output or a miner's reward. An output assigns a new owner to the value by associating it with a key. The destination key is called an encumberance, it imposes a requirement for a signature for the funds to be redeemed in future transactions. 
 ====
 
-The transaction contains proof of ownership for each amount of bitcoin whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner. 
+The transaction contains proof of ownership for each amount of bitcoin (inputs) whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner. 
 
 [[blockchain-mnemonic]]
 .Transaction Chain
 image::images/Transaction chain.png["Transaction chain"]
 
-Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob.
+Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked (encumbered) against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob.
 
-At this point you may begin to wonder: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined.
-	
+.Transaction Chains and Mining
+****
+As you examine the chain of transactions you may ask: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined.
+****
+
+=== Transaction Data Structure
+
 A transaction, in bitcoin terminology, also refers to the signed data structure that contains a series of inputs and outputs transferring value, as encoded in the blockchain or propagating on the bitcoin network. In the blockchain, a transaction is stored as a variable-lenght data structure, that contains an array of _transaction inputs_ and an array of _transaction outputs_. 
 
 .A transaction data structure, as stored in the blockchain
@@ -62,23 +74,20 @@ A transaction, in bitcoin terminology, also refers to the signed data structure 
 From the perspective of Alice and Bob's transaction for the cup of coffee, the input would be Alice's coins from previous transactions and the output would be 0.015 BTC (or 1.5m satoshi) that would be "sent" to Bob's bitcoin address for payment of the coffee. Bob could then spend this bitcoin by creating transactions whose inputs refer to this transaction
 s output. Each transaction's outputs become possible inputs for future transactions. What changes is who controls the keys that unlock them. For that we have to delve in a bit deeper into the data structure of the inputs and outputs themselves. 
 
-The input always refers to a previous transaction. In the case of Alice's coffee purchase, he wallet software would find a previous transaction that has a similar value, to minimize the need for generating change. Let's assume that Alice had previously been paid 0.02BTC by someone else. Her wallet will use that previous transaction to pay Bob for the coffee.
-
+The input always refers to a previous transaction. In the case of Alice's coffee purchase, her wallet software would find a previous transaction that has a similar value, to minimize the need for generating change. 
 
 .Alice's transaction input
 [options="header"]
 |=======
 |Part|Value|Description
 |Previous Tx Hash| 643b0b82c0e88ffdfec6b64e3e6ba35e7ba5fdd7d5d6cc8d25c6b241501 | a hash used to identify a previous transaction
-|Previous Tx Index| 0 | The first output of that transaction is 0
+|Previous Tx Index| 0 | The first output of that transaction is referred to as index number 0
 |Script Signature | 30450...6b241501 | A signature from Alice's key to unlock this value
 |=======
 
-In the input above, Alice sources the funds to pay for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from thousands of inputs, aggregating the value. A transaction can also have thousands of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output. 
+In the input above, Alice sources the funds to pay for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from dozens of inputs, aggregating the value, as we will see Bob's wallet do to add up all the small payments into a larger payment. A transaction can also have hundreds of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output, index number zero. 
 
 You may notice that there is no value field in the input. That is because the *entire* value of the referenced output is consumed. You cannot use only part of an output, you must use the entire value. All the value from all the inputs listed in a transaction is aggregated and then disbursed to the various outputs, according to the value defined in those outputs. In attempting to pay Bob for coffee, Alice must create a transaction for the exact amount, even though she may not have "exact change" in the form of previous transactions that perfectly match. Alice will therefore have to either aggregate many smaller inputs (previous unspent outputs) to reach the price of the coffee, or use a larger input and then make some change back to her wallet. This is all done automatically by the wallet software, so Alice just sees the exact amount transacted, but behind the scenes there may be a flurry of inputs being aggregated and change returned. 
-
-For simplicity, Alice was lucky enough to have a perfectly matching previous transaction, so her wallet only needs one input for this coffee transaction. 
 
 [TIP]
 ====
