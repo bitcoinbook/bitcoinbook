@@ -15,7 +15,7 @@ image::images/Bitcoin Overview.png["Bitcoin Overview"]
 
 ==== A simple transaction
 
-Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her frined Joe to exchange some cash for bitcoin. The transaction created by Joe funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, by adding a bitcoin option to his point-of-sale system (see <<bitcoin_for_merchants>> for information on using bitcoin for merchants/retail). The prices at Bob's Cafe are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction at the register. The point-of-sale system will convert the total price from US dollars to bitcoins at the prevailing market rate and displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
+Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her frined Joe to exchange some cash for bitcoin. The transaction created by Joe, funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, by adding a bitcoin option to his point-of-sale system (see <<bitcoin_for_merchants>> for information on using bitcoin for merchants/retail). The prices at Bob's Cafe are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction at the register. The point-of-sale system will convert the total price from US dollars to bitcoins at the prevailing market rate and displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
 
 ----
 Total:
@@ -51,16 +51,30 @@ Alice uses her smartphone to scan the barcode on display. Her smartphone shows a
 
 In the following sections we will examine this transaction in more detail, see how Alice's wallet constructed it, how it was propagated across the network, how it was verified and finally how Bob, the owner of the cafe, can spend that amount in subsequent transactions
 
+[NOTE]
+====
+The bitcoin network can transact in fractional values, e.g. from millibitcoins (1/1000th of a bitcoin) down to  1/100,000,000th of a bitcoin, which is known as a Satoshi.  Throughout this book we’ll use the term “bitcoins” to refer to any quantity of bitcoin currency, from the smallest unit (1 Satoshi) to the total number (21,000,000) of all bitcoins that will ever be mined. 
+====
+
+
 === Transactions
 
 In simple terms, a transaction tells the network that the owner of a number bitcoins has authorized the transfer of some of those bitcoins to another owner. The new owner can now spend these bitcoins by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
 
+Transactions are like lines in a double-entry bookkeeping ledger. In simple terms, each transaction contains one or more "inputs", which are debits against a bitcoin account. On the other side of the transaction, there are one or more "outputs", which are credits added to a bitcoin account. The inputs and outputs (debits and credits) do not necessarily add up to the same amount. Instead, outputs add up to slightly less than inputs and the difference represents an implied "transaction fee", a small payment collected by the miner who includes the transaction in the ledger. 
+
+[[transaction-double-entry]]
+.Transaction As Double-Entry Bookkeeping 
+image::images/Transaction Double Entry.png["Transaction Double-Entry"]
+
+The transaction contains proof of ownership for each amount of bitcoin (inputs) whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner identified by a bitcoin address. 
+
+
 [TIP]
 ====
-_Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_. An input is where the coins (value) is coming from, either a previous transaction's output or a miner's reward. An output assigns a new owner to the value by associating it with a key. The destination key is called an encumberance, it imposes a requirement for a signature for the funds to be redeemed in future transactions. 
+_Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_. An input is where the coin value is coming from, usually a previous transaction's output. A transaction output assigns a new owner to the value by associating it with a key. The destination key is called an _encumberance_, it imposes a requirement for a signature for the funds to be redeemed in future transactions. Outputs from one transaction can be used as inputs in a new transaction, thus creating a chain of ownership as the value is moved from address to address. 
 ====
 
-The transaction contains proof of ownership for each amount of bitcoin (inputs) whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner. 
 
 [[blockchain-mnemonic]]
 .Transaction Chain
@@ -68,10 +82,25 @@ image::images/Transaction chain.png["Transaction chain"]
 
 Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked (encumbered) against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob.
 
-.Transaction Chains and Mining
-****
-As you examine the chain of transactions you may ask: "If every transaction refers to value in a previous transaction, where does the value come from originally?". All bitcoins are originally _mined_ (see <<mining>>). Each block contains a special transaction which is the first transaction in the block. This is called the _generation_ transaction and it generates bitcoin out of a special input, which is called the _coinbase_ and is reward for creating a new block. In simple terms, miners get the privilege of a magic transaction that create bitcoins from thin-air and pay those bitcoins to themselves. If you were to look at the chain of transaction for a bitcoin payment you have received, you can track the inputs to a previous transaction's output. Go back far enough and you will find the block where the bitcoins you hold today were once mined.
-****
+==== Common Transaction Forms
+
+The most common form of transaction is a simple payment from one address to another, which often includes some "change" returned to the original owner. This type of transaction has one input and two outputs and is shown below:
+
+[[transaction-common]]
+.Most Common Transaction
+image::images/Bitcoin Transaction Structure - Common.png["Common Transaction"]
+
+Another common form of transaction is a transaction that aggregates several inputs into a single output. This represents the real-world equivalent of exchanging a pile of coins and currency notes for a single larger note. Transactions like these are sometimes generated by wallet applications to cleanup lots of smaller amounts that were received as change for payments.
+
+[[transaction-aggregating]]
+.Transaction Aggregating Funds
+image::images/Bitcoin Transaction Structure - Aggregating.png["Aggregating Transaction"]
+
+Finally, another transaction form that is seen often on the bitcoin ledger is a transaction that distributes one input to multiple outputs representing multiple recipients. This type of transaction is sometimes used by commercial entities to distribute funds, such as when processing payroll payments to multiple employees.
+
+[[transaction-aggregating]]
+.Transaction Distributing Funds
+image::images/Bitcoin Transaction Structure - Distribution.png["Distributing Transaction"]
 
 === Transaction Data Structure
 
