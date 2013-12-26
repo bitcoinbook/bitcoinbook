@@ -102,6 +102,39 @@ Finally, another transaction form that is seen often on the bitcoin ledger is a 
 .Transaction Distributing Funds
 image::images/Bitcoin Transaction Structure - Distribution.png["Distributing Transaction"]
 
+=== Constructing A Transaction
+
+Alice's wallet application contains all the logic for selecting appropriate inputs and outputs to build a transaction to Alice's specification. Alice only needs to specify a destination and an amount and the rest happens in the wallet application without her seeing the details. Importantly, a wallet application can construct transactions even if completely offline. Like writing a cheque at home and later sending it to the bank in an envelope, the transaction does not need to be constructed and signed while connected to the bitcoin network, it only has to be sent to the network eventually for it to be executed. 
+
+==== Getting the right inputs
+
+Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of *every unspent output* from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. 
+	
+If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as a HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
+
+.Lookup all the unspent outputs for address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+----
+$ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+
+{
+	 
+	"unspent_outputs":[
+	
+		{
+			"tx_hash":"eff2be9869ec5d80198c5924157f4be8135d12e0d6b4cfa9aaa6729da2a9098a",
+			"tx_index":103732607,
+			"tx_output_n": 0,	
+			"script":"76a914096b74a8acff9d13bdcc698b6054c67ebf470d4188ac",
+			"value": 10000000,
+			"value_hex": "989680",
+			"confirmations": 212
+		},
+	]
+}
+----
+
+The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and it's value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
+
 
 
 === Transaction Data Structure
@@ -154,4 +187,4 @@ Inputs don't have a value field. That is because the outputs of a previous trans
 The second part of the transaction, is where Alice effectively pays Bob for the coffee. This is achieved by creating an output _that only Bob can spend_. In bitcoin, the script used to "lock" an output to a specific bitcoin address is +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+, with +<public key hash>+ replaced by the public key of the recipient, in this case Bob's public key.
 
 While this script looks rather complicated and confusing, it will be explained in great detail below (see <<script>>). This exact script is used in 99.99% of bitcoin transactions, as it expresses the simple goal of _"payable to whoever can generate a signature with the private key of this bitcoin address"_. With this output, Alice establishes a value of 0.015BTC "payable to Bob". Once this transaction is propagated on the network, included in a block and confirmed, Bob will be able to spend this output by constructing a transaction of his own. 
-	
+
