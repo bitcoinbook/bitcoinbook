@@ -5,6 +5,17 @@
 
 The bitcoin system, unlike traditional banking and payment systems, is based on de-centralized trust. Instead of a central trusted authority, in bitcoin, trust is achieved as an emergent property from the interactions of different participants in the bitcoin system. In this chapter we will examine bitcoin from a high-level by tracking a single transaction through the bitcoin system and watch as it becomes "trusted" and accepted by the bitcoin mechanism of distributed consensus and is finally recorded on the blockchain, the distributed ledger of all transactions. 
 
+Each example below is based upon an actual transaction made on the bitcoin network, simulating the interactions between the users (Joe, Alice and Bob) by sending funds from one wallet to another. While tracking a transaction through the bitcoin network and blockchain, we will use a _blockchain explorer_ site to visualize each step. A blockchain explorer is a web application that operates as a bitcoin search engine, in that it allows you to search for addresses, transactions and blocks and see the relationships and flows between them.
+
+Popular blockchain explorers include:
+
+* blockchain.info
+* blockexplorer.com
+* biteasy.com
+
+Each of these has a search function that can take an address, transaction hash or block number and find the equivalent data on the bitcoin network and blockchain. With each example, we will provide a URL that takes you directly to the relevant entry, so you can study it in detail.
+
+
 ==== Bitcoin Overview
 
 In the overview diagram below, we see that the bitcoin system consists of users with wallets containing keys, transactions which are propagated across the network and miners who produce (through competitive computation) the consensus blockchain, the authoritative ledger of all transactions. In this chapter, we will trace a single transaction as it travels across the network and examine the interactions between each part of the bitcoin system, at a high level. Subsequent chapters will delve deeper into the technology behind wallets, mining and merchant systems. 
@@ -13,7 +24,7 @@ In the overview diagram below, we see that the bitcoin system consists of users 
 .Bitcoin Overview
 image::images/Bitcoin Overview.png["Bitcoin Overview"]
 
-==== A simple transaction
+==== Buying a cup of coffee
 
 Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her frined Joe to exchange some cash for bitcoin. The transaction created by Joe, funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, by adding a bitcoin option to his point-of-sale system (see <<bitcoin_for_merchants>> for information on using bitcoin for merchants/retail). The prices at Bob's Cafe are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction at the register. The point-of-sale system will convert the total price from US dollars to bitcoins at the prevailing market rate and displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
 
@@ -57,7 +68,7 @@ The bitcoin network can transact in fractional values, e.g. from millibitcoins (
 ====
 
 
-=== Transactions
+=== Bitcoin Transactions
 
 In simple terms, a transaction tells the network that the owner of a number bitcoins has authorized the transfer of some of those bitcoins to another owner. The new owner can now spend these bitcoins by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
 
@@ -110,81 +121,64 @@ Alice's wallet application contains all the logic for selecting appropriate inpu
 
 Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of *every unspent output* from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. 
 	
-If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as a HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
+	If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as a HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
 
-.Lookup all the unspent outputs for address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
-----
-$ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+	.Lookup all the unspent outputs for Alice's address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+	----
+	$ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
 
-{
+	{
 	 
-	"unspent_outputs":[
+		"unspent_outputs":[
 	
-		{
-			"tx_hash":"eff2be9869ec5d80198c5924157f4be8135d12e0d6b4cfa9aaa6729da2a9098a",
-			"tx_index":103732607,
-			"tx_output_n": 0,	
-			"script":"76a914096b74a8acff9d13bdcc698b6054c67ebf470d4188ac",
-			"value": 10000000,
-			"value_hex": "989680",
-			"confirmations": 212
-		},
-	]
-}
-----
+			{
+				"tx_hash":"186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779",
+				"tx_index":104810202,
+				"tx_output_n": 0,	
+				"script":"76a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac",
+				"value": 10000000,
+				"value_hex": "00989680",
+				"confirmations":0
+			}
+	  
+		]
+	}
+	----
 
-The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and it's value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
-
-
-
-=== Transaction Data Structure
-
-A transaction, in bitcoin terminology, also refers to the signed data structure that contains a series of inputs and outputs transferring value, as encoded in the blockchain or propagating on the bitcoin network. In the blockchain, a transaction is stored as a variable-lenght data structure, that contains an array of _transaction inputs_ and an array of _transaction outputs_. 
-
-.A transaction data structure, as stored in the blockchain
-[options="header"]
-|=======
-|Part|Size|Description
-|Version| 4 bytes | The transaction type version (default and only type value is 1) 
-|Number of Inputs | VarInt | How many inputs are listed below
-|Inputs | List of Tx_In | One or more inputs, specifying where the value will come from
-|Number of Outputs | VarInt | How many outputs are listed below
-|Outputs | List of Tx_Out | One or more outputs, specifying where to "send" the value
-|=======
-
-From the perspective of Alice and Bob's transaction for the cup of coffee, the input would be Alice's coins from previous transactions and the output would be 0.015 BTC (or 1.5m satoshi) that would be "sent" to Bob's bitcoin address for payment of the coffee. Bob could then spend this bitcoin by creating transactions whose inputs refer to this transaction
-s output. Each transaction's outputs become possible inputs for future transactions. What changes is who controls the keys that unlock them. For that we have to delve in a bit deeper into the data structure of the inputs and outputs themselves. 
-
-The input always refers to a previous transaction. In the case of Alice's coffee purchase, her wallet software would find a previous transaction that has a similar value, to minimize the need for generating change. 
-
-.Alice's transaction input
-[options="header"]
-|=======
-|Part|Value|Description
-|Previous Tx Hash| 643b0b82c0e88ffdfec6b64e3e6ba35e7ba5fdd7d5d6cc8d25c6b241501 | a hash used to identify a previous transaction
-|Previous Tx Index| 0 | The first output of that transaction is referred to as index number 0
-|Script Signature | 30450...6b241501 | A signature from Alice's key to unlock this value
-|=======
-
-In the input above, Alice sources the funds to pay for the coffee. In this case, all the funds come from a single output from a previous transaction. It is possible to construct transactions that source value from dozens of inputs, aggregating the value, as we will see Bob's wallet do to add up all the small payments into a larger payment. A transaction can also have hundreds of outputs, so the _Tx Index_ is used to identify which of the previous transaction's outputs will be "consumed" in this new transaction. In this case, Alice will be using the first transaction output, index number zero. 
-
-You may notice that there is no value field in the input. That is because the *entire* value of the referenced output is consumed. You cannot use only part of an output, you must use the entire value. All the value from all the inputs listed in a transaction is aggregated and then disbursed to the various outputs, according to the value defined in those outputs. In attempting to pay Bob for coffee, Alice must create a transaction for the exact amount, even though she may not have "exact change" in the form of previous transactions that perfectly match. Alice will therefore have to either aggregate many smaller inputs (previous unspent outputs) to reach the price of the coffee, or use a larger input and then make some change back to her wallet. This is all done automatically by the wallet software, so Alice just sees the exact amount transacted, but behind the scenes there may be a flurry of inputs being aggregated and change returned. 
+	The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and it's value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
 
 [TIP]
 ====
-Inputs don't have a value field. That is because the outputs of a previous transaction can either be spent or unspent as a whole. You cannot use part of an output, you must use all of it. If you only need part of the value of a previous output, you must spend all of it and generate "change", by creating an new output for the excess value back to your own wallet. 
+Lookup the transaction from Joe to Alice, to see the information referenced above, as it is stored in the bitcoin blockchain. Using the blockchain explorer web application, follow the URL below:
+
+https://blockchain.info/tx/7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18
 ====
 
+As you can see, Alice's wallet contains enough bitcoins in a single unspent output to pay for the cup of coffee. Had this not been the case, Alice's wallet application might have to "rummage" through a pile of smaller unspent outputs, like picking coins from a purse, until it could find enough to pay for coffee. In both cases, there might be a need to get some change back, which we will see in the next section, as the wallet application creates the transaction outputs (payments).
 
-.Alice's transaction output
-[options="header"]
-|=======
-|Part|Value|Description
-|Value| 1,500,000 | The value in satoshi to transfer to this output
-|Script| OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG | A script for spending this output
-|=======
 
-The second part of the transaction, is where Alice effectively pays Bob for the coffee. This is achieved by creating an output _that only Bob can spend_. In bitcoin, the script used to "lock" an output to a specific bitcoin address is +OP_DUP OP_HASH160 <public key hash> OP_EQUALVERIFY OP_CHECKSIG+, with +<public key hash>+ replaced by the public key of the recipient, in this case Bob's public key.
+==== Creating the outputs
 
-While this script looks rather complicated and confusing, it will be explained in great detail below (see <<script>>). This exact script is used in 99.99% of bitcoin transactions, as it expresses the simple goal of _"payable to whoever can generate a signature with the private key of this bitcoin address"_. With this output, Alice establishes a value of 0.015BTC "payable to Bob". Once this transaction is propagated on the network, included in a block and confirmed, Bob will be able to spend this output by constructing a transaction of his own. 
+A transaction output is created in the form of a script, that creates an encumberance on the value and can only be redeemed by the introduction of a solution to the script. In simpler terms, Alice's transaction output will contain a script that says something like "This output is payable to whoever can present a signature from the key corresponding to Bob's public address". Since only Bob has the wallet with the keys corresponding to that address, only Bob's wallet can present such a signature to redeem this output. Alice will therefore "encumber" the output value with a demand for a signature from Bob. 
+
+This transaction will also include a second output, because Alice's funds are in a the form of a 0.10 BTC output, too much money for the 0.015 BTC cup of coffee. Alice will need 0.085 BTC in change. Alice's change payment is created _by Alice's wallet_ in the very same transaction as the payment to Bob. Essentially, Alice's wallet breaks her funds into two payments, one to Bob, one back to herself. She can then use the change output in a subsequent transaction, thus spending it later. 
+
+Finally, for the transaction to be processed by the network in a timely fashion, Alice's wallet application will add a small fee. This is not explicit in the transaction, it is implied by the difference between inputs and outputs. If instead of taking 0.085 in change, Alice instead creates only 0.0845 as the second output, there will be 0.0005 BTC (half a millibitcoin) left over. The input's 0.10 BTC is not fully spent with the two outputs, as they will add up to less than 0.10. The resulting difference is the transaction fee which is collected by the miner for including the transaction in a block and putting it on the blockchain ledger.
+
+.The transaction outputs sum up to less than the input, leaving the fee
+----
+Alice's transaction to pay for Bob's coffee:
+
+		Input						0.1000 BTC
+minus 	Output to Bob				0.0150 BTC
+minus 	Output to Alice (change)	0.0845 BTC
+
+equals								0.0005 BTC
+----
+
+
+
+
+
+
 
