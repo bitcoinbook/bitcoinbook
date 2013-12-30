@@ -28,6 +28,7 @@ image::images/Bitcoin_Overview.png["Bitcoin Overview"]
 
 Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her frined Joe to exchange some cash for bitcoin. The transaction created by Joe, funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, by adding a bitcoin option to his point-of-sale system (see <<bitcoin_for_merchants>> for information on using bitcoin for merchants/retail). The prices at Bob's Cafe are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction at the register. The point-of-sale system will convert the total price from US dollars to bitcoins at the prevailing market rate and displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
 
+.Displayed on Bob's cash register
 ----
 Total:
 $1.50 USD
@@ -36,7 +37,7 @@ $1.50 USD
 
 [[payment-request-QR]]
 .Payment Request QR Code - encodes a payment request URL as defined in BIP0021
-image::images/payment-request-qr.gif["payment-request"]
+image::images/payment-request-qr.png["payment-request"]
 
 [[payment-request-URL]]
 .The payment request QR code above encodes the following URL, defined in BIP0021
@@ -123,29 +124,29 @@ Alice's wallet application will first have to find inputs that can pay for the a
 	
 	If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as a HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
 
-	.Lookup all the unspent outputs for Alice's address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
-	----
-	$ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+.Lookup all the unspent outputs for Alice's address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+----
+$ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
 
-	{
-	 
-		"unspent_outputs":[
-	
-			{
-				"tx_hash":"186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779",
-				"tx_index":104810202,
-				"tx_output_n": 0,	
-				"script":"76a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac",
-				"value": 10000000,
-				"value_hex": "00989680",
-				"confirmations":0
-			}
-	  
-		]
-	}
-	----
+{
+ 
+	"unspent_outputs":[
 
-	The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and it's value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
+		{
+			"tx_hash":"186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779",
+			"tx_index":104810202,
+			"tx_output_n": 0,	
+			"script":"76a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac",
+			"value": 10000000,
+			"value_hex": "00989680",
+			"confirmations":0
+		}
+  
+	]
+}
+----
+
+The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and it's value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
 
 [TIP]
 ====
