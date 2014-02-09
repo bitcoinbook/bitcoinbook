@@ -1,11 +1,111 @@
-[[ch03_consumers]]
-== Using bitcoin as a consumer
+[[ch03_bitcoin_client]]
+== The Bitcoin Client
 
-This chapter introduces bitcoin from the perspective of a consumer. The goal is to show a user how to adopt bitcoin as a working currency for daily transactions, savings and money transfer. This chapter is illustrated at a graphical and workflow level and does not contain code or command-line. 
+=== Bitcoin-Qt - The Reference Implementation, aka Satoshi Client
 
-=== Transactions
-=== Anonymity and address "taint"
-=== Recycling addresses
-=== Identity Verification
-=== Transaction non-reversal
-=== Vanity addresses
+You can download the Satoshi Client from bitcoin.org. Depending on your operating system, it will be called bitcoin-qt or bitcoind. The reference client implements all aspects of the bitcoin system, including wallets, a transaction verification engine with a full copy of the entire transaciton ledger (blockchain) and a full network node in the peer-to-peer bitcoin network. 
+
+Go to http://bitcoin.org/en/choose-your-wallet and select "Bitcoin-Qt" to download the reference client. Depending on your operating system, you will download an executable installer. For Windows, this is either a ZIP archive or an EXE executable. For Mac OS it is DMG disk image. Linux versions include a PPA package for Ubuntu or a TAR.GZ archive. 
+
+==== Bitcoin-Qt - Download Options
+
+[[bitcoin-qt-dl-options]]
+.Bitcoin-Qt - Download options for different operating systems
+image::images/bitcoin-qt-dl-options.png["bitcoin-qt download options"]
+
+==== Bitcoin-Qt - Running the client for the first time
+
+If you download an installable package, such as an EXE, DMG or PPA, you can install it the same way as any application on your operating system. For Windows, run the EXE and follow the step-by-step instructions. For Mac OS, launch the DMG and drag the Bitcoin-QT icon into your Applications folder. For Ubuntu, double-click on the PPA in your File Explorer and it will open the package manager to install the package. Once you have completed installation you should have a new application "Bitcoin-Qt" in your application list. Double-click on the icon to start the bitcoin client. 
+
+The first time you run Bitcoin-Qt it will start downloading the blockchain, a process that may take several days. Leave it running in the background, until it displays "Synchronized" and no longer shows "Out of sync" next to the balance.
+
+[TIP]
+====
+Bitcoin-Qt keeps a full copy of the transaction ledger (blockchain), with every transaction that has ever occured on the bitcoin network since its inception in 2009. This data set is several gigabytes in size (approximately 16GB in late 2013) and is downloaded incrementally over several days. The client will not be able to process transactions or update account balances until the full blockchain dataset is downloaded. During that time, the client will display "Out of sync" next to the account balances and show "Synchronizing" in the footer. Make sure you have enough disk space, bandwidth and time to complete the initial synchronization. 
+====
+ 
+[[bitcoin-qt-firstload]]
+.Bitcoin-Qt - The Graphical User Interface, during the blockchain initialization
+image::images/bitcoin-qt-firstload.png["bitcoin-qt first run"]
+
+
+==== Bitcoin-Qt - Compiling the client from the source code
+
+For developers, there is also the option to download the full source code, either as a ZIP archive or by cloning the authoritative source repository from Github. Go to https://github.com/bitcoin/bitcoin and select "Download ZIP" from the sidebar. Alternatively, use the git command line to create a local copy of the source code on your system. In the example below, we are cloning the source code from a unix-like command-line, in Linux or Mac OS:
+
+----
+$ git clone https://github.com/bitcoin/bitcoin.git
+Cloning into 'bitcoin'...
+remote: Counting objects: 31864, done.
+remote: Compressing objects: 100% (12007/12007), done.
+remote: Total 31864 (delta 24480), reused 26530 (delta 19621)
+Receiving objects: 100% (31864/31864), 18.47 MiB | 119 KiB/s, done.
+Resolving deltas: 100% (24480/24480), done.
+$
+----
+
+[TIP]
+====
+The instructions and resulting output may vary from version to version. Follow the documentation that comes with the code even if it differs from the instructions you see here and don't be surprised if the output displayed on your screen is slightly different from the examples here. 
+====
+
+When the git cloning operation has complete, you will have a complete local copy of the source code repository in the directory _bitcoin_. Change to this directory by typing +cd bitcoin+ at the prompt:
+
+----
+$ cd bitcoin
+----
+ 
+By default, the local copy will be synchronized with the most recent code which may be an unstable or "beta" version of bitcoin. Before compiling the code, we want to select a specific version, by checking out a release _tag_. This will synchronize the local copy with a specific snapshot of the code repository identified by a keyword tag. Tags are used by the developers to mark specific releases of the code by version number. First, to find the available tags, we use the +git tag+ command:
+
+----
+$ git tag
+v0.1.5
+v0.1.6test1
+v0.2.0
+v0.2.10
+v0.2.11
+v0.2.12
+
+[... many more tags ...]
+
+v0.8.4rc2
+v0.8.5
+v0.8.6
+v0.8.6rc1
+v0.9.0rc1
+----
+
+The list of tags shows all the released versions of bitcoin. By convention, _release candidates_, which are intended for testing, have the suffix "rc". Stable releases that can be run on production systems have no suffix. From the list above, we select the highest version release, which at this time is v0.9.0rc1. To synchronize the local code with this version, we use the +git checkout+ command:
+
+----
+$ git checkout v0.9.0rc1
+Note: checking out 'v0.9.0rc1'.
+
+HEAD is now at 15ec451... Merge pull request #3605
+$
+----
+
+
+The source code includes documentation, which can be found in a number of files. Review the main documentation located in README.md in the bitcoin directory, by typing +more README.md+ at the prompt, using the space bar to progress to the next page. In this chapter we will build the command-line bitcoin client, also known as +bitcoind+ on Linux. Review the instructions for compiling the bitcoind command-line client on your platform by typing +more doc/build-unix.md+. Alternative instructions for Mac OSX and Windows can be found in the doc directory, as +build-os.md+ or +build-msw.md+ respectively. 
+
+Carefully review the build pre-requisited which are in the first part of the build documentation. These are libraries that must be present on your system before you can begin to compile bitcoin. If these pre-requisites are missing the build process will fail with an error. If this happens because you missed a pre-requisite, you can install it and then resume the build process from where you left off. Assuming the pre-requisites are installed, we start the build process by generating a set of build scripts using the +autogen.sh+ script.
+
+----
+$ ./autogen.sh 
+configure.ac:12: installing `src/build-aux/config.guess'
+configure.ac:12: installing `src/build-aux/config.sub'
+configure.ac:37: installing `src/build-aux/install-sh'
+configure.ac:37: installing `src/build-aux/missing'
+src/Makefile.am: installing `src/build-aux/depcomp'
+$ 
+----
+
+
+
+
+
+
+
+
+
+
