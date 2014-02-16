@@ -142,7 +142,7 @@ Report bugs to <info@bitcoin.org>.
 $
 ----
 
-The +configure+ script allows you to enable or disable certain features of bitcoind through the use of the +--enable-FEATURE+ and +--disable-FEATURE+ flags, where +FEATURE+ is replaced byt he feature name, as listed in the help output above. In this chapter, we will build the bitcoind client with all the default features, so we won't be using these flags, but you should review them to understand what optional features are part of the client. Next, we run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for our system:
+The +configure+ script allows you to enable or disable certain features of bitcoind through the use of the +--enable-FEATURE+ and +--disable-FEATURE+ flags, where +FEATURE+ is replaced by the feature name, as listed in the help output above. In this chapter, we will build the bitcoind client with all the default features, so we won't be using these flags, but you should review them to understand what optional features are part of the client. Next, we run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for our system:
 
 ----
 $ ./configure 
@@ -203,6 +203,268 @@ make[1]: Leaving directory `/home/ubuntu/bitcoin'
 $ 
 ----
 
+If all goes well, bitcoind is now compiled. The final step is to install the bitcoind executable into the system path, using the +make+ command:
+
+----
+$ sudo make install
+Making install in src
+Making install in .
+ /bin/mkdir -p '/usr/local/bin'
+  /usr/bin/install -c bitcoind bitcoin-cli '/usr/local/bin'
+Making install in test
+make  install-am
+ /bin/mkdir -p '/usr/local/bin'
+  /usr/bin/install -c test_bitcoin '/usr/local/bin'
+$
+----
+
+We can confirm that bitcoin is correctly installed, as follows:
+
+----
+$ which bitcoind
+/usr/local/bin/bitcoind
+----
+
+The default installation of bitcoind puts it in +/usr/local/bin+. When we first run bitcoind it will remind us to create a configuration file with a strong password for the JSON-RPC interface. We run it by typing +bitcoind+ into the terminal:
+
+----
+$ bitcoind
+Error: To use the "-server" option, you must set a rpcpassword in the configuration file:
+/home/ubuntu/.bitcoin/bitcoin.conf
+It is recommended you use the following random password:
+rpcuser=bitcoinrpc
+rpcpassword=2XA4DuKNCbtZXsBQRRNDEwEY2nM6M4H9Tx5dFjoAVVbK
+(you do not need to remember this password)
+The username and password MUST NOT be the same.
+If the file does not exist, create it with owner-readable-only file permissions.
+It is also recommended to set alertnotify so you are notified of problems;
+for example: alertnotify=echo %s | mail -s "Bitcoin Alert" admin@foo.com
+----
+
+Edit the configuration file in your preferred editor and set the parameters, replacing the password with a strong password as recommended by bitcoind. Do *not* use the password shown below. Create a file inside the +.bitcoin+ directory, so that it is named +.bitcoin/bitcoin.conf+ and enter a username and password:
+
+----
+rpcuser=bitcoinrpc
+rpcpassword=7p687uGU8wMyBprB2aQrnt72r9Lh6jZy
+----
+
+Now, run the bitcoin client. The first time you run it, it will rebuild the bitcoin blockchain. This is a multi-gigabyte file and will take on average 2 days to download in full. You can shorten the blockchain initialization time by downloading a partial copy of the blockchain using bittorrent from +http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/+. 
+
+Run bitcoind in the background with the option +-daemon+:
+
+----
+$ bitcoind -daemon
+$
+Bitcoin version v0.9.0rc1-beta (2014-01-31 09:30:15 +0100)
+Using OpenSSL version OpenSSL 1.0.1c 10 May 2012
+Default data directory /home/bitcoin/.bitcoin
+Using data directory /bitcoin/
+Using at most 4 connections (1024 file descriptors available)
+init message: Verifying wallet...
+dbenv.open LogDir=/bitcoin/database ErrorFile=/bitcoin/db.log
+Bound to [::]:8333
+Bound to 0.0.0.0:8333
+init message: Loading block index...
+Opening LevelDB in /bitcoin/blocks/index
+Opened LevelDB successfully
+Opening LevelDB in /bitcoin/chainstate
+Opened LevelDB successfully
+
+[... more startup messages ...]
+
+----
+
+
+=== Using bitcoind from the command line
+
+The reference client bitcoind offers a number of commands that can be run from the command line. These are the same commands as those offered via the JSON-RPC API, so the command line allows us to experiment interactively with the capabilities that are also available programmatically. To start, we can invoke the +help+ command to see a list of the available bitcoin commands:
+
+
+[[bitcoind_commands]]
+.Bitcoind command list
+----
+addmultisigaddress nrequired ["key",...] ( "account" )
+addnode "node" "add|remove|onetry"
+backupwallet "destination"
+createmultisig nrequired ["key",...]
+createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
+decoderawtransaction "hexstring"
+decodescript "hex"
+dumpprivkey "bitcoinaddress"
+dumpwallet "filename"
+encryptwallet "passphrase"
+getaccount "bitcoinaddress"
+getaccountaddress "account"
+getaddednodeinfo dns ( "node" )
+getaddressesbyaccount "account"
+getbalance ( "account" minconf )
+getbestblockhash
+getblock "hash" ( verbose )
+getblockcount
+getblockhash index
+getblocktemplate ( "jsonrequestobject" )
+getconnectioncount
+getdifficulty
+getgenerate
+gethashespersec
+getinfo
+getmininginfo
+getnettotals
+getnetworkhashps ( blocks height )
+getnewaddress ( "account" )
+getpeerinfo
+getrawchangeaddress
+getrawmempool ( verbose )
+getrawtransaction "txid" ( verbose )
+getreceivedbyaccount "account" ( minconf )
+getreceivedbyaddress "bitcoinaddress" ( minconf )
+gettransaction "txid"
+gettxout "txid" n ( includemempool )
+gettxoutsetinfo
+getunconfirmedbalance
+getwork ( "data" )
+help ( "command" )
+importprivkey "bitcoinprivkey" ( "label" rescan )
+importwallet "filename"
+keypoolrefill ( newsize )
+listaccounts ( minconf )
+listaddressgroupings
+listlockunspent
+listreceivedbyaccount ( minconf includeempty )
+listreceivedbyaddress ( minconf includeempty )
+listsinceblock ( "blockhash" target-confirmations )
+listtransactions ( "account" count from )
+listunspent ( minconf maxconf  ["address",...] )
+lockunspent unlock [{"txid":"txid","vout":n},...]
+move "fromaccount" "toaccount" amount ( minconf "comment" )
+ping
+sendfrom "fromaccount" "tobitcoinaddress" amount ( minconf "comment" "comment-to" )
+sendmany "fromaccount" {"address":amount,...} ( minconf "comment" )
+sendrawtransaction "hexstring" ( allowhighfees )
+sendtoaddress "bitcoinaddress" amount ( "comment" "comment-to" )
+setaccount "bitcoinaddress" "account"
+setgenerate generate ( genproclimit )
+settxfee amount
+signmessage "bitcoinaddress" "message"
+signrawtransaction "hexstring" ( [{"txid":"id","vout":n,"scriptPubKey":"hex","redeemScript":"hex"},...] ["privatekey1",...] sighashtype )
+stop
+submitblock "hexdata" ( "jsonparametersobject" )
+validateaddress "bitcoinaddress"
+verifychain ( checklevel numblocks )
+verifymessage "bitcoinaddress" "signature" "message"
+----
+
+==== Command: bitcoind getinfo
+
+Bitcoin's +getinfo+ command shows us basic information about the status of the bitcoin network node, the wallet and the blockchain database:
+
+----
+$ bitcoind getinfo
+{
+    "version" : 90000,
+    "protocolversion" : 70002,
+    "walletversion" : 60000,
+    "balance" : 0.00000000,
+    "blocks" : 286216,
+    "timeoffset" : -72,
+    "connections" : 4,
+    "proxy" : "",
+    "difficulty" : 2621404453.06461525,
+    "testnet" : false,
+    "keypoololdest" : 1374553827,
+    "keypoolsize" : 101,
+    "paytxfee" : 0.00000000,
+    "errors" : ""
+}
+----
+
+The data is returned as a JavaScript Object Notation (JSON), a format which can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version of the bitcoin software client (9000), protocol (70002) and wallet file (60000). We see the current balance contained in the wallet, which is zero. We see the current block height, showing us how many blocks are known to this client, 286216. We also see various statistics about the bitcoin network and the settings related to this client. We will explore these settings in more detail in the rest of this chapter. 
+
+[TIP]
+====
+It will take some time, perhaps more than a day, for the bitcoind client to "catch up" to the current blockchain height as it downloads blocks from other bitcoin clients. You can check its current progress using getinfo to see the number of known blocks.
+====
+
+==== Commands: bitcoind encryptwallet, walletpassphrase
+
+Before we proceed with creating keys and other commands, we will first encrypt the wallet with a password. For this example, we use the +encryptwallet+ command with the password "foo". Obviously, replace "foo" with a strong and complex password!
+
+----
+$ bitcoind encryptwallet foo
+wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet. The keypool has been flushed, you need to make a new backup.
+$
+----
+
+We can verify the wallet has been encrypted, by running +getinfo+ again. This time you will notice a new entry +unlocked_until+ which is a counter showing how long the wallet decryption password will be stored in memory, keeping the wallet unlocked. At first this will be set to zero, meaning the wallet is locked:
+
+----
+$ bitcoind getinfo
+{
+    "version" : 90000,
+
+[... other information...]
+
+    "unlocked_until" : 0,
+    "errors" : ""
+}
+$
+----
+
+To unlock the wallet, we issue the +walletpassphrase+ command that takes two parameters, the password and a number of seconds until the wallet is locked again automatically (a time counter):
+
+----
+$ bitcoind walletpassphrase foo 360
+$
+----
+
+Confirm the wallet is unlocked and see the timeout by running +getinfo+ again:
+
+----
+$ bitcoind getinfo
+{
+    "version" : 90000,
+
+[... other information ...]
+
+    "unlocked_until" : 1392580909,
+    "errors" : ""
+}
+----
+
+==== Commands: backupwallet, importwallet, dumpwallet
+
+Next, we will practice creating a wallet backup file and then restoring the wallet from the backup file. Use the +backupwallet+ command to backup, providing the file name as the parameter. Here we backup the wallet to the file +wallet.backup+:
+
+----
+$ bitcoind backupwallet wallet.backup
+$
+----
+
+Now, to restore the backup file, use the +importwallet+ command. If your wallet is locked, you will need to unlock it first (see +walletpassphrase+ above) in order to import the backup file:
+
+----
+$ bitcoind importwallet wallet.backup
+$
+----
+
+The +dumpwallet+ command can be used to dump the wallet into a text file that is human-readable:
+
+----
+$ bitcoind dumpwallet wallet.txt
+$ more wallet.txt
+# Wallet dump created by Bitcoin v0.9.0rc1-beta (2014-01-31 09:30:15 +0100)
+# * Created on 2014-02- 8dT20:34:55Z
+# * Best block at time of backup was 286234 (0000000000000000f74f0bc9d3c186267bc45c7b91c49a0386538ac24c0d3a44),
+#   mined on 2014-02- 8dT20:24:01Z
+
+KzTg2wn6Z8s7ai5NA9MVX4vstHRsqP26QKJCzLg4JvFrp6mMaGB9 2013-07- 4dT04:30:27Z change=1 # addr=16pJ6XkwSQv5ma5FSXMRPaXEYrENCEg47F
+Kz3dVz7R6mUpXzdZy4gJEVZxXJwA15f198eVui4CUivXotzLBDKY 2013-07- 4dT04:30:27Z change=1 # addr=17oJds8kaN8LP8kuAkWTco6ZM7BGXFC3gk
+[... many more keys ...]
+
+$
+----
+
+==== Commands: getnewaddress, listreceivedbyaddress, getreceivedbyaddress, listaccounts, getbalance
 
 
 
@@ -213,6 +475,15 @@ $
 
 
 
+
+
+
+
+
+
+
+
+ 
 
 
 
