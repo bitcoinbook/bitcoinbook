@@ -385,7 +385,9 @@ The data is returned as a JavaScript Object Notation (JSON), a format which can 
 It will take some time, perhaps more than a day, for the bitcoind client to "catch up" to the current blockchain height as it downloads blocks from other bitcoin clients. You can check its current progress using getinfo to see the number of known blocks.
 ====
 
-==== Commands: bitcoind encryptwallet, walletpassphrase
+==== Wallet setup and encryption
+
+Commands: bitcoind encryptwallet, walletpassphrase
 
 Before we proceed with creating keys and other commands, we will first encrypt the wallet with a password. For this example, we use the +encryptwallet+ command with the password "foo". Obviously, replace "foo" with a strong and complex password!
 
@@ -431,7 +433,9 @@ $ bitcoind getinfo
 }
 ----
 
-==== Commands: backupwallet, importwallet, dumpwallet
+==== Wallet backup, plain-text dump and restore
+
+Commands: backupwallet, importwallet, dumpwallet
 
 Next, we will practice creating a wallet backup file and then restoring the wallet from the backup file. Use the +backupwallet+ command to backup, providing the file name as the parameter. Here we backup the wallet to the file +wallet.backup+:
 
@@ -464,7 +468,9 @@ Kz3dVz7R6mUpXzdZy4gJEVZxXJwA15f198eVui4CUivXotzLBDKY 2013-07- 4dT04:30:27Z chang
 $
 ----
 
-==== Commands: getnewaddress, getreceivedbyaddress, listtransactions, getaddressesbyaccount, getbalance
+==== Wallet addresses and receiving transactions
+
+Commands: getnewaddress, getreceivedbyaddress, listtransactions, getaddressesbyaccount, getbalance
 
 The bitcoin reference client maintains a pool of addresses, the size of which is displayed by +keypoolsize+ when you use the command +getinfo+. These addresses are generated automatically and can then be used as public receiving addresses or change addresses. To get one of these addresses, you can use the +getnewaddress+ command:
 
@@ -542,7 +548,8 @@ If the transaction has not yet confirmed, the balance returned by getbalance wil
 ====
 
 
-==== Commands: gettransaction, getrawtransaction, decoderawtransaction
+==== Exploring and decoding transactions
+Commands: gettransaction, getrawtransaction, decoderawtransaction
 
 We'll now explore the incoming transaction that was listed above, using the +gettransaction+. We can retrieve a transaction by its transaction hash, shown at +txid+, above with the +gettransaction+ command:
 
@@ -657,7 +664,9 @@ $ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309ac
 
 Above, we see the new information in the entries +blockhash+, the hash of the block in which the transaction was included, and +blockindex+ with value 18, indicating that our transaction was the 18th transaction in that block. 
 
-==== Commands: getblock
+==== Exploring blocks
+
+Commands: getblock, getblockhash
 
 Now that we know which block our transaction was included in, we can query that block. We use the +getblock+ command with the block hash as the parameter:
 
@@ -737,6 +746,254 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 ----
 
 The +getblock+, +getblockhash+ and +gettransaction+ commands can be used to explore the blockchain database, programmatically. 
+
+
+==== Creating, signing and submitting transactions based on unspent outputs
+
+Commands: listunspent, gettxout, createrawtransaction, decoderawtransaction, signrawtransaction, sendrawtransaction
+
+Bitcoin's transactions are based on the concept of spending "outputs", which are the result of previous transactions, creating a transaction chain that transfers ownership from address to address. Our wallet has now received a transaction that assigned one such output to our address. Once this is confirmed, we can now spend that output. 
+
+First, we use the +listunspent+ command to show all the unspent *confirmed* outputs in our wallet:
+
+----
+$ bitcoind listunspent 
+[
+    {
+        "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+        "vout" : 0,
+        "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+        "account" : "",
+        "scriptPubKey" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
+        "amount" : 0.05000000,
+        "confirmations" : 7
+    }
+]
+----
+
+We see that the transaction +9ca8f9...+ created an output (with vout index 0) assigned to the address +1hvzSo...+ for the amount of 50 millibits, which at this point has received 7 confirmations. Transactions use previously created outputs as their inputs, by referring to them by the previous txid and vout index. We will now create a transaction that will spend the 0'th vout of the txid +9ca8f9...+ as its input and assign it to a new output that sends value to a new address. 
+
+First, let's look at the specific output in more detail. We use the +gettxout+ to get the details of this unspent output above. Transaction outputs are always referenced by txid and vout and these are the parameters we pass to +gettxout+:
+
+----
+$ bitcoind gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3 0
+{
+    "bestblock" : "0000000000000001405ce69bd4ceebcdfdb537749cebe89d371eb37e13899fd9",
+    "confirmations" : 7,
+    "value" : 0.05000000,
+    "scriptPubKey" : {
+        "asm" : "OP_DUP OP_HASH160 07bdb518fa2e6089fd810235cf1100c9c13d1fd2 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
+        "reqSigs" : 1,
+        "type" : "pubkeyhash",
+        "addresses" : [
+            "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL"
+        ]
+    },
+    "version" : 1,
+    "coinbase" : false
+}
+----
+
+What we see above is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to send the money to:
+
+----
+$ bitcoind getnewaddress 
+1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb
+----
+
+We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the *whole* output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
+
+We use the +createrawtransaction+ to create the transaction described above. As parameters to +createrawtransaction+ we provide the transaction input (the 50 millibit unspent output from our confirmed transaction) and the two transaction outputs (money sent to the new address and change sent back to the previous address):
+
+----
+bitcoind createrawtransaction 
+ '[{"txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3", "vout" : 0}]' 
+'{"1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb": 0.025, 
+"1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL": 0.0245}'
+
+0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+----
+
+The +createrawtransaction+ command produces a raw hex string that encodes the transaction details we supplied. Let's confirm everything is correct by decoding this raw string using the +decoderawtransaction+ command:
+
+----
+$ bitcoind decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+{
+    "txid" : "0793299cb26246a8d24e468ec285a9520a1c30fcb5b6125a102e3fc05d4f3cba",
+    "version" : 1,
+    "locktime" : 0,
+    "vin" : [
+        {
+            "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+            "vout" : 0,
+            "scriptSig" : {
+                "asm" : "",
+                "hex" : ""
+            },
+            "sequence" : 4294967295
+        }
+    ],
+    "vout" : [
+        {
+            "value" : 0.02500000,
+            "n" : 0,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 d90d36e98f62968d2bc9bbd68107564a156a9bcf OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb"
+                ]
+            }
+        },
+        {
+            "value" : 0.02450000,
+            "n" : 1,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 07bdb518fa2e6089fd810235cf1100c9c13d1fd2 OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL"
+                ]
+            }
+        }
+    ]
+}
+----
+
+That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 millibits to our new address and one for 24.5 millibits as change back to the original address. The difference of 0.5 millibits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
+
+As you may notice, the transaction contains an empty +scriptSig+, because we haven't signed it yet. Without a signature, this transaction is meaningless, we haven't yet proven that we *own* the address from which the unpsent output is sourced. By signing, we remove the encumberance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter.
+
+[TIP]
+====
+If the wallet is encrypted, you have to unlock it before you sign a transaction, as that operation requires access to the secret keys in your wallet
+====
+
+----
+$ bitcoind walletpassphrase foo 360
+$ bitcoind signrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+{
+    "hex" : "0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000",
+    "complete" : true
+}
+----
+
+The +signrawtransaction+ command returns another hex encoded raw transaction. We decode it to see what changed, with +decoderawtransaction+:
+
+----
+$ bitcoind decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+{
+    "txid" : "ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346",
+    "version" : 1,
+    "locktime" : 0,
+    "vin" : [
+        {
+            "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+            "vout" : 0,
+            "scriptSig" : {
+                "asm" : "304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a0601 03c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127",
+                "hex" : "47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127"
+            },
+            "sequence" : 4294967295
+        }
+    ],
+    "vout" : [
+        {
+            "value" : 0.02500000,
+            "n" : 0,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 d90d36e98f62968d2bc9bbd68107564a156a9bcf OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb"
+                ]
+            }
+        },
+        {
+            "value" : 0.02450000,
+            "n" : 1,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 07bdb518fa2e6089fd810235cf1100c9c13d1fd2 OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL"
+                ]
+            }
+        }
+    ]
+}
+----
+
+Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the encumberance on the output so that it can be spent. The signature makes this transaction verifiable by any node in the bitcoin network. 
+
+Now it's time to submit the newly created transaction to the network. We do that with the command +sendrawtransaction+ which takes the raw hex string produced by +signrawtransaction+, the same string we just decoded above:
+
+----
+$ bitcoind sendrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+
+ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
+----
+
+The command +sendrawtransaction+ returns a transaction hash (txid) as it submits the transaction on the network. We can now query that transaction id with +gettransaction+:
+
+----
+$ bitcoind gettransaction ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
+{
+    "amount" : 0.00000000,
+    "fee" : -0.00050000,
+    "confirmations" : 0,
+    "txid" : "ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346",
+    "time" : 1392666702,
+    "timereceived" : 1392666702,
+    "details" : [
+        {
+            "account" : "",
+            "address" : "1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb",
+            "category" : "send",
+            "amount" : -0.02500000,
+            "fee" : -0.00050000
+        },
+        {
+            "account" : "",
+            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+            "category" : "send",
+            "amount" : -0.02450000,
+            "fee" : -0.00050000
+        },
+        {
+            "account" : "",
+            "address" : "1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb",
+            "category" : "receive",
+            "amount" : 0.02500000
+        },
+        {
+            "account" : "",
+            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+            "category" : "receive",
+            "amount" : 0.02450000
+        }
+    ]
+}
+----
+
+As before, we can also examine this in more detail using the +getrawtransaction+ and +decodetransaction+ commands. These commands will return the exact same hex string that we produced and decoded previously just before we sent it on the network. 
+
+
+
+
+
+
+
+
 
 
 
