@@ -464,30 +464,48 @@ Kz3dVz7R6mUpXzdZy4gJEVZxXJwA15f198eVui4CUivXotzLBDKY 2013-07- 4dT04:30:27Z chang
 $
 ----
 
-==== Commands: getnewaddress, listreceivedbyaddress, getreceivedbyaddress, listaccounts, getbalance
+==== Commands: getnewaddress, getreceivedbyaddress, listtransactions, getaddressesbyaccount, getbalance
 
 The bitcoin reference client maintains a pool of addresses, the size of which is displayed by +keypoolsize+ when you use the command +getinfo+. These addresses are generated automatically and can then be used as public receiving addresses or change addresses. To get one of these addresses, you can use the +getnewaddress+ command:
 
 ----
 $ bitcoind getnewaddress 
-13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM
-$
+1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL
 ----
 
-Now, we can use this address to send a small amount of bitcoin to our bitcoind wallet from an external wallet (assuming you have some bitcoin in an exchange, web wallet or othe bitcoind wallet held elsewhere). For this example, we will send 10 millibits (0.010 bitcoin) to the address returned above +13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM+. 
+Now, we can use this address to send a small amount of bitcoin to our bitcoind wallet from an external wallet (assuming you have some bitcoin in an exchange, web wallet or othe bitcoind wallet held elsewhere). For this example, we will send 50 millibits (0.050 bitcoin) to the address returned above. 
 
 We can now query the bitcoind client for the amount received by this address, and specify how many confirmations are required before an amount is counted in that balance. For this example, we will specify zero confirmations. A few seconds after sending the bitcoin from another wallet, we will see it reflected in the wallet. We use +getreceivedbyaddress+ with the address and the number of confirmations set to zero (0):
 
 ----
-$ bitcoind getreceivedbyaddress 13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM 0
-0.01000000
+$ bitcoind getreceivedbyaddress 1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL 0
+0.05000000
 ----
 
 If we ommit the zero from the end of this command, we will only see the amounts that have at least +minconf+ confirmations, where +minconf+ is the setting for the minimum number of confirmations before a transaction is ilsted in the balance. The +minconf+ setting is specified in the bitcoind configuration file. Since the transaction sending this bitcoin was only sent in the last few seconds, it has still not confirmed and therefore we will see it list a zero balance:
 
 ----
-$ bitcoind getreceivedbyaddress 13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM 
+$ bitcoind getreceivedbyaddress 1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL 
 0.00000000
+----
+
+The transactions received by the entire wallet can also be displayed using the +listtransactions+ command:
+
+----
+$  bitcoind listtransactions 
+[
+    {
+        "account" : "",
+        "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+        "category" : "receive",
+        "amount" : 0.05000000,
+        "confirmations" : 0,
+        "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+        "time" : 1392660908,
+        "timereceived" : 1392660908
+    }
+]
+
 ----
 
 We can list all addresses in the entire wallet using the +getaddressesbyaccount+ command:
@@ -505,28 +523,227 @@ $ bitcoind getaddressesbyaccount ""
     "1Q3q6taTsUiv3mMemEuQQJ9sGLEGaSjo81",
     "1HoSiTg8sb16oE6SrmazQEwcGEv8obv9ns",
     "13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM",
+    "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
     "1KHUmVfCJteJ21LmRXHSpPoe23rXKifAb2",
     "1LqJZz1D9yHxG4cLkdujnqG5jNNGmPeAMD"
 ]
 ----
 
-The transactions received by the entire wallet (all the addresses above) can also be displayed using the +listtransactions+ command:
+Finally, the command +getbalance+ will show the total balance of the wallet, adding up all transactions confirmed with at least +minconf+ confirmations:
 
 ----
-$ bitcoind listtransactions 
-[
-    {
-        "account" : "",
-        "address" : "13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM",
-        "category" : "receive",
-        "amount" : 0.01000000,
-        "confirmations" : 0,
-        "txid" : "b1ad8bb54469887793d38914a52327a690a63560aeea3cd7711da8029ab40a61",
-        "time" : 1392600726,
-        "timereceived" : 1392600726
-    }
-]
+$ bitcoind getbalance
+0.05000000
 ----
+
+[TIP]
+====
+If the transaction has not yet confirmed, the balance returned by getbalance will be zero. The configuration option "minconf" determines the minimum number of confirmations that are required before a transaction shows in the balance
+====
+
+
+==== Commands: gettransaction, getrawtransaction, decoderawtransaction
+
+We'll now explore the incoming transaction that was listed above, using the +gettransaction+. We can retrieve a transaction by its transaction hash, shown at +txid+, above with the +gettransaction+ command:
+
+----
+$ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
+{
+    "amount" : 0.05000000,
+    "confirmations" : 0,
+    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+    "time" : 1392660908,
+    "timereceived" : 1392660908,
+    "details" : [
+        {
+            "account" : "",
+            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+            "category" : "receive",
+            "amount" : 0.05000000
+        }
+    ]
+}
+----
+
+[TIP]
+====
+Transaction IDs are not authoritative until a transaction has been confirmed. Absence of a transaction hash in the blockchain does not mean the transaction was not processed. This is known as "transaction malleability", as transaction hashes can be modified prior to confirmation in a block. After confirmation, the txid is immutable and authoritative.
+====
+
+The transaction form shown above with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it we will use two commands, +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the transaction hash (txid) as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the bitcoin network:
+
+----
+$ bitcoind getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
+0100000001d717279515f88e2f56ce4e8a31e2ae3e9f00ba1d0add648e80c480ea22e0c7d3000000008b483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5ceaffffffff02404b4c00000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac1f312906000000001976a914107b7086b31518935c8d28703d66d09b3623134388ac00000000
+----
+
+To decode this hex string, we can use the +decoderawtransaction+ command. Copy and paste the hex as the first parameter of +decoderawtransaction+ to get the full contents interpreted as a JSON data structure (for formatting reasons the hex string is shortened in the example below):
+
+----
+$ bitcoind decoderawtransaction 0100000001d717...388ac00000000
+{
+    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+    "version" : 1,
+    "locktime" : 0,
+    "vin" : [
+        {
+            "txid" : "d3c7e022ea80c4808e64dd0a1dba009f3eaee2318a4ece562f8ef815952717d7",
+            "vout" : 0,
+            "scriptSig" : {
+                "asm" : "3045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd193dfba201 04793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5cea",
+                "hex" : "483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5cea"
+            },
+            "sequence" : 4294967295
+        }
+    ],
+    "vout" : [
+        {
+            "value" : 0.05000000,
+            "n" : 0,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 07bdb518fa2e6089fd810235cf1100c9c13d1fd2 OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL"
+                ]
+            }
+        },
+        {
+            "value" : 1.03362847,
+            "n" : 1,
+            "scriptPubKey" : {
+                "asm" : "OP_DUP OP_HASH160 107b7086b31518935c8d28703d66d09b36231343 OP_EQUALVERIFY OP_CHECKSIG",
+                "hex" : "76a914107b7086b31518935c8d28703d66d09b3623134388ac",
+                "reqSigs" : 1,
+                "type" : "pubkeyhash",
+                "addresses" : [
+                    "12W9goQ3P7Waw5JH8fRVs1e2rVAKoGnvoy"
+                ]
+            }
+        }
+    ]
+}
+----
+
+The transaction decode shows all the compoenents of this transaction, including the transaction inputs, and outputs. In this case we see that the transaction that credited our new address with 50 milibits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+ above). The two outputs correspond to the 50 milibit credit and an output with change back to the sender. 
+
+We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction, using the same commands (eg. +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
+
+Once the transaction we received has been confirmed, by inclusion in a block, the +gettransaction+ command will return additional information, showing the block hash (identifier) in which the transaction was included:
+
+----
+$ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
+{
+    "amount" : 0.05000000,
+    "confirmations" : 1,
+    "blockhash" : "000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a717b",
+    "blockindex" : 18,
+    "blocktime" : 1392660808,
+    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+    "time" : 1392660908,
+    "timereceived" : 1392660908,
+    "details" : [
+        {
+            "account" : "",
+            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
+            "category" : "receive",
+            "amount" : 0.05000000
+        }
+    ]
+}
+----
+
+Above, we see the new information in the entries +blockhash+, the hash of the block in which the transaction was included, and +blockindex+ with value 18, indicating that our transaction was the 18th transaction in that block. 
+
+==== Commands: getblock
+
+Now that we know which block our transaction was included in, we can query that block. We use the +getblock+ command with the block hash as the parameter:
+
+----
+$ bitcoind getblock 000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a717b true
+{
+    "hash" : "000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a717b",
+    "confirmations" : 2,
+    "size" : 248758,
+    "height" : 286384,
+    "version" : 2,
+    "merkleroot" : "9891747e37903016c3b77c7a0ef10acf467c530de52d84735bd55538719f9916",
+    "tx" : [
+        "46e130ab3c67d31d2b2c7f8fbc1ca71604a72e6bc504c8a35f777286c6d89bf0",
+        "2d5625725b66d6c1da88b80b41e8c07dc5179ae2553361c96b14bcf1ce2c3868",
+        "923392fc41904894f32d7c127059bed27dbb3cfd550d87b9a2dc03824f249c80",
+        "f983739510a0f75837a82bfd9c96cd72090b15fa3928efb9cce95f6884203214",
+        "190e1b010d5a53161aa0733b953eb29ef1074070658aaa656f933ded1a177952",
+        "ee791ec8161440262f6e9144d5702f0057cef7e5767bc043879b7c2ff3ff5277",
+        "4c45449ff56582664abfadeb1907756d9bc90601d32387d9cfd4f1ef813b46be",
+        "3b031ed886c6d5220b3e3a28e3261727f3b4f0b29de5f93bc2de3e97938a8a53",
+        "14b533283751e34a8065952fd1cd2c954e3d37aaa69d4b183ac6483481e5497d",
+        "57b28365adaff61aaf60462e917a7cc9931904258127685c18f136eeaebd5d35",
+        "8c0cc19fff6b66980f90af39bee20294bc745baf32cd83199aa83a1f0cd6ca51",
+        "1b408640d54a1409d66ddaf3915a9dc2e8a6227439e8d91d2f74e704ba1cdae2",
+        "0568f4fad1fdeff4dc70b106b0f0ec7827642c05fe5d2295b9deba4f5c5f5168",
+        "9194bfe5756c7ec04743341a3605da285752685b9c7eebb594c6ed9ec9145f86",
+        "765038fc1d444c5d5db9163ba1cc74bba2b4f87dd87985342813bd24021b6faf",
+        "bff1caa9c20fa4eef33877765ee0a7d599fd1962417871ca63a2486476637136",
+        "d76aa89083f56fcce4d5bf7fcf20c0406abdac0375a2d3c62007f64aa80bed74",
+        "e57a4c70f91c8d9ba0ff0a55987ea578affb92daaa59c76820125f31a9584dfc",
+        "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
+
+[... many more transactions ...]
+
+    ],
+    "time" : 1392660808,
+    "nonce" : 3888130470,
+    "bits" : "19015f53",
+    "difficulty" : 3129573174.52228737,
+    "chainwork" : "000000000000000000000000000000000000000000001931d1658fc04879e466",
+    "previousblockhash" : "0000000000000000177e61d5f6ba6b9450e0dade9f39c257b4d48b4941ac77e7",
+    "nextblockhash" : "0000000000000001239d2c3bf7f4c68a4ca673e434702a57da8fe0d829a92eb6"
+}
+----
+
+The block contains 367 transactions and as you see above, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 millibits to our address. The +height+ entry tells us this is the 286384'th block in the blockchain. 
+
+We can also retrieve a block by its block height, using the +getblockhash+ command, which takes the block height as the parameter and returns the block hash for that block:
+
+----
+$ bitcoind getblockhash 0
+000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+----
+
+Above, we retrieve the block hash of the "genesis block", the first block mined by Satoshi Nakamoto, at height zero. Retrieving this block shows:
+
+----
+$ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+{
+    "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+    "confirmations" : 286388,
+    "size" : 285,
+    "height" : 0,
+    "version" : 1,
+    "merkleroot" : "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+    "tx" : [
+        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+    ],
+    "time" : 1231006505,
+    "nonce" : 2083236893,
+    "bits" : "1d00ffff",
+    "difficulty" : 1.00000000,
+    "chainwork" : "0000000000000000000000000000000000000000000000000000000100010001",
+    "nextblockhash" : "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
+}
+----
+
+The +getblock+, +getblockhash+ and +gettransaction+ commands can be used to explore the blockchain database, programmatically. 
+
+
+
+
+
+
+
 
 
 
