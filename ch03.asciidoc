@@ -466,6 +466,67 @@ $
 
 ==== Commands: getnewaddress, listreceivedbyaddress, getreceivedbyaddress, listaccounts, getbalance
 
+The bitcoin reference client maintains a pool of addresses, the size of which is displayed by +keypoolsize+ when you use the command +getinfo+. These addresses are generated automatically and can then be used as public receiving addresses or change addresses. To get one of these addresses, you can use the +getnewaddress+ command:
+
+----
+$ bitcoind getnewaddress 
+13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM
+$
+----
+
+Now, we can use this address to send a small amount of bitcoin to our bitcoind wallet from an external wallet (assuming you have some bitcoin in an exchange, web wallet or othe bitcoind wallet held elsewhere). For this example, we will send 10 millibits (0.010 bitcoin) to the address returned above +13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM+. 
+
+We can now query the bitcoind client for the amount received by this address, and specify how many confirmations are required before an amount is counted in that balance. For this example, we will specify zero confirmations. A few seconds after sending the bitcoin from another wallet, we will see it reflected in the wallet. We use +getreceivedbyaddress+ with the address and the number of confirmations set to zero (0):
+
+----
+$ bitcoind getreceivedbyaddress 13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM 0
+0.01000000
+----
+
+If we ommit the zero from the end of this command, we will only see the amounts that have at least +minconf+ confirmations, where +minconf+ is the setting for the minimum number of confirmations before a transaction is ilsted in the balance. The +minconf+ setting is specified in the bitcoind configuration file. Since the transaction sending this bitcoin was only sent in the last few seconds, it has still not confirmed and therefore we will see it list a zero balance:
+
+----
+$ bitcoind getreceivedbyaddress 13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM 
+0.00000000
+----
+
+We can list all addresses in the entire wallet using the +getaddressesbyaccount+ command:
+
+----
+$ bitcoind getaddressesbyaccount ""
+[
+    "1LQoTPYy1TyERbNV4zZbhEmgyfAipC6eqL",
+    "17vrg8uwMQUibkvS2ECRX4zpcVJ78iFaZS",
+    "1FvRHWhHBBZA8cGRRsGiAeqEzUmjJkJQWR",
+    "1NVJK3JsL41BF1KyxrUyJW5XHjunjfp2jz",
+    "14MZqqzCxjc99M5ipsQSRfieT7qPZcM7Df",
+    "1BhrGvtKFjTAhGdPGbrEwP3xvFjkJBuFCa",
+    "15nem8CX91XtQE8B1Hdv97jE8X44H3DQMT",
+    "1Q3q6taTsUiv3mMemEuQQJ9sGLEGaSjo81",
+    "1HoSiTg8sb16oE6SrmazQEwcGEv8obv9ns",
+    "13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM",
+    "1KHUmVfCJteJ21LmRXHSpPoe23rXKifAb2",
+    "1LqJZz1D9yHxG4cLkdujnqG5jNNGmPeAMD"
+]
+----
+
+The transactions received by the entire wallet (all the addresses above) can also be displayed using the +listtransactions+ command:
+
+----
+$ bitcoind listtransactions 
+[
+    {
+        "account" : "",
+        "address" : "13fE8BGhBvnoy68yZKuWJ2hheYKovSDjqM",
+        "category" : "receive",
+        "amount" : 0.01000000,
+        "confirmations" : 0,
+        "txid" : "b1ad8bb54469887793d38914a52327a690a63560aeea3cd7711da8029ab40a61",
+        "time" : 1392600726,
+        "timereceived" : 1392600726
+    }
+]
+----
 
 
 
