@@ -1,24 +1,150 @@
-[[ch04_merchant]]
-== Using bitcoin as a merchant
+[[ch04_wallets_keys]]
+== Wallets, Keys and Addresses
 
-This chapter examines bitcoin from the perspective of a retail merchant who wishes to sell goods or services, priced or paid (or both) in bitcoin. The chapter examines the differences between consumer single-wallet use and merchant-level use of the bitcoin software. 
 
-=== Merchant and payment services
-=== Transaction fees and conversion fees
+==== Public key cryptography and crypto-currency
+((("public key")))
+Public-key cryptography, or assymetric cryptography, is a key part of a crypto-currency. Surprisingly, the cryptographic keys are not actually stored inside the bitcoin blockchain or the network. Instead, the blockchain only records transactions with digital signatures (hashes) of keys. The keys themselves are completely independent and can be generated and managed by the end users. This enables many of the interesting properties of bitcoin, including de-centralized trust and control. 
 
-=== Handling thousands of transactions
-=== Address per transaction
-=== Deterministic key generation 
-=== Master public key (MPK)
-=== Cold storage
-=== Customer culture (early adopter) and expectations
-==== Anonymity and privacy expectations
-==== Trust without chargebacks
-==== Corporate and personal identity for trust
-=== Refunds and reversals
-=== Pricing in bitcoin or fiat currencies
-=== Exchange rate and Conversion timing 
-=== Handling currency risk 
-=== Currency exchange and liquidity risk
-=== Volatility risk
-=== Regulatory risk
+In a nutshell, public-key cryptography is like a digital padlock, which can only be opened by the owner of a secret key. The owner of that key can hand out as many copies of the padlock as they want, and others can use it to "lock" bitcoins inside transactions recorded on the blockchain. Only the owner of the key can then unlock and "redeem" these transactions, as only they can open the digital padlock. 
+
+
+==== Public Key Cryptography
+((("public key", "private key")))
+Public key, or assymetric cryptography, is a type of cryptography that uses a pair of digital keys. A user has a private and a public key. The public key is derived from the private key with a mathematical function that is difficult to reverse. 
+
+[[pubcrypto_colors]]
+.Public Key Cryptography: Irreversible Function as Color Mixing
+image::images/pubcrypto-colors.png["Public Key Cryptography: Irreversible Function as Color Mixing"]
+
+As an example, think of mixing a shade of yellow with a shade of blue. Mixing the two colors is simple. However, figuring out exactly which two shades went into the final mix is not so easy, unless you have one of the two shades. If you have one of the colors you can easily filter it out and get the other. Whereas mixing colors is easy, "un-mixing" them is hard. The mathematical equivalent most often used in cryptography is the Discrete Logarith Problem link$$https://en.wikipedia.org/wiki/Discrete_logarithm_problem#Cryptography$$[Discrete Logarithm Problem in Cryptography]
+
+To use public key cryptography, Alice will ask Bob for his public key. Then, Alice can encrypt messages with Bob's public key, knowing that only Bob can read those messages, since only Bob has the equivalent private key. 
+
+[TIP]
+====
+In most implementations, the private and public keys are stored together as a _key pair_, for convenience. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
+====
+
+==== Elliptic Curve Cryptography
+((("elliptic curve cryptography", "ECC")))
+Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
+
+Starting with a private key in the form of a randomly generator number +k+, we multiply it with a predetermined point on the curve called the _generator point_ to produce another point somewhere else on the curve, which is the corresponding public key. 
+
+[latexmath]
+++++
+\begin{equation}
+{K = k G}
+\end{equation}
+++++
+
+[[key_derivation]]
+where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. 
+
+Elliptic curve multiplication can be visualized geometrically as drawing a line connecting two points on the curve (G and kG) to produce a third point (K). The third point is the public key. 
+
+[[ecc_addition]]
+.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
+image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
+
+Bitcoin specifically uses the +secp256k1+ elliptic curve:
+((("secp256k1")))
+[latexmath]
+++++
+\begin{equation}
+{y^2 = (x^3 + 7)} \text{over} \mathbb{F}_p
+\end{equation}
+++++
+or 
+
+[latexmath]
+++++
+\begin{equation}
+{y^2 \mod p = (x^3 + 7) \mod p}
+\end{equation}
+++++
+
+where +p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F+, a very large prime. 
+
+The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)]. The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
+
+[[ecc-over-F37-math]]
+.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve over F(p)
+image::images/ecc-over-F37-math.png["Addition operator on points of an elliptic curve over F(p)"]
+
+
+==== Generating bitcoin keys
+
+There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods for key generation.
+
+===== Type-0 or non-deterministic (random) keys
+
+The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter, as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256-bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the trully paranoid, nothing beats dice, pencil and paper.
+
+
+[[Type0_keygen]]
+.Private key generation: From random mouse movements to a 256-bit number used as the private key
+image::images/Type-0 keygen.png["Private key generation"]
+
+
+[TIP]
+====
+The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256-bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
+====
+
+Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the https://www.openssl.org/docs/crypto/ec.html[Elliptic Curve library]. 
+
+Here's an example from the reference implementation, generating a public key from an existing private key
+
+[[ecc_mult]]
+.Reference Client: Using OpenSSL's EC_POINT_mul to generate the public key from a private key https://github.com/bitcoin/bitcoin/blob/0.8.4/src/key.cpp#L31[bitcoin/src/key.cpp : 31]
+====
+[source, c++]
+----
+
+// Generate a private key from just the secret parameter
+int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
+{
+  
+[...initializtion code ommitted ...] 
+
+    if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx)) <1>
+        goto err;
+
+    EC_KEY_set_private_key(eckey,priv_key);
+    EC_KEY_set_public_key(eckey,pub_key);
+
+[...]
+----
+<1> Multiplying the priv_key by the generator point of the elliptic curve group, produces the pub_key
+====
+
+[TIP]
+====
+The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
+====
+
+This most basic form of key generation, generates what are known as _Type-0_ or _Non-Deterministic_ (ie. random) keys. When a sequence of keys is generated for a single user's wallet, each key is randomly generated when needed
+
+[[Type0_chain]]
+.Type-0 or Non-Deterministic Keys are randomly generated as needed
+image::images/type0_chain.png["Key generation"]
+
+===== Type-1 deterministic (non-random) key chains
+
+[[Type1_chain]]
+.Type-1 Deterministic Keys are generated from a phrase and index number
+image::images/type1_chain.png["Key generation"]
+
+===== Type-2 chained deterministic keys
+
+[[Type2_chain]]
+.Type-2 Chained Deterministic Keys are generated from a binary seed and index number
+image::images/type2_chain.png["Key generation"]
+
+===== Type-2 hierarchical deterministic keys
+
+[[Type2_tree]]
+.Type-2 Hierarchical Deterministic Keys are derived from a master seed using a tree structure
+image::images/BIP32-derivation.png["Key generation"]
