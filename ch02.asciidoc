@@ -3,7 +3,7 @@
 
 === Transactions, Blocks, Mining and the Blockchain
 
-The bitcoin system, unlike traditional banking and payment systems, is based on de-centralized trust. Instead of a central trusted authority, in bitcoin, trust is achieved as an emergent property from the interactions of different participants in the bitcoin system. In this chapter we will examine bitcoin from a high-level by tracking a single transaction through the bitcoin system and watch as it becomes "trusted" and accepted by the bitcoin mechanism of distributed consensus and is finally recorded on the blockchain, the distributed ledger of all transactions. 
+The bitcoin system, unlike traditional banking and payment systems, is based on de-centralized trust (JB - it feels to me like there is much more than just decentralised trust at work eg systematic trust in cryptography and trust that the network will regulate itself so that eg 51% attack is not carried out. Also trust by your average user in something that is at the moment quite tech!). Instead of a central trusted authority, in bitcoin, trust is achieved as an emergent property from the interactions of different participants in the bitcoin system (JB - trust as an 'emergent property' is a hard-sounding concept to me. Is there an easier way to explain it?). In this chapter we will examine bitcoin from a high-level by tracking a single transaction through the bitcoin system and watch as it becomes "trusted" and accepted by the bitcoin mechanism of distributed consensus and is finally recorded on the blockchain, the distributed ledger of all transactions. 
 
 Each example below is based upon an actual transaction made on the bitcoin network, simulating the interactions between the users (Joe, Alice and Bob) by sending funds from one wallet to another. While tracking a transaction through the bitcoin network and blockchain, we will use a _blockchain explorer_ site to visualize each step. A blockchain explorer is a web application that operates as a bitcoin search engine, in that it allows you to search for addresses, transactions and blocks and see the relationships and flows between them.
 
@@ -24,9 +24,23 @@ In the overview diagram below, we see that the bitcoin system consists of users 
 .Bitcoin Overview
 image::images/Bitcoin_Overview.png["Bitcoin Overview"]
 
+JB comments on diagram: 
+- Could you pls explain the user 'controls'
+- Assume in the bit on the left that the 'user' is running a 'wallet' which acts as a 'node'?
+- Is consensus achieved by 100% of nodes or less than 100%?
+- Does each and every node hold the blockchain?
+- Does hashing power 'calculate' the proof of work, or carry out work to create a correct hash (the correct hash being so hard to find that it is proof the miner has probably done a lot of work to find it)?
+- Add a bit about the new block being accepted?
+- Transmit 'unverified' transaction to network
+- There are three lines coming out of Exchange. Does this mean the Exchange is running 3 nodes?
+
 ==== Buying a cup of coffee
 
 Alice, who we introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her frined Joe to exchange some cash for bitcoin. The transaction created by Joe, funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California. Bob's coffee shop recently started accepting bitcoin payments, by adding a bitcoin option to his point-of-sale system (see <<bitcoin_for_merchants>> for information on using bitcoin for merchants/retail). The prices at Bob's Cafe are listed in the local currency (US dollars) but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters the transaction at the register. The point-of-sale system will convert the total price from US dollars to bitcoins at the prevailing market rate and displays the prices in both currencies, as well as showing a QR code containing a _payment request_ for this transaction:
+
+JB - will there likely be a mark-up in the BTC/USD conversion?
+JB - will the conversion rate be real-time?
+JB - how does the average consumer know whether it will be more cost effective to pay in BTC or USD? (a bit like DCC transactions at POS nowadays...) 
 
 .Displayed on Bob's cash register
 ----
@@ -41,6 +55,9 @@ image::images/payment-request-qr.png["payment-request"]
 
 [[payment-request-URL]]
 .The payment request QR code above encodes the following URL, defined in BIP0021
+
+JB - worth saying what BIP0021 is?
+
 ----
 bitcoin:1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA?\
 amount=0.015&\
@@ -63,7 +80,7 @@ Unlike a QR code that simply contains a destination bitcoin address, a "payment 
 
 Bob says "That's one-dollar-fifty, or fifteen milliBits".
 
-Alice uses her smartphone to scan the barcode on display. Her smartphone shows a payment of +0.0150 BTC+ to +Bob's Cafe+ and she selects +Send+ to authorize the payment. Within a few seconds (about the same time as a credit card authorization), Bob would see the transaction on the register, completing the transaction.
+Alice uses her smartphone to scan the barcode (JB - QR code?) on display. Her smartphone shows a payment of +0.0150 BTC+ to +Bob's Cafe+ and she selects +Send+ to authorize the payment. Within a few seconds (about the same time as a credit card authorization), Bob would see the transaction on the register, completing the transaction.
 
 In the following sections we will examine this transaction in more detail, see how Alice's wallet constructed it, how it was propagated across the network, how it was verified and finally how Bob, the owner of the cafe, can spend that amount in subsequent transactions
 
@@ -77,18 +94,22 @@ The bitcoin network can transact in fractional values, e.g. from millibitcoins (
 
 In simple terms, a transaction tells the network that the owner of a number bitcoins has authorized the transfer of some of those bitcoins to another owner. The new owner can now spend these bitcoins by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
 
-Transactions are like lines in a double-entry bookkeeping ledger. In simple terms, each transaction contains one or more "inputs", which are debits against a bitcoin account. On the other side of the transaction, there are one or more "outputs", which are credits added to a bitcoin account. The inputs and outputs (debits and credits) do not necessarily add up to the same amount. Instead, outputs add up to slightly less than inputs and the difference represents an implied "transaction fee", a small payment collected by the miner who includes the transaction in the ledger. 
+Transactions are like lines in a double-entry bookkeeping ledger. In simple terms, each transaction contains one or more "inputs", which are debits against a bitcoin account (JB - but there are no bitcoin accounts? address?). On the other side of the transaction, there are one or more "outputs", which are credits added to a bitcoin account. The inputs and outputs (debits and credits) do not necessarily add up to the same amount. Instead, outputs add up to slightly less than inputs and the difference represents an implied "transaction fee" (JB - not implied, but actual?), a small payment collected by the miner who (JB - successfully) includes the transaction in the ledger. 
 
 [[transaction-double-entry]]
 .Transaction As Double-Entry Bookkeeping 
 image::images/Transaction_Double_Entry.png["Transaction Double-Entry"]
 
-The transaction contains proof of ownership for each amount of bitcoin (inputs) whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner identified by a bitcoin address. 
+JB - comments on image:
+- Make clear that inputs come from previous outputs
+- Generally, do people understand double entry bookkeeping for it to be a good example?
+
+The transaction contains proof of ownership for each amount of bitcoin (inputs) whose value is transfered, in the form of a digital signature from the owner, that can be independently validated by anyone (JB - assume multiple digital signatures ie one for each input?). In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys, over to a new owner identified by a bitcoin address. 
 
 
 [TIP]
 ====
-_Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_. An input is where the coin value is coming from, usually a previous transaction's output. A transaction output assigns a new owner to the value by associating it with a key. The destination key is called an _encumberance_, it imposes a requirement for a signature for the funds to be redeemed in future transactions. Outputs from one transaction can be used as inputs in a new transaction, thus creating a chain of ownership as the value is moved from address to address. 
+_Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_. An input is where the coin value is coming from, usually a previous transaction's output. A transaction output assigns a new owner to the value by associating it with (JB - the receiver's key) a key (JB - or could re-assign to existing owner ref giving change?). The destination key is called an _encumberance_, it imposes a requirement for a signature for the funds to be redeemed in future transactions (JB - are funds redeemed, or just re-assigned?). Outputs from one transaction can be used as inputs in a new transaction, thus creating a chain of ownership as the value is moved from address to address. (JB - mention that each input must be totally re-assigned/spent in the transaction?)
 ====
 
 
@@ -96,17 +117,23 @@ _Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_
 .Transaction Chain
 image::images/Transaction_Chain.png["Transaction chain"]
 
-Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked (encumbered) against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob.
+JB - comments on diagram
+- Was a bit confused by the signatures... I have prob understood this wrong, but isn't the very first INPUT#0 from Joe's previous transaction signed by the sender of that transaction when they sent to Joe's address? Joe will then sign with his signature when he sends to Alice in OUTPUT#-0?
+- Would be good to have totals of each transaction on the right of box 
+
+Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked (encumbered) against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob. JB - thought might be good to open the public/private keys distinction in this bit??
 
 ==== Common Transaction Forms
 
-The most common form of transaction is a simple payment from one address to another, which often includes some "change" returned to the original owner. This type of transaction has one input and two outputs and is shown below:
+The most common form of transaction is a simple payment from one address to another, which often includes some "change" returned (JB - reassigned, as it goes to a new location on the blockchain not gets returned to same location?) to the original owner. This type of transaction has one input and two outputs and is shown below:
 
 [[transaction-common]]
 .Most Common Transaction
 image::images/Bitcoin_Transaction_Structure_Common.png["Common Transaction"]
 
-Another common form of transaction is a transaction that aggregates several inputs into a single output. This represents the real-world equivalent of exchanging a pile of coins and currency notes for a single larger note. Transactions like these are sometimes generated by wallet applications to cleanup lots of smaller amounts that were received as change for payments.
+JB - on the diagram isnt the input from Joe, signed by Joe to Alice's address? Alice then signs when she assigns to Bob and herself?
+
+Another common form of transaction is a transaction that aggregates several inputs into a single output. This represents the real-world equivalent of exchanging a pile of coins and currency notes for a single larger note. Transactions like these are sometimes generated by wallet applications to cleanup lots of smaller amounts that were received as change for payments. (JB - assume only at request of user??)
 
 [[transaction-aggregating]]
 .Transaction Aggregating Funds
@@ -124,7 +151,7 @@ Alice's wallet application contains all the logic for selecting appropriate inpu
 
 ==== Getting the right inputs
 
-Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of *every unspent output* from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. 
+Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of *every unspent output* from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. (JB - is the unspent outputs database considered part of the blockchain, or is it just practical for nodes to form it from the blockchain?)
 	
 If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as a HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
 
@@ -150,7 +177,7 @@ $ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
 }
 ----
 
-The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and its value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
+The response above shows that the bitcoin network knows of one unspent output (one that has not been redeemed yet (JB - rather than not redeemed it is just available for Alice to assign?)) under the ownership of Alice's address _+1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK+_. The response includes the reference to the transaction in which this unspent output is contained (the payment from Joe) and its value in Satoshis, at 10 million, equivalent to 0.10 bitcoin. With this information, Alice's wallet application can construct a transaction to transfer that value to new owner addresses.
 
 [TIP]
 ====
@@ -159,16 +186,18 @@ Lookup the transaction from Joe to Alice, to see the information referenced abov
 https://blockchain.info/tx/7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18
 ====
 
+JB - what do all the letters and number mean?
+
 As you can see, Alice's wallet contains enough bitcoins in a single unspent output to pay for the cup of coffee. Had this not been the case, Alice's wallet application might have to "rummage" through a pile of smaller unspent outputs, like picking coins from a purse, until it could find enough to pay for coffee. In both cases, there might be a need to get some change back, which we will see in the next section, as the wallet application creates the transaction outputs (payments).
 
 
 ==== Creating the outputs
 
-A transaction output is created in the form of a script, that creates an encumberance on the value and can only be redeemed by the introduction of a solution to the script. In simpler terms, Alice's transaction output will contain a script that says something like "This output is payable to whoever can present a signature from the key corresponding to Bob's public address". Since only Bob has the wallet with the keys corresponding to that address, only Bob's wallet can present such a signature to redeem this output. Alice will therefore "encumber" the output value with a demand for a signature from Bob. 
+A transaction output is created in the form of a script, that creates an encumberance on the value and can only be redeemed (JB - reassigned?) by the introduction of a solution to the script. In simpler terms, Alice's transaction output will contain a script that says something like "This output is payable to whoever can present a (JB - valid?) signature (JB - for the key?) from the key corresponding to Bob's public address". Since only Bob has the wallet with the keys corresponding to that address, only Bob's wallet can present such a signature to redeem this output. Alice will therefore "encumber" the output value with a demand for a signature from Bob. 
 
-This transaction will also include a second output, because Alice's funds are in a the form of a 0.10 BTC output, too much money for the 0.015 BTC cup of coffee. Alice will need 0.085 BTC in change. Alice's change payment is created _by Alice's wallet_ in the very same transaction as the payment to Bob. Essentially, Alice's wallet breaks her funds into two payments, one to Bob, one back to herself. She can then use the change output in a subsequent transaction, thus spending it later. 
+This transaction will also include a second output, because Alice's funds are in a the form of a 0.10 BTC output, too much money for the 0.015 BTC cup of coffee. Alice will need 0.085 BTC in change. Alice's change payment is created _by Alice's wallet_ in the very same transaction as the payment to Bob. Essentially, Alice's wallet breaks her funds into two payments, one to Bob, one back to herself. She can then use the change output in a subsequent transaction, thus spending it later. (JB - assume Alice also encumbers herself in the same way?)
 
-Finally, for the transaction to be processed by the network in a timely fashion, Alice's wallet application will add a small fee. This is not explicit in the transaction, it is implied by the difference between inputs and outputs. If instead of taking 0.085 in change, Alice creates only 0.0845 as the second output, there will be 0.0005 BTC (half a millibitcoin) left over. The input's 0.10 BTC is not fully spent with the two outputs, as they will add up to less than 0.10. The resulting difference is the _transaction fee_ which is collected by the miner as a fee for including the transaction in a block and putting it on the blockchain ledger.
+Finally, for the transaction to be processed by the network in a timely fashion (JB - what does timely mean pls - next block?), Alice's wallet application will add a small fee. This is not explicit in the transaction, it is implied by the difference between inputs and outputs. If instead of taking 0.085 in change, Alice creates only 0.0845 as the second output, there will be 0.0005 BTC (half a millibitcoin) left over. The input's 0.10 BTC is not fully spent with the two outputs, as they will add up to less than 0.10. The resulting difference is the _transaction fee_ which is collected by the miner as a fee for including the transaction in a block and putting it on the blockchain ledger. (JB - how is an appropriate fee worked out - by the wallet? Does the fee guarantee or make more likely? What if there is no fee?)
 
 The resulting transaction can be seen using a blockchain explorer web application
 
@@ -194,11 +223,11 @@ Since the transaction contains all the information necessary to process, it does
 
 ===== How it propagates
 
-Alice's wallet application can send the new transaction to any of the other bitcoin clients it is connected to, over WiFi or mobile data, or any Internet connection. Her bitcoin wallet does not have to be connected to Bob's bitcoin wallet directly and she does not have to use the Internet connection offered by the cafe, though both those options are possible too. Any bitcoin network node (other client) that receives a valid transaction it has not seen before, will immediately forward it to other nodes it is connected to. Thus, the transaction rapidly propagates out across the peer-to-peer network, reaching a large percentage of the nodes within a few seconds. 
+Alice's wallet application can send the new transaction to any of the other bitcoin clients it is connected to, over WiFi or mobile data, or any Internet connection. Her bitcoin wallet does not have to be connected to Bob's bitcoin wallet directly and she does not have to use the Internet connection offered by the cafe, though both those options are possible too. Any bitcoin network node (other client) that receives a valid transaction it has not seen before, will immediately forward it to other nodes it is connected to (JB - it must immediately forward it or just will do if it can and is performing its role honestly?). Thus, the transaction rapidly propagates out across the peer-to-peer network, reaching a large percentage of the nodes within a few seconds. 
 
 ===== Bob's view
 
-If Bob's bitcoin wallet application is directly connected to Alice's wallet application, it may be the first node to receive the transaction. However, even if Alice's wallet sends it through other nodes, the transaction will reach Bob's wallet within a few seconds. Bob's wallet will immediately identify Alice's transaction as an incoming payment because it contains outputs redeemable by Bob's keys. Bob's wallet application can also independently verify that the transaction is well-formed, uses previously-unspent inputs and contains sufficient transaction fees to be included in the next block. At this point, Bob can assume, with little risk, that the transaction will shortly be included in a block and confirmed. 
+If Bob's bitcoin wallet application is directly connected to Alice's wallet application, it may be the first node to receive the transaction. However, even if Alice's wallet sends it through other nodes, the transaction will reach Bob's wallet within a few seconds. Bob's wallet will immediately identify Alice's transaction as an incoming payment because it contains outputs redeemable by Bob's keys. Bob's wallet application can also independently verify that the transaction is well-formed, uses previously-unspent inputs (B - outputs?) and contains sufficient transaction fees to be included in the next block. At this point, Bob can assume, with little risk, that the transaction will shortly be included in a block and confirmed. (JB - what happens if Bobs wallet sees a problem? Also, can the risk that Bob is taking be quantified at all?) 
 
 [TIP]
 ====
@@ -214,30 +243,32 @@ The bitcoin system of trust is based on computation. Transactions are bundled in
 * Mining creates new bitcoins in each block, almost like a central bank printing new money. The amount of bitcoin created is fixed and diminishes with time
 * Mining creates trust by ensuring that transactions are only confirmed if enough computational power was devoted to the block that contains them. More blocks mean more computation which means more trust. 
 
-A good way to describe mining is like a giant competitive game of sudoku that resets every time someone finds a solution and whose difficulty automatically adjusts so that it takes approximately 10 minutes to find a solution. Imagine a giant sudoku puzzle, several thousand rows and columns in size. If I show you a completed puzzle you can verify it quite quickly. If it is empty, however, it takes a lot of work to solve! The difficulty of the sudoku can be adjusted by changing its size (more or fewer rows and columns), but it can still be verified quite easily even if it is very large. The "puzzle" used in bitcoin is based on a cryptographic hash and exhibits similar characteristics: it is assymetrically hard to solve, but easy to verify and its difficulty can be adjusted.
+A good way to describe mining is like a giant competitive game of sudoku that resets every time someone finds a solution and whose difficulty automatically adjusts so that it takes approximately 10 minutes to find a solution. Imagine a giant sudoku puzzle, several thousand rows and columns in size. If I show you a completed puzzle you can verify it quite quickly. If it is empty, however, it takes a lot of work to solve! The difficulty of the sudoku can be adjusted by changing its size (more or fewer rows and columns), but it can still be verified quite easily even if it is very large. The "puzzle" used in bitcoin is based on a cryptographic hash and exhibits similar characteristics: it is assymetrically hard to solve, but easy to verify and its difficulty can be adjusted. JB - like the sudoku analogy!
 
-In <<user-stories>> we introduced Jing, a computer engineering student in Shanghai. Jing is participating in the bitcoin network as a miner. Every 10 minutes or so, Jing joins thousands of other miners in a global race to find a solution to a block of transactions. Finding such a solution, the so-called "Proof-of-Work" requires quadrillions of hashing operations per second, across the entire bitcoin network. The algorithm for "Proof-of-Work" involves repeatedly hashing the header of the block and a random number with the SHA256 cryptographic algorithm, until a solution matching a pre-determined pattern emerges. The first miner to find such a solution wins the round of competition and publishes that block into the blockchain. 
+In <<user-stories>> we introduced Jing, a computer engineering student in Shanghai. Jing is participating in the bitcoin network as a miner. Every 10 minutes or so, Jing joins thousands of other miners in a global race to find a solution to a block of transactions. Finding such a solution, the so-called "Proof-of-Work" requires quadrillions of hashing operations per second, across the entire bitcoin network. The algorithm for "Proof-of-Work" involves repeatedly hashing the header of the block and a random number with the SHA256 cryptographic algorithm, until a solution matching a pre-determined pattern emerges. The first miner to find such a solution wins the round of competition and publishes that block into the blockchain. (JB - is it likely a solo miner in this example could profitably mine these days, even in a pool? Would it be better to emphasis the professional mining centres that presumably control the bulk of mining? I understand the costs of ASICS is quite significant and presumably not suitable for your average student/bitcoin user? Also, what happens when a block is published, do all miners immediately stop work on the old block and start on a new block?) 
 
 Jing started mining in 2010 using a very fast desktop computer to find a suitable Proof-of-Work for new blocks. As more miners started joining the bitcoin network, the difficulty of the problem increased rapidly. Soon, Jing and other miners upgraded to more specialized hardware, such as Graphical Processing Units (GPU), as used in gaming desktops or consoles. As this book is written, by 2014, the difficulty is so high that it is only profitable to mine with Application Specific Integrated Circuits, essentially hundreds of mining algorithms printed in hardware, running in parallel on a single silicone chip. Jing also joined a "mining pool", which much like a lottery-pool allows several participants to share their efforts and the rewards. Jing now runs two ASIC machines, which are USB connected devices, to mine for bitcoin 24 hours a day. He pays his electricity costs by selling the bitcoin he is able to generate from mining, creating some income from the profits. His computer runs a copy of bitcoind, the reference bitcoin client, as a back-end to his specialized mining software.
 
 === Mining transactions in blocks
 
-A transaction transmitted across the network is not verified until it becomes part of the global distributed ledger, the blockchain. Every ten minutes, miners generate a new block, which contains all the transactions since the last block. New transactions are constantly flowing into the network from user wallets and other applications. As these are seen by the bitcoin network nodes, they get added to a temporary "pool" of unverified transactions maintained by each node. As miners build a new block, they add unverified transactions from this pool to a new block and then attempt to solve a very hard problem (aka Proof-of-Work) to prove the validity of that new block. The process of mining is explained in detail in <<mining>>
+A transaction transmitted across the network is not verified until it becomes part of the global distributed ledger, the blockchain. Every ten minutes, miners generate a new block, which contains all the transactions since the last block (JB - all, or only the ones selected by the miner to be included?). New transactions are constantly flowing into the network from user wallets and other applications. As these are seen by the bitcoin network nodes, they get added to a temporary "pool" of unverified transactions maintained by each node. As miners build a new block, they add unverified transactions from this pool to a new block and then attempt to solve a very hard problem (aka Proof-of-Work) to prove the validity of that new block. The process of mining is explained in detail in <<mining>> (JB - do different miners choose different transactions to be included in a bloc, perhaps based on different criteria? Also, if I start mining a block with 10 transactions and then another transaction comes in do I start again with 11 or does the new one get left until I attempt the next block?)
 
-Transactions are added to the new block, prioritized by the highest-fee transactions first and a few other criteria. Each miner starts the process of mining a new block of transactions as soon as they receive the previous block from the network, knowing they have lost that previous round of competition. They immediately create a new block, fill it with transactions and the fingerprint of the previous block and start calculating a the Proof-of-Work for the new block. Each miner includes a special transaction in their block, one that pays their own bitcoin address a reward of newly created bitcoins (currently 25 BTC per block). If they find a solution that makes that block valid, they "win" this reward because their successful block is added to the global blockchain and the reward transaction they included becomes spendable. Jing, who participates in a mining pool, has set up his software to create new blocks that assign the reward to a pool address. From there, a share of the reward is distributed to Jing and other miners in proportion to the amount of work they contributed in the last round. 
+Transactions are added to the new block, prioritized by the highest-fee transactions first and a few other criteria (JB - expand upon?). Each miner starts the process of mining a new block of transactions as soon as they receive the previous block from the network, knowing they have lost that previous round of competition (JB - must or should?). They immediately create a new block, fill it with transactions and the fingerprint of the previous block and start calculating a the Proof-of-Work for the new block. Each miner includes a special transaction in their block, one that pays their own bitcoin address a reward of newly created bitcoins (currently 25 BTC per block). If they find a solution that makes that block valid, they "win" this reward because their successful block is added to the global blockchain and the reward transaction they included becomes spendable. Jing, who participates in a mining pool, has set up his software to create new blocks that assign the reward to a pool address. From there, a share of the reward is distributed to Jing and other miners in proportion to the amount of work they contributed in the last round. (JB - is it worth putting in something about why effort is not wasted when a miner attempts but cannot solve a block?) 
 
-Alice's transaction was picked up by the network and included in the pool of unverified transactions. Since it had sufficient fees, it was included in a new block generated by Jing's mining pool. Approximately 5 minutes after the transaction was first transmitted by Alice's wallet, Jing's ASIC miner found a solution for the block and published it as block #277316, containing 419 other transactions. Jing's ASIC miner published the new block on the bitcoin network, where other miners validated it and started the race to generate the next block. 
+Alice's transaction was picked up by the network and included in the pool of unverified transactions. Since it had sufficient fees, it was included in a new block generated by Jing's mining pool. Approximately 5 minutes after the transaction was first transmitted by Alice's wallet, Jing's ASIC miner found a solution for the block and published it as block #277316, containing 419 other transactions. Jing's ASIC miner published the new block on the bitcoin network, where other miners validated it (JB - what do they do to validate, and what happens if problems?) and started the race to generate the next block. 
 
 You can see the block that includes Alice's transaction here:
 https://blockchain.info/block-height/277316
 
 A few minutes later, a new block, #277317 is mined by another miner. As this new block is based on the previous block (#277316) that contained Alice's transaction, it added even more computation on top of that block, thereby strengthening the trust in those transactions. One block mined on top of the one containing the transaction, is called "one confirmation" for that transaction. As the blocks pile on top of each other, it becomes exponentially harder to reverse the transaction, thereby making it more and more trusted by the network. 
 
-In the diagram below, we can see block #277316, the one which contains Alice's transaction. Below it are 277,315 blocks, linked to each other in a chain of blocks (blockchain) all the way back to block #0, the genesis block. Over time, as the "height" in blocks increases, so does the computation difficulty for each block and the chain as a whole. The blocks mined after the one that contains Alice's transaction act as further assurance, as they pile on more computation in a longer and longer chain. The blocks above count as "confirmations". By convention, any block with more than 6 confirmation is considered irrevocable, as it would require an immense amount of computation to invalidate and re-calculate six blocks. We will examine the process of mining and the way it builds trust in more detail in <<mining>>.
+In the diagram below, we can see block #277316, the one which contains Alice's transaction. Below it are 277,315 blocks, linked to each other in a chain of blocks (blockchain) all the way back to block #0, the genesis block. Over time, as the "height" in blocks increases, so does the computation difficulty for each block and the chain as a whole (JB - does difficulty always increase? In theory if lots of miners left wouldn't it go down?). The blocks mined after the one that contains Alice's transaction act as further assurance, as they pile on more computation in a longer and longer chain. The blocks above count as "confirmations". By convention, any block with more than 6 confirmation is considered irrevocable, as it would require an immense amount of computation to invalidate and re-calculate six blocks. We will examine the process of mining and the way it builds trust in more detail in <<mining>>.
 
 [[block-alice]]
 .Alice's transaction included in block #277,317
 image::images/Blockchain_height_and_depth.png["Alice's transaction included in a block"]
+
+JB - in the diagram what does block height refer to? Is it number of txns in the block?
 
 === Spending the transaction
 
@@ -251,7 +282,7 @@ As Bob spends the payments received from Alice and other customers, he exends th
 .Alice's transaction as part of a transaction chain from Joe to Gopesh
 image::images/Alices_Transaction_Chain.png["Alice's transaction as part of a transaction chain"]
 
-
+JB - put note in diagram that ever transaction can either be tracked back to genesis block or to when it was mined?
 
 
 
