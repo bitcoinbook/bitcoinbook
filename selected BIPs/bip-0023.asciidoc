@@ -1,0 +1,429 @@
+---------------------------------------------
+  BIP: 23
+  Title: getblocktemplate - Pooled Mining
+  Author: Luke Dashjr <luke+bip22@dashjr.org>
+  Status: Accepted
+  Type: Standards Track
+  Created: 2012-02-28
+---------------------------------------------
+
+[[abstract]]
+Abstract
+~~~~~~~~
+
+This BIP describes extensions to the getblocktemplate JSON-RPC call to
+enhance pooled mining.
+
+[[specification]]
+Specification
+~~~~~~~~~~~~~
+
+Note that all sections of this specification are optional extensions on
+top of link:BIP 0022[BIP 22].
+
+[[summary-support-levels]]
+Summary Support Levels
+^^^^^^^^^^^^^^^^^^^^^^
+
+Something can be said to have BIP 23 Level 1 support if it implements at
+least:
+
+* http://www.ietf.org/rfc/rfc1945.txt[RFC 1945]
+* http://json-rpc.org/wiki/specification[JSON-RPC 1.0]
+* link:bip-0022.mediawiki[BIP 22 (non-optional sections)]
+* bip-0022.mediawiki#Optional:_Long_Polling[BIP 22 Long Polling]
+* link:#Basic_Pool_Extensions[BIP 23 Basic Pool Extensions]
+* link:#Mutations[BIP 23 Mutation "coinbase/append"]
+* link:#Submission_Abbreviation[BIP 23 Submission Abbreviation
+"submit/coinbase"]
+* link:#Mutations[BIP 23 Mutation "time/increment"] (only required for
+servers)
+
+It can be said to have BIP 23 Level 2 support if it also implements:
+
+* link:#Mutations[BIP 23 Mutation "transactions/add"]
+* link:#Block_Proposals[BIP 23 Block Proposals]
+
+[[basic-pool-extensions]]
+Basic Pool Extensions
+^^^^^^^^^^^^^^^^^^^^^
+
+[cols="",options="header",]
+|==================================================================
+|template request
+|Key |Type |Description
+|target |String |desired target for block template (may be ignored)
+|==================================================================
+
+[cols="",options="header",]
+|=======================================================================
+|template
+|Key |Type |Description
+
+|expires |Number |how many seconds (beginning from when the server sent
+the response) this work is valid for, at most
+
+|target |String |the number which valid results must be less than, in
+big-endian hexadecimal
+|=======================================================================
+
+[[block-proposal]]
+Block Proposal
+^^^^^^^^^^^^^^
+
+Servers may indicate support for proposing blocks by including a
+capability string in their original template:
+
+[cols="",options="header",]
+|=======================================================================
+|template
+|Key |Type |Description
+
+|capabilities |Array of Strings |MAY contain "proposal" to indicate
+support for block proposal
+
+|reject-reason |String |Reason the proposal was invalid as-is (only
+applicable in response to proposals)
+|=======================================================================
+
+If supported, a miner MAY propose a block to the server for general
+validation at any point before the job expires. This is accomplished by
+calling getblocktemplate with two keys:
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=3| getblocktemplate parameters
+|Key |Type |Description
+
+|data |String |MUST be hex-encoded block data
+
+|mode |String |MUST be "proposal"
+
+|workid |String |if the server provided a workid, it MUST be included
+with proposals
+|=======================================================================
+
+The block data MUST be validated and checked against the server's usual
+acceptance rules (excluding the check for a valid proof-of-work). If it
+is found to be in violation of any of these rules, the server MUST
+return one of the following:
+
+* Null if it is acceptable as-is, with the same workid (if any) as
+provided. Note that this SHOULD NOT invalidate the old template's claim
+to the same workid.
+* A String giving the reason for the rejection (see
+link:bip-0022.mediawiki#appendix-example-rejection-reasons[example
+rejection reasons]).
+* A "delta" block template (with changes needed); in this case, any
+missing keys are assumed to default to those in the proposed block or,
+if not applicable, the original block template it was based on. This
+template MAY also include a "reject-reason" key with a String of the
+reason for rejection.
+
+It is RECOMMENDED that servers which merely need to track the proposed
+block for later share/* submissions, return a simple Object of the form:
+
+`{"workid":"new workid"}`
+
+Clients SHOULD assume their proposed block will remain valid if the only
+changes they make are to the portion of the coinbase scriptSig they
+themselves provided (if any) and the time header. Servers SHOULD NOT
+break this assumption without good cause.
+
+[[mutations]]
+Mutations
+^^^^^^^^^
+
+[cols="",options="header",]
+|=======================================================================
+|template request
+|Key |Type |Description
+
+|nonces |Number |size of nonce range the miner needs; if not provided,
+the server SHOULD assume the client requires 2^32^
+|=======================================================================
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=3| template
+|Key |Type |Description
+
+|maxtime |Number |the maximum time allowed
+
+|maxtimeoff |Number |the maximum time allowed (as a moving offset from
+"curtime" - every second, the actual maxtime is incremented by 1; for
+example, "maxtimeoff":0 means "time" may be incremented by 1 every
+second)
+
+|mintime |Number |the minimum time allowed
+
+|mintimeoff |Number |the minimum time allowed (as a moving offset from
+"curtime")
+
+|mutable |Array of Strings |different manipulations that the server
+explicitly allows to be made
+
+|noncerange |String |two 32-bit integers, concatenated in big-endian
+hexadecimal, which represent the valid ranges of nonces the miner may
+scan
+|=======================================================================
+
+If the block template contains a "mutable" key, it is a list of these to
+signify modifications the miner is allowed to make:
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=2| mutations
+|Value |Significance
+
+|coinbase/append |append the provided coinbase scriptSig
+
+|coinbase |provide their own coinbase; if one is provided, it may be
+replaced or modified (implied if "coinbasetxn" omitted)
+
+|generation |add or remove outputs from the coinbase/generation
+transaction (implied if "coinbasetxn" omitted)
+
+|time/increment |change the time header to a value after "time" (implied
+if "maxtime" or "maxtimeoff" are provided)
+
+|time/decrement |change the time header to a value before "time"
+(implied if "mintime" is provided)
+
+|time |modify the time header of the block
+
+|transactions/add (or "transactions") |add other valid transactions to
+the block (implied if "transactions" omitted from result)
+
+|prevblock |use the work with other previous-blocks; this implicitly
+allows removing transactions that are no longer valid (but clients
+SHOULD attempt to propose removal of any required transactions); it also
+implies adjusting "height" as necessary
+
+|version/force |encode the provide block version, even if the miner
+doesn't understand it
+
+|version/reduce |use an older block version than the one provided (for
+example, if the client does not support the version provided)
+|=======================================================================
+
+[[submission-abbreviation]]
+Submission Abbreviation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=3| template
+|Key |Type |Description
+
+|fulltarget |String |the number which full results should be less than,
+in big-endian hexadecimal (see "share/*" mutations)
+
+|mutable |Array of Strings |different manipulations that the server
+explicitly allows to be made, including abbreviations
+|=======================================================================
+
+If the block template contains a "mutable" key, it is a list of these to
+signify modifications the miner is allowed to make:
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=2| abbreviation mutations
+|Value |Significance
+
+|submit/hash |each transaction being sent in a request, that the client
+is certain the server knows about, may be replaced by its hash in
+little-endian hexadecimal, prepended by a ":" character
+
+|submit/coinbase |if the "transactions" provided by the server are used
+as-is with no changes, submissions may omit transactions after the
+coinbase (transaction count varint remains included with the full number
+of transactions)
+
+|submit/truncate |if the "coinbasetxn" and "transactions" provided by
+the server are used as-is with no changes, submissions may contain only
+the block header; if only the scriptSig of "coinbasetxn" is modified,
+the params Object MUST contain a "coinbasesig" key with the content, or
+a "coinbaseadd" with appended data (if only appending)
+
+|share/coinbase |same as "submit/coinbase", but only if the block hash
+is greater than "fulltarget"
+
+|share/merkle |if the block hash is greater than "fulltarget", the
+non-coinbase transactions may be replaced with a merkle chain connecting
+it to the root
+
+|share/truncate |same as "submit/truncate", but only if the block hash
+is greater than "fulltarget"
+|=======================================================================
+
+[[format-of-data-for-merkle-only-shares]]
+Format of Data for Merkle-Only Shares
++++++++++++++++++++++++++++++++++++++
+
+The format used for submitting shares with the "share/merkle" mutation
+shall be the 80-byte block header, the total number of transactions
+encoded in Bitcoin variable length number format, the coinbase
+transaction, and then finally the little-endian SHA256 hashes of each
+link in the merkle chain connecting it to the merkle root.
+
+[[logical-services]]
+Logical Services
+^^^^^^^^^^^^^^^^
+
+[cols="",options="header",]
+|=======================================================================
+|template request
+|Key |Type |Description
+
+|capabilities |Array of Strings |miners which support this SHOULD
+provide a list including the String "serverlist"
+|=======================================================================
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=3| template
+|Key |Type |Description
+
+|serverlist |Array of Objects |list of servers in this single logical
+service
+|=======================================================================
+
+If the "serverlist" parameter is provided, clients MAY choose to
+intelligently treat the server as part of a larger single logical
+service.
+
+Each host Object in the Array is comprised of the following fields:
+
+[cols="",options="header",]
+|=======================================================================
+|colspan=3| serverlist element
+|Key |Type |Description
+
+|uri |String |URI of the individual server; if authentication
+information is omitted, the same authentication used for this request
+MUST be assumed
+
+|avoid |Number |number of seconds to avoid using this server
+
+|priority |Number |an integer priority of this host (default: 0)
+
+|sticky |Number |number of seconds to stick to this server when used
+
+|update |Boolean |whether this server may update the serverlist
+(default: true)
+
+|weight |Number |a relative weight for hosts with the same priority
+(default: 1)
+|=======================================================================
+
+When choosing which actual server to get the next job from, URIs MUST be
+tried in order of their "priority" key, lowest Number first. Where the
+priority of URIs is the same, they should be chosen from in random
+order, weighed by their "weight" key. Work proposals and submissions
+MUST be made to the same server that issued the job. Clients MAY attempt
+to submit to other servers if, and only if, the original server cannot
+be reached. If cross-server share submissions are desired, services
+SHOULD instead use the equivalent domain name system (DNS) features
+(RFCs http://tools.ietf.org/html/rfc1794[1794] and
+http://tools.ietf.org/html/rfc2782[2782]).
+
+Updates to the Logical Service server list may only be made by the
+original server, or servers listed with the "update" key missing or
+true. Clients MAY choose to advertise serverlist capability to servers
+with a false "update" key, but if so, MUST treat the server list
+provided as a subset of the current one, only considered in the context
+of this server. At least one server with "update" privilege MUST be
+attempted at least once daily.
+
+If the "sticky" key is provided, then when that server is used, it
+should be used consistently for at least that many seconds, if possible.
+
+A permanent change in server URI MAY be indicated with a simple
+"serverlist" parameter:
+
+`"serverlist":[{"uri": "`http://newserver[`http://newserver`]`"}]`
+
+A temporary delegation to another server for 5 minutes MAY be indicated
+likewise:
+
+`"serverlist":[{"uri": "", avoid: 300}, {"uri": "`http://newserver[`http://newserver`]`", "update": false}]`
+
+[[motivation]]
+Motivation
+~~~~~~~~~~
+
+There is reasonable concerns about mining currently being too
+centralized on pools, and the amount of control these pools hold. By
+exposing the details of the block proposals to the miners, they are
+enabled to audit and possibly modify the block before hashing it.
+
+To encourage widespread adoption, this BIP should be a complete superset
+of the existing centralized getwork protocol, so pools are not required
+to make substantial changes to adopt it.
+
+[[rationale]]
+Rationale
+~~~~~~~~~
+
+Why allow servers to restrict the complete coinbase and nonce range?
+
+* This is necessary to provide a complete superset of JSON-RPC getwork
+functionality, so that pools may opt to enable auditing without
+significantly changing or increasing the complexity of their share
+validation or mining policies.
+* Since noncerange is optional (both for getwork and this BIP), neither
+clients nor servers are required to support it.
+
+Why specify "time/*" mutations at all?
+
+* In most cases, these are implied by the
+mintime/mintimecur/maxtime/maxtimecur keys, but there may be cases that
+there are no applicable minimums/maximums.
+
+What is the purpose of the "prevblock" mutation?
+
+* There are often cases where a miner has processed a new block before
+the server. If the server allows "prevblock" mutation, the miner may
+begin mining on the new block immediately, without waiting for a new
+template.
+
+Why must both "mintime"/"maxtime" and "mintimeoff"/"maxtimeoff" keys be
+defined?
+
+* In some cases, the limits may be unrelated to the current time (such
+as the Bitcoin network itself; the minimum is always a fixed median
+time)
+* In other cases, the limits may be bounded by other rules (many pools
+limit the time header to within 5 minutes of when the share is submitted
+to them).
+
+Is "target" really needed?
+
+* Some pools work with lower targets, and should not be expected to
+waste bandwidth ignoring shares that don't meet it.
+* Required to be a proper superset of getwork.
+* As mining hashrates grow, some miners may need the ability to request
+a lower target from their pools to be able to manage their bandwidth
+use.
+
+What is the purpose of the "hash" transaction list format?
+
+* Non-mining tools may wish to simply get a list of memory pool
+transactions.
+* Humans may wish to view their current memory pool.
+
+[[reference-implementation]]
+Reference Implementation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* http://gitorious.org/bitcoin/libblkmaker[libblkmaker]
+* https://gitorious.org/bitcoin/eloipool[Eloipool]
+* https://github.com/bitcoin/bitcoin/pull/936/files[bitcoind]
+
+[[see-also]]
+See Also
+~~~~~~~~
+
+* link:bip-0022.mediawiki[BIP 22: getblocktemplate - Fundamentals]
+
