@@ -25,51 +25,6 @@ In bitcoin, we use public key cryptography to create a key pair that controls ac
 In most implementations, the private and public keys are stored together as a _key pair_ for convenience. However, it is trivial to reproduce the public key if one has the private key, so storing only the private key is also possible. 
 ====
 
-==== Elliptic Curve Cryptography
-((("elliptic curve cryptography", "ECC")))
-Elliptic Curve Cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
-
-<< Replace chart below with one showing the K = k * G key generation as a line on the curve >>
-
-[[ecc_addition]]
-.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
-image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
-
-Bitcoin specifically uses the +secp256k1+ elliptic curve:
-((("secp256k1")))
-[latexmath]
-++++
-\begin{equation}
-{y^2 = (x^3 + 7)} \text{over} \mathbb{F}_p
-\end{equation}
-++++
-or 
-
-[latexmath]
-++++
-\begin{equation}
-{y^2 \mod p = (x^3 + 7) \mod p}
-\end{equation}
-++++
-
-where +latexmath:[\(p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1\)]+, a very large prime number. 
-
-The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)]. The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
-
-<< Replace chart below with one showing the K = k * G key generation as a line on the curve >>
-
-[[ecc-over-F37-math]]
-.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve over F(p)
-image::images/ecc-over-F37-math.png["Addition operator on points of an elliptic curve over F(p)"]
-
-Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the https://www.openssl.org/docs/crypto/ec.html[Elliptic Curve library]. 
-
-
-[TIP]
-====
-The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
-====
-
 === Keys
 
 Your bitcoin wallet contains a collection of key pairs, each consisting of a private key and a public key. 
@@ -118,7 +73,44 @@ $ sx newkey
 
 The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse (division), or calculating +k+ if you know +K+ is as difficult as trying all possible values of +k+, i.e. a brute-force search. 
 
-Starting with a private key in the form of a randomly generated number +k+, we multiply it with a predetermined point on the curve called the _generator point_ +G+ to produce another point somewhere else on the curve, which is the corresponding public key +K+. 
+==== Elliptic Curve Cryptography
+((("elliptic curve cryptography", "ECC")))
+Elliptic Curve Cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
+
+Below we see an exaple of an elliptic curve, similar to that used by bitcoin:
+
+[[ecc-curve]]
+.An Elliptic Curve
+image::images/ecc-curve.png["ecc-curve"]
+
+Bitcoin specifically uses a specific curve and a set of constants, defined as a standard called +secp256k1+, by the National Institute of Standards and Technology (NIST). The +secp256k1+ is defined by the following function, which produces an elliptic curve:
+((("secp256k1")))
+[latexmath]
+++++
+\begin{equation}
+{y^2 = (x^3 + 7)} \text{over} \mathbb{F}_p
+\end{equation}
+++++
+or 
+
+[latexmath]
+++++
+\begin{equation}
+{y^2 \mod p = (x^3 + 7) \mod p}
+\end{equation}
+++++
+
+The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)], where latexmath:[\(p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1\)], a very large prime number. 
+
+The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above. Below is the same elliptic curve over a much smaller finite field of prime order 17, showing a pattern of dots on a grid. The bitcoin elliptic curve can be thought of as a much more complex pattern of dots on a unfathomably large grid. 
+
+[[ecc-over-F17-math]]
+.Elliptic Curve Cryptography: Visualizing an elliptic curve over F(p), with p=17
+image::images/ecc-over-F17-math.png["ecc-over-F17-math"]
+
+==== Generating a public key 
+
+Starting with a private key in the form of a randomly generated number +k+, we multiply it with a predetermined point on the curve called the _generator point_ +G+ to produce another point somewhere else on the curve, which is the corresponding public key +K+. The generator point is specified as part of the +secp256k1+ standard and is always the same for all keys in bitcoin.  
 
 [latexmath]
 ++++
@@ -128,7 +120,15 @@ Starting with a private key in the form of a randomly generated number +k+, we m
 ++++
 
 [[key_derivation]]
-where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. 
+where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. Since the generator point is always the same, a private key k multiplied with G will always produce the same public key K. 
+
+To visualize multiplication of a point with an integer, we will use the simpler elliptic curve over the real numbers - remember, the math is the same. Starting with the generator point G, we take the tangent of the curve at G until it crosses the curve again at another point. This new point is the negative of G+G, or -2G. Reflectign that point across the x-axis gives us 2G. If we take the tangent at 2G, it crosses the curve at -3G, which we can reflect on the x-axis to find 3G. Continuing this process, we can bounce around the curve finding the multiples of G, 2G, 3G, 4G etc. As you can see, a randomly selected large number k, when multiplied against the generator point G is like bouncing around the curve until we land on the point kG which is the public key. This process is irreversible, meaning that it is infeasible to find the factor k (the secret k) in any way other than trying all multiples of G (1G, 2G, 3G etc) in a brute-force search for k. Since k can be an enormous number, that brute-force search would take forever. 
+
+
+[[ecc_illustrated]]
+.Elliptic Curve Cryptography: Visualizing the multiplication of a point G by an integer k on an elliptic curve
+image::images/ecc_illustrated.png["ecc_illustrated"]
+
 
 [TIP]
 ====
