@@ -1,43 +1,182 @@
-[[ch04_wallets_keys]]
-== Wallets, Keys and Addresses
+[[ch04_keys_addresses_wallets]]
+== Keys, Addresses, Wallets
 
-Ownership of bitcoin is established through _digital keys_ and _digital signatures_. These keys are not actually stored in the network, but are instead created and stored by end-users, in a file called a _wallet_, or in a database. The keys within each user's wallet allow the user to sign transactions, thereby providing cryptographic proof of the ownership of the bitcoins sourced by the transaction. The keys themselves are completely independent of the bitcoin protocol and can be generated and managed by the end users. Keys can be generated without reference to the blockchain or access to the network. Keys enable many of the interesting properties of bitcoin, including de-centralized trust and control, ownership attestation and the cryptographic-proof security model. Keys can also be converted into unique and public addresses (eg. bitcoin addresses, those that start with a "1"), allowing anyone to create transactions that transfer ownership of bitcoin to our keys. 
+=== Introduction
 
-In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored and managed. We will review the various encoding formats used to represent private and public keys, addresses and script addresses. Finally we will look at special uses of keys to sign messages, prove ownerhsip and special addresses uses such as vanity addresses and paper wallets. 
+Ownership of bitcoin is established through _digital keys_, _bitcoin addresses_ and _digital signatures_. The digital keys are not actually stored in the network, but are instead created and stored by end-users in a file, or simple database, called a _wallet_. The digital keys in a user's wallet are completely independent of the bitcoin protocol and can be generated and managed by the user's wallet software without reference to the blockchain or access to the network. Keys enable many of the interesting properties of bitcoin, including de-centralized trust and control, ownership attestation and the cryptographic-proof security model. 
 
-[TIP]
-====
-Wallets contain keys, not coins. The coins are stored on the blockchain, in the form of transaction-outputs (often noted as vout or txout). Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/publice keys (See <<public key>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). 
-====
+The digital keys within each user's wallet allow the user to sign transactions, thereby providing cryptographic proof of the ownership of the bitcoins sourced by the transaction. Keys come in pairs consisting of a private (secret) and public key. Think of the public key as similar to a bank account number and the private key as similar to the secret PIN number, or signature on a cheque, that provides control over the account. These digital keys are very rarely seen by the users of bitcoin. For the most part, they are stored inside the wallet file and managed by the bitcoin wallet software. 
 
-[[wallets]]
+In transactions, the public key is represented by its digital fingeprint called a _bitcoin address_ which is used as the beneficiary name on a cheque (ie. "Pay to the order of"). In most cases a bitcoin address is a generated from and corresponds to a public key. However, like a beneficiary name on a cheque, some bitcoin addresses do not represent a public key and instead represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper cheques: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills or pay to cash. The bitcoin address is the only part of the wallet that users will routinely see. 
 
-=== Wallets
+In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored and managed. We will review the various encoding formats used to represent private and public keys, addresses and script addresses. Finally we will look at special uses of keys: to sign messages, to prove ownership and to create vanity addresses and paper wallets. 
+
 
 === Keys
 
-Your bitcoin wallet contains a collection of key pairs, each consisting of a private key and a public key. 
+==== Public key cryptography and crypto-currency
+((("public key")))
+Public key cryptography was invented in the 1970s and is mathematics applied to computer security. Since the invention of public key cryptography, several suitable mathematical functions, such as prime number exponentiation and elliptic curve multiplication, have been discovered. These mathematical functions are practically irreversible, meaning that they are easy to calculate in one direction and infeasible to calculate in the opposite direction. Based on these mathematical functions, cryptography enables the creation of digital secrets and unforgeable digital signatures. Bitcoin uses elliptic curve multiplication as the basis for its public key cryptography.  
+ 
+In bitcoin, we use public key cryptography to create a key pair that controls access to bitcoins. The key pair consists of a private key and derived from it, a unique public key. The public key is used to receive bitcoins and the private key is used to sign transactions to spend those bitcoins. There is a special relationship between the public key and private key that allows the private key to be used to generate a signature. This signature can be validated against the public key without revealing the private key. When spending bitcoins, the current bitcoin owner presents their public key and a signature in a transaction to spend those bitcoins. Through the presentation of the public key and signature everyone in the bitcoin network can verify and accept that transaction as valid, meaning the person transfering the bitcoin owned them at the time of the transfer. 
+
+[TIP]
+====
+In most implementations, the private and public keys are stored together as a _key pair_ for convenience. However, it is trivial to reproduce the public key if one has the private key, so storing only the private key is also possible. 
+====
+
+=== Keys
+
+Your bitcoin wallet contains a collection of key pairs, each consisting of a private key and a public key. The private key (k) is a number, usually picked at random. From the private key, we use elliptic curve multiplication, a one-way cryptographic function, to generate a public key (K). From the public key (K), we use a one-way cryptographic hash function to generate a bitcoin address (A). In this section we will start with generating the private key, look at the elliptic curve math that is used to turn that into a public key and finally, generate a bitcoin address from the public key. The relationship between private key, public key and bitcoin address is shown below:
+
+[[k_to_K_to_A]]
+.Private Key, Public Key and Bitcoin Address
+image::images/privk_to_pubK_to_addressA.png["privk_to_pubK_to_addressA"]
+
 
 ==== Private Keys
 
-In the most simple form, the +private key+ is a number. The private key be used to create a corresponding +public key+. The public key can then be converted into a +bitcoin address+, which is shared with anyone who we want to send us bitcoin. Ownerhsip and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. 
+In the most simple form, the +private key+ is a number. The private key can be used to create a corresponding +public key+. The public key can then be converted into a +bitcoin address+, which is shared with anyone who we want to send us bitcoin. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. 
 
 ===== Generating a private key from a random number
 
-A private key is a number, between +1+ and +n - 1+ where latexmath:[\(n = 1.158 * 10^\(77\) \)] is the order of the elliptic curve used in bitcoin (See <<secp256k1>>). To create such a key, we just pick a 256-bit random number, and check that it is less than +n - 1+. The constant +n+ is defined in any elliptic curve cryptography library. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. 
+A private key is a number between +1+ and +n - 1+ where latexmath:[\(n = 1.158 * 10^\(77\) \)] is the order of the elliptic curve used in bitcoin (See <<secp256k1>>). To create such a key, we just pick a 256-bit random number and check that it is less than +n - 1+. The constant +n+ is defined in any elliptic curve cryptography library. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. 
 	
 	
 [TIP]
 ====
-Do not try and design your own pseudo random number generator (PRNG). Use a cryptographically-secure (CSPRNG) with a seed from a source of sufficient entropy, the choice of which which depends on you operating-system. Correct implementation of the CSPRNG is critical to the security of the keys. DIY is highly discouraged unless you are a professional cryptographer. 
+Do not try and design your own pseudo random number generator (PRNG). Use a cryptographically-secure pseudo-random number generator (CSPRNG) with a seed from a source of sufficient entropy, the choice of which depends on the operating-system. Correct implementation of the CSPRNG is critical to the security of the keys. DIY is highly discouraged unless you are a professional cryptographer. 
 ====
 
 
-Below, is a randomly generated private key shown in hexadecimal format (256 binary digits, or bits is shown as 64 hexadecimal digits, each 4-bits):
+Below is a randomly generated private key shown in hexadecimal format (256 binary digits shown as 64 hexadecimal digits, each 4 bits):
 
 ----
 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD
 ----
+
+To generate a new key with bitcoind, use the +getnewaddress+ command. For security reasons it displays the public key only, not the private key. To ask bitcoind to expose the private key, use the +dumpprivkey+ command. Here's an example of both commands:
+
+----
+$ bitcoind getnewaddress
+1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
+$ bitcoind dumpprivkey 1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
+KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
+----
+
+The +dumpprivkey+ command is opening the wallet and extracting the private key that was generated by the +getnewaddress+ command. It is not otherwise possible for bitcoind to know the private key from the public key, unless they are both stored in the wallet. In the example above, we see that the private key has a "K" prefix, indicating it is encoded as a WIF-compressed format. This means that the key-pair is stored in the wallet with both keys compressed, saving 31 bytes of space. If the prefix had been "5", indicating the WIF format, we would know that the key-pair is uncompressed. 
+
+You can also use +sx tools+ to generate keys and convert them between formats:
+
+===== New key
+----
+$ sx newkey
+5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
+----
+
+==== Public Keys
+
+The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse (division), or calculating +k+ if you know +K+ is as difficult as trying all possible values of +k+, i.e. a brute-force search. 
+
+==== Elliptic Curve Cryptography
+((("elliptic curve cryptography", "ECC")))
+Elliptic Curve Cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
+
+Below we see an exaple of an elliptic curve, similar to that used by bitcoin:
+
+[[ecc-curve]]
+.An Elliptic Curve
+image::images/ecc-curve.png["ecc-curve"]
+
+Bitcoin specifically uses a specific curve and a set of constants, defined as a standard called +secp256k1+, by the National Institute of Standards and Technology (NIST). The +secp256k1+ is defined by the following function, which produces an elliptic curve:
+((("secp256k1")))
+[latexmath]
+++++
+\begin{equation}
+{y^2 = (x^3 + 7)} \text{over} \mathbb{F}_p
+\end{equation}
+++++
+or 
+
+[latexmath]
+++++
+\begin{equation}
+{y^2 \mod p = (x^3 + 7) \mod p}
+\end{equation}
+++++
+
+The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)], where latexmath:[\(p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1\)], a very large prime number. 
+
+The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above. Below is the same elliptic curve over a much smaller finite field of prime order 17, showing a pattern of dots on a grid. The bitcoin elliptic curve can be thought of as a much more complex pattern of dots on a unfathomably large grid. 
+
+[[ecc-over-F17-math]]
+.Elliptic Curve Cryptography: Visualizing an elliptic curve over F(p), with p=17
+image::images/ecc-over-F17-math.png["ecc-over-F17-math"]
+
+==== Generating a public key 
+
+Starting with a private key in the form of a randomly generated number +k+, we multiply it with a predetermined point on the curve called the _generator point_ +G+ to produce another point somewhere else on the curve, which is the corresponding public key +K+. The generator point is specified as part of the +secp256k1+ standard and is always the same for all keys in bitcoin.  
+
+[latexmath]
+++++
+\begin{equation}
+{K = k * G}
+\end{equation}
+++++
+
+[[key_derivation]]
+where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. Since the generator point is always the same, a private key k multiplied with G will always produce the same public key K. 
+
+To visualize multiplication of a point with an integer, we will use the simpler elliptic curve over the real numbers - remember, the math is the same. Starting with the generator point G, we take the tangent of the curve at G until it crosses the curve again at another point. This new point is the negative of G+G, or -2G. Reflecting that point across the x-axis gives us 2G. If we take the tangent at 2G, it crosses the curve at -3G, which we can reflect on the x-axis to find 3G. Continuing this process, we can bounce around the curve finding the multiples of G, 2G, 3G, 4G etc. As you can see, a randomly selected large number k, when multiplied against the generator point G is like bouncing around the curve until we land on the point kG which is the public key. This process is irreversible, meaning that it is infeasible to find the factor k (the secret k) in any way other than trying all multiples of G (1G, 2G, 3G etc) in a brute-force search for k. Since k can be an enormous number, that brute-force search would take forever. 
+
+
+[[ecc_illustrated]]
+.Elliptic Curve Cryptography: Visualizing the multiplication of a point G by an integer k on an elliptic curve
+image::images/ecc_illustrated.png["ecc_illustrated"]
+
+
+[TIP]
+====
+The private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using a method as simple as tossing a coin, pencil and paper. Toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. Keys really are just a pair of numbers, one calculated from the other. 
+====
+
+The public key is a point on the elliptic curve, and consists of a pair of coordinates +(x,y)+, normally represented by a 512-bit number with the added prefix +04+. 
+
+Here's the public key generated by the private key we created above, shown as the coordinates +(x,y)+
+
+.Public Key K defined as a point +K = (x,y)+
+----
+x = 32 5D 52 E3 B7 ... E5 D3 78
+y = 7A 3D 41 E6 70 ... CD 90 C2
+----
+
+Here's the same public key shown as a 512-bit number (130 hex digits) with the prefix +04+ followed by +x+ and then +y+
+
+.Uncompressed Public Key K shown in hex (130 hex digits) as +04 x y+
+----
+K = 04 32 5D 52 E3 B7 ... CD 90 C2
+----
+
+[TIP]
+====
+A private key can be converted into a public key, but a public key cannot be converted back into a private key because the math only works one way. 
+====
+
+==== Addresses
+
+An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses begin with the digit "1". This is an address made by hashing the public key twice through two different hashing algorithms.
+
+===== Base58 and Base58Check Encoding
+
+
+[[base58check_encoding]]
+.Base58Check Encoding: A base-58, versioned and checksummed format for unambiguously encoding bitcoin data
+image::images/Base58CheckEncoding.png["Base58CheckEncoding"]
+
+
+==== Key Formats and Addresses
+
+===== Private Key Formats
 
 The private key can be represented in a number of different formats, all of which correspond to the same 256-bit number. These formats include:
 
@@ -63,24 +202,6 @@ The key above, for example can be represented as:
 
 All of the above representations are different ways of showing the same number, the same private key. They look different, but any one format can easily be converted to any other format. 
 
-To generate a new key with bitcoind, use the +getnewaddress+ command. For security reasons it displays the public key only, not the private key. To ask bitcoind to expose the private key, use the +dumpprivkey+ command. Here's an example of both commands:
-
-----
-$ bitcoind getnewaddress
-1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
-$ bitcoind dumpprivkey 1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
-KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
-----
-
-The +dumpprivkey+ command is opening the wallet and extracting the private key that was generated by the +getnewaddress+ command. It is not otherwise possible for bitcoind to know the private key from the public key, unless they are both stored in the wallet. In the example above, we see that the private key has a "K" prefix, indicating it is encoded as a WIF-compressed format. This means it that the key-pair is stored in the wallet with both keys compressed, saving 31 bytes of space. If the prefix had been "5", indicating the WIF format, we would know that the key-pair is uncompressed. 
-
-You can also use +sx tools+ to generate keys and convert them between formats:
-
-===== New key
-----
-$ sx newkey
-5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
-----
 
 ===== Decoded from the Base58Check encoding to Hex
 ----
@@ -100,28 +221,9 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 ----
 
-==== From Private Key to Public Key
+===== Compressed Keys
 
-The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse (division), or calculating +k+ if you know +K+ is as difficult as trying all possible values of +k+, ie a brute-force search. 
-
-The public key is a point on the elliptic curve, and consists of a pair of coordinates +(x,y)+, normally represented by a 512-bit number with the added prefix +04+. 
-
-Here's the public key generated by the private key we created above, shown as the coordinates +(x,y)+
-
-.Public Key K defined as a point +K = (x,y)+
-----
-x = 32 5D 52 E3 B7 ... E5 D3 78
-y = 7A 3D 41 E6 70 ... CD 90 C2
-----
-
-Here's the same public key shown as a 512-bit number (130 hex digits) with the prefix +04+ followed by +x+ and then +y+
-
-.Uncompressed Public Key K shown in hex (130 hex digits) as +04 x y+
-----
-K = 04 32 5D 52 E3 B7 ... CD 90 C2
-----
-
-The +y+ coordinate can be deduced from the +x+ coordinate, since they both lie on the same curved line defined by the elliptic curve equation. This makes it possible to store the public key _compressed_, with the +y+ ommitted. A +compressed public key+ has the prefix +02+ if the +y+ is above the x-axis, and +03+ if it is below the x-axis, allowing the software to calculate it from +x+. 
+The +y+ coordinate can be deduced from the +x+ coordinate, since they both lie on the same curved line defined by the elliptic curve equation. This makes it possible to store the public key _compressed_, with the +y+ omitted. A +compressed public key+ has the prefix +02+ if the +y+ is above the x-axis, and +03+ if it is below the x-axis, allowing the software to calculate it from +x+. 
 
 Here's the same public key above, shown as a +compressed public key+ stored in 264-bits (66 hex digits) with the prefix +02+ indicating the +y+ coordinate has a positive sign:
 
@@ -130,177 +232,28 @@ Here's the same public key above, shown as a +compressed public key+ stored in 2
 K = 02 32 5D 52 E3 B7 ... E5 D3 78
 ----
 
-[TIP]
-====
-A private key can be converted into a public key, but a public key cannot be converted back into a private key because the math only works one way. 
-====
+==== Wallets
 
-==== From Public Key to Address
-
-An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses begin with the digit "1". An address made by hashing the public key twice, through two different hashing algorithms. 
-
-==== Generating keys
-
-There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods for key generation.
+There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can be generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods for key generation.
 
 [TIP]
 ====
-The private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256-bits long. You can pick your keys randomly using a method as simple as tossing a coin, pencil and paper. Toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. Keys really are just a pair of numbers, one calculated from the other. 
+Wallets contain keys, not coins. The coins are stored on the blockchain in the form of transaction-outputs (often noted as vout or txout). Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/public keys (See <<public key>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). 
 ====
 
-===== Type-0 or non-deterministic (random) keys
+===== Non-Deterministic (Random) Wallets
 
-The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter, as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256-bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the trully paranoid, nothing beats dice, pencil and paper.
+The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256 bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil and paper.
 
 
-[[Type0_keygen]]
-.Private key generation: From random mouse movements to a 256-bit number used as the private key
-image::images/Type-0 keygen.png["Private key generation"]
+[[Type0_wallet]]
+.Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
+image::images/non-deterministic_wallet.png["non-deterministic wallet"]
 
 
 [TIP]
 ====
-The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256-bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
-====
-
-Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the https://www.openssl.org/docs/crypto/ec.html[Elliptic Curve library]. 
-
-[TIP]
-====
-The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
-====
-
-This most basic form of key generation, generates what are known as _Type-0_ or _Non-Deterministic_ (ie. random) keys. When a sequence of keys is generated for a single user's wallet, each key is randomly generated when needed
-
-[[Type0_chain]]
-.Type-0 or Non-Deterministic Keys are randomly generated as needed
-image::images/type0_chain.png["Key generation"]
-
-===== Type-1 deterministic (non-random) key chains
-
-[[Type1_chain]]
-.Type-1 Deterministic Keys are generated from a phrase and index number
-image::images/type1_chain.png["Key generation"]
-
-===== Type-2 chained deterministic keys
-
-[[Type2_chain]]
-.Type-2 Chained Deterministic Keys are generated from a binary seed and index number
-image::images/type2_chain.png["Key generation"]
-
-===== Type-2 hierarchical deterministic keys
-
-[[Type2_tree]]
-.Type-2 Hierarchical Deterministic Keys are derived from a master seed using a tree structure
-image::images/BIP32-derivation.png["Key generation"]
-
-
-
-
-
-
-
-
-
-[[public_key]]
-==== Public key cryptography and crypto-currency
-((("public key")))
-Public-key cryptography, is like a digital padlock, which can only be opened by the owner of a secret, also known as a private key. The owner of that key can hand out as many copies of the padlock, as they want, and others can use it to "lock" bitcoins inside transactions recorded on the blockchain. Only the owner of the private key can then create a signature to unlock and "redeem" these transactions, as only they can open the digital padlock. 
-
-When Alice pays Bob 15 millibits (0.015 BTC), she is unlocking a set of unspent outputs with _digital signatures_ made with her _private keys_. Like signing a check, she signs a transaction to authorize spending her coins. Then she "locks" a certain amount of bitcoin with Bob's address (made from his _public key_ and freely shared), thereby making a transaction output encumbered by Bob's address and spendable only with Bob's signature. 
-
-Spending can be visualized as unlocking my coins and then locking some of them with someone else's padlock so they now own them. 
-
-==== Public Key Cryptography
-((("public key", "private key")))
-Public key, or assymetric cryptography, is a type of cryptography that uses a pair of digital keys. A user has a private and a public key. The public key is derived from the private key with a mathematical function that is difficult to reverse. 
-
-[[pubcrypto_colors]]
-.Public Key Cryptography: Irreversible Function as Color Mixing
-image::images/pubcrypto-colors.png["Public Key Cryptography: Irreversible Function as Color Mixing"]
-
-As an example, think of mixing a shade of yellow with a shade of blue. Mixing the two colors is simple. However, figuring out exactly which two shades went into the final mix is not so easy, unless you have one of the two shades. If you have one of the colors you can easily filter it out and get the other. Whereas mixing colors is easy, "un-mixing" them is hard. The mathematical equivalent most often used in cryptography is the Discrete Logarith Problem link$$https://en.wikipedia.org/wiki/Discrete_logarithm_problem#Cryptography$$[Discrete Logarithm Problem in Cryptography]
-
-To use public key cryptography, Alice will ask Bob for his public key. Then, Alice can encrypt messages with Bob's public key, knowing that only Bob can read those messages, since only Bob has the equivalent private key. 
-
-[TIP]
-====
-In most implementations, the private and public keys are stored together as a _key pair_, for convenience. However, it is trivial to re-produce the public key if one has the private key, so storing only the private key is also possible. 
-====
-
-==== Elliptic Curve Cryptography
-((("elliptic curve cryptography", "ECC")))
-Elliptic Curve Cryptography is a type of assymetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
-
-Starting with a private key in the form of a randomly generator number +k+, we multiply it with a predetermined point on the curve called the _generator point_ +G+ to produce another point somewhere else on the curve, which is the corresponding public key +K+. 
-
-[latexmath]
-++++
-\begin{equation}
-{K = k * G}
-\end{equation}
-++++
-
-[[key_derivation]]
-where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. 
-
-Elliptic curve multiplication can be visualized geometrically as drawing a line connecting two points on the curve (G and kG) to produce a third point (K). The third point is the public key. 
-
-[[ecc_addition]]
-.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve
-image::images/ecc-addition.png["Addition operator on points of an elliptic curve"]
-
-Bitcoin specifically uses the +secp256k1+ elliptic curve:
-((("secp256k1")))
-[latexmath]
-++++
-\begin{equation}
-{y^2 = (x^3 + 7)} \text{over} \mathbb{F}_p
-\end{equation}
-++++
-or 
-
-[latexmath]
-++++
-\begin{equation}
-{y^2 \mod p = (x^3 + 7) \mod p}
-\end{equation}
-++++
-
-where +latexmath:[\(p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1\)]+, a very large prime number. 
-
-The +mod p+ indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)]. The curve looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above.
-
-[[ecc-over-F37-math]]
-.Elliptic Curve Cryptography: Visualizing the addition operator on the points of an elliptic curve over F(p)
-image::images/ecc-over-F37-math.png["Addition operator on points of an elliptic curve over F(p)"]
-
-
-Once a private key has been generated, the public key equivalent can be derived from it using the elliptic curve multiplication function. Many software implementations of bitcoin use the OpenSSL library, specifically the https://www.openssl.org/docs/crypto/ec.html[Elliptic Curve library]. 
-
-Here's an example from the reference implementation, generating a public key from an existing private key
-
-[[ecc_mult]]
-.Reference Client: Using OpenSSL's EC_POINT_mul to generate the public key from a private key https://github.com/bitcoin/bitcoin/blob/0.8.4/src/key.cpp#L31[bitcoin/src/key.cpp : 31]
-====
-[source, c++]
-----
-
-// Generate a private key from just the secret parameter
-int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
-{
-  
-[...initializtion code ommitted ...] 
-
-    if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx)) <1>
-        goto err;
-
-    EC_KEY_set_private_key(eckey,priv_key);
-    EC_KEY_set_public_key(eckey,pub_key);
-
-[...]
-----
-<1> Multiplying the priv_key by the generator point of the elliptic curve group, produces the pub_key
+The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
 ====
 
 [TIP]
@@ -308,4 +261,32 @@ int EC_KEY_regenerate_key(EC_KEY *eckey, BIGNUM *priv_key)
 The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
 ====
 
+This most basic form of key generation generates what are known as _Type-0_ or _Non-Deterministic_ (i.e. random) keys. When a sequence of keys is generated for a single user's wallet, each key is randomly generated when needed.
 
+===== Deterministic (Seeded)
+
+===== Seed Words (BIP0039)
+
+===== Deterministic Chains (Electrum Key Chains)
+
+
+[[Type1_wallet]]
+.Type-1 Deterministic Wallet: A Chain of Keys Generared from a Seed
+image::images/chained_wallet.png["chained wallet"]
+
+
+===== Deterministic Trees (BIP0032)
+
+[[Type2_wallet]]
+.Type-2 Hierarchical Deterministic Wallet: A Tree of Keys Generared from a Seed
+image::images/HD_wallet.png["HD wallet"]
+
+==== Key Storage
+===== Software Wallets
+===== Hardware Wallets
+===== Paper Wallets
+==== Advanced Keys and Addresses
+===== Encrypted Keys (BIP0038)
+===== Pay To Script Hash Addresses (P2SH)
+===== Multi-Signature Addresses
+===== Vanity Addresses
