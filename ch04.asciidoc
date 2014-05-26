@@ -7,7 +7,7 @@ Ownership of bitcoin is established through _digital keys_, _bitcoin addresses_ 
 
 The digital keys within each user's wallet allow the user to sign transactions, thereby providing cryptographic proof of the ownership of the bitcoins sourced by the transaction. Keys come in pairs consisting of a private (secret) and public key. Think of the public key as similar to a bank account number and the private key as similar to the secret PIN number, or signature on a cheque, that provides control over the account. These digital keys are very rarely seen by the users of bitcoin. For the most part, they are stored inside the wallet file and managed by the bitcoin wallet software. 
 
-In the payment portion of a bitcoin transaction, the recipient's public key is represented by its digital fingeprint called a _bitcoin address_ which is used in the same way as the beneficiary name on a cheque (ie. "Pay to the order of"). In most cases a bitcoin address is a generated from and corresponds to a public key. However, like a beneficiary name on a cheque, some bitcoin addresses do not represent a public key and instead represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper cheques: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills or pay to cash. The bitcoin address is the only representation of the keys that users will routinely see, as this is the part they need to share with the world.
+In the payment portion of a bitcoin transaction, the recipient's public key is represented by its digital fingerprint called a _bitcoin address_ which is used in the same way as the beneficiary name on a cheque (i.e. "Pay to the order of"). In most cases a bitcoin address is a generated from and corresponds to a public key. However, like a beneficiary name on a cheque, some bitcoin addresses do not represent a public key and instead represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper cheques: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills or pay to cash. The bitcoin address is the only representation of the keys that users will routinely see, as this is the part they need to share with the world.
 
 In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored and managed. We will review the various encoding formats used to represent private and public keys, addresses and script addresses. Finally we will look at special uses of keys: to sign messages, to prove ownership and to create vanity addresses and paper wallets. 
 
@@ -18,7 +18,7 @@ In this chapter we will introduce wallets, which contain cryptographic keys. We 
 ((("public key")))
 Public key cryptography was invented in the 1970s and is mathematics applied to computer security. Since the invention of public key cryptography, several suitable mathematical functions, such as prime number exponentiation and elliptic curve multiplication, have been discovered. These mathematical functions are practically irreversible, meaning that they are easy to calculate in one direction and infeasible to calculate in the opposite direction. Based on these mathematical functions, cryptography enables the creation of digital secrets and unforgeable digital signatures. Bitcoin uses elliptic curve multiplication as the basis for its public key cryptography.  
  
-In bitcoin, we use public key cryptography to create a key pair that controls access to bitcoins. The key pair consists of a private key and derived from it, a unique public key. The public key is used to receive bitcoins and the private key is used to sign transactions to spend those bitcoins. There is a special relationship between the public key and private key that allows the private key to be used to generate a signature. This signature can be validated against the public key without revealing the private key. When spending bitcoins, the current bitcoin owner presents their public key and a signature (different each time, but created from the same private key, see <<signature>>) in a transaction to spend those bitcoins. Through the presentation of the public key and signature everyone in the bitcoin network can verify and accept that transaction as valid, meaning the person transfering the bitcoin owned them at the time of the transfer. 
+In bitcoin, we use public key cryptography to create a key pair that controls access to bitcoins. The key pair consists of a private key and derived from it, a unique public key. The public key is used to receive bitcoins and the private key is used to sign transactions to spend those bitcoins. There is a special relationship between the public key and private key that allows the private key to be used to generate a signature. This signature can be validated against the public key without revealing the private key. When spending bitcoins, the current bitcoin owner presents their public key and a signature (different each time, but created from the same private key, see <<signature>>) in a transaction to spend those bitcoins. Through the presentation of the public key and signature everyone in the bitcoin network can verify and accept that transaction as valid, meaning the person transferring the bitcoin owned them at the time of the transfer. 
 
 [TIP]
 ====
@@ -100,7 +100,7 @@ The public key is calculated from the private key using elliptic curve multiplic
 ((("elliptic curve cryptography", "ECC")))
 Elliptic Curve Cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
 
-Below we see an exaple of an elliptic curve, similar to that used by bitcoin:
+Below we see an example of an elliptic curve, similar to that used by bitcoin:
 
 [[ecc-curve]]
 .An Elliptic Curve
@@ -174,7 +174,7 @@ Starting with the public key K, we compute the SHA256 hash and then compute the 
 ++++
 where K is the public key and A is the resulting bitcoin address. 
 
-Bitcoin addresses are almost always presented to users in an encoding called "Base58Check" (see <<base58check>> below), which uses 58 characters (a base-58 nunber system) and a checksum to help human readability, avoid ambiguity and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. 
+Bitcoin addresses are almost always presented to users in an encoding called "Base58Check" (see <<base58check>> below), which uses 58 characters (a base-58 number system) and a checksum to help human readability, avoid ambiguity and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. 
 
 [[pubkey_to_adddress]]
 .Public Key to Bitcoin Address: Conversion of a public key into a bitcoin address 
@@ -185,7 +185,7 @@ image::images/PubKey_to_Bitcoin_Address.png["pubkey_to_address"]
 [[base58]]
 ====== Base-58 Encoding
 
-In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses sixteen, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, Base-64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readbility, disambiguity, and error detection and prevention. Base-58 is a subset of Base-64, using the upper and lower case letters and numbers but ommitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base-58 is Base-64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
+In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses sixteen, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, Base-64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readability and error detection and prevention. Base-58 is a subset of Base-64, using the upper and lower case letters and numbers but omitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base-58 is Base-64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
 
 [[base58alphabet]]
 ----
@@ -196,7 +196,7 @@ Bitcoin's Base-58 Alphabet:
 [[base58check]]
 ====== Base58Check Encoding
 
-To add extra security against typos or transcription errors, Base58Check is a Base-58 encoding format, frequently used in bitcoin, which has a built-in error-checking code. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When presented with a Base58Check code, the decoding software will calculate the cheksum of the data and compare it to the checksum included in the code. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error which would otherwise result in loss of funds.
+To add extra security against typos or transcription errors, Base58Check is a Base-58 encoding format, frequently used in bitcoin, which has a built-in error-checking code. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When presented with a Base58Check code, the decoding software will calculate the checksum of the data and compare it to the checksum included in the code. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error which would otherwise result in loss of funds.
 
 To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte", which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown below in <<base58check_versions>>
 
@@ -215,12 +215,12 @@ In bitcoin, most of the data presented to the user is Base58Check encoded to mak
 [options="header"]
 |=======
 |Type| Version prefix (hex)| Base-58 result prefix
-| Bitcoin Address | 0x00 | 1 |
-| Pay-to-Script-Hash Address | 0x05 | 3 |
-| Bitcoin Testnet Address | 0x6F | m or n |
-| Private Key WIF |  0x80 | 5, K or L | 
-| BIP38 Encypted Private Key | 0x0142 | 6P |
-| BIP32 Extended Public Key | 0x0488B21E | xpub | 
+| Bitcoin Address | 0x00 | 1 
+| Pay-to-Script-Hash Address | 0x05 | 3 
+| Bitcoin Testnet Address | 0x6F | m or n 
+| Private Key WIF |  0x80 | 5, K or L 
+| BIP38 Encrypted Private Key | 0x0142 | 6P 
+| BIP32 Extended Public Key | 0x0488B21E | xpub  
 |=======
 
 ==== Key Formats and Addresses
@@ -295,7 +295,7 @@ x = 32 5D 52 E3 B7 ... E5 D3 78
 y = 7A 3D 41 E6 70 ... CD 90 C2
 ----
 
-Here's the same public key shown as a 512-bit number (130 hex digits) with the prefix +04+ followed by +x+ and then +y+ coordinates, as +04xy+:
+Here's the same public key shown as a 512-bit number (130 hex digits) with the prefix +04+ followed by +x+ and then +y+ coordinates, as +04 x y+:
 
 .Uncompressed Public Key K shown in hex (130 hex digits) as +04xy+
 ----
