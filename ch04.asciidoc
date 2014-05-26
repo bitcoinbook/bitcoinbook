@@ -38,9 +38,16 @@ image::images/privk_to_pubK_to_addressA.png["privk_to_pubK_to_addressA"]
 
 A +private key+ is simply a number, picked at random. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. The private key is used to create signatures that are required to spend bitcoins, by proving ownership of funds used in a transaction. The private key must remain secret at all times, as revealing it to a third party is equivalent to giving them control over the bitcoins secured by that key. The private key must also be backed up and protected from accidental loss, since if lost it cannot be recovered and the funds secured by it are forever lost too. 
 
+[TIP]
+====
+The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
+====
+
 ===== Generating a private key from a random number
 
-A private key is a number between +1+ and +n - 1+, where n is a constant defined in the elliptic curve standard n = 1.158 * 10^77^, n is the order of the elliptic curve used in bitcoin. See <<elliptic_curve>>). To create such a key, we randomly pick a 256-bit number and check that it is less than +n - 1+. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. If the result is less than +n - 1+, we have a suitable private key. If it is greater than +n - 1+, we simply try again with another random number. 
+The first and most important step in generating keys is to find a secure source of entropy, or randomness. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software uses the underlying operating system's random number generators to produce 256 bits of entropy (randomness). Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil and paper.
+
+More accurately, the private key can be any number between +1+ and +n - 1+, where n is a constant (n = 1.158 * 10^77^ or slightly less than 2^256^) defined as the order of the elliptic curve used in bitcoin (see <<elliptic_curve>>). To create such a key, we randomly pick a 256-bit number and check that it is less than +n - 1+. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. If the result is less than +n - 1+, we have a suitable private key. If it is greater than +n - 1+, we simply try again with another random number. 
 	
 [TIP]
 ====
@@ -52,6 +59,12 @@ Below is a randomly generated private key shown in hexadecimal format (256 binar
 ----
 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD
 ----
+
+
+[TIP]
+====
+The size of bitcoin's private key, 2^256^ is an unfathomably large number. It is approximately 10^77^ in decimal. The visible universe is estimated to contain 10^80^ atoms.
+====
 
 To generate a new key with the Bitcoin Core Client (see <<ch03_bitcoin_client>>), use the +getnewaddress+ command. For security reasons it displays the public key only, not the private key. To ask bitcoind to expose the private key, use the +dumpprivkey+ command. The +dumpprivkey+ shows the private key in a base-58 checksum encoded format called the Wallet Import Format (WIF), which we will examine in more detail in <<priv_formats>>. Here's an example of generating and displaying a private key using these two commands:
 
@@ -343,7 +356,9 @@ Remember, these formats are _not_ used interchangeably. In a newer wallet that i
 
 ==== Wallets
 
-There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can be generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods of key generation.
+Wallets are containers for private keys, usually implemented as structured files or simple databases. In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. For example, the Bitcoin Core Client pre-generates 100 random private keys when first started and generates more keys as needed, trying to use each key only once. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed-up frequently. Each key must be backed-up, or the funds it controls are irrevocably lost. 
+
+Another method for making keys is _deterministic key generation_. Here you derive each new private key, using a one-way hash function from a previous private key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key (known as a _seed_ or _master_ key) to generate them all. In this section we will examine the different methods of key generation and the wallet structures that are built around them. 
 
 [TIP]
 ====
@@ -352,23 +367,9 @@ Wallets contain keys, not coins. The coins are stored on the blockchain in the f
 
 ===== Non-Deterministic (Random) Wallets
 
-The first and most important step in generating keys is to find a secure source of entropy, or randomness. The private key is a 256-bit number, which must be selected at random. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software will use the underlying operating system's random number generators to produce 256 bits of entropy. Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil and paper.
-
-
 [[Type0_wallet]]
 .Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
 image::images/non-deterministic_wallet.png["non-deterministic wallet"]
-
-
-[TIP]
-====
-The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
-====
-
-[TIP]
-====
-The size of bitcoin's private key, 2^256^ is a truly unfathomable number. It is equal to approximately 10^77^ in decimal. The visible universe contains approximately 10^80^ atoms.
-====
 
 This most basic form of key generation generates what are known as _Type-0_ or _Non-Deterministic_ (i.e. random) keys. When a sequence of keys is generated for a single user's wallet, each key is randomly generated when needed.
 
@@ -378,11 +379,9 @@ This most basic form of key generation generates what are known as _Type-0_ or _
 
 ===== Deterministic Chains (Electrum Key Chains)
 
-
 [[Type1_wallet]]
 .Type-1 Deterministic Wallet: A Chain of Keys Generared from a Seed
 image::images/chained_wallet.png["chained wallet"]
-
 
 ===== Deterministic Trees (BIP0032)
 
