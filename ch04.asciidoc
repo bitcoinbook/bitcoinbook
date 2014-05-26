@@ -168,7 +168,7 @@ Bitcoin addresses are almost always presented to users in an encoding called "Ba
 [[base58]]
 ====== Base58
 
-Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readbility, disambiguity, and error detection and prevention. {START WITH THE NEED TO REPRESENT LONG NUMBERS IN A COMPACT WAY - FIRST HEX, THEN WHAT IS BASE 64 THEN WHAT IS BASE58} In order to represent long numbers in a compact way, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses six additional symbols, the letters A through F. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, base64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base64 is most commonly used to add binary attachments to email. Base58 is a subset of base64, which uses the upper and lower case letters and numbers but ommits some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, base58 is base64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
+In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses sixteen, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, base64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readbility, disambiguity, and error detection and prevention. Base-58 is a subset of Base-64, using the upper and lower case letters and numbers but ommitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base-58 is Base-64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
 
 [[base58alphabet]]
 ----
@@ -179,18 +179,32 @@ Bitcoin's Base-58 Alphabet:
 [[base58check]]
 ====== Base58Check
 
-To add extra security against typos or transcription errors, Base58Check is a format that uses the Base58 encoding but has a built-in error-checking code (checksum) and version identifier. The checksum is an additional four bytes of data added to the end of the number that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. If a single symbol is accidentally changed or mistyped in a Base58Check encoded string, the checksum will not compute correctly, allowing for the detection of the error. {DO YOU WANT TO MAKE IT MORE SIMPLE - ERRORS ARE DETECTED BY COMPARING TWO NUMBERS - IF PROPERLY INPUT AND EXECUTED THE EQUATION WILL READ TRUE AND BE PROCESSED. OTHERWISE THE TRANSACTION WILL RETURN FALSE, INDICATING AN ERROR}
+To add extra security against typos or transcription errors, Base58Check is a Base-58 econding format, frequently used in bitcoin, which has a built-in error-checking code (checksum) and version identifier. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When decoding Base58Check strings, the decoding software will compare the included checksum to the derived checksum by hashing the data. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error which would otherwise result in loss of funds.
 
-To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte", which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex).
+To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte", which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown below in <<base58check_versions>>
 
-Next compute the checksum by "double-SHA", meaning we apply the SHA256 hash-algorithm twice on the previous result (prefix and data): +checksum = SHA256(SHA256(prefix\+data))+ From the resulting 32-byte hash (hash-of-a-hash), we take only the last four bytes. These four bytes serve as the error-checking code, or checksum. The checksum is concatenated (appended) to the end. 
+Next compute the checksum by "double-SHA", meaning we apply the SHA256 hash-algorithm twice on the previous result (prefix and data): +checksum = SHA256(SHA256(prefix\+data))+ From the resulting 32-byte hash (hash-of-a-hash), we take only the first four bytes. These four bytes serve as the error-checking code, or checksum. The checksum is concatenated (appended) to the end. 
 
 The result of the above is now a prefix, the data and a checksum, concatenated (bytewise). This result is encoded using the base-58 alphabet described in the section above.
-
 
 [[base58check_encoding]]
 .Base58Check Encoding: A base-58, versioned and checksummed format for unambiguously encoding bitcoin data
 image::images/Base58CheckEncoding.png["Base58CheckEncoding"]
+
+The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base-58 contain specific characters at the beginning of the Base58Check encoded address, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a bitcoin address that starts with a "1" from a private key WIF format that starts with a "5". Some example version prefixes and the resulting Base-58 characters are shown below:
+
+[[base58check_versions]]
+.Base58Check Version Prefix and Encoded Result Examples
+[options="header"]
+|=======
+|Type| Version prefix (hex)| Base-58 result prefix
+| Bitcoin Address | 0x00 | 1 |
+| Pay-to-Script-Hash Address | 0x05 | 3 |
+| Bitcoin Testnet Address | 0x6F | m or n |
+| Private Key WIF |  0x80 | 5, K or L | 
+| BIP38 Encypted Private Key | 0x0142 | 6P |
+| BIP32 Extended Public Key | 0x0488B21E | xpub | 
+|=======
 
 ==== Key Formats and Addresses
 
