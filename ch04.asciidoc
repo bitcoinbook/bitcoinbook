@@ -148,7 +148,7 @@ A private key can be converted into a public key, but a public key cannot be con
 
 ==== Addresses
 
-An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses begin with the digit "1". The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper cheque, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of". On a paper cheque, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions or even cash. Because paper cheques do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper cheques very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
+An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses produced from public keys begin with the digit "1". The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper cheque, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of". On a paper cheque, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions or even cash. Because paper cheques do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper cheques very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
     
 A bitcoin address derived from a public key is a string of numbers and letters that begins with the number one, such as +1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+. The bitcoin address is derived from the public key through the use of one-way cryptographic hashing. A "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, script addresses and in the mining "Proof-of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
 
@@ -161,14 +161,18 @@ Starting with the public key K, we compute the SHA256 hash and then compute the 
 ++++
 where K is the public key and A is the resulting bitcoin address. 
 
-Bitcoin addresses are almost always presented to users in an encoding called "Base58Check", which uses 58 characters (a base-58 nunber system) and a checksum to help human readability, avoid ambiguity and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. 
+Bitcoin addresses are almost always presented to users in an encoding called "Base58Check" (see <<base58check>> below), which uses 58 characters (a base-58 nunber system) and a checksum to help human readability, avoid ambiguity and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. 
+
+[[pubkey_to_adddress]]
+.Public Key to Bitcoin Address: Conversion of a public key into a bitcoin address 
+image::images/PubKey_to_Bitcoin_Address.png["pubkey_to_address"]
 
 ===== Base58 and Base58Check Encoding
 
 [[base58]]
-====== Base58
+====== Base-58 Encoding
 
-In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses sixteen, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, base64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readbility, disambiguity, and error detection and prevention. Base-58 is a subset of Base-64, using the upper and lower case letters and numbers but ommitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base-58 is Base-64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
+In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the ten numerals 0 through 9, the hexadecimal system uses sixteen, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, Base-64 representation uses 26 lower case letters, 26 capital letters, 10 numerals and two more characters such as "+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base-58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readbility, disambiguity, and error detection and prevention. Base-58 is a subset of Base-64, using the upper and lower case letters and numbers but ommitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base-58 is Base-64 without the 0 (number zero), O (capital o), l (lower L), I (capital i) and the symbols "+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) mentioned above.
 
 [[base58alphabet]]
 ----
@@ -177,9 +181,9 @@ Bitcoin's Base-58 Alphabet:
 ----
 
 [[base58check]]
-====== Base58Check
+====== Base58Check Encoding
 
-To add extra security against typos or transcription errors, Base58Check is a Base-58 econding format, frequently used in bitcoin, which has a built-in error-checking code (checksum) and version identifier. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When decoding Base58Check strings, the decoding software will compare the included checksum to the derived checksum by hashing the data. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error which would otherwise result in loss of funds.
+To add extra security against typos or transcription errors, Base58Check is a Base-58 encoding format, frequently used in bitcoin, which has a built-in error-checking code. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When presented with a Base58Check code, the decoding software will calculate the cheksum of the data and compare it to the checksum included in the code. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error which would otherwise result in loss of funds.
 
 To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte", which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown below in <<base58check_versions>>
 
@@ -191,7 +195,7 @@ The result of the above is now a prefix, the data and a checksum, concatenated (
 .Base58Check Encoding: A base-58, versioned and checksummed format for unambiguously encoding bitcoin data
 image::images/Base58CheckEncoding.png["Base58CheckEncoding"]
 
-The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base-58 contain specific characters at the beginning of the Base58Check encoded address, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a bitcoin address that starts with a "1" from a private key WIF format that starts with a "5". Some example version prefixes and the resulting Base-58 characters are shown below:
+In bitcoin, most of the data presented to the user is Base58Check encoded to make it compact, easy to read and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base-58 contain specific characters at the beginning of the Base58Check encoded address, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check encoded bitcoin address that starts with a "1" from a Base58Check encoded private key WIF format that starts with a "5". Some example version prefixes and the resulting Base-58 characters are shown below:
 
 [[base58check_versions]]
 .Base58Check Version Prefix and Encoded Result Examples
@@ -254,7 +258,7 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 ----
 
-===== Encode from Hex (Comrpessed Key) to Base58Check encoding
+===== Encode from Hex (Compressed Key) to Base58Check encoding
 
 To encode into Base58Check as a "compressed" private key (see <<comp_priv>>), we add the suffix +01+ to the end of the hex key and then encode as above:
 ----
@@ -266,7 +270,9 @@ The resulting WIF-compressed format, starts with a "K". This denotes that the pr
 
 ===== Public Key Formats
 
-The public key is a point on the elliptic curve, and consists of a pair of coordinates +(x,y)+, usually represented by a 512-bit number with the added prefix +04+. That's two 256-bit numbers, one for the x-coordinate of the point, the other for the y-coordinate. The prefix +04+ is used to distinguish uncompressed public keys from compressed public keys that begin with a +02+ or a +03+. 
+Public keys are also presented in different ways, most importantly as either _compressed_ or _uncompressed_ public keys. 
+
+As we saw previously, the public key is a point on the elliptic curve consisting of a pair of coordinates +(x,y)+. It is usually presented with the prefix +04+ followed by two 256-bit numbers, one for the x-coordinate of the point, the other for the y-coordinate. The prefix +04+ is used to distinguish uncompressed public keys from compressed public keys that begin with a +02+ or a +03+.
 
 Here's the public key generated by the private key we created above, shown as the coordinates +x+ and +y+
 
@@ -286,20 +292,24 @@ K = 04 32 5D 52 E3 B7 ... CD 90 C2
 [[comp_pub]]
 ===== Compressed Public Keys
 
-Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include a signature and public key, required to spend the funds and "transfer out" of one bitcoin address and into another. Storage of each public key requires 513 bytes (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
+Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 513 bytes (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
 
-As we saw in the section <<pubkey>> above, a public key is a point (x,y) on an elliptic curve. Since the curve expresses a mathematical function, a point on the curve represents a solution to the equation and therefore if we know the x coordinate we can calculate the y coordinate by solving the euqation y^2^ mod p = (x^3^ + 7) mod p. That allows us to store only the x-coordinate of the public key point, ommitting the y-coordinate and reducing the size of the key and the space required to store it by 256 bits. A 50% reduction in size in every transaction adds up to a lot of data saved over time!
+As we saw in the section <<pubkey>> above, a public key is a point (x,y) on an elliptic curve. Since the curve expresses a mathematical function, a point on the curve represents a solution to the equation and therefore if we know the x coordinate we can calculate the y coordinate by solving the equation y^2^ mod p = (x^3^ + 7) mod p. That allows us to store only the x-coordinate of the public key point, omitting the y-coordinate and reducing the size of the key and the space required to store it by 256 bits. A 50% reduction in size in every transaction adds up to a lot of data saved over time!
 
 Whereas uncompressed public keys have a prefix of +04+, compressed public keys start with either a +02+ or a +03+ prefix. Let's look at why there are two possible prefixes: since the left side of the equation is y^2^, that means the solution for y is a square root, which can have a positive or negative value. Visually, this means that the resulting y-coordinate can be above the x-axis or below the x-axis. As you can see from the graph of the elliptic curve, the curve is symmetric, meaning it is reflected like a mirror by the x-axis. So, while we can omit the y-coordinate we have to store the _sign_ of y (positive or negative), or in other words we have to remember if it was above or below the x-axis, as each of those options represents a different point and a different public key. When calculating the elliptic curve in binary arithmetic on the finite field of prime order p, the y coordinate is either even or odd, which corresponds to the positive/negative sign as explained above. Therefore, to distinguish between the two possible values of y, we store a +compressed public key+ with the prefix +02+ if the +y+ is even, and +03+ if it is odd, allowing the software to correctly deduce the y-coordinate from the x-coordinate and uncompress the public key to the full coordinates of the point. 
 
-Here's the same public key above, shown as a +compressed public key+ stored in 264-bits (66 hex digits) with the prefix +02+ indicating the +y+ coordinate is even:
+[[pubkey_compression]]
+.Public Key Compression
+image::images/pubkey_compression.png["pubkey_compression"]
+
+Here's the same public key generated previously, shown as a +compressed public key+ stored in 264-bits (66 hex digits) with the prefix +02+ indicating the +y+ coordinate is even:
 
 .Compressed Public Key K shown in hex  (66 hex digits) as +K = {02 or 03} x+
 ----
 K = 02 32 5D 52 E3 B7 ... E5 D3 78
 ----
 
-The compressed public key, above, corresponds to the same private key, meaning that it is generated from the same private key. However it looks different from the uncompressed public key. More importantly, if we convert this compressed public key to a bitcoin address using the double-hash function (RIPEMD160(SHA256(K))) it will produce a _different_ bitcoin address. This can be confusing, because it means that a single private key can produce a public key expressed in two different formats (compressed and uncompressed) which produce two different bitcoin addresses. But the private key is identical and therefore can produce valid signatures that authorize spending funds from _either_ bitcoin address.
+The compressed public key, above, corresponds to the same private key, meaning that it is generated from the same private key. However it looks different from the uncompressed public key. More importantly, if we convert this compressed public key to a bitcoin address using the double-hash function (RIPEMD160(SHA256(K))) it will produce a _different_ bitcoin address. This can be confusing, because it means that a single private key can produce a public key expressed in two different formats (compressed and uncompressed) which produce two different bitcoin addresses. However, the private key is identical for both bitcoin addresses.
 
 Compressed public keys are gradually becoming the default across bitcoin clients, which is having a significant impact on reducing the size of transactions and therefore the blockchain. However, not all clients support compressed public keys yet. Newer clients that support compressed public keys have to account for transactions and older clients which do not support compressed public keys. This is especially important when a wallet application is importing private keys from another bitcoin wallet application, because the new wallet needs to scan the blockchain to find transactions corresponding to these imported keys. Which bitcoin addresses should the bitcoin wallet scan for? The bitcoin addresses produced by uncompressed public keys, or the bitcoin addresses produced by compressed public keys? Both are valid bitcoin addresses, both can be signed for by the private key, but they are different addresses!
 
@@ -308,9 +318,11 @@ To resolve this issue, when private keys are exported from a wallet, the Wallet 
 [[comp_priv]]
 ===== Compressed Private Keys
 
+Ironically, the name "compressed private key" is misleading, because when a private key is exported as WIF-compressed it is actually one byte _longer_ than an "uncompressed" private key. That is because it has the added 01 suffix which signifies it comes from a newer wallet and should only be used to produce compressed public keys. Private keys are not compressed and cannot be compressed. The term "compressed private key" really means "private key from which compressed public keys should be derived", whereas "uncompressed private key" really means "private key from which uncompressed public keys should be derived". You should only refer to the export format as "WIF-compressed" or "WIF" and not refer to the private key as "compressed" to avoid further confusion.
+
 If a bitcoin wallet is able to implement compressed public keys, then it will use those in all transactions. The private keys in the wallet will be used to derive the public key points on the curve, which will be compressed. The compressed public keys will be used to produce bitcoin addresses and those will be used in transactions. When exporting private keys from a new wallet that implements compressed public keys, the Wallet Import Format is modified, with the addition of a one-byte suffix +01+to the private key. The resulting base58check encoded private key is called a "Compressed WIF" and starts with the letter K or L, instead of starting with "5" as is the case with WIF encoded (non-compressed) keys from older wallets. 
 
-Here's the same key, encoded in WIF and WIF-compressed formats:
+Here's the same key, encoded in WIF and WIF-compressed formats
 
 .Example: Same Key, Different Formats
 [options="header"]
@@ -322,9 +334,7 @@ Here's the same key, encoded in WIF and WIF-compressed formats:
 | WIF-compressed | +KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ+
 |=======
 
-Remember, these formats are _not_ used interchangeably. In a newer wallet that implements compressed public keys, the private keys will only ever be exported as WIF-compressed (K/L prefix). If the wallet is an older implementation and does not use compressed public keys, the private keys will only ever be exported as WIF (5 prefix). The goal here is to signal to the wallet importing these private keys whether it must search the blockchain for compressed or uncompressed public keys and addresses. 
-
-Ironically, the name "compressed private key" is misleading, because when a private key is exported as WIF-compressed it is actually one byte _longer_ than an "uncompressed" private key. That is because it has the added 01 suffix which signifies it comes from a newer wallet and should only be used to produce compressed public keys. Private keys are not compressed and cannot be compressed. The term "compressed private key" really means "private key from which compressed public keys should be derived", whereas "uncompressed private key" really means "private key from which uncompressed public keys should be derived". You should only refer to the export format as "WIF-compressed" or "WIF" and not refer to the private key as "compressed" to avoid further confusion.
+Remember, these formats are _not_ used interchangeably. In a newer wallet that implements compressed public keys, the private keys will only ever be exported as WIF-compressed (K/L prefix). If the wallet is an older implementation and does not use compressed public keys, the private keys will only ever be exported as WIF (5 prefix). The goal here is to signal to the wallet importing these private keys whether it must search the blockchain for compressed or uncompressed public keys and addresses. {YOU NEED TO SAY THIS SOONER}
 
 [TIP]
 ====
@@ -333,7 +343,7 @@ Ironically, the name "compressed private key" is misleading, because when a priv
 
 ==== Wallets
 
-There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can be generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods for key generation.
+There are many ways to generate keys for use in bitcoin. The simplest is to pick a large random number and turn it into a key pair (See <<key_derivation>>). A random key can be generated with very simple hardware or even manually with pen, paper and dice. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them. Another method for making keys is _deterministic key generation_. Here you generate each new key as a function of the previous key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key to generate them all. In this section we will examine the different methods of key generation.
 
 [TIP]
 ====
