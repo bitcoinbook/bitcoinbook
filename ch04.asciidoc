@@ -457,7 +457,6 @@ image::images/HD_wallet.png["HD wallet"]
 
 ==== Advanced Keys and Addresses
 
-
 ===== Encrypted Private Keys (BIP0038)
 
 Private keys must remain secret. The need for _confidentiality_ of the private keys is a truism which is quite difficult to achieve in practice, as it conflicts with the equally important security objective of _availability_. Keeping the private key private is much harder when you need to store backups of the private key to avoid losing it. A private key stored in a wallet that is encrypted by a password may be secure, but that wallet needs to be backed up. At times, users need to move keys from one wallet to another, to upgrade or replace the wallet software, for example. Private key backups might also be stored on paper (see <<paper_wallets>>) or on external storage media, such as a USB flash drive. But what if the backup itself is stolen or lost? These conflicting security goals led to the introduction of a portable and convenient standard for encrypting private keys in a way that can be understood by many different wallets and bitcoin clients, standardized by Bitcoin Improvement Proposal 38  or BIP0038 (see <<bip0038>>). 
@@ -474,15 +473,37 @@ Test the following encrypted keys using bitaddress.org to see how you can get th
 .Example of BIP0038 Encrypted Private Key 
 |=======
 | Private Key (WIF) | 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
-| Passphrase | test
-| Encrypted Key (BIP0038) | 6PRTHL6mXaZ8ehdjJdhjyeNVWkLo1NqCE1VeC9Ni8eRtF9N6BjhXAG5nzB
+| Passphrase | MyTestPassphrase
+| Encrypted Key (BIP0038) | 6PRTHL6mWa48xSopbU1cKrVjpKbBZxcLRRCdctLJ3z5yxE87MobKoXdTsJ
 |=======
 
 
 [[p2sh]]
 ===== Pay To Script Hash (P2SH) and Multi-Sig Addresses 
 
+As we know, traditional bitcoin addresses begin with the number “1” and are derived from the public key, which is derived from the private key.  While anyone can send bitcoin to a “1” address, that bitcoin can only be spent by presenting the corresponding private key signature and public key hash. 
 
+Bitcoin addresses that begin with the number “3” are pay-to-script-hash (P2SH) addresses, sometimes erroneously called multi-signature or multi-sig addresses. They designate the beneficiary of a bitcoin transaction as the hash of a script, instead of the owner of a public key. The feature was introduced in January 2012 with Bitcoin Improvement Proposal 16 or BIP0016 (see <<bip0016>>) and is being widely adopted because it provides the opportunity to add functionality to the address itself. Unlike transactions that "send" funds to traditional “1” bitcoin addresses, also known as pay-to-public-key-hash (P2PKH), funds sent to “3” addresses require something more than the presentation of one public key hash and one private key signature as proof of ownership. The requirements are designated at the time the address is created, within the script, and all inputs to this address will be encumbered with the same requirements.
+    
+A pay-to-script-hash address is created from a transaction script, which defines who can spend a transaction output (for more detail, see <<transactions>>) and encoding it using the same double-hash function as that used to create a bitcoin address, only applied on the script instead of the public key.
+    
+----
+script hash = RIPEMD160(SHA256(script))
+----
+    
+The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +32M8ednmuyZ2zVbes4puqe44NZumgG92sM+ 
+
+
+[TIP]
+====
+P2SH is not necessarily the same as a multi-signature standard transaction. A P2SH address _most often_ represents a multi-signature script, but it might also represent a script encoding other types of transactions. 
+====
+
+====== Multi-signature addresses and P2SH
+
+Currently, the most common implementation of the P2SH function is the multi-signature address script. As the name implies, the underlying script requires more than one signature to prove ownership and therefore spend funds. The bitcoin multi-signature feature is designed to require M signatures (also known as the “threshold”) from a total of N keys, known as an M-of-N multi-sig, where M is equal to or less than N. For example, Bob the coffee shop owner from chapter 1 could use a multi-signature address requiring 1-of-2 signatures from a key belonging to him and a key belonging to his spouse, ensuring either of them could sign to spend a transaction output locked to this address. This would be similar to a “joint account” as implemented in traditional banking where either spouse can spend with a single signature. Or Gopesh, the web designer paid by Bob to create a website might have a 2-of-3 multi-signature address for his business that ensures that no funds can be spent unless at least two of the business partners sign a transaction. 
+
+We will explore how to create transactions that spend funds from P2SH (and multi-signature) addresses in <<transactions>>
 
 ===== Vanity Addresses
 
@@ -538,11 +559,52 @@ In both cases, one of the risks of using a single fixed address (rather than a s
 |=======
 | Original Random Address | 1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
 | Vanity (4 character match) | 1J7md1QqU4LpctBetHS2ZoyLV5d6dShhEy
-| Vanity (4 character match) | 1J7mdi84uzJTDHhi56Xj8UuCWXPydTxAKc
-| 
+| Vanity (5 character match) | 1J7mdgYqyNd4ya3UEcq31Q7sqRMXw2XZ6n
+| Vanity (6 character match) | 1J7mdg5WxGENmwyJP9xuGhG5KRzu99BBCX
 |=======
 
 So does a vanity address increase security? If Eugenio generates the vanity address "1Kids33q44erFfpeXrmDSz7zEqG2FesZEN", 
-users are likely to look at the vanity pattern word _and a few characters beyond_, for example noticing the "1Kids33" part of the address. That would force an attacker to generate a vanity address matching at least 6 characters, expending an effort that is 3,364 times (58 x 58) higher than the effort Eugenio expended for a 4 character vanity. Essentially, the effort Eugenio expends (or pays a vanity pool for) "pushes" the attacker into having to produce a longer pattern vanity. If Eugenio pays a pool to generate an 8 character vanity address, the attacker would be pushed into the realm of 10 characters which is infeasible on a personal computer and expensive even with a custom vanity-mining rig or vanity pool. 
+users are likely to look at the vanity pattern word _and a few characters beyond_, for example noticing the "1Kids33" part of the address. That would force an attacker to generate a vanity address matching at least 6 characters (2 more), expending an effort that is 3,364 times (58 x 58) higher than the effort Eugenio expended for a 4 character vanity. Essentially, the effort Eugenio expends (or pays a vanity pool for) "pushes" the attacker into having to produce a longer pattern vanity. If Eugenio pays a pool to generate an 8 character vanity address, the attacker would be pushed into the realm of 10 characters which is infeasible on a personal computer and expensive even with a custom vanity-mining rig or vanity pool. What is affordable for Eugenio becomes unaffordable for the attacker, especially if the potential reward of fraud is not high enough to cover the cost of the vanity address generation. 
 
 ===== Paper Wallets
+
+Paper wallets are bitcoin private keys printed on paper. Often the paper wallet also includes the corresponding bitcoin address, for convenience, but this is not necessary since it can be derived from the private key. Paper wallets are a very effective way to create backups or offline bitcoin storage, also known as "cold storage". As a backup mechanism, a paper wallet can provide security against the loss of key due to a computer mishap such as a hard drive failure, theft or accidental deletion. As a "cold storage" mechanism, if the paper wallet keys are generated offline and never stored on a computer system, they are much more secure against hackers, key-loggers and other online computer threats. 
+
+Paper wallets come in many shapes, sizes and designs, but at a very basic level are just a key and an address printed on paper. Here's the simplest form of a paper wallet:
+
+.A very simple paper wallet - a printout of the bitcoin address and private key 
+|=======
+| Public Address | 1424C2F4bC9JidNjjTUZCbUxv6Sa1Mt62x
+| Private Key (WIF) | 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
+|=======
+
+Paper wallets can be generated easily using a tool such as the client-side Javascript generator at bitaddress.org. This page contains all the code necessary to generate keys and paper wallets, even while completely disconnected from the Internet. To use it, save the HTML page on your local drive or on an external USB flash drive. Disconnect from the Internet and open the file in a browser. Even better, boot your computer using a pristine operating system, such as a CDROM bootable Linux OS. Any keys generated with this tool while offline can be printed on a local printer over a USB cable (not wirelessly), thereby creating paper wallets whose keys exist only on the paper and have never been stored on any online system. Put these paper wallets in a fire-proof safe and "send" bitcoin to their private address, to implement a simple yet highly effective "cold storage" solution. 
+
+.An example of a simple paper wallet from bitaddress.org
+image::images/paper_wallet_simple.png["paper_wallet_simple"]
+
+The disadvantage of the simple paper wallet system is that the printed keys are vulnerable to theft. A thief who is able to gain access to the paper can either steal it or photograph the keys and take control of the bitcoins locked with those keys. A more sophisticate paper wallet storage system uses BIP0038 encrypted private keys. The keys printed on the paper wallet are protected by a passphrase that the owner has memorized. Without the passphrase, the encrypted keys are useless. Yet, they still are superior to a passphrase protected wallet because the keys have never been online and must be physically stolen from a safe or other physically secured storage. 
+
+.An example of an encrypted paper wallet from bitaddress.org. The passphrase is "test"
+image::images/paper_wallet_encrypted.png["paper_wallet_encrypted"]
+
+[WARNING]
+====
+While you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds you expose the private key and because some wallets may generate a change address if you spend less than the whole amount. One way to do this is to withdraw the entire balance stored in the paper wallet and send any remaining funds to a new paper wallet. 
+====
+
+Paper wallets come in many designs and sizes, with many different features. Some are intended to be given as gifts and have seasonal themes, such as Christmas and New Year's themes. Others are designed for storage in a bank vault or safe with the private key hidden in some way, either with opaque scratch-off stickers, or folded and sealed with tamper-proof adhesive foil.
+
+.An example of a paper wallet from bitcoinpaperwallet.com with the private key on a folding flap.
+image::images/paper_wallet_bpw.png["paper_wallet_bpw"]
+
+.The bitcoinpaperwallet.com paper wallet with the private key concealed.
+image::images/paper_wallet_bpw_folded.jpg["paper_wallet_bpw_folded"]
+
+Other designs feature additional copies of the key and address, in the form of detachable stubs similar to ticket stubs, allowing you to store multiple copies to protect against fire, flood or other natural disasters. 
+
+.An example of a paper wallet with additional copies of the keys on a backup "stub"
+image::images/paper_wallet_spw.png["paper_wallet_spw"]
+
+
+
