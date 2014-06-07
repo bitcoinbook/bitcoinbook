@@ -1,4 +1,7 @@
+[[ch5]]
 == Chapter 5 - Transactions
+
+[[ch5_intro]]
 === Introduction
 
 Transactions are the most important part of the bitcoin system. Everything else in bitcoin is there to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions, the blockchain. Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is an public entry in bitcoin's global double-entry bookkeeping ledger, the blockchain. 
@@ -9,34 +12,55 @@ In this chapter we will examine all the various forms of transactions, what they
 
 Transactions are grouped together into blocks, which are in turn linked in a long chain called the blockchain. This forms the authoritative ledger of all transactions since bitcoin's beginning in 2009. The blockchain is the subject of the next chapter, where we will examine the formation of the authoritative record through the competitive process of proof-of-work, also known as mining. The details of mining will be left for the next chapter. In this chapter, however we will see how transactions relate to the blockchain by tracing their journey from the moment they are created until they are included in the blockchain.
 
+[[tx_lifecycle]]
 ==== Transaction Lifecycle
 
-A transaction's lifecycle starts with the transaction's creation, also known as origination. The transaction is then signed, with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) alidates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spend in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
+A transaction's lifecycle starts with the transaction's creation, also known as origination. The transaction is then signed, with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spend in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
 
+[[tx_origination]]
 ===== Creating Transactions
 
 In some ways it helps to think of a transaction in the same way as a paper cheque. Like a cheque, a transaction is an instrument that expresses the intent to transfer money and is not visible to the financial system until it is submitted for execution. Like a cheque, the originator of the transaction does not have to be the one signing the transaction. Transactions can be created online or offline by anyone, even if they are not able to sign for the funds spent by the check. While a cheque references a specific account as the source of the funds, a transaction references a specific previous transaction as its source (also known as an "input"), rather than an account. 
 
 Once a transaction has been created, it is signed by the owner (or owners) of the source funds. If it was properly formed and signed, the signed transaction is now valid and contains all the information needed to execute the transfer of funds. Now, the valid transaction has to reach the bitcoin network so that it can be propagated until it reaches a miner for inclusion in the pubic ledger, the blockchain.
 
-===== Broadcasting Transactions
+[[tx_bcast]]
+===== Broadcasting Transactions to the Bitcoin Network
 
-Next, a transaction needs to get on to the bitcoin network so that it can be propagated and eventually executed by inclusion in the blockchain. Since the transaction is signed and contains no confidential information, private keys or credentials, it can be broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network, even broadcast by radio or printed on paper. As long as it can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node.  In essence, a bitcoin transaction is just 300-400 bytes of data that needs to reach any one of tens of thousands of bitcoin nodes. Bitcoin transactions can therefore be sent to the bitcoin network over insecure networks such as Wifi, Bluetooth, NFC, Chirp, barcodes or by copy and paste in a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay or shortwave using burst transmission, spread spectrum or frequency hoping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a forum or sent as a text message or Skype chat message. It is virtually impossible to stop anyone from sending a bitcoin transaction to the bitcoin network for execution. 
+Next, a transaction needs to get on to the bitcoin network so that it can be propagated and eventually executed by inclusion in the blockchain. Since the transaction is signed and contains no confidential information, private keys or credentials, it can be broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network, even broadcast by radio or printed on paper. As long as it can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node.  In essence, a bitcoin transaction is just 300-400 bytes of data that needs to reach any one of tens of thousands of bitcoin nodes. Bitcoin transactions can therefore be sent to the bitcoin network over insecure networks such as Wifi, Bluetooth, NFC, Chirp, barcodes or by copy and paste in a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay or shortwave using burst transmission, spread spectrum or frequency hoping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a forum or sent as a text message or Skype chat message. Bitcoin turned money into a data structure making it virtually impossible to stop anyone from sending a bitcoin transaction to the bitcoin network for execution. 
 
-===== Validating and Propagating Transactions
+[[tx_propagation]]
+===== Propagating Transactions on the Bitcoin Network
 
+Once a bitcoin transaction is sent to any node connected to the bitcoin network, the transaction will be validated by that node and then propagated to all other nodes that it is connected to. Within a few seconds, a valid transaction will propagate from node to node, in an exponentially ripple across the network until all connected nodes have received it.
 
+To prevent spamming, denial of service attacks or other nuisance attacks agains the bitcoin system, every node will independently validate every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<>> 
+
+[[tx_mining]]
 ===== Mining Transactions into Blocks
 
+[[tx_fees_intro]]
 ==== Transaction Fees
+
+[[tx_validation]]
 ==== Transaction Validation
+
+[[tx_validation_limits]]
 ===== Validation Limits
+
+[[tx_locktime]]
 ==== Transaction Locktime
+
+[[tx_irrevocability]]
 ==== Transaction Irrevocability
+
+[[tx_selfsufficiency]]
 ==== Transaction Self-Sufficiency
 
-  
+[[tx_structure]]
 === Transaction Structure
+
+[[tx_inputs_outputs]]
 === Transaction Outputs and Inputs
 
 [TIP]
@@ -44,6 +68,7 @@ Next, a transaction needs to get on to the bitcoin network so that it can be pro
 Outputs come first, chicken and egg.
 ====
 
+[[tx_outs]]
 ==== Transaction Outputs
 ===== Spending Conditions (Encumbrances)
 ===== Unspent Transaction Outputs (UTXO)
@@ -53,9 +78,12 @@ Outputs come first, chicken and egg.
 The are no accounts or balances in bitcoin, only UTXO. 
 ====
 
+[[tx_inputs]]
 ==== Transaction Inputs
 ===== Spending the Transaction Outputs
 ===== Unlocking the Conditions (Encumbrance Satisfaction)
+
+[[tx_fees]]
 ==== Transaction Fees
 
 
