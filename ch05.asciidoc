@@ -57,7 +57,10 @@ A transaction contains a number of fields, in addition to the inputs and outputs
 | Variable | Inputs | One or more Transaction Inputs
 | 1-9 bytes (VarInt) | Output Counter | How many outputs are included
 | Variable | Outputs | One or more Transaction Outputs
+| 4 bytes | Locktime | A unix timestamp or block number
 |=======
+
+Note: Locktime defines the earliest time that a transaction can be added to the blockchain. It is set to zero in most transactions to indicate immediate execution. If locktime is non-zero and below 500 million, it is interpreted as a block height, meaning the transaction is not included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not included in the blockchain prior to the specified time. 
 
 [[tx_inputs_outputs]]
 === Transaction Outputs and Inputs
@@ -103,7 +106,7 @@ The transaction scripting language, used in the locking script mentioned above, 
 |=======
 |Size| Field | Description
 | 8 bytes | Amount | Bitcoin Value in Satoshis (10^^-8 bitcoin)
-| 1-9 bytes (VarInt) | Locking-Script Size | Locking-script length in bytes, to follow
+| 1-9 bytes (VarInt) | Locking-Script Size | Locking-Script length in bytes, to follow
 | Variable | Locking-Script | A script defining the conditions needed to spend the output
 |=======
 
@@ -123,8 +126,14 @@ When a user makes a payment, their wallet constructs a transaction by selecting 
 [options="header"]
 |=======
 |Size| Field | Description
-|
+| 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
+| 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
+| 1-9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
+| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking-script.
+| 4 bytes | Sequence Number | Currently-disabled Tx-replacement feature, set to 0xFFFFFFFF
 |=======
+
+Note: The sequence number is used to override a transaction prior to the expiration of the transaction locktime, which is a feature that is currently disabled in bitcoin. Most transactions set this value to the maximum integer value (0xFFFFFFFF) and it is ignored by the bitcoin network. If the transaction has a non-zero locktime, at least one of its inputs must have a sequence number below 0xFFFFFFFF in order to enable locktime. 
 
 [[tx_fees]]
 ==== Transaction Fees
@@ -141,7 +150,21 @@ The current algorithm used by miners to prioritize transactions for inclusion in
     
 ==== Adding Fees to Transactions
 
-The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners. This is a somewhat confusing element of transactions and an important point to understand, because if you are constructing your own transactions you must ensure you do not inadvertently include a very large fee by underspending the inputs. That means that you must account for all inputs, if necessary by creating change, or you will end up giving the miners a very big tip!
+The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners. 
+
+
+[[tx_fee_equation]]
+.Transaction fees are implied, as the excess of inputs minus outputs
+----
+Fees = Sum(Inputs) - Sum(Outputs)
+----
+
+This is a somewhat confusing element of transactions and an important point to understand, because if you are constructing your own transactions you must ensure you do not inadvertently include a very large fee by underspending the inputs. That means that you must account for all inputs, if necessary by creating change, or you will end up giving the miners a very big tip!
+
+[WARNING]
+====
+If you forget to add a change output in a manually constructed transaction you will be paying the change as a transaction fee. "Keep the change!" may not be what you intended.
+====
 
 For example, if you consume a 20 bitcoin UTXO to make a 1 bitcoin payment, you must include a 19 bitcoin change output back to your wallet. Otherwise, the 19 bitcoin "leftover" will be counted as a transaction fee and will be collected by the miner who mines your transaction in a block. While you will receive priority processing and make a miner very happy, this is probably not what you intended. 
 
@@ -149,15 +172,6 @@ Let's see how this works in practice, by looking at Alice's coffee purchase agai
 
 Now let's look at a different scenario. Eugenio, our children's charity director in the Philippines has completed a fundraiser to purchase school books for the children. He received several thousand small donations from people all around the world, totaling 50 . Now, he want to purchase hundreds of school books from a local publisher, paying in bitcoin. The charity received thousands of small donations from all around the world. As Eugenio's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2-3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin. Eugenio's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenio is spending more money, but because his transaction is more complex and larger in size - the fee is independent of the transaction's bitcoin value. 
 
-=== Standard Transactions
-==== Pay to Public Key Hash (P2PKH)
-==== Simple Pubkey 
-==== Mutli-Signature
-==== Data Injection (OP_RETURN)
-==== Pay to Script Hash (P2SH)
-===== Redeem Script and isStandard Validation
-
-=== Non-Standard Transactions
 
 [[tx_script]]
 === Transaction Scripts and Script Language
@@ -172,6 +186,18 @@ Now let's look at a different scenario. Eugenio, our children's charity director
 [[scriptSig and scriptPubKey]]
 .Combining scriptSig and scriptPubKey to evaluate a transaction script
 image::images/scriptSig_and_scriptPubKey.png["scriptSig_and_scriptPubKey"]
+
+
+=== Standard Transactions
+==== Pay to Public Key Hash (P2PKH)
+==== Simple Pubkey 
+==== Mutli-Signature
+==== Data Injection (OP_RETURN)
+==== Pay to Script Hash (P2SH)
+===== Redeem Script and isStandard Validation
+
+=== Non-Standard Transactions
+
 
 === Standard Transaction Scripts
 ==== Pay to Public Key Hash Script Example
