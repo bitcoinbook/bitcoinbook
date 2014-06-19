@@ -62,20 +62,20 @@ A transaction contains a number of fields, in addition to the inputs and outputs
 [[tx_inputs_outputs]]
 === Transaction Outputs and Inputs
 
-The fundamental building block of a bitcoin transaction is an _unspent transaction output_ or UTXO, a block of currency. UTXO are indivisible chunks of bitcoin currency locked to a specific owner, recorded on the blockchain, and recognized as currency units by the entire network. The bitcoin network tracks the set of all available (unspent) UTXO, currently numbering in the millions. As bitcoin users receive bitcoin these are recorded as UTXO on the blockchain and may be scattered amongst hundreds of transactions and hundreds of blocks. In effect, there is no such thing as a balance of a bitcoin address or account. There are only scattered UTXO, locked to specific owners. The concept of a user's bitcoin balance is artificial and created by the wallet application, by scanning the blockchain and aggregating all UTXO that belongs to addresses controlled by that user. Like loose coins and bank notes of different denominations in a purse, an end-user's bitcoin wallet application tracks all the UTXO owned by that user's keys and presents the sum of all the various UTXO values as the user's current balance. 
+The fundamental building block of a bitcoin transaction is an _unspent transaction output_ or UTXO. UTXO are indivisible chunks of bitcoin currency locked to a specific owner, recorded on the blockchain, and recognized as currency units by the entire network. The bitcoin network tracks all available (unspent) UTXO currently numbering in the millions. Whenever a user receives bitcoin, that amount is recorded within the blockchain as a UTXO. Thus, a user's bitcoin may be scattered as UTXO amongst hundreds of transactions and hundreds of blocks. In effect, there is no such thing as a balance of a bitcoin address or account; there are only scattered UTXO, locked to specific owners. The concept of a user's bitcoin balance is a construct created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating all UTXO belonging to that user.
 
 [TIP]
 ====
-The are no accounts or balances in bitcoin, there are only _unspent transaction outputs_ (UTXO) scattered in the blockchain. 
+There are no accounts or balances in bitcoin, there are only _unspent transaction outputs_ (UTXO) scattered in the blockchain. 
 ====
 
-Unlike cash which exists in specific denominations, one dollar, five dollars, ten dollars, etc., a UTXO can have any arbitrary value denominated as a multiple of satoshis (the smallest bitcoin unit equal to 100 millionth of a bitcoin). While UTXO can be any arbitrary value, once created it is indivisible just like a coin that cannot be cut in half. If a UTXO is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. In other words, if you have a 20 bitcoin UTXO and want to pay 1 bitcoin, your transaction must consume the entire 20 bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result, bitcoin transactions must occasionally generate change to account for consuming UTXO in excess of the desired value. 
+Unlike cash which exists in specific denominations, one dollar, five dollars, ten dollars, etc., a UTXO can have any arbitrary value denominated as a multiple of satoshis (the smallest bitcoin unit equal to 100 millionth of a bitcoin). While UTXO can be any arbitrary value, once created it is indivisible just like a coin that cannot be cut in half. If a UTXO is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. In other words, if you have a 20 bitcoin UTXO and want to pay 1 bitcoin, your transaction must consume the entire 20 bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result, bitcoin transactions must occasionally generate change. 
 
-In simple terms, transactions consume from a users available UTXO and create new UTXO locked to a new owner, the destination address of the transaction. Imagine a shopper buying a beverage reaching into their wallet and trying to find a combination of coins and bank notes that will cover the price of the beverage. The shopper will choose exact change if available, or a combination of smaller denominations, or if necessary, a larger unit such as a bank note. If they hand too much money to the shop owner they will expect change, which they will return to their wallet and have available for future transactions. Similarly, a bitcoin transaction must be created from a users UTXO in whatever denominations that user has available. They cannot cut a UTXO in half anymore than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the users available UTXO various units to compose an amount greater than or equal to the desired transaction amount. As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change.
+In simple terms, transactions consume the sender's available UTXO and create new UTXO locked to the recipient's bitcoin address. Imagine a shopper buying a $1.50 beverage, reaching into their wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a bank note (five dollar note). If they hand too much money, say $5, to the shop owner they will expect $3.50 change, which they will return to their wallet and have available for future transactions. Similarly, a bitcoin transaction must be created from a users UTXO in whatever denominations that user has available. They cannot cut a UTXO in half anymore than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the users available UTXO various units to compose an amount greater than or equal to the desired transaction amount. As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change.
 
 The UTXO consumed by a transaction are called transaction inputs, while the UTXO created by a transaction are called transaction outputs. This way, chunks of bitcoin value move forward from owner to owner in a chain of transactions consuming and creating UTXO. Transactions consume UTXO unlocking it with the signature of the current owner and create UTXO locking it to the bitcoin address of the new owner. 
 
-The exception to this is a special type of transaction called the _coinbase_ transaction, which is the first transaction in each block. This transaction is placed there by the "winning" miner and creates brand-new bitcoin payable to that miner as a reward for mining. This is how bitcoin's money supply is created during the mining process as we will see in <<mining>>
+The exception to the output and input chain is a special type of transaction called the _coinbase_ transaction, which is the first transaction in each block. This transaction is placed there by the "winning" miner and creates brand-new bitcoin payable to that miner as a reward for mining. This is how bitcoin's money supply is created during the mining process as we will see in <<mining>>
 
 
 [TIP]
@@ -86,20 +86,16 @@ What comes first? Inputs or outputs, the chicken or the egg? Strictly speaking, 
 [[tx_outs]]
 ==== Transaction Outputs
 
-The destination of a bitcoin transaction is called an _output_. Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called _unspent transaction outputs_ or UTXO, which are then recognized by the whole network and available for future transactions to spend. Giving someone bitcoin is giving them an unspent transaction output (UTXO) registered to their address and available for them to spend. 
+Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called _unspent transaction outputs_ or UTXO, which are then recognized by the whole network and available for the owner to spend in a future transaction. Sending someone bitcoin is creating an unspent transaction output (UTXO) registered to their address and available for them to spend.
 
-UTXO are tracked by every full node bitcoin client in a database held in memory, called the _UTXO set_ or _UTXO pool_. Any new transaction will consume (spend) one or more of these outputs from the UTXO set. 
+UTXO are tracked by every full node bitcoin client in a database held in memory, called the _UTXO set_ or _UTXO pool_. New transactions consume (spend) one or more of these outputs from the UTXO set. 
 
 Transaction outputs consist of two parts: 
 
 * An amount of bitcoin, denominated in _satoshis_, the smallest bitcoin unit
 * A _locking script_, also known as an "encumbrance" that "locks" this amount by specifying the conditions that must be met to spend the output
 
-The transaction scripting language that is used to define the locking script used in transaction outputs and corresponding unlocking script used in transaction inputs is discussed in detail in <<tx_script>>
-
-===== Spending Conditions (Encumbrances)
-
-Transactions create outputs by assigning a specific amount (in satoshis) to a specific _encumbrance_ or locking-script. In most cases the locking script will lock the output so that it can only be spent by the owner of a specific bitcoin address, thereby transferring ownership of that amount to the new owner. When Alice pays Bob's Cafe for a cup of coffee, her transaction is creating a coffee-amount output that is _encumbered_ or locked to Bob Cafe's bitcoin address. That output will be recorded on the blockchain and be part of the Unspent Transaction Output set corresponding to Bob's Cafe, meaning it will show in Bob's wallet as a balance until it is spent. When Bob chooses to spend that amount, his transaction releases the encumbrance, unlocking the output by providing an unlocking script containing a signature from Bob's private key. 
+The transaction scripting language, used in the locking script mentioned above, is discussed in detail in <<tx_script>>
 
 [[tx_out_structure]]
 .The structure of a transaction output
@@ -111,20 +107,47 @@ Transactions create outputs by assigning a specific amount (in satoshis) to a sp
 | Variable | Locking-Script | A script defining the conditions needed to spend the output
 |=======
 
+===== Spending Conditions (Encumbrances)
+
+Transaction outputs associate a specific amount (in satoshis) to a specific _encumbrance_ or locking-script that defines the condition that must be met to spend that amount. In most cases the locking script will lock the output to a specific bitcoin address, thereby transferring ownership of that amount to the new owner. When Alice paid Bob's Cafe for a cup of coffee, her transaction created a 0.015 bitcoin output _encumbered_ or locked to the Cafe's bitcoin address. That 0.015 bitcoin output was recorded on the blockchain and became part of the Unspent Transaction Output set, meaning it showed in Bob's wallet as part of the available balance. When Bob chooses to spend that amount, his transaction will release the encumbrance, unlocking the output by providing an unlocking script containing a signature from Bob's private key. 
+
 [[tx_inputs]]
 ==== Transaction Inputs
 
-Transaction inputs are pointer references to UTXO, by reference to the transaction hash and sequence number where they are recorded in the blockchain. To spend UTXO, a transaction input also includes unlocking-scripts (usually signatures) for each referenced UTXO in order to prove ownership of those funds. 
+In simple terms, transaction inputs are pointers to UTXO. They point to a specific UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. To spend UTXO, a transaction input also includes unlocking-scripts that satisfy the spending conditions set by the UTXO. The unlocking script is usually a signature proving ownership of the bitcoin address that is in the locking script. 
 
+When a user makes a payment, their wallet constructs a transaction by selecting from the available UTXO. For example, to make a 0.015 bitcoin payment, the wallet app may select a 0.01 UTXO and a 0.005 UTXO, using them both to add up to the desired payment amount. The wallet then produces unlocking scripts containing signatures for each of the UTXO, thereby making them spendable by satisfying their locking script conditions. The wallet adds these UTXO references and unlocking scripts as inputs to the transaction. 
 
-
-===== Spending the Transaction Outputs
-
-===== Unlocking the Conditions (Encumbrance Satisfaction)
+[[tx_in_structure]]
+.The structure of a transaction input
+[options="header"]
+|=======
+|Size| Field | Description
+|
+|=======
 
 [[tx_fees]]
 ==== Transaction Fees
 
+Most transactions include transactions fees that compensate the bitcoin miners for securing the network. Mining and the fees and rewards collected by miners are discussed in more detail in <<mining>>. This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command line interface, you must manually account for and include fees. 
+    
+Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against "spam" transactions or any kind of abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain. 
+
+Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees and may even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next-most mined block, while a transaction with insufficient or no fees may be delayed, on a best-effort basis and processed after a few blocks or not at all. Transaction fees are not mandatory and transactions without fees may be processed, eventually, but including transaction fees encourages priority processing. 
+
+Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been changing. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. The current minimum transaction fee is fixed at 0.0001 bitcoin or a tenth of a milli-bitcoin, recently decreased from one milli-bitcoin, per kilobyte. Most transactions are less than one kilobyte, however those with multiple inputs or outputs can be larger. In future revisions of the bitcoin protocol it is expected that wallet applications will use statistical analysis to calculate the most appropriate fee to attach to a transaction based on the average fees of recent transactions. 
+
+The current algorithm used by miners to prioritize transactions for inclusion in a block based on their fees will be examined in detail in <<mining>>.
+    
+==== Adding Fees to Transactions
+
+The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners. This is a somewhat confusing element of transactions and an important point to understand, because if you are constructing your own transactions you must ensure you do not inadvertently include a very large fee by underspending the inputs. That means that you must account for all inputs, if necessary by creating change, or you will end up giving the miners a very big tip!
+
+For example, if you consume a 20 bitcoin UTXO to make a 1 bitcoin payment, you must include a 19 bitcoin change output back to your wallet. Otherwise, the 19 bitcoin "leftover" will be counted as a transaction fee and will be collected by the miner who mines your transaction in a block. While you will receive priority processing and make a miner very happy, this is probably not what you intended. 
+
+Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.001. That will mean that the total cost of the transaction will be 0.016. Her wallet must therefore source a set of UTXO that adds up to 0.016 bitcoin or more and if necessary create change. Let's say her wallet has a 0.2 bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.184 bitcoin in change back to her own wallet, leaving 0.001 bitcoin unallocated, as an implicit fee for the transaction. 
+
+Now let's look at a different scenario. Eugenio, our children's charity director in the Philippines has completed a fundraiser to purchase school books for the children. He received several thousand small donations from people all around the world, totaling 50 . Now, he want to purchase hundreds of school books from a local publisher, paying in bitcoin. The charity received thousands of small donations from all around the world. As Eugenio's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2-3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin. Eugenio's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenio is spending more money, but because his transaction is more complex and larger in size - the fee is independent of the transaction's bitcoin value. 
 
 === Standard Transactions
 ==== Pay to Public Key Hash (P2PKH)
