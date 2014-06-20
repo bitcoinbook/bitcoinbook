@@ -197,6 +197,12 @@ An unlocking script is a script that "solves", or satisfies, the conditions plac
 
 Every bitcoin client will validate transaction by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and concatenate them. The locking script is added to the end of the unlocking script and then the entire combined script is executed using the script execution engine. If the result of executing the combined script is "TRUE", the unlocking script has succeeded in resolving the conditions imposed by the locking script and therefore the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid as it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available UTXO.
 
+Below is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation: 
+
+[[scriptSig and scriptPubKey]]
+.Combining scriptSig and scriptPubKey to evaluate a transaction script
+image::images/scriptSig_and_scriptPubKey.png["scriptSig_and_scriptPubKey"]
+
 ==== Scripting Language
 
 The bitcoin transaction script language, also named confusingly _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages. Script is a very simple, lightweight language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device, like a handheld calculator. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. In the case of programmable money, that is a deliberate security feature. 
@@ -213,8 +219,9 @@ Here's a more complex script, to calculate ((2 + 3) * 2) + 1. Notice that when t
 
 Conditional operators evaluate a condition producing a boolean result of TRUE or FALSE. For example, OP_EQUAL pops two items from the stack and pushes TRUE if they are equal or FALSE if they are not. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the result TRUE that signifies a valid transaction. 
 
-In a bitcoin transaction, the locking script could be as simple as:
+While most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid.  
 
+In a bitcoin transaction, the locking script could be as simple as:
 ----
 3 OP_ADD 5 OP_EQUAL
 ----
@@ -225,39 +232,56 @@ The locking script above can be satisfied by transaction containing an input wit
 ----
 
 The validation software combines the locking and unlocking scripts and the resulting script is:
-
 ----
 2 3 OP_ADD 5 OP_EQUAL
 ----
 
-When executed, the result is OP_TRUE.
-
+When this script is executed, the result is OP_TRUE, making the transaction valid. 
 
 ==== Turing Incompleteness
+
+The bitcoin transaction script language contains many operators but is deliberately limited in one important way - there are no loops or other flow control capabilities. This ensures that the language is not Turing Complete, meaning that scripts have limited complexity and predictable execution times. This ensures that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a Denial-of-Service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability. 
+
 ==== Stateless Verification
-==== Transaction Script Operands
 
-
-
-
-[[scriptSig and scriptPubKey]]
-.Combining scriptSig and scriptPubKey to evaluate a transaction script
-image::images/scriptSig_and_scriptPubKey.png["scriptSig_and_scriptPubKey"]
-
+The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. 
 
 === Standard Transactions
+
+In the first few years of bitcoin's development, the developers introduced some limitations in the types of scripts that could be processed by the reference client. The limitation is encoded in a function called +isStandard()+ which defines five types of "standard" transactions. These limitations are temporary and may be lifted by the time you read this. Until then, the five standard types of transaction scripts are the only ones that will be accepted by the reference client and most miners who run the reference client. While it is possible to create a non-standard transaction containing a script that is not part of the standard types, you must find a miner who does not follow these limitations, to mine that transaction into a block. 
+
+Check the source code of the bitcoin core client (the reference implementation) to see what is currently allowed as a valid transaction script. 
+
+The five standard types of transaction scripts are Pay-to-Public-Key-Hash (P2PKH), Public-Key, Multi-Signature (limited to 15 keys), Pay-to-Script-Hash (P2SH) and Data Output (OP_RETURN), which are described in more detail below.
+
 ==== Pay to Public Key Hash (P2PKH)
-==== Simple Pubkey 
-==== Mutli-Signature
-==== Data Injection (OP_RETURN)
-==== Pay to Script Hash (P2SH)
-===== Redeem Script and isStandard Validation
 
-=== Non-Standard Transactions
+The vast majority of transactions processed on the bitcoin network are Pay-to-Public-Key-Hash, also known as P2PKH transactions. These contain a locking script that encumbers the output with a public key hash, more commonly known as a bitcoin address. Transactions that pay a bitcoin address contain P2PKH scripts. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key. 
 
+For example, let's look at Alice's payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to the Cafe's bitcoin address. That transaction output would have a locking script of the form:
 
-=== Standard Transaction Scripts
-==== Pay to Public Key Hash Script Example
+----
+OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
+----
+
+The +Cafe Public Key Hash+ is equivalent to the bitcoin address of the Cafe, without the Base58Check encoding. Most applications would show the Public Key Hash in hexadecimal encoding and not the familiar bitcoin address Base58Check format that begins with a "1". 
+
+The locking script above can be satisfied with an unlocking script of the form:
+
+----
+<Cafe Signature> <Cafe Public Key>
+----
+
+The two scripts together would form the combined validation script below:
+
+----
+<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUAL OP_CHECKSIGVERIFY
+----
+
+When executed, this combined script will evaluate to TRUE, if and only if the unlocking script matches the conditions set by the locking script, that is if the unlocking script has a valid signature from the Cafe's private key which corresponds to the public key hash set as an encumbrance. 
+
+Here's a step-by-step execution of the combined script, which will prove this is a valid transaction:
+
 [[P2PubKHash1]]
 .Evaluating a script for a Pay-to-Public-Key-Hash transaction (Part 1 of 2)
 image::images/Tx_Script_P2PubKeyHash_1.png["Tx_Script_P2PubKeyHash_1"]
@@ -265,10 +289,49 @@ image::images/Tx_Script_P2PubKeyHash_1.png["Tx_Script_P2PubKeyHash_1"]
 [[P2PubKHash2]]
 .Evaluating a script for a Pay-to-Public-Key-Hash transaction (Part 2 of 2)
 image::images/Tx_Script_P2PubKeyHash_2.png["Tx_Script_P2PubKeyHash_2"]
+    
+==== Simple Pubkey
 
-==== Pubkey Script Example
-==== Multi-Signature Scripts Example
-==== P2SH Script Example
+
+==== Mutli-Signature
+
+Multi-signature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to release the encumbrance, also known as an M-of-N scheme where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multi-signature is one where 3 public keys are listed as potential signers and at least 2 of those must be used to create signatures for a valid transaction to spend the funds. At this time, standard multi-signature scripts are limited to at most 15 listed public keys, meaning you can do anything from a 1-of-1 to a 15-of-15 multi-signature or any combination within that range. The limitation to 15 listed keys may be lifted by the time of publication of this book, so check the +isStandard()+ function to see what is currently accepted by the network. 
+
+
+The general form of a locking script setting an M-of-N multi-signature condition is:
+
+----
+M <Public Key 1> <Public Key 2> ... <Public Key N> N OP_CHECKMULTISIGVERIFY
+----
+where N is the total number of listed public keys and M is the threshold of required signatures to spend the output.
+ 
+A locking script setting a 2-of-3 multi-signature condition looks like this:
+----
+2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIGVERIFY
+----
+
+The locking script above can be satisfied with an unlocking script of the form:
+----
+<Signature from Private Key B> <Signature from Private Key C>
+----
+or any combination of two signatures from the private keys corresponding to the three listed public keys. 
+
+The two scripts together would form the combined validation script below:
+----
+<Signature from Private Key B> <Signature from Private Key C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIGVERIFY
+----
+
+When executed, this combined script will evaluate to TRUE, if and only if the unlocking script matches the conditions set by the locking script, that is if the unlocking script has a valid signatures from the two private keys which correspond to two of the three public keys set as an encumbrance. 
+
+==== Data Output (OP_RETURN)
+
+
+==== Pay to Script Hash (P2SH)
+
+
+===== Redeem Script and isStandard Validation
+
+=== Non-Standard Transactions
 
 === Scripts and Signatures
 ==== Elliptic Curve Digital Signature Algorithm
