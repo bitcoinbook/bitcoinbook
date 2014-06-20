@@ -176,12 +176,69 @@ Now let's look at a different scenario. Eugenio, our children's charity director
 [[tx_script]]
 === Transaction Scripts and Script Language
 
+Bitcoin clients validate transactions by executing a script, written in a Forth-like scripting language. Both the locking script (encumbrance) placed on a UTXO and the unlocking script that usually contains a signature are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition. 
+
+Today most transactions processed through the bitcoin network have the form "Alice pays Bob" and are based on the same script called a Pay-to-Public-Key-Hash script. However, the use of scripts to lock outputs and unlock inputs means that through use of the programming language, transactions can contain an infinite number of conditions. Bitcoin transactions are not limited to the "Alice pays Bob" form and pattern.  
+
+This is only the tip of the iceberg of possibilities that can be expressed with this scripting language. In this section we will demonstrate the components of bitcoins transaction scripting language and show how it can be used to express complex conditions for spending and how those conditions can be satisfied by unlocking scripts. 
+
+[TIP]
+====
+Bitcoin transaction validation is not based on a static pattern, but instead is achieved through the execution of a scripting language. This language allows for a near infinite variety of conditions to be expressed. This is how bitcoin gets the power of "programmable money"
+====
+
+==== Script Construction (Lock + Unlock)
+
+Bitcoin's transaction validation engine relies on two types of scripts to validate transactions - a locking script and an unlocking script. 
+
+A locking script is an encumbrance placed on an output, that specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address. In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as "scriptPubKey". 
+
+An unlocking script is a script that "solves", or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input and most of the time they contain a digital signature produced by the user's wallet from their private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In this book we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, as not all unlocking scripts must contain signatures. As mentioned above, in most bitcoin applications the source code will refer to the unlocking script as "scriptSig".
+
+Every bitcoin client will validate transaction by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and concatenate them. The locking script is added to the end of the unlocking script and then the entire combined script is executed using the script execution engine. If the result of executing the combined script is "TRUE", the unlocking script has succeeded in resolving the conditions imposed by the locking script and therefore the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid as it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available UTXO.
+
 ==== Scripting Language
+
+The bitcoin transaction script language, also named confusingly _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages. Script is a very simple, lightweight language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device, like a handheld calculator. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. In the case of programmable money, that is a deliberate security feature. 
+
+Bitcoin's scripting language is called a stack-based language because it uses a data structure called a _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. 
+
+The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and may push a result onto the stack. For example, OP_ADD will pop two items from the stack, add them and push the resulting sum onto the stack. In the following example, an addition operator _OP_ADD_ is demonstrated, adding two numbers and putting the result on the stack: 
+
+{diagram - 2 3 OP_ADD}
+
+Here's a more complex script, to calculate ((2 + 3) * 2) + 1. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
+
+{diagram - 2 3 OP_ADD 2 OP_MUL 1 OP_ADD}
+
+Conditional operators evaluate a condition producing a boolean result of TRUE or FALSE. For example, OP_EQUAL pops two items from the stack and pushes TRUE if they are equal or FALSE if they are not. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the result TRUE that signifies a valid transaction. 
+
+In a bitcoin transaction, the locking script could be as simple as:
+
+----
+3 OP_ADD 5 OP_EQUAL
+----
+
+The locking script above can be satisfied by transaction containing an input with the unlocking script:
+----
+2
+----
+
+The validation software combines the locking and unlocking scripts and the resulting script is:
+
+----
+2 3 OP_ADD 5 OP_EQUAL
+----
+
+When executed, the result is OP_TRUE.
+
+
 ==== Turing Incompleteness
 ==== Stateless Verification
 ==== Transaction Script Operands
 
-==== Script Construction (Lock + Unlock)
+
+
 
 [[scriptSig and scriptPubKey]]
 .Combining scriptSig and scriptPubKey to evaluate a transaction script
