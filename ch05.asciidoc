@@ -209,12 +209,16 @@ Bitcoin's scripting language is called a stack-based language because it uses a 
 
 The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and may push a result onto the stack. For example, OP_ADD will pop two items from the stack, add them and push the resulting sum onto the stack. In the following example, an addition operator _OP_ADD_ is demonstrated, adding two numbers and putting the result on the stack: 
 
-{diagram - 2 3 OP_ADD}
-{remove op_ from above?}
+[[simplemath_script]]
+.Bitcoin's script validation doing simple math
+image::images/TxScriptSimpleMathExample.png["TxScriptSimpleMathExample"]
 
 Here's a more complex script, to calculate ((2 + 3) * 2) + 1. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
 
-{diagram - 2 3 OP_ADD 2 OP_MUL 1 OP_ADD}
+----
+2 3 OP_ADD 2 OP_MUL 1 OP_ADD 11 OP_EQUAL
+----
+Try validating the script above yourself, using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
 
 Conditional operators evaluate a condition producing a boolean result of TRUE or FALSE. For example, OP_EQUAL pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the result TRUE that signifies a valid transaction. 
 
@@ -235,13 +239,13 @@ The validation software combines the locking and unlocking scripts and the resul
 2 3 OP_ADD 5 OP_EQUAL
 ----
 
-When this script is executed, the result is OP_TRUE, making the transaction valid. 
+When this script is executed, the result is OP_TRUE, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. 
 
 [TIP]
 ====
-Transactions are valid if the top result on the stack is TRUE (1), but also if the stack is empty after script execution. Transactions are invalid if the top value on the stack is FALSE (0) or if script execution is halted explicitly by an operator, such as OP_VERIFY, OP_RETURN or a conditional terminator such as OP_ENDIF. See <<tx_script_ops>> for details.
+Transactions are valid if the top result on the stack is TRUE (1), any other non-zero value or if the stack is empty after script execution. Transactions are invalid if the top value on the stack is FALSE (0) or if script execution is halted explicitly by an operator, such as OP_VERIFY, OP_RETURN or a conditional terminator such as OP_ENDIF. See <<tx_script_ops>> for details.
 ====
-{non zero is TRUE?}
+
 ==== Turing Incompleteness
 
 The bitcoin transaction script language contains many operators but is deliberately limited in one important way - there are no loops or other flow control capabilities. This ensures that the language is not Turing Complete, meaning that scripts have limited complexity and predictable execution times. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a Denial-of-Service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability. 
@@ -332,9 +336,9 @@ A locking script setting a 2-of-3 multi-signature condition looks like this:
 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
-The locking script above can be satisfied with an unlocking script of the form:
+The locking script above can be satisfied with an unlocking script containing pairs of signatures and public keys:
 ----
-OP_0 <Signature from Private Key B> <Signature from Private Key C> <Public Key B> <Public Key C>
+OP_0 <Signature B> <Signature C>
 ----
 or any combination of two signatures from the private keys corresponding to the three listed public keys. 
 
@@ -342,8 +346,7 @@ _Note: The prefix OP_0 is required because of a bug in the original implementati
 
 The two scripts together would form the combined validation script below:
 ----
-OP_0 <Signature from Private Key B> <Signature from Private Key C> <Public Key B> <Public Key C> 
-2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script, that is if the unlocking script has a valid signatures from the two private keys which correspond to two of the three public keys set as an encumbrance. 
@@ -372,7 +375,7 @@ Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN, 
 
 ==== Pay to Script Hash (P2SH)
 
-Pay-to-Script-Hash (P2SH) was introduced in the winter of 2012 as a powerful new type of transaction that greatly simplified the use of complex transaction scripts. {simplified? didn't it introduce? could you use scripts before p2sh?}. 
+Pay-to-Script-Hash (P2SH) was introduced in the winter of 2012 as a powerful new type of transaction that greatly simplified the use of complex transaction scripts. 
 
 * Complex scripts replaced by shorter fingerprint in the output
 * Scripts can be coded as an address, so the sender and the sender's wallet don't need complex engineering to implement
@@ -382,7 +385,6 @@ Pay-to-Script-Hash (P2SH) was introduced in the winter of 2012 as a powerful new
 * Sender pays the fee and shorter output means less fee for the sender, shifts the cost of a complex transaction to the spender (recipient)
 
 
-{why was it introduced? how is this related to "multi-sig", how else can it be used? }
 
 ===== Redeem Script and isStandard Validation
 
