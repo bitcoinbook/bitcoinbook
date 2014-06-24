@@ -224,15 +224,14 @@ Below is a slightly more complex script, which calculates +((2 + 3) * 2) + 1+. N
 ----
 Try validating the script above yourself, using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
 
+While most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. The simple arithmetic we used as an example of the scripting language above is also a valid locking script that can be used to lock a transaction output.
 
-While most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. 
-
-In a bitcoin transaction, the locking script could be as simple as:
+Use part of the arithmetic example script as the locking script:
 ----
 3 OP_ADD 5 OP_EQUAL
 ----
 
-The locking script above can be satisfied by transaction containing an input with the unlocking script:
+which can be satisfied by transaction containing an input with the unlocking script:
 ----
 2
 ----
@@ -242,7 +241,7 @@ The validation software combines the locking and unlocking scripts and the resul
 2 3 OP_ADD 5 OP_EQUAL
 ----
 
-When this script is executed, the result is OP_TRUE, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. 
+As we saw in the step-by-step example above, when this script is executed the result is OP_TRUE, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. 
 
 [TIP]
 ====
@@ -251,7 +250,7 @@ Transactions are valid if the top result on the stack is TRUE (1), any other non
 
 ==== Turing Incompleteness
 
-The bitcoin transaction script language contains many operators but is deliberately limited in one important way - there are no loops or other flow control capabilities. This ensures that the language is not Turing Complete, meaning that scripts have limited complexity and predictable execution times. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a Denial-of-Service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability. 
+The bitcoin transaction script language contains many operators but is deliberately limited in one important way - there are no loops or complex flow control capabilities other than conditional flow control. This ensures that the language is not Turing Complete, meaning that scripts have limited complexity and predictable execution times. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a Denial-of-Service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability. 
 
 ==== Stateless Verification
 
@@ -372,9 +371,7 @@ where the data portion is limited to 40 bytes and most often represents a hash, 
 
 Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN, that can be used to "spend" an OP_RETURN output. The whole point of OP_RETURN is that you can't spend the money locked in that output and therefore it does not need to be held in the UTXO set as potentially spendable - OP_RETURN is _provably un-spendable_. OP_RETURN is usually an output with a zero bitcoin amount, since any bitcoin assigned to such an output is effectively lost forever. If an OP_RETURN is encountered by the script validation software it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an OP_RETURN output as an input in a transaction, that transaction is invalid. 
 
-
-
-{how are these transactions structured? can a single transaction have two outputs - 1 as p2pkh and one as op_return? wouldn't i need that to pay the transaction fee? is this something most wallets can implement?}
+A valid transaction can have only one OP_RETURN output. However, a single OP_RETURN output can be combined in a transaction with outputs of any other type. 
 
 ==== Pay to Script Hash (P2SH)
 
@@ -386,8 +383,6 @@ Pay-to-Script-Hash (P2SH) was introduced in the winter of 2012 as a powerful new
 * Moves the burden in data storage for the long script from the output (which is in UTXO set) to the input
 * Moves the burden in data storage for the long script from the present (payment) to the future (spend)
 * Sender pays the fee and shorter output means less fee for the sender, shifts the cost of a complex transaction to the spender (recipient)
-
-
 
 ===== Redeem Script and isStandard Validation
 
