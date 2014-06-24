@@ -207,20 +207,23 @@ The bitcoin transaction script language, also named confusingly _Script_, is a F
 
 Bitcoin's scripting language is called a stack-based language because it uses a data structure called a _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. 
 
-The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and may push a result onto the stack. For example, OP_ADD will pop two items from the stack, add them and push the resulting sum onto the stack. In the following example, an addition operator _OP_ADD_ is demonstrated, adding two numbers and putting the result on the stack: 
+The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and may push a result onto the stack. For example, OP_ADD will pop two items from the stack, add them and push the resulting sum onto the stack. 
+
+Conditional operators evaluate a condition producing a boolean result of TRUE or FALSE. For example, OP_EQUAL pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the result TRUE that signifies a valid transaction. 
+
+In the following example, the script +2 3 OP_ADD 5 OP_EQUAL+ demonstrates the arithmetic addition operator _OP_ADD_, adding two numbers and putting the result on the stack, followed by the conditional operator OP_EQUAL which checks the resulting sum is equal to +5+. For brevity, the OP_ prefix is omitted in the step-by-step example. 
 
 [[simplemath_script]]
 .Bitcoin's script validation doing simple math
 image::images/TxScriptSimpleMathExample.png["TxScriptSimpleMathExample"]
 
-Here's a more complex script, to calculate ((2 + 3) * 2) + 1. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
+Below is a slightly more complex script, which calculates +((2 + 3) * 2) + 1+. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
 
 ----
 2 3 OP_ADD 2 OP_MUL 1 OP_ADD 11 OP_EQUAL
 ----
 Try validating the script above yourself, using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
 
-Conditional operators evaluate a condition producing a boolean result of TRUE or FALSE. For example, OP_EQUAL pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the result TRUE that signifies a valid transaction. 
 
 While most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. 
 
