@@ -201,6 +201,8 @@ Below is an example of the unlocking and locking scripts for the most common typ
 .Combining scriptSig and scriptPubKey to evaluate a transaction script
 image::images/scriptSig_and_scriptPubKey.png["scriptSig_and_scriptPubKey"]
 
+
+[[tx_script_language]]
 ==== Scripting Language
 
 The bitcoin transaction script language, also named confusingly _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages. Script is a very simple, lightweight language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device, like a handheld calculator. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. In the case of programmable money, that is a deliberate security feature. 
@@ -256,6 +258,7 @@ The bitcoin transaction script language contains many operators but is deliberat
 
 The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. This predictability of outcomes is a key benefit of the bitcoin system.
 
+[[std_tx]]
 === Standard Transactions
 
 In the first few years of bitcoin's development, the developers introduced some limitations in the types of scripts that could be processed by the reference client. These limitations are encoded in a function called +isStandard()+ which defines five types of "standard" transactions. These limitations are temporary and may be lifted by the time you read this. Until then, the five standard types of transaction scripts are the only ones that will be accepted by the reference client and most miners who run the reference client. While it is possible to create a non-standard transaction containing a script that is not one of the standard types, you must find a miner who does not follow these limitations, to mine that transaction into a block. 
@@ -264,6 +267,7 @@ Check the source code of the bitcoin core client (the reference implementation) 
 
 The five standard types of transaction scripts are Pay-to-Public-Key-Hash (P2PKH), Public-Key, Multi-Signature (limited to 15 keys), Pay-to-Script-Hash (P2SH) and Data Output (OP_RETURN), which are described in more detail below.
 
+[[p2pkh]]
 ==== Pay to Public Key Hash (P2PKH)
 
 The vast majority of transactions processed on the bitcoin network are Pay-to-Public-Key-Hash, also known as P2PKH transactions. These contain a locking script that encumbers the output with a public key hash, more commonly known as a bitcoin address. Transactions that pay a bitcoin address contain P2PKH scripts. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key. 
@@ -299,7 +303,8 @@ image::images/Tx_Script_P2PubKeyHash_1.png["Tx_Script_P2PubKeyHash_1"]
 [[P2PubKHash2]]
 .Evaluating a script for a Pay-to-Public-Key-Hash transaction (Part 2 of 2)
 image::images/Tx_Script_P2PubKeyHash_2.png["Tx_Script_P2PubKeyHash_2"]
-    
+
+[[p2pk]]    
 ==== Pay-to-Public-Key
 
 Pay-to-Public-Key is a simpler form of a bitcoin payment than Pay-to-Public-Key-Hash. With this script form, the public key itself is stored in the locking script, rather than a public-key-hash as with P2PKH above, which is much shorter. The disadvantage of this form of locking script is that it consumes more space in the blockchain to store these types of payments, because a public key is 264 or 520 bits long (depending on whether it is compressed), whereas a public key hash is only 160 bits long. For legacy compatibility, Pay-to-Public-Key is used in all coinbase generation transactions, the transactions that pay the reward to the miners. 
@@ -321,7 +326,7 @@ The combined script, which is validated by the transaction validation software i
 
 The script above is a simple invocation of the CHECKSIG operator which validates the signature as belonging to the correct key and returns TRUE on the stack.
 
-
+[[multisig]]
 ==== Mutli-Signature
 
 Multi-signature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to release the encumbrance. This is also known as an M-of-N scheme, where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multi-signature is one where 3 public keys are listed as potential signers and at least 2 of those must be used to create signatures for a valid transaction to spend the funds. At this time, standard multi-signature scripts are limited to at most 15 listed public keys, meaning you can do anything from a 1-of-1 to a 15-of-15 multi-signature or any combination within that range. The limitation to 15 listed keys may be lifted by the time of publication of this book, so check the +isStandard()+ function to see what is currently accepted by the network. 
@@ -353,6 +358,7 @@ OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 
 
 When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script, that is if the unlocking script has a valid signatures from the two private keys which correspond to two of the three public keys set as an encumbrance. 
 
+[[op_return]]
 ==== Data Output (OP_RETURN)
 
 Bitcoin's distributed and timestamped ledger, the blockchain, has potential uses far beyond payments. Many developers have tried to use the transaction scripting language to take advantage of the security and resilience of the system for applications such as digital notary services, stock certificates, and smart contracts. Early attempts to use bitcoin's script language for these purposes involved creating transaction outputs that recorded data on the blockchain, for example to record a digital fingerprint of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction.
@@ -373,35 +379,112 @@ Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN, 
 
 A valid transaction can have only one OP_RETURN output. However, a single OP_RETURN output can be combined in a transaction with outputs of any other type. 
 
+[[p2sh]]
 ==== Pay to Script Hash (P2SH)
 
 Pay-to-Script-Hash (P2SH) was introduced in the winter of 2012 as a powerful new type of transaction that greatly simplifies the use of complex transaction scripts. To explain the need for P2SH, let's look at a practical example.
 
-In chapter 1 we introduced Mohammed, an electronics importer based in Dubai. Mohammed's company uses bitcoin's multi-signature feature extensively for its corporate accounts. Multi-signature accounts are used protect the company's treasury funds, accounts receivable funds and for large inventory expenses, such as large orders of electronics. Mohammed wants to use bitcoin's multi-signature to collect a payment from a customer who is importing a very large order of electronics. The payment from the customer will be "locked" by a multi-signature locking script that requires at least two signatures, from a pool of three public keys that include Mohammed's key, his customer's key and a third-party acting as an escrow agent for the order. 
+In chapter 1 we introduced Mohammed, an electronics importer based in Dubai. Mohammed's company uses bitcoin's multi-signature feature extensively for its corporate accounts. Multi-signature scripts are one of the most common uses of bitcoin's advanced scripting capabilities and are a very powerful feature. Mohammed's company uses a multi-signature script for all customer payments, known in accounting terms as "accounts receivable" or AR. With the multi-signature scheme, any payments made by customers are locked in such a way that they require at least two signatures to release, from Mohammed and one of his partners or from his attorney who has a backup key. A multi-signature scheme like that offers corporate governance controls and protects against theft, embezzlement or loss. 
 
 The resulting script is quite long and looks like this:
 
-2 <Mohammed's Public Key> <Customer Public Key> <Escrow Agent Public Key> 3 OP_CHECKMULTISIG
+----
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
+----
     
-The script encoded in hex is also quite long:
-+522102b89c96990d66f92b0d80de10
-0e0cd95239d83611e868dcfaf355ff
-2a4e3a6f37210346119060d1a37e30
-f14188d7b593e462e1999e40217ded
-2fc31bb38df83938802103fb20a2bc
-d01f5cb1707153f7175a17576b0541
-59eebeaa6e3aad6d2ef53cc60753ae+
+While multi-signature scripts are a powerful feature, they are cumbersome to use. Given the script above, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, as this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex output scripts difficult in practice. 
 
-* Complex scripts replaced by shorter fingerprint in the output
-* Scripts can be coded as an address, so the sender and the sender's wallet don't need complex engineering to implement
-* Moves the burden of constructing the script to the recipient not the sender
-* Moves the burden in data storage for the long script from the output (which is in UTXO set) to the input
-* Moves the burden in data storage for the long script from the present (payment) to the future (spend)
-* Sender pays the fee and shorter output means less fee for the sender, shifts the cost of a complex transaction to the spender (recipient)
+Pay-to-Script-Hash (P2SH) was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script which will be presented later when this output is spent". 
+
+In P2SH transactions, the locking script that is replaced by a hash is referred to as the _redeemScript_ because it is presented to the system at redemption time rather than as a locking script. 
+
+[[without_p2sh]]
+.Complex Script Without P2SH
+|=======
+| Locking Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
+| Unlocking Script | Sig1 Sig2   
+|=======
+
+[[with_p2sh]]
+.Complex Script as P2SH
+|=======
+| Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
+| Locking Script | OP_HASH160 <20-byte hash of redeemScript> OP_EQUAL
+| Unlocking Script | Sig1 Sig2 redeemScript 
+|=======
+
+As you can see from the tables above, with P2SH the complex script that details the conditions for spending the output (redeemScript) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeemScript itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction. 
+
+Let's look at Mohammed's company, their complex multi-signature script and the resulting P2SH scripts. 
+
+First, the multi-signature script that Mohammed's company uses for all incoming payments from customers:
+----
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
+----
+
+If the placeholders above are replaced by actual public keys (shown below as 520 bit numbers starting with 04) you can see that this script becomes very long:
+----
+2 
+04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C587 
+04A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49
+047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D9977965
+0421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5
+043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800
+5 OP_CHECKMULTISIG
+----
+
+The entire script above can instead be represented by a 20-byte cryptographic hash, by first applying the SHA256 hashing algorithm and then applying the RIPEMD160 algorithm on the result. The 20-byte hash of the above script is:
+
+----
+54c557e07dde5bb6cb791c7a540e0a4796f5e97e
+----
+
+A P2SH transaction locks the output to this hash instead of the longer script, using the locking script:
+----
+OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
+----
+which, as you can see is much much shorter. Instead of "pay to this 5-key multi-signature script", the P2SH equivalent transaction is "pay to a script with this hash". A customer making a payment to Mohammed's company need only include this much shorter locking script in their payment. When Mohammed wants to spend this UTXO, they must present the original redeemScript (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
+
+----
+<Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
+----
+
+The two scripts are combined in two stages. First, the redeemScript is checked against the locking script to make sure the hash matches:
+----
+<2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <redeemScriptHash> OP_EQUAL
+----
+If the redeemScript hash matches, then the unlocking script is executed on its own, to unlock the redeemScript:
+----
+<Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG
+----
+
+===== Pay-to-Script-Hash Addresses
+
+Another important part of the P2SH feature is the ability to encode a script hash as an address. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5", which results in Base58Check encoded addresses that start with a "3". For example, Mohammed's complex script, hashed and Base58Check encoded as P2SH address becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a bitcoin address. 
+
+P2SH addresses hide all of the complexity, so that the person making a payment does not see the script. 
+
+===== Benefits of Pay-to-Script-Hash 
+
+The Pay-to-Script-Hash feature offers the following benefits compared to the direct use of complex scripts in locking outputs:
+
+* Complex scripts are replaced by shorter fingerprint in the transaction output, making the transaction smaller
+* Scripts can be coded as an address, so the sender and the sender's wallet don't need complex engineering to implement P2SH
+* P2SH shifts the burden of constructing the script to the recipient not the sender
+* P2SH shifts the burden in data storage for the long script from the output (which is in UTXO set) to the input (only stored on the blockchain)
+* P2SH shifts the burden in data storage for the long script from the present time (payment) to a future time (when it is spent)
+* P2SH shifts the transaction fee cost of a long script from the sender to the recipient who has to include the long redeemScript to spend it
 
 ===== Redeem Script and isStandard Validation
 
-=== Non-Standard Transactions
+Pay-to-Script-Hash is currently limited to the standard types of bitcoin transaction scripts, by the +isStandard()+ function. That means that the redeemScript presented in the spending transaction must be one of the standard types: P2PK, P2PK or Multi-Sig, excluding OP_RETURN and P2SH itself. You cannot reference a P2SH script inside a redeemScript and you can't use an OP_RETURN inside a P2SH script. This limitation is temporary and will likely be removed in future versions of the bitcoin reference implementation, allowing the use of any valid script inside a P2SH redeemScript.
+
+Note that since the redeemScript is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of a non-standard transaction it will be processed as valid. However, you will not be able to spend it as the spending transaction which includes the redeemScript will not be accepted, as it is non-standard. This creates a risk, as you can lock bitcoin in a P2SH which cannot be later spent. The network will accept the P2SH encumbrance even if it corresponds to a non-standard or invalid redeemScript, because the script hash gives no indication of the script it represents. 
+
+[WARNING]
+====
+P2SH locking scripts contain the hash of a redeemScript which gives no clues as to the content of the redeemScript itself. The P2SH transaction will be considered valid and accepted even if the redeemScript is invalid or non-standard. You may accidentally lock bitcoin in such a way that it cannot later be spent. 
+====
 
 [[tx_script_ops]]
 === Transaction Script Language Operators, Constants and Symbols
@@ -439,7 +522,7 @@ d01f5cb1707153f7175a17576b0541
 | OP_RETURN | 0x6a | Halt and invalidate transaction
 |=======
  
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_stack]]
 .Stack Operations
 [options="header"]
 |=======
@@ -465,7 +548,7 @@ d01f5cb1707153f7175a17576b0541
 | OP_TUCK | 0x7d | Copy the top item and insert it between the top and second item.
 |=======
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_splice]]
 .String Splice Operations
 [options="header"]
 |=======
@@ -477,7 +560,7 @@ d01f5cb1707153f7175a17576b0541
 | OP_SIZE | 0x82 | Calculate string length of top item and push the result 
 |=======
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_binmath]]
 .Binary Arithmetic and Conditionals
 [options="header"]
 |=======
@@ -492,7 +575,7 @@ d01f5cb1707153f7175a17576b0541
 | OP_RESERVED2 | 0x8a | Halt - Invalid transaction unless found in an unexecuted OP_IF clause
 |=======
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_numbers]]
 .Numeric Operators
 [options="header"]
 |=======
@@ -527,7 +610,7 @@ d01f5cb1707153f7175a17576b0541
 |=======
 
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_crypto]]
 .Cryptographic and Hashing Operations
 [options="header"]
 |=======
@@ -544,7 +627,7 @@ d01f5cb1707153f7175a17576b0541
 | OP_CHECKMULTISIGVERIFY | 0xaf | Same as CHECKMULTISIG, then OP_VERIFY to halt if not TRUE
 |=======
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_nop]]
 .Non-Operators
 [options="header"]
 |=======
@@ -553,7 +636,7 @@ d01f5cb1707153f7175a17576b0541
 |=======
 
 
-[[tx_script_ops_table_control]]
+[[tx_script_ops_table_internal]]
 .Reserved OP codes for internal use by the parser
 [options="header"]
 |=======
@@ -565,6 +648,3 @@ d01f5cb1707153f7175a17576b0541
 | OP_PUBKEY | 0xfe | Represents a public key field
 | OP_INVALIDOPCODE | 0xff | Represents any OP code not currently assigned
 |=======
-
-
-=== Transaction Malleability
