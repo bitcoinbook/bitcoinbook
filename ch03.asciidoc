@@ -3,7 +3,7 @@
 
 === Bitcoin Core - The Reference Implementation, aka Satoshi Client
 
-You can download the Reference Client, also known as _Bitcoin Core_ from bitcoin.org. The reference client implements all aspects of the bitcoin system, including wallets, a transaction verification engine with a full copy of the entire transaciton ledger (blockchain) and a full network node in the peer-to-peer bitcoin network. 
+You can download the Reference Client, also known as _Bitcoin Core_ from bitcoin.org. The reference client implements all aspects of the Bitcoin system, including wallets, a transaction verification engine with a full copy of the entire transaction ledger (block chain) and a full network node in the peer-to-peer Bitcoin network. 
 
 Go to http://bitcoin.org/en/choose-your-wallet and select "Bitcoin Core" to download the reference client. Depending on your operating system, you will download an executable installer. For Windows, this is either a ZIP archive or an EXE executable. For Mac OS it is DMG disk image. Linux versions include a PPA package for Ubuntu or a TAR.GZ archive. 
 
@@ -13,17 +13,17 @@ image::images/bitcoin-choose-client.png["bitcoin choose client"]
 
 ==== Bitcoin Core - Running the client for the first time
 
-If you download an installable package, such as an EXE, DMG or PPA, you can install it the same way as any application on your operating system. For Windows, run the EXE and follow the step-by-step instructions. For Mac OS, launch the DMG and drag the Bitcoin-QT icon into your Applications folder. For Ubuntu, double-click on the PPA in your File Explorer and it will open the package manager to install the package. Once you have completed installation you should have a new application "Bitcoin-Qt" in your application list. Double-click on the icon to start the bitcoin client. 
+If you download an installable package, such as an EXE, DMG or PPA, you can install it the same way as any application on your operating system. For Windows, run the EXE and follow the step-by-step instructions. For Mac OS, launch the DMG and drag the Bitcoin-QT icon into your Applications folder. For Ubuntu, double-click on the PPA in your File Explorer and it will open the package manager to install the package. Once you have completed installation you should have a new application "Bitcoin-Qt" in your application list. Double-click on the icon to start the Bitcoin client. 
 
-The first time you run Bitcoin Core it will start downloading the blockchain, a process that may take several days. Leave it running in the background until it displays "Synchronized" and no longer shows "Out of sync" next to the balance.
+The first time you run Bitcoin Core it will start downloading the block chain, a process that may take several days. Leave it running in the background until it displays "Synchronized" and no longer shows "Out of sync" next to the balance.
 
 [TIP]
 ====
-Bitcoin Core keeps a full copy of the transaction ledger (blockchain), with every transaction that has ever occurred on the bitcoin network since its inception in 2009. This dataset is several gigabytes in size (approximately 16GB in late 2013) and is downloaded incrementally over several days. The client will not be able to process transactions or update account balances until the full blockchain dataset is downloaded. During that time, the client will display "Out of sync" next to the account balances and show "Synchronizing" in the footer. Make sure you have enough disk space, bandwidth and time to complete the initial synchronization. 
+Bitcoin Core keeps a full copy of the transaction ledger (block chain), with every transaction that has ever occurred on the Bitcoin network since its inception in 2009. This dataset is several gigabytes in size (approximately 16GB in late 2013) and is downloaded incrementally over several days. The client will not be able to process transactions or update account balances until the full block chain dataset is downloaded. During that time, the client will display "Out of sync" next to the account balances and show "Synchronizing" in the footer. Make sure you have enough disk space, bandwidth and time to complete the initial synchronization. 
 ====
  
 [[bitcoin-qt-firstload]]
-.Bitcoin Core - The Graphical User Interface, during the blockchain initialization
+.Bitcoin Core - The Graphical User Interface, during the block chain initialization
 image::images/bitcoin-qt-firstload.png["bitcoin-qt first run"]
 
 
@@ -330,7 +330,7 @@ verifymessage "bitcoinaddress" "signature" "message"
 
 Commands: -daemon, getinfo
 
-Now, run the bitcoin client. The first time you run it the bitcoin blockchain will be rebuilt. This is a multi-gigabyte file and will take on average 2 days to download in full. You can shorten the blockchain initialization time by downloading a partial copy of the blockchain using bittorrent from +http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/+. 
+Now, run the bitcoin client. The first time you run it the bitcoin block chain will be rebuilt. This is a multi-gigabyte file and will take on average 2 days to download in full. You can shorten the block chain initialization time by downloading a partial copy of the block chain using bittorrent from +http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/+. 
 
 Run bitcoind in the background with the option +-daemon+:
 
@@ -356,7 +356,7 @@ Opened LevelDB successfully
 
 ----
 
-Bitcoin's +getinfo+ command shows us basic information about the status of the bitcoin network node, the wallet and the blockchain database:
+Bitcoin's +getinfo+ command shows us basic information about the status of the bitcoin network node, the wallet and the block chain database:
 
 ----
 $ bitcoind getinfo
@@ -382,7 +382,7 @@ The data is returned in JavaScript Object Notation (JSON), a format which can ea
 
 [TIP]
 ====
-It will take some time, perhaps more than a day, for the bitcoind client to "catch up" to the current blockchain height as it downloads blocks from other bitcoin clients. You can check its current progress using getinfo to see the number of known blocks.
+It will take some time, perhaps more than a day, for the bitcoind client to "catch up" to the current block chain height as it downloads blocks from other Bitcoin clients. You can check its current progress using getinfo to see the number of known blocks.
 ====
 
 ==== Wallet setup and encryption
@@ -472,7 +472,7 @@ $
 
 Commands: getnewaddress, getreceivedbyaddress, listtransactions, getaddressesbyaccount, getbalance
 
-The bitcoin reference client maintains a pool of addresses, the size of which is displayed by +keypoolsize+ when you use the command +getinfo+. These addresses are generated automatically and can then be used as public receiving addresses or change addresses. To get one of these addresses, you can use the +getnewaddress+ command:
+The Bitcoin reference client maintains a pool of addresses, the size of which is displayed by +keypoolsize+ when you use the command +getinfo+. These addresses are generated automatically and can then be used as public receiving addresses or change addresses. To get one of these addresses, you can use the +getnewaddress+ command:
 
 ----
 $ bitcoind getnewaddress 
@@ -574,10 +574,10 @@ $ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309ac
 
 [TIP]
 ====
-Transaction IDs are not authoritative until a transaction has been confirmed. Absence of a transaction hash in the blockchain does not mean the transaction was not processed. This is known as "transaction malleability", as transaction hashes can be modified prior to confirmation in a block. After confirmation, the txid is immutable and authoritative.
+Transaction IDs are not authoritative until a transaction has been confirmed. Absence of a transaction hash in the block chain does not mean the transaction was not processed. This is known as "transaction malleability", as transaction hashes can be modified prior to confirmation in a block. After confirmation, the txid is immutable and authoritative.
 ====
 
-The transaction form shown above with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it we will use two commands, +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the transaction hash (txid) as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the bitcoin network:
+The transaction form shown above with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it we will use two commands, +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the transaction hash (txid) as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the Bitcoin network:
 
 ----
 $ bitcoind getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
@@ -634,9 +634,9 @@ $ bitcoind decoderawtransaction 0100000001d717...388ac00000000
 }
 ----
 
-The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 milliBits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+ above). The two outputs correspond to the 50 millibit credit and an output with change back to the sender. 
+The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 milliBits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+ above). The two outputs correspond to the 50 milliBit credit and an output with change back to the sender. 
 
-We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (eg. +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
+We can further explore the block chain by examining the previous transaction referenced by its txid in this transaction using the same commands (eg. +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
 
 Once the transaction we received has been confirmed by inclusion in a block, the +gettransaction+ command will return additional information, showing the block hash (identifier) in which the transaction was included:
 
@@ -713,7 +713,7 @@ $ bitcoind getblock 000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a
 }
 ----
 
-The block contains 367 transactions and as you see above, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 milliBits to our address. The +height+ entry tells us this is the 286384th block in the blockchain. 
+The block contains 367 transactions and as you see above, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 milliBits to our address. The +height+ entry tells us this is the 286384th block in the block chain. 
 
 We can also retrieve a block by its block height using the +getblockhash+ command, which takes the block height as the parameter and returns the block hash for that block:
 
@@ -745,7 +745,7 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 }
 ----
 
-The +getblock+, +getblockhash+ and +gettransaction+ commands can be used to explore the blockchain database, programmatically. 
+The +getblock+, +getblockhash+ and +gettransaction+ commands can be used to explore the block chain database, programmatically. 
 
 
 ==== Creating, signing and submitting transactions based on unspent outputs
@@ -802,7 +802,7 @@ $ bitcoind getnewaddress
 1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb
 ----
 
-We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the *whole* output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
+We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the *whole* output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 milliBits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
 
 We use the +createrawtransaction+ to create the transaction described above. As parameters to +createrawtransaction+ we provide the transaction input (the 50 millibit unspent output from our confirmed transaction) and the two transaction outputs (money sent to the new address and change sent back to the previous address):
 
@@ -865,7 +865,7 @@ $ bitcoind decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db
 }
 ----
 
-That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 millibits to our new address and one for 24.5 millibits as change back to the original address. The difference of 0.5 millibits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
+That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 milliBits to our new address and one for 24.5 milliBits as change back to the original address. The difference of 0.5 milliBits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
 
 As you may notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless, we haven't yet proven that we *own* the address from which the unspent output is sourced. By signing, we remove the encumberance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter.
 
@@ -933,7 +933,7 @@ $ bitcoind decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db
 }
 ----
 
-Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the encumberance on the output so that it can be spent. The signature makes this transaction verifiable by any node in the bitcoin network. 
+Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the encumberance on the output so that it can be spent. The signature makes this transaction verifiable by any node in the Bitcoin network. 
 
 Now it's time to submit the newly created transaction to the network. We do that with the command +sendrawtransaction+ which takes the raw hex string produced by +signrawtransaction+. This is the same string we just decoded above:
 
@@ -990,15 +990,15 @@ As before, we can also examine this in more detail using the +getrawtransaction+
 
 === Alternative clients, libraries and toolkits
 
-Beyond the reference client, bitcoind, there are other clients and libraries that can be used to interact with the bitcoin network and data structures. These are implemented in a variety of programming languages, offering programmers native interfaces in their own language. 
+Beyond the reference client, bitcoind, there are other clients and libraries that can be used to interact with the Bitcoin network and data structures. These are implemented in a variety of programming languages, offering programmers native interfaces in their own language. 
 
 Alternative implementations include:
 
 * libbitcoin and sx tools, a C++ multi-threaded full node client and library with command-line tools (https://libbitcoin.dyne.org/)
 * bitcoinj, a Java full node client library (https://code.google.com/p/bitcoinj/)
-* btcd, a Go language full node bitcoin client (https://opensource.conformal.com/wiki/btcd)
-* Bits of Proof (BOP), a Java enterprise-class implementation of bitcoin (https://bitsofproof.com)
-* picocoin, a C implementation of a light-weight client library for bitcoin (https://github.com/jgarzik/picocoin)
+* btcd, a Go language full node Bitcoin client (https://opensource.conformal.com/wiki/btcd)
+* Bits of Proof (BOP), a Java enterprise-class implementation of Bitcoin (https://bitsofproof.com)
+* picocoin, a C implementation of a light-weight client library for Bitcoin (https://github.com/jgarzik/picocoin)
 
 Many more libraries exist in a variety of other programming languages and more are created all the time. 
 
