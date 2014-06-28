@@ -4,8 +4,71 @@
 *DRAFT - DO NOT SUBMIT ISSUES OR PULL REQUESTS YET PLEASE - CONSTANT CHANGES HAPPENING*
 
 === Introduction
-=== The Blockchain 
-=== Genesis Block
+
+The blockchain is bitcoin's distributed ledger of transactions and the main data structure in bitcoin, which consists of a chain of blocks of transactions in historical order from the "genesis" of bitcoin until now. In this chapter we will look at the structure of the blockchain and the blocks within it. We will examine various mechanisms for querying the blockchain database to retrieve information about blocks and transactions. Finally, we will see how new blocks are added to the blockchain through the mechanism of distributed consensus based on a Proof-of-Work algorithm, known as "mining".
+
+=== The Blockchain
+
+The blockchain is a securely timestamped, ordered linked list of blocks of transactions. Each block is identified by a hash, generated using the SHA256 cryptographic message hash algorithm on the header of the block. Each block also contains a link to the previous block in the chain, by reference to the previous block's hash. Since a block contains a cryptographic hash of the previous block as a reference, the hash proves that the previous block was known when the current block was created. The hash of the previous block is also part of the data that creates the hash of the current block, making the ancestry of each block an immutable part of its identity. The chain of hashes guarantees that a block cannot be modified retrospectively without forcing the re-computation of all following blocks, because a retrospective change in any block would change the hash, thereby changing the reference in the next block whose hash also changes, and so on. As new blocks are added to the chain, they strengthen the immutability of the ledger by effectively incorporating all previous blocks by reference in their cryptographic hash. 
+
+Since each block can only reference one previous block, every chain of blocks can be traced back to the first block every created, the _genesis block_. 
+
+=== The Genesis Block
+
+The first block in the chain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
+
+The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such a blockchain.info and you will find a page describing the contents of this block, with a URL containing that hash:
+
+https://blockchain.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+
+https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+
+Using the Bitcoin Core reference client on the command-line:
+
+----
+$ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+{
+    "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+    "confirmations" : 308321,
+    "size" : 285,
+    "height" : 0,
+    "version" : 1,
+    "merkleroot" : "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+    "tx" : [
+        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+    ],
+    "time" : 1231006505,
+    "nonce" : 2083236893,
+    "bits" : "1d00ffff",
+    "difficulty" : 1.00000000,
+    "nextblockhash" : "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
+}
+----
+
+
+=== Structure of a Block
+
+[[block_structure]]
+.The structure of a block
+[options="header"]
+|=======
+|Size| Field | Description
+| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
+| 4 bytes | Block Size | The size of the block, in bytes, following this field
+| Block Header ||
+| 4 bytes | Version | A version number to track software/protocol upgrades
+| 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
+| 32 bytes | Merkle Root | A hash of the root of the Merkle-Tree of this block's transactions
+| 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
+| 4 bytes | Difficulty Target | The proof-of-work algorithm difficulty target for this block
+| 4 bytes | Nonce | A counter used for the proof-of-work algorithm
+| 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
+| Variable | Transactions | The transactions recorded in this block
+|=======
+
+
+=== The Genesis Block
+=== Merkle Trees
 === Proof-of-Work (Mining) and Consensus
 ==== Consensus Mechanism
 ==== Proof-of-Work Algorithm
