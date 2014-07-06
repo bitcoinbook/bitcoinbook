@@ -14,7 +14,7 @@ Satoshi Nakamoto's main invention is the decentralized mechanism for emergent co
 
 Bitcoin's consensus emerges from the interplay of three processes that occur independently on nodes across the network: 
 
-* Independent verification of each transaction, by every full node, based on digital signatures (cryptographic proof of ownership)
+* Independent verification of each transaction, by every full node, based on a comprehensive list of criteria
 * Independent aggregation of those transactions into new blocks by mining nodes, coupled with demonstrated computation through a Proof-of-Work algorithm
 * Independent assembly of the new blocks by every full node into a chain and selection of the chain with the most cumulative computation demonstrated through Proof-of-Work
 
@@ -28,7 +28,7 @@ In the previous chapter we saw how wallet software creates transactions by colle
 
 Every bitcoin node that receives a transaction will first verify the transaction before forwarding it to its neighbors. This ensures that only valid transactions are propagated across the network, while invalid transactions are discarded at the first node that encounters them. 
 
-Each node verifies transaction against a long checklist of criteria:
+Each node verifies every transaction against a long checklist of criteria:
 
 * Check the syntactic correctness of the transaction's data structure
 * Make sure neither lists of inputs or outputs are empty
@@ -51,13 +51,22 @@ Each node verifies transaction against a long checklist of criteria:
 
 These conditions can be seen in detail in the functions AcceptToMemoryPool, CheckTransaction and CheckInputs in the bitcoin reference client. Note that the conditions change over time, to address new types of Denial-of-Service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
-If all the conditions are met, the transaction is accepted as valid and added to the transaction pool (the list of unconfirmed transactions), matched against the user's wallet if the node is keeping a wallet and finally, relayed to the neighboring nodes to propagate on the network
-
 By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid new transactions (the transaction pool), roughly in the same order. 
+
+[[transaction_pools]]
+== Transaction Pools
+
+Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the memory pool or transaction pool. Once a transaction is verified using the detailed checklist introduced in the section above, it is added to the transaction pool. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the blockchain. For example, a node that holds a users wallet will use the transaction pool to track incoming payments to the users wallet that have been received on the network but are not yet confirmed. Every node also maintains a separate pool of orphaned transactions as detailed in <<orphan_transactions>>. If a transactions inputs refer to a transaction that is not yet known, a missing parent, then it will be stored temporarily in the orphan pool until the parent transaction arrives. Both the transaction pool and orphan pool are stored in local memory and are not saved on persistent storage, rather they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network. 
+
+As transactions are received and verified using the criteria in the previous section, they are added to the transaction pool and relayed to the neighboring nodes to propagate on the network.
+
+When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any orphans found are pulled from the orphan pool and validated using the above checklist. If valid, they are also added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
+
+Most nodes also create a UTXO pool which is the set of all unspent outputs on the blockchain, this may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 === Aggregating Transactions into Blocks
 
-Some of the nodes on the bitcoin network are specialized nodes called _miners_. A miner will collect incoming transactions and validate them just like any other node. Unlike other nodes, a miner will then aggregate these transactions into a _block_. The block of transactions constructed by a miner is a candidate block and becomes valid only if the miner succeeds in winning the mining competition. Each miner competes by trying billions of possible solutions to an equation based on a cryptographic hash. If they find a solution, they broadcast the candidate block for everyone to record on the blockchain. The competition difficulty is calibrated to ensure that a new block solution is found by someone every 10 minutes on average. We will look at the mining process itself in more detail in <<mining>>. For now, let's look at how miners aggregate transactions into blocks. 
+Some of the nodes on the bitcoin network are specialized nodes called _miners_. A miner will collect, validate and relay new transactions just like any other node. Unlike other nodes, a miner will then aggregate these transactions into a _block_. The block of transactions constructed by a miner is a candidate block and becomes valid only if the miner succeeds in winning the mining competition. Each miner competes by trying billions of possible solutions to an equation based on a cryptographic hash. If they find a solution, they broadcast the candidate block for everyone to record on the blockchain. The competition difficulty is calibrated to ensure that a new block solution is found by someone every 10 minutes on average. We will look at the mining process itself in more detail in <<mining>>. For now, let's look at how miners aggregate transactions into blocks. 
 
 In Chapter 1 we introduced Jing, a computer engineering student in Shanghai China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig" which is a specialized computer-hardware system designed to mine bitcoins. Jing started mining for bitcoin in 2010, when mining was not as competitive as it is today. At that time, Jing could mine bitcoin using a desktop computer. Today, he uses a much more powerful mining system based on Application Specific Integrated Circuits (ASICs), which are specialized silicon chips designed exclusively for one application - bitcoin mining. Over time, the way Jing participates in the mining process has changed slightly, but the fundamentals remain the same. We will start by looking at how Jing mined in 2010, when things were simpler and then look at how he mines today, as bitcoin mining has become a more complex and competitive activity. 
 
@@ -65,7 +74,29 @@ In 2010, Jing mined on a desktop computer. At the time, he would run a full bitc
 
 Jing's bitcoin node is also listening for new blocks, propagated on the bitcoin network. As soon a Jing's bitcoin node receives a valid new block, it immediately starts the next round of competition. Receiving a new block signifies that someone else has won the previous round, meaning that Jing's system did not win that round and should abandon its current efforts and shift its resources to try and win the next round. During the previous 10 minutes, while Jing's node was searching for a solution, it was also collecting transactions. By now it has collected a few hundred transactions in the memory pool. After removing any transactions that appear in the new block recently received, Jing's memory pool is left containing unconfirmed transactions that are waiting to be recorded in a new block. 
 
-Jing's node immediately constructs a new candidate block, to participate in the competition. To construct the candidate block his bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block.  
+Jing's node immediately constructs a new candidate block, to participate in the competition. 
+
+=== Structure of a Block
+
+A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of it's size. 
+
+[[block_structure]]
+.The structure of a block
+[options="header"]
+|=======
+|Size| Field | Description
+| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
+| 4 bytes | Block Size | The size of the block, in bytes, following this field
+| 80 bytes | Block Header | Several fields form the block header (see below)
+| 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
+| Variable | Transactions | The transactions recorded in this block
+|=======
+
+Jing's mining node creates a candidate block by building an empty data structure and then filling it with transactions and the appropriate metadata. We'll ignore the header for now, as it is the last thing filled in by a node and concentrate instead on the transactions and how they are added to the block. Jing's node uses a selection algorithm to pick transactions from the memory pool (and the orphan pool if the parent has arrived) and adds them after the block header. The selection algorithm is detailed in the next section. 
+
+=== Adding Transactions to a Candidate Block
+
+To construct the candidate block Jing's bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block.  
 
 The priority of a transaction is calculated as the sum of the value and age of the inputs divided by the total size of the transaction:
 ----
@@ -86,23 +117,12 @@ Jing's mining node then fills the rest of the block up to the maximum block size
 
 If there is any space remaining in the block, Jing's mining node may choose to fill it with no-fee transactions. Some miners choose to mine transactions without fees on a best-effort basis. Other miners may choose to ignore transactions without fees. 
 
-Any transactions left in the memory pool after the block is filled will be carried forward for inclusion in the next block. As transactions remain in the memory pool, their inputs "age", as the UTXO they spend get deeper into the blockchain with new blocks added on top. A transaction that remains in the pool after several blocks will have a higher priority than when it was first included in the pool and may end up being included in a block for free. 
+Any transactions left in the memory pool after the block is filled will remain in the pool for inclusion in the next block. As transactions remain in the memory pool, their inputs "age", as the UTXO they spend get deeper into the blockchain with new blocks added on top. Since a transactions priority depends on the age of its inputs, transactions remaining in the pool will age and therefore increase in priority. Eventually a transaction without fees may reach a high enough priority to be included in the block for free. 
 
-=== Structure of a Block
+Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, as it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software is expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time. 
 
-The block created by Jing's mining node above has now been filled with transactions. The main body of the block contains the transactions and a counter showing how many transactions are contained within it. The header of the block data structure contains metadata about the block and its relation to the other blocks in the blockchain. Once Jing's node has filled it with transactions, it will construct the block header and begin trying to solve the equation that will make the block a valid block and allow him to win the mining competition, as we will see in <<mining>>
 
-[[block_structure]]
-.The structure of a block
-[options="header"]
-|=======
-|Size| Field | Description
-| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
-| 4 bytes | Block Size | The size of the block, in bytes, following this field
-| 80 bytes | Block Header | Several fields form the block header (see below)
-| 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
-| Variable | Transactions | The transactions recorded in this block
-|=======
+=== Block Header
 
 The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. Merkle Trees are discussed in the next section. 
     
@@ -151,7 +171,7 @@ Since the merkle tree is a binary tree, it needs an even number of leaf nodes. I
 .An even number of data elements, by duplicating one data element
 image::images/MerkleTreeOdd.png["merkle_tree_odd"]
 
-The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32-bytes of data from a single merkle root. In the diagram below, we have show a tree build from 16 transactions: 
+The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32-bytes of data from a single merkle root. In the diagram below, you will see a tree built from 16 transactions: 
 
 [[merkle_tree_large]]
 .A Merkle Tree summarizing many data elements
@@ -273,16 +293,13 @@ With SHA-256, the output is always 256 bits long, regardless of the size of the 
 
 [[sha256_example1]]
 .SHA256 Example
-++++
-<screen>
-$ python
+----
+$ *python*
 Python 2.7.1
->>> <userinput>import hashlib</userinput>
->>> <userinput>print hashlib.sha256("I am Satoshi Nakamoto").hexdigest()</userinput>
+>>> import hashlib
+>>> print hashlib.sha256("I am Satoshi Nakamoto").hexdigest()
 5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e
-</screen>
-++++
-
+----
 
 The example shows that if we calculate the hash of the phrase +"I am Satoshi Nakamoto"+, it will produce +5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e+. This 256-bit number is the _hash_ or _digest_ of the phrase and depends on every part of the phrase. Adding a single letter, punctuation mark or any character will produce a different hash.
 
