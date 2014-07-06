@@ -20,7 +20,9 @@ Bitcoin's consensus emerges from the interplay of three processes that occur ind
 
 In the next few sections we will examine these processes and how they interact to create the emergent property of network-wide consensus that allows any bitcoin node to assemble its own copy of the authoritative, trusted, public, global ledger.
 
-=== Independent Transaction Verification
+Each of these processes also aggregates smaller bitcoin units into larger data structures. First, unspent transaction outputs (UTXO) are aggregated into transactions. Next, many transactions are aggregated into a block. Finally, blocks are added to a chain of blocks, the blockchain. In the previous chapter we looked at transactions as a data structure. In this chapter we will also look at the larger data structures: blocks and the blockchain. 
+
+=== Independently Verifying Transactions
 
 In the previous chapter we saw how wallet software creates transactions by collecting UTXO, providing the appropriate unlocking scripts and then constructing new outputs assigned to a new owner. The resulting transaction is then sent to the neighboring nodes in the bitcoin network so that it may be propagated across the entire bitcoin network. 
 
@@ -31,33 +33,175 @@ Each node verifies transaction against a long checklist of criteria:
 * Check the syntactic correctness of the transaction's data structure
 * Make sure neither lists of inputs or outputs are empty
 * The transaction size in bytes is less than MAX_BLOCK_SIZE
-* Each output value, as well as the total, must be in the legal money range
+* Each output value, as well as the total, must be within the allowed range of values (less than 21m coins, more than 0)
 * Check none of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
 * Check that nLockTime is less than or equal to INT_MAX
 * Check that the transaction size in bytes is greater than or equal to 100
 * Check the number of signature operations contained in the transaction is less than the signature operation limit
 * Reject "nonstandard" transactions: unlocking script (scriptSig) doing anything other than pushing numbers on the stack, or the locking script (scriptPubkey) not matching isStandard forms
-* Check if we already have a matching transaction in the pool, or in a block in the main branch, if so reject this transaction
+* Check for a matching transaction in the pool, or in a block in the main branch, if so reject this transaction
 * For each input, if the referenced output exists in any other transaction in the pool, reject this transaction.
-* For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions, if a matching transaction is not in there already.
+* For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions, if a matching transaction is not already in the pool.
 * For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations; else reject this transaction
 * For each input, if the referenced output does not exist (e.g. never existed or has already been spent), reject this transaction
-* Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in legal money range
+* Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0)
 * Reject if the sum of input values < sum of output values
 * Reject if transaction fee would be too low to get into an empty block
-* Verify the unlocking scripts for each input against the corresponding output locking scripts. 
+* Verify the unlocking scripts for each input against the corresponding output locking scripts
+
+These conditions can be seen in detail in the functions AcceptToMemoryPool, CheckTransaction and CheckInputs in the bitcoin reference client. Note that the conditions change over time, to address new types of Denial-of-Service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
 If all the conditions are met, the transaction is accepted as valid and added to the transaction pool (the list of unconfirmed transactions), matched against the user's wallet if the node is keeping a wallet and finally, relayed to the neighboring nodes to propagate on the network
 
 By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid new transactions (the transaction pool), roughly in the same order. 
 
+=== Aggregating Transactions into Blocks
+
+Some of the nodes on the bitcoin network are specialized nodes called _miners_. A miner will collect incoming transactions and validate them just like any other node. Unlike other nodes, a miner will then aggregate these transactions into a _block_. The block of transactions constructed by a miner is a candidate block and becomes valid only if the miner succeeds in winning the mining competition. Each miner competes by trying billions of possible solutions to an equation based on a cryptographic hash. If they find a solution, they broadcast the candidate block for everyone to record on the blockchain. The competition difficulty is calibrated to ensure that a new block solution is found by someone every 10 minutes on average. We will look at the mining process itself in more detail in <<mining>>. For now, let's look at how miners aggregate transactions into blocks. 
+
+In Chapter 1 we introduced Jing, a computer engineering student in Shanghai China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig" which is a specialized computer-hardware system designed to mine bitcoins. Jing started mining for bitcoin in 2010, when mining was not as competitive as it is today. At that time, Jing could mine bitcoin using a desktop computer. Today, he uses a much more powerful mining system based on Application Specific Integrated Circuits (ASICs), which are specialized silicon chips designed exclusively for one application - bitcoin mining. Over time, the way Jing participates in the mining process has changed slightly, but the fundamentals remain the same. We will start by looking at how Jing mined in 2010, when things were simpler and then look at how he mines today, as bitcoin mining has become a more complex and competitive activity. 
+
+In 2010, Jing mined on a desktop computer. At the time, he would run a full bitcoin node, connected to the bitcoin network. A full bitcoin node keeps a full copy of the blockchain, the list of all transactions since the first ever transaction in 2009. Jing's bitcoin node would receive transactions propagated by other nodes, just like any other node on the bitcoin network. After validating those transactions, the bitcoin software would add them to the _memory pool_, or _transaction pool_, where transactions would await until they could be included (mined) into a block. 
+
+Jing's bitcoin node is also listening for new blocks, propagated on the bitcoin network. As soon a Jing's bitcoin node receives a valid new block, it immediately starts the next round of competition. Receiving a new block signifies that someone else has won the previous round, meaning that Jing's system did not win that round and should abandon its current efforts and shift its resources to try and win the next round. During the previous 10 minutes, while Jing's node was searching for a solution, it was also collecting transactions. By now it has collected a few hundred transactions in the memory pool. After removing any transactions that appear in the new block recently received, Jing's memory pool is left containing unconfirmed transactions that are waiting to be recorded in a new block. 
+
+Jing's node immediately constructs a new candidate block, to participate in the competition. To construct the candidate block his bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block.  
+
+The priority of a transaction is calculated as the sum of the value and age of the inputs divided by the total size of the transaction:
+----
+Priority = Sum (Value of input * Input Age) / Transaction Size
+----
+
+In the equation above, the value of an input is measured in the base unit, satoshis (1/100m of a bitcoin). The age of a UTXO is the number of blocks that have elapsed since the UTXO was recorded on the blockchain, measuring how many blocks "deep" into the blockchain it is. The size of the transaction is measured in bytes.
+
+For a transaction to be considered "high priority" its priority must be greater than 57,600,000, which corresponds to one bitcoin (100m satoshis), aged one day (144 blocks) in a transaction of 250 bytes total size.
+
+----
+High Priority = 100,000,000 satoshis * 144 blocks / 250 bytes = 57,600,000
+----
+
+The first 50 kilobytes of transaction space in a block are set aside for high priority transactions. Jing's node will fill the first 50 kilobytes, prioritizing the highest priority transactions first, regardless of fee. This allows high-priority transactions to be processed even if they carry zero fees.
+
+Jing's mining node then fills the rest of the block up to the maximum block size (MAX_BLOCK_SIZE in the code), with transactions that carry at least the minimum fee, prioritizing those with the highest fee per kilobyte of transaction.
+
+If there is any space remaining in the block, Jing's mining node may choose to fill it with no-fee transactions. Some miners choose to mine transactions without fees on a best-effort basis. Other miners may choose to ignore transactions without fees. 
+
+Any transactions left in the memory pool after the block is filled will be carried forward for inclusion in the next block. As transactions remain in the memory pool, their inputs "age", as the UTXO they spend get deeper into the blockchain with new blocks added on top. A transaction that remains in the pool after several blocks will have a higher priority than when it was first included in the pool and may end up being included in a block for free. 
+
+=== Structure of a Block
+
+The block created by Jing's mining node above has now been filled with transactions. The main body of the block contains the transactions and a counter showing how many transactions are contained within it. The header of the block data structure contains metadata about the block and its relation to the other blocks in the blockchain. Once Jing's node has filled it with transactions, it will construct the block header and begin trying to solve the equation that will make the block a valid block and allow him to win the mining competition, as we will see in <<mining>>
+
+[[block_structure]]
+.The structure of a block
+[options="header"]
+|=======
+|Size| Field | Description
+| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
+| 4 bytes | Block Size | The size of the block, in bytes, following this field
+| 80 bytes | Block Header | Several fields form the block header (see below)
+| 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
+| Variable | Transactions | The transactions recorded in this block
+|=======
+
+The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. Merkle Trees are discussed in the next section. 
+    
+Jing's node will next assemble the metadata and fill in the candidate block's header. 
+    
+[[block_structure]]
+.The structure of the block header
+[options="header"]
+|=======
+|Size| Field | Description
+| 4 bytes | Version | A version number to track software/protocol upgrades
+| 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
+| 32 bytes | Merkle Root | A hash of the root of the Merkle-Tree of this block's transactions
+| 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
+| 4 bytes | Difficulty Target | The proof-of-work algorithm difficulty target for this block
+| 4 bytes | Nonce | A counter used for the proof-of-work algorithm
+|=======
+
+=== Merkle Trees
+
+A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure. The term "tree" is used in computer science to describe a branching data structure, but trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow. 
+
+Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, which can be used to prove that a transaction is included in the set. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
+
+The merkle tree is constructed bottom-up. In the example below, we start with four transactions A, B, C and D, which form the _leaves_ of the Merkle Tree, shown in the diagram at the bottom. The transactions are not stored in the merkle tree, rather their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~ and H~D~:
+
+----
+H~A~ = SHA256(SHA256(Transaction A))
+----
+
+Consecutive pairs of leaf nodes are then summarized in a parent node, by concatenating the two hashes and hashing them together. For example, to construct the parent node H~AB~, the two 32-byte hashes of the children are concatenated to create a 64-byte string. That string is then double-hashed to produce the parent node's hash:
+
+----
+H~AB~ = SHA256(SHA256(H~A~ + H~B~))
+----
+
+The process continues until there is only one node at the top, the node known as the Merkle Root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
+
+[[simple_merkle]]
+.Calculating the nodes in a Merkle Tree
+image::images/MerkleTree.png["merkle_tree"]
+
+Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash is duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
+
+[[merkle_tree_odd]]
+.An even number of data elements, by duplicating one data element
+image::images/MerkleTreeOdd.png["merkle_tree_odd"]
+
+The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32-bytes of data from a single merkle root. In the diagram below, we have show a tree build from 16 transactions: 
+
+[[merkle_tree_large]]
+.A Merkle Tree summarizing many data elements
+image::images/MerkleTreeLarge.png["merkle_tree_large"]
+
+To prove that a specific transaction is included in a block, a node need only produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ that lead to the merkle root. 
+
+[[merkle_tree_path]]
+.A Merkle Path used to prove inclusion of a data element
+image::images/MerkleTreePathToK.png["merkle_tree_path"]
+
+The efficiency of merkle trees becomes obvious as the scale increases. For example, proving that a transaction is part of a block requires:
+
+[[block_structure]]
+.Merkle Tree Efficiency
+[options="header"]
+|=======
+|Number of Transactions| Path Size (Hashes) | Path Size (Bytes)
+| 16 transactions | 4 hashes | 128 bytes
+| 512 transactions | 9 hashes | 288 bytes
+| 2048 transactions | 11 hashes | 352 bytes
+| 65,535 transactions | 16 hashes | 512 bytes
+|=======
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[blockchain]]
 === The Blockchain
 
 Bitcoin's core innovation is the _blockchain_, a distributed, timestamped ledger. The ledger consists of a cryptographically verified chain of _blocks_ in historical order, each of which contains transactions, new coins and a signature (hash) of the previous block. Each full bitcoin node in the network keeps a complete local replica of the blockchain, and independently verify all transactions and balances from that replica. 
 
 In this chapter we will look at the structure of the blockchain and the blocks within it. We will examine various mechanisms for querying the blockchain database to retrieve information about blocks and transactions. Finally, we will see how new blocks are added to the blockchain through the mechanism of distributed consensus based on a Proof-of-Work algorithm, known as "mining".
-
-
 
 The blockchain data structure is an ordered linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. 
 
@@ -97,35 +241,6 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 }
 ----
 
-
-=== Structure of a Block
-
-[[block_structure]]
-.The structure of a block
-[options="header"]
-|=======
-|Size| Field | Description
-| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
-| 4 bytes | Block Size | The size of the block, in bytes, following this field
-| 80 bytes | Block Header | Several fields form the block header (see below)
-| 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
-| Variable | Transactions | The transactions recorded in this block
-|=======
-
-
-[[block_structure]]
-.The structure of the block header
-[options="header"]
-|=======
-|Size| Field | Description
-| 4 bytes | Version | A version number to track software/protocol upgrades
-| 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
-| 32 bytes | Merkle Root | A hash of the root of the Merkle-Tree of this block's transactions
-| 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
-| 4 bytes | Difficulty Target | The proof-of-work algorithm difficulty target for this block
-| 4 bytes | Nonce | A counter used for the proof-of-work algorithm
-|=======
-
 === Linking Blocks in a Chain
 
 [[chain_of_blocks]]
@@ -133,31 +248,11 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 image::images/ChainOfBlocks.png["chain_of_blocks"]
 
 
-=== Merkle Trees
 
-A _Merkle Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +log(N)+ calculations, making this a very efficient data structure. 
-
-[[simple_merkle]]
-.Calculating the nodes in a Merkle Tree
-image::images/MerkleTree.png["merkle_tree"]
-
-[[merkle_tree_odd]]
-.An even number of data elements, by duplicating one data element
-image::images/MerkleTreeOdd.png["merkle_tree_odd"]
-
-[[merkle_tree_large]]
-.A Merkle Tree summarizing many data elements
-image::images/MerkleTreeLarge.png["merkle_tree_large"]
-
-[[merkle_tree_path]]
-.A Merkle Path used to prove inclusion of a data element
-image::images/MerkleTreePathToK.png["merkle_tree_path"]
-
+[[mining]]
 === Proof-of-Work (Mining) and Consensus
-((("mining"))) 
+((("Mining", "Proof of Work", "SHA256", "hashing power", "difficulty", "nonce")))
 Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners act as a decentralized clearinghouse, validating new transactions and recording them on the global ledger. A new block, containing transactions which occurred since the last block, is "mined" every 10 minutes thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed", which allows the new owners of bitcoin to spend the bitcoin they received in those transactions.  Miners receive two types of reward for mining: new coins created with each new block and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the Proof-of-Work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the Proof-of-Work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
-
-In Chapter 1 we introduced Jing, a computer engineering student in Shanghai China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig" which is a specialized computer-hardware system designed to mine bitcoins. Jing started mining for bitcoin in 2010, when mining was not as competitive as it is today. At that time, Jing could mine bitcoin using a desktop computer. Today, he uses a much more powerful mining system based on Application Specific Integrated Circuits (ASICs), which are specialized silicon chips designed exclusively for one application - bitcoin mining. Over time, the way Jing participates in the mining process has changed slightly, but the fundamentals remain the same. We will start by looking at how Jing mined in 2010, when things were simpler and then look at how he mines today, as bitcoin mining has become a more complex and competitive activity. 
 
 
 Bitcoin's security is underpinned by computation. New blocks are added to the blockchain through a consensus mechanism called the _Proof-of-Work_ (PoW) that requires a predictable computational effort, one that takes approximately 10 minutes to solve on average. Specialized bitcoin nodes called _miners_ validate transactions and collect them into blocks, then attempt to find the solution that satisfies the Proof-of-Work algorithm. The first miner to find such a solution, propagates the newly created block across the network. All other nodes on the network verify that the new block contains valid transactions and satisfies the Proof-of-Work algorithm, then they add it to the blockchain, thereby extending it by one block. The miners add a special coin generation transaction into the blocks they build, which creates new bitcoin from nothing and is payable to the miner's own bitcoin address.  Once the block is accepted as valid by the entire network, that transaction is also recorded on the blockchain, thereby rewarding the miner for the computational effort it took to satisfy the Proof-of-Work. This de-centralized consensus mechanism, based on a global competition and requiring computation to create new blocks, is the basis for the security of the bitcoin transaction ledger and also for the issuance of new bitcoin. {move the last sentence to the beginning of the paragraph - to explain more about security} The equilibrium between the incentive of bitcoin reward and the immense computing effort required to win it force the participants to behave honestly, without the need for a centralized clearinghouse or currency issuer. The bitcoin consensus mechanism is a dynamic, self-regulating and completely decentralized security model that operates at very large scale. 
@@ -168,33 +263,7 @@ Bitcoin miners also earn fees from transactions. Every transaction may include a
 
 Today the fees represent 1% or less of a bitcoin miner's income, the vast majority coming from the newly minted bitcoins. However, as the reward decreases over time and the number of transactions per block increases, a greater proportion of bitcoin mining earnings will come from fees. After 2140 all bitcoin miner earnings will be in the form of transaction fees.
 
-==== Mining New Bitcoins
 
-Bitcoins are "minted" during the creation of each block at a fixed and diminishing rate. Each block, generated on average every 10 minutes, contains a _reward_ that consists of entirely new bitcoins. The reward was 50BTC for the first four years of operation of the network. Every four years the reward is decreased by 50%, resulting in a diminishing rate of issuance over time. In 2012, the reward was decreased to 25BTC and it will decrease again to 12.5BTC in 2016. By approximately 2140, the last fragments of a bitcoin will be mined, for a total of 21 million bitcoins. {Clarify coinbase transaction as first - includes the reward and transactions. Discuss how the coinbase transaction will change in 2140}
-
-The finite and diminishing issuance creates a fixed monetary supply that resists inflation. Unlike a fiat currency which can be printed in infinite numbers by a central bank, bitcoin can never be inflated by printing.
-
-===== Monetary supply
-
-Bitcoin's monetary supply is defined as the number of coins in circulation (minted). Like any other currency, this measure of monetary supply is called M0, which represents the narrowest measure of the money supply. Just like any other currency, bitcoin can also have a _fractional reserve banking_ which means that an organization can trade bitcoins "off blockchain" which are not part of the M0 monetary measure, but of the broader monetary supply measures M1-M3. {have you explained M1-M3?}{also, i think you should explain fractional reserve banking a bit here}
-
-While the total bitcoins in circulation will not exceed 21m, that monetary base can support a much broader economy through fractional reserve banking and expansion of the available credit.
-
-===== Deflationary Money
-
-The most important and debated consequence of a fixed and diminishing monetary issuance is that the currency will tend to be inherently _deflationary_. Deflation is the phenomenon of appreciation of value due to a mismatch in supply and demand that drives up the value (and exchange rate) of a currency. The opposite of inflation, price deflation means that your money has more purchasing power over time. 
-
-Many economists argue that a deflationary economy is a disaster that should be avoided at all costs. That is because in a period of rapid deflation, the incentives for regular people are to hoard the money and not spend it, hoping that prices will fall. Such a phenomenon unfolded during Japan's "Lost Decade", when a complete collapse of demand pushed the currency into a deflationary spiral. 
-
-Bitcoin experts argue that deflation is not bad *per se*. Rather, we associate deflation with a collapse in demand because that is the only example of deflation we have to study. In a fiat currency with the possibility of unlimited printing, it is very difficult to enter a deflationary spiral unless there is a complete collapse in demand and an unwillingness to print money. Deflation in bitcoin is not caused by a collapse in demand, but by predictably constrained supply. 
-
-In practice, it has become evident that the hoarding instinct caused by a deflationary currency can be overcome by discounting from vendors, until the discount overcomes the hoarding instinct of the buyer. Since the seller is also motivated to hoard, the discount becomes the equilibrium price at which the two hoarding instincts are matched. With discounts of 30% on the bitcoin price, most bitcoin retailers are not experiencing difficulty overcoming the hoarding instinct and generating revenue. It remains to be seen whether the deflationary aspect of the currency is really a problem when it is not driven by rapid economic retraction.
-
-==== Consensus Mechanism
-((("Mining", "Proof of Work", "SHA256", "hashing power", "difficulty", "nonce")))
-Bitcoin is secured through computation and consensus. For a new block of transactions to be added to the network, someone must first find a solution to a specific mathematical problem called the _proof of work_. Bitcoin's proof-of-work algorithm is based on the Secure Hash Algorithm (SHA-256) and consists of trying to generate a block whose hash is less than a specific number. Let's see how this works in practice.
-
-A hashing algorithm is a cryptographic function that takes an arbitrary length input (a text message or binary file), and produces a fixed-size output called the _hash_ or _digest_. It is trivial to verify the hash of any input, but it is computationally infeasible to predict or select an input to produce a desired hash. It's a one-way function, so it can easily work one way but is impossible to reverse.
 
 [[figure_sha256_logical]]
 .The Secure Hash Algorithm (SHA-256)
@@ -358,9 +427,9 @@ At the time of writing this, the network is attempting to find a block whose hea
 
 Bitcoin is tuned to generate blocks approximately every 10 minutes. This is achieved by automatically adjusting the target difficulty to account for increases and decreases in the available computing power on the network. This process occurs automatically and on every full node independently. Each node recalculates the expected difficulty every 2106 blocks, based on the time it took to hash the previous 2106 blocks. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty will decrease. 
 
-{miners that are on mining pools get the difficulty (do not calculate difficulty independently) they are given the difficulty from the mining pool so they don't have to calculate the difficulty themselves and they are actually given a lower difficulty target. There are essentially two classifications of miners today - pool miners and solo miners. Solo miners run a full node and compete on their own. Whereas pool miners collaborate with one another and compete against the network as a team, while sharing the reward. The reason miners join pools - solo miners need an enormous amount of hashing power in order to have even teh slimmest chance of finding a solution to a block which will make their earnings erratic. By participating in a pool, miners get smaller shares but a more regular share of rewards, reducing uncertainty. Solo mining is becoming obsolete, as the difficulty increases the likelihood of a solo miner finding a solution is more like winning the lottery.}
+{miners that are on mining pools get the difficulty (do not calculate difficulty independently) they are given the difficulty from the mining pool so they don't have to calculate the difficulty themselves and they are actually given a lower difficulty target. There are essentially two classifications of miners today - pool miners and solo miners. Solo miners run a full node and compete on their own. Whereas pool miners collaborate with one another and compete against the network as a team, while sharing the reward. The reason miners join pools - solo miners need an enormous amount of hashing power in order to have even the slimmest chance of finding a solution to a block which will make their earnings erratic. By participating in a pool, miners get smaller shares but a more regular share of rewards, reducing uncertainty. Solo mining is becoming obsolete, as the difficulty increases the likelihood of a solo miner finding a solution is more like winning the lottery.}
 
-{ASIC miners do not run full nodes. Full nodes independently calculate the difficulty using the same equation on the same block, arriving at the same result for the new difficulty. Retargeting the difficulty at block heights that are multiples of 2106 from the genesis block. The equation for retargeting difficulty measures the time it took to find the last 2106 blocks, compares that to the expected time of 21,060 minutes (based upon a desired 10 minute block time), the difference is calculated as a percentage and a corresponding percentage adjustment is made to the difficulty. To avoid extreme volatility in the difficulty, the retargeting adjustment cannot exceed {X%} per retargeting. The difficulty will only be retargeted up or down by maximum of {X%} per cycle. If the requierd difficulty adjustment is greater than the maximum it will be reflected in the next retargeting adjustment as the imbalance will persist through the next 2106 blocks. Large discrepancies between hashing power and difficulty may take several cycles to even out. This leads to a potential problem which has been observed in alt coins, where very large changes in difficulty can cause hashing power to collapse leading to excessively long blocktimes. If the aggregate network hashing power collapses due to the departure of many miners simultaneously, the remaining hashing power may be insufficient to meet the difficulty target leading to excessively long block intervals. Since retargeting is not a function of time but rather block number, a large hashing deficit can mean the next cycle is very far in the future. Usually this is caused for two reasons - scenario one - entry for a brief period of a lot of hashing which temporarily increases the difficulty, followed by the departure of that hashing, resulting in a collapse of block solutions. Essentially a hashing pump and dump. Usually a deliberate attack. This is not a concern in bitcoin because new hashing power introduced into the network will not effect the average enough to cause a major change in difficulty. The other scenario in which hashing power can collapse is a crash in bitcoin price, making mining unprofitable. (If the miner cannot pay their electricity bill, the miner will leave the network.) This is a weakness of the protocol, as an insurmountable hashing deficit could occur with a precipitous collapse in price and corresponding reduction in available hashing power. The network would be unable to recover because ... } 
+{ASIC miners do not run full nodes. Full nodes independently calculate the difficulty using the same equation on the same block, arriving at the same result for the new difficulty. Retargeting the difficulty at block heights that are multiples of 2106 from the genesis block. The equation for retargeting difficulty measures the time it took to find the last 2106 blocks, compares that to the expected time of 21,060 minutes (based upon a desired 10 minute block time), the difference is calculated as a percentage and a corresponding percentage adjustment is made to the difficulty. To avoid extreme volatility in the difficulty, the retargeting adjustment cannot exceed {X%} per retargeting. The difficulty will only be retargeted up or down by maximum of {X%} per cycle. If the required difficulty adjustment is greater than the maximum it will be reflected in the next retargeting adjustment as the imbalance will persist through the next 2106 blocks. Large discrepancies between hashing power and difficulty may take several cycles to even out. This leads to a potential problem which has been observed in alt coins, where very large changes in difficulty can cause hashing power to collapse leading to excessively long block times. If the aggregate network hashing power collapses due to the departure of many miners simultaneously, the remaining hashing power may be insufficient to meet the difficulty target leading to excessively long block intervals. Since retargeting is not a function of time but rather block number, a large hashing deficit can mean the next cycle is very far in the future. Usually this is caused for two reasons - scenario one - entry for a brief period of a lot of hashing which temporarily increases the difficulty, followed by the departure of that hashing, resulting in a collapse of block solutions. Essentially a hashing pump and dump. Usually a deliberate attack. This is not a concern in bitcoin because new hashing power introduced into the network will not effect the average enough to cause a major change in difficulty. The other scenario in which hashing power can collapse is a crash in bitcoin price, making mining unprofitable. (If the miner cannot pay their electricity bill, the miner will leave the network.) This is a weakness of the protocol, as an insurmountable hashing deficit could occur with a precipitous collapse in price and corresponding reduction in available hashing power. The network would be unable to recover because ... } 
 
 [TIP]
 ====
@@ -370,6 +439,28 @@ The difficulty of finding a bitcoin block is approximately '10 minutes of proces
 Note that the target difficulty is independent of the number of transactions or the value of transactions. This means that the amount of hashing power and therefore electricity expended to secure bitcoin is also entirely independent of the number of transactions. Bitcoin can scale up, achieve broader adoption and remain secure without any increase in hashing power from today's level. The increase in hashing power represents market forces as new miners enter the market to compete for the reward. As long as enough hashing power is under the control of miners acting honestly in pursuit of the reward, it is enough to prevent "takeover" attacks and therefore it is enough to secure bitcoin. 
 
 The target difficulty is closely related to the cost of electricity and the exchange rate of bitcoin vis-a-vis the currency used to pay for electricity. High performance mining systems are about as efficient as possible with the current generation of silicon fabrication, converting electricity into hashing computation at the highest rate possible. The primary influence on the mining market is the price of one kilowatt-hour in bitcoin, as that determines the profitability of mining and therefore the incentives to enter or exit the mining market. 
+
+==== Mining New Bitcoins
+
+Bitcoins are "minted" during the creation of each block at a fixed and diminishing rate. Each block, generated on average every 10 minutes, contains a _reward_ that consists of entirely new bitcoins. The reward was 50BTC for the first four years of operation of the network. Every four years the reward is decreased by 50%, resulting in a diminishing rate of issuance over time. In 2012, the reward was decreased to 25BTC and it will decrease again to 12.5BTC in 2016. By approximately 2140, the last fragments of a bitcoin will be mined, for a total of 21 million bitcoins. {Clarify coinbase transaction as first - includes the reward and transactions. Discuss how the coinbase transaction will change in 2140}
+
+The finite and diminishing issuance creates a fixed monetary supply that resists inflation. Unlike a fiat currency which can be printed in infinite numbers by a central bank, bitcoin can never be inflated by printing.
+
+===== Monetary supply
+
+Bitcoin's monetary supply is defined as the number of coins in circulation (minted). Like any other currency, this measure of monetary supply is called M0, which represents the narrowest measure of the money supply. Just like any other currency, bitcoin can also have a _fractional reserve banking_ which means that an organization can trade bitcoins "off blockchain" which are not part of the M0 monetary measure, but of the broader monetary supply measures M1-M3. {have you explained M1-M3?}{also, i think you should explain fractional reserve banking a bit here}
+
+While the total bitcoins in circulation will not exceed 21m, that monetary base can support a much broader economy through fractional reserve banking and expansion of the available credit.
+
+===== Deflationary Money
+
+The most important and debated consequence of a fixed and diminishing monetary issuance is that the currency will tend to be inherently _deflationary_. Deflation is the phenomenon of appreciation of value due to a mismatch in supply and demand that drives up the value (and exchange rate) of a currency. The opposite of inflation, price deflation means that your money has more purchasing power over time. 
+
+Many economists argue that a deflationary economy is a disaster that should be avoided at all costs. That is because in a period of rapid deflation, the incentives for regular people are to hoard the money and not spend it, hoping that prices will fall. Such a phenomenon unfolded during Japan's "Lost Decade", when a complete collapse of demand pushed the currency into a deflationary spiral. 
+
+Bitcoin experts argue that deflation is not bad *per se*. Rather, we associate deflation with a collapse in demand because that is the only example of deflation we have to study. In a fiat currency with the possibility of unlimited printing, it is very difficult to enter a deflationary spiral unless there is a complete collapse in demand and an unwillingness to print money. Deflation in bitcoin is not caused by a collapse in demand, but by predictably constrained supply. 
+
+In practice, it has become evident that the hoarding instinct caused by a deflationary currency can be overcome by discounting from vendors, until the discount overcomes the hoarding instinct of the buyer. Since the seller is also motivated to hoard, the discount becomes the equilibrium price at which the two hoarding instincts are matched. With discounts of 30% on the bitcoin price, most bitcoin retailers are not experiencing difficulty overcoming the hoarding instinct and generating revenue. It remains to be seen whether the deflationary aspect of the currency is really a problem when it is not driven by rapid economic retraction.
 
 ==== Blockchain Forks
 
@@ -389,7 +480,7 @@ Let's assume for example that a miner in Canada finds a proof-of-work solution f
 
 ----
 Block "A" extends the chain: P-A
-BLock "B" also extends the chain: P-B
+Block "B" also extends the chain: P-B
 ----
 
 Forks are almost always resolved within one block. As part of the network's hashing power is dedicated to building on top of "A" as the parent, another part of the hashing power is focused on building on top of "B". Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say for example that the miners building on top of "B" find a new block "X" that extends the chain to height 315002 (e.g. P-B-X). They immediately propagate this new block and the entire network sees it as a valid solution. All nodes that had chosen "B" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "A" as the winner, however, will now see a block extending an even longer chain (greater-cumulative difficulty), that does not include "A" in it. Any miners working on extending the chain P-A will now stop that work because their candidate block is an "orphan", as its parent "A" is no longer on the longest chain. The block "A" is removed from the blockchain by any nodes that had accepted it and any transactions within it are queued up again for processing in the next block. The entire network re-converges on a single blockchain P-B-X, with "X" as the last block in the chain. All miners immediately start working on candidate blocks that reference "X" as their parent to extend the P-B-X chain. 
