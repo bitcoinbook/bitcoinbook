@@ -62,7 +62,7 @@ As transactions are received and verified using the criteria in the previous sec
 
 When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any orphans found are pulled from the orphan pool and validated using the above checklist. If valid, they are also added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
 
-Most nodes also create a UTXO pool which is the set of all unspent outputs on the blockchain, this may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
+Some implementations of the bitcoin client also maintain a UTXO pool which is the set of all unspent outputs on the blockchain. This may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 === Aggregating Transactions into Blocks
 
@@ -141,6 +141,9 @@ Jing's node will next assemble the metadata and fill in the candidate block's he
 | 4 bytes | Nonce | A counter used for the proof-of-work algorithm
 |=======
 
+First, a node will create a summary of all the transactions added to the candidate block, by computing the _root_ of the Merkle Tree, which is a binary hash tree data structure. The merkle root is a 32-byte hash and is inserted into the block header. Think of the merkle root as a hash of all transactions, a digital fingerprint of the transactions that becomes part of the block header and therefore part of the fingerprint of the block. As we will see in the following section, the merkle root depends on all the transactions and can be used to prove that a transaction was included in calculating it. 
+
+[[merkle_trees]]
 === Merkle Trees
 
 A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure. The term "tree" is used in computer science to describe a branching data structure, but trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow. 
@@ -185,49 +188,29 @@ The efficiency of merkle trees becomes obvious as the scale increases. For examp
 .Merkle Tree Efficiency
 [options="header"]
 |=======
-|Number of Transactions| Path Size (Hashes) | Path Size (Bytes)
-| 16 transactions | 4 hashes | 128 bytes
-| 512 transactions | 9 hashes | 288 bytes
-| 2048 transactions | 11 hashes | 352 bytes
-| 65,535 transactions | 16 hashes | 512 bytes
+|Number of Transactions| Approx. Size of Block | Path Size (Hashes) | Path Size (Bytes)
+| 16 transactions | 4 kilobytes | 4 hashes | 128 bytes
+| 512 transactions | 128 kilobytes | 9 hashes | 288 bytes
+| 2048 transactions | 512 kilobytes | 11 hashes | 352 bytes
+| 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
 |=======
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. 
 
 [[blockchain]]
 === The Blockchain
 
-Bitcoin's core innovation is the _blockchain_, a distributed, timestamped ledger. The ledger consists of a cryptographically verified chain of _blocks_ in historical order, each of which contains transactions, new coins and a signature (hash) of the previous block. Each full bitcoin node in the network keeps a complete local replica of the blockchain, and independently verify all transactions and balances from that replica. 
-
-In this chapter we will look at the structure of the blockchain and the blocks within it. We will examine various mechanisms for querying the blockchain database to retrieve information about blocks and transactions. Finally, we will see how new blocks are added to the blockchain through the mechanism of distributed consensus based on a Proof-of-Work algorithm, known as "mining".
+Now that the Jing's node has built a candidate block and populated the transactions and merkle root, this block must be linked to the other blocks in the blockchain. In this section we will look at the blockchain data structure in more detail and see how Jing will extend this chain with the new block. 
 
 The blockchain data structure is an ordered linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. 
 
-The blockchain is made of blocks, which are generated {not are generated - maybe are usually computed / created / produced / found / mined} every ten minutes on average and hold several hundred transactions that occurred during the previous ten minutes. {is this true? is it always those that occurred during the previous 10 min?} Each block is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. {who generates this hash?} Each block also {references the previous block's hash - thereby linking the two together} contains a link to the previous block in the chain, by reference to the previous block's hash. Since a block contains a cryptographic hash of the previous block as a reference, the hash proves that the previous block was known when the current block was created. The hash of the previous block is also part of the data that creates the hash of the current block, making the ancestry of each block an immutable part of its identity. The chain of hashes guarantees that a block cannot be modified retrospectively without forcing the re-computation of all following blocks, because a retrospective change in any block would change the hash, thereby changing the reference in the next block whose hash also changes, and so on. As new blocks are added to the chain, they strengthen the immutability of the ledger by effectively incorporating all previous blocks by reference in their cryptographic hash.
+Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent, creates a chain going back all the way to the first block ever created, known as the _genesis block_. A block can have multiple children, each of which refers to it as its parent and contains the same hash in the "previous block hash" field. However, since a block only hash one single "previous block hash", that means each block can only have one parent. 
 
-Since each block can only reference one previous block, every chain of blocks can be traced back to the first block every created, the _genesis block_. 
+The hash of the parent is also part of the data (the block header) that creates the hash of the child, making the ancestry of each block an immutable part of its identity. The chain of hashes guarantees that a block cannot be modified retrospectively without forcing the re-computation of all following blocks (children), because a retrospective change in any block would change its hash, thereby changing the reference in any children whose hash also changes, and so on. As new blocks are added to the chain, they strengthen the immutability of the ledger by effectively incorporating all previous blocks by reference in their cryptographic hash.
 
 === The Genesis Block
 
-The first block in the chain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
+The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
 
@@ -257,12 +240,43 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 }
 ----
 
-=== Linking Blocks in a Chain
+
+=== Linking Blocks in the Blockchain
+
+Jing's node maintains a complete copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As Jing's node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, Jing's node will examine the incoming block header and look for the "previous block hash".
+
+Let's assume for example that Jing's node has 277,314 blocks in the local copy of the blockchain. The last block Jing's node knows about is block 277314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
+
+Jing's node then receives a new block from the network, which it parses as follows:
+----
+{
+    "size" : 43560,
+    "version" : 2,
+    "previousblockhash" : 
+        "00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249",
+    "merkleroot" : 
+        "5e049f4030e0ab2debb92378f53c0a6e09548aea083f3ab25e1d94ea1155e29d",
+    "time" : 1388185038,
+    "difficulty" : 1180923195.25802612,
+    "nonce" : 4215469401,
+    "tx" : [
+        "257e7497fb8bc68421eb2c7b699dbab234831600e7352f0d9e6522c7cf3f6c77",
+
+ [... many more transactions omitted ...]
+
+        "05cfd38f6ae6aa83674cc99e4d75a1458c165b7ab84725eda41d018a09176634"
+    ]
+}
+----
+
+Looking at this new block, Jing's node sees the "previousblockhash" field contains the hash of its parent block. It is a hash known to Jing's node, that of the last block on the chain at height 277314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. Jing's node adds this new block to the end of the chain, making its heigh 277315. 
+
+The moment Jing's node received this block (height 277315), this event signified that another node on the network had won this round of the mining competition. Jing's mining node then created the candidate block for the new round of the competition. After filling the candidate block with transactions, Jing's node needs to populate the header of the candidate block and therefore link it to the rest of the blockchain. The existing block at height 277315 will be the parent of Jing's new candidate block. Jing's node will therefore populate the "previous block hash" field in the candidate block with the hash of the block at height 277315. 
+
 
 [[chain_of_blocks]]
 .Blocks linked in a chain, by reference to the previous block header hash
 image::images/ChainOfBlocks.png["chain_of_blocks"]
-
 
 
 [[mining]]
