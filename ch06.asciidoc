@@ -70,11 +70,17 @@ Some of the nodes on the bitcoin network are specialized nodes called _miners_. 
 
 In Chapter 1 we introduced Jing, a computer engineering student in Shanghai China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig" which is a specialized computer-hardware system designed to mine bitcoins. Jing started mining for bitcoin in 2010, when mining was not as competitive as it is today. At that time, Jing could mine bitcoin using a desktop computer. Today, he uses a much more powerful mining system based on Application Specific Integrated Circuits (ASICs), which are specialized silicon chips designed exclusively for one application - bitcoin mining. Over time, the way Jing participates in the mining process has changed slightly, but the fundamentals remain the same. We will start by looking at how Jing mined in 2010, when things were simpler and then look at how he mines today, as bitcoin mining has become a more complex and competitive activity. 
 
-In 2010, Jing mined on a desktop computer. At the time, he would run a full bitcoin node, connected to the bitcoin network. A full bitcoin node keeps a full copy of the blockchain, the list of all transactions since the first ever transaction in 2009. Jing's bitcoin node would receive transactions propagated by other nodes, just like any other node on the bitcoin network. After validating those transactions, the bitcoin software would add them to the _memory pool_, or _transaction pool_, where transactions would await until they could be included (mined) into a block. 
+In 2010, Jing mined on a desktop computer. At the time, he would run a full bitcoin node, connected to the bitcoin network. A full bitcoin node keeps a full copy of the blockchain, the list of all transactions since the first ever transaction in 2009. Jing's bitcoin node receives transactions propagated by other nodes, just like any other node on the bitcoin network. After validating those transactions, the bitcoin software adds them to the _memory pool_, or _transaction pool_, where transactions would await until they could be included (mined) into a block. 
 
-Jing's bitcoin node is also listening for new blocks, propagated on the bitcoin network. As soon a Jing's bitcoin node receives a valid new block, it immediately starts the next round of competition. Receiving a new block signifies that someone else has won the previous round, meaning that Jing's system did not win that round and should abandon its current efforts and shift its resources to try and win the next round. During the previous 10 minutes, while Jing's node was searching for a solution, it was also collecting transactions. By now it has collected a few hundred transactions in the memory pool. After removing any transactions that appear in the new block recently received, Jing's memory pool is left containing unconfirmed transactions that are waiting to be recorded in a new block. 
+Jing's bitcoin node is also listening for new blocks, propagated on the bitcoin network. Let's follow the blocks that were created during the time Alice bought a cup of coffee from Bob's Cafe (see <<cup_of_coffee>>). Alice's transaction was included in block 277316. For the purpose of demonstrating the concepts in this chapter let's assume that block was mined by Jing's mining system and follow Alice's transaction as it becomes part of this new block. 
+
+Jing's mining node maintains a local copy of the blockchain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain of 277,314 blocks of transactions. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. Jing's node receives an incoming block, propagated by the bitcoin network, which fits into the existing blockchain at height 277,315. 
+
+As soon a Jing's bitcoin node receives a valid new block, it immediately starts the next round of competition. Receiving a new block signifies that someone else has won the previous round, meaning that Jing's system did not win that round and should abandon its current efforts and shift its resources to try and win the next round. During the previous 10 minutes, while Jing's node was searching for a solution, it was also collecting transactions. By now it has collected a few hundred transactions in the memory pool. After removing any transactions that appear in the new block recently received, Jing's memory pool is left containing unconfirmed transactions that are waiting to be recorded in a new block. 
 
 Jing's node immediately constructs a new candidate block, to participate in the competition. 
+
+=== 
 
 === Structure of a Block
 
@@ -121,10 +127,10 @@ Any transactions left in the memory pool after the block is filled will remain i
 
 Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, as it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software is expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time. 
 
-
+[[block_header]]
 === Block Header
 
-The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. Merkle Trees are discussed in the next section. 
+The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. 
     
 Jing's node will next assemble the metadata and fill in the candidate block's header. 
     
@@ -141,12 +147,109 @@ Jing's node will next assemble the metadata and fill in the candidate block's he
 | 4 bytes | Nonce | A counter used for the proof-of-work algorithm
 |=======
 
-First, a node will create a summary of all the transactions added to the candidate block, by computing the _root_ of the Merkle Tree, which is a binary hash tree data structure. The merkle root is a 32-byte hash and is inserted into the block header. Think of the merkle root as a hash of all transactions, a digital fingerprint of the transactions that becomes part of the block header and therefore part of the fingerprint of the block. As we will see in the following section, the merkle root depends on all the transactions and can be used to prove that a transaction was included in calculating it. 
+
+[[block_hash]]
+=== Block Identifiers - Block Header Hash and Block Height
+
+The primary identifier of a block is its cryptographic hash, a digital fingerprint, made by hashing the block header twice through the SHA256 algorithm. The resulting 32-byte hash, is called the _block hash_, but is more accurately the _block *header* hash_, as only the block header is used to compute it. For example, the block hash of the first bitcoin block ever created is +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. The block hash identifies a block uniquely and unambiguously and can be independently derived by any node by simply hashing the block header. 
+
+Note that the block hash is not actually included inside the block's data structure, neither when the block is transmitted on the network, nor when it is stored on a node's persistence storage as part of the blockchain. Instead, the block's hash is computed by each node as the block is received from the network. On full nodes, the block hash may be stored in a separate database table as part of the block's metadata, to facilitate indexing and faster retrieval of block from disk. 
+
+A second way to identify a block is by its position in the blockchain, called the _block height_. The first block ever created is at block height 0 (zero), and is the same block that was referenced by the block hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ above. A block can thus be identified two ways, either by referencing the block hash, or by referencing the block height. Each subsequent block added "on top" of that first block is one position "higher" in the blockchain, like boxes stacked one on top of the other. The block height on January 1st 2014 was approximately 278,000, meaning there were 278,000 blocks stacked on top of the first block created in January 2009. 
+
+Unlike the block hash, the block height is not a unique identifier. While a single block will always have a specific and invariant block height, the reverse is not true - the block height does not always identify a single block. Two or more blocks may have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section on <<forks>>. The block height is also not a part of the block's data structure, it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the bitcoin network. The block height may also be stored as metadata in an indexed database table for faster retrieval. 
+    
+[TIP]
+====
+A block's _block hash_ always identifies a single block uniquely. A block also always has a specific _block height_. However, it is not always the case that a specific block height can identify a single block, rather more than one blocks can compete for a single position in the blockchain. 
+====
+
+[[blockchain]]
+=== The Blockchain
+
+Now that the Jing's node has built a candidate block and populated the transactions and merkle root, this block must be linked to the other blocks in the blockchain {must be ready to link to other blocks (if he wins the competition)}. In this section we will look at the blockchain data structure in more detail and see how Jing will extend this chain with the new block. 
+
+The blockchain data structure is an ordered linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. 
+
+Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent, creates a chain going back all the way to the first block ever created, known as the _genesis block_. A block can have multiple children, each of which refers to it as its parent and contains the same hash in the "previous block hash" field. However, since a block only hash one single "previous block hash", that means each block can only have one parent. {one of which will win out while the others die...}
+
+The hash of the parent is also part of the data (the block header) that creates the hash of the child, making the ancestry of each block an immutable part of its identity. The chain of hashes guarantees that a block cannot be modified retrospectively without forcing the re-computation of all following blocks (children), because a retrospective change in any block would change its hash, thereby changing the reference in any children whose hash also changes, and so on. As new blocks are added to the chain, they strengthen the immutability of the ledger by effectively incorporating all previous blocks by reference in their cryptographic hash.
+
+=== The Genesis Block
+
+The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
+
+The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
+
+https://blockchain.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+
+https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+
+Using the Bitcoin Core reference client on the command-line:
+
+----
+$ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+{
+    "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+    "confirmations" : 308321,
+    "size" : 285,
+    "height" : 0,
+    "version" : 1,
+    "merkleroot" : "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+    "tx" : [
+        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+    ],
+    "time" : 1231006505,
+    "nonce" : 2083236893,
+    "bits" : "1d00ffff",
+    "difficulty" : 1.00000000,
+    "nextblockhash" : "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
+}
+----
+
+=== Linking Blocks in the Blockchain
+
+Jing's node maintains a complete copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As Jing's node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, Jing's node will examine the incoming block header and look for the "previous block hash".
+
+Let's assume for example that Jing's node has 277,314 blocks in the local copy of the blockchain. The last block Jing's node knows about is block 277314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
+
+Jing's node then receives a new block from the network, which it parses as follows:
+----
+{
+    "size" : 43560,
+    "version" : 2,
+    "previousblockhash" : 
+        "00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249",
+    "merkleroot" : 
+        "5e049f4030e0ab2debb92378f53c0a6e09548aea083f3ab25e1d94ea1155e29d",
+    "time" : 1388185038,
+    "difficulty" : 1180923195.25802612,
+    "nonce" : 4215469401,
+    "tx" : [
+        "257e7497fb8bc68421eb2c7b699dbab234831600e7352f0d9e6522c7cf3f6c77",
+
+ [... many more transactions omitted ...]
+
+        "05cfd38f6ae6aa83674cc99e4d75a1458c165b7ab84725eda41d018a09176634"
+    ]
+}
+----
+
+Looking at this new block, Jing's node sees the "previousblockhash" field contains the hash of its parent block. It is a hash known to Jing's node, that of the last block on the chain at height 277314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. Jing's node adds this new block to the end of the chain, making its heigh 277315. 
+
+The moment Jing's node received this block (height 277315), this event signified that another node on the network had won this round of the mining competition. Jing's mining node then created the candidate block for the new round of the competition. After filling the candidate block with transactions, Jing's node needs to populate the header of the candidate block and therefore link it to the rest of the blockchain. The existing block at height 277315 will be the parent of Jing's new candidate block. Jing's node will therefore populate the "previous block hash" field in the candidate block with the hash of the block at height 277315. 
+
+
+[[chain_of_blocks]]
+.Blocks linked in a chain, by reference to the previous block header hash
+image::images/ChainOfBlocks.png["chain_of_blocks"]
 
 [[merkle_trees]]
 === Merkle Trees
 
-A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure. The term "tree" is used in computer science to describe a branching data structure, but trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow. 
+As part of populating the block header, a mining node will create a summary of all the transactions added to the block. This summary is created by computing the _root_ of the Merkle Tree, which is a binary hash tree data structure. The merkle root is a 32-byte hash that provides a shortcut to identify individual transactions contained within that block.
+
+A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow. 
 
 Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, which can be used to prove that a transaction is included in the set. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
 
@@ -197,87 +300,6 @@ The efficiency of merkle trees becomes obvious as the scale increases. For examp
 
 As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. 
 
-[[blockchain]]
-=== The Blockchain
-
-Now that the Jing's node has built a candidate block and populated the transactions and merkle root, this block must be linked to the other blocks in the blockchain. In this section we will look at the blockchain data structure in more detail and see how Jing will extend this chain with the new block. 
-
-The blockchain data structure is an ordered linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. 
-
-Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent, creates a chain going back all the way to the first block ever created, known as the _genesis block_. A block can have multiple children, each of which refers to it as its parent and contains the same hash in the "previous block hash" field. However, since a block only hash one single "previous block hash", that means each block can only have one parent. 
-
-The hash of the parent is also part of the data (the block header) that creates the hash of the child, making the ancestry of each block an immutable part of its identity. The chain of hashes guarantees that a block cannot be modified retrospectively without forcing the re-computation of all following blocks (children), because a retrospective change in any block would change its hash, thereby changing the reference in any children whose hash also changes, and so on. As new blocks are added to the chain, they strengthen the immutability of the ledger by effectively incorporating all previous blocks by reference in their cryptographic hash.
-
-=== The Genesis Block
-
-The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
-
-The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
-
-https://blockchain.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-
-https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-
-Using the Bitcoin Core reference client on the command-line:
-
-----
-$ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-{
-    "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-    "confirmations" : 308321,
-    "size" : 285,
-    "height" : 0,
-    "version" : 1,
-    "merkleroot" : "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-    "tx" : [
-        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
-    ],
-    "time" : 1231006505,
-    "nonce" : 2083236893,
-    "bits" : "1d00ffff",
-    "difficulty" : 1.00000000,
-    "nextblockhash" : "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
-}
-----
-
-
-=== Linking Blocks in the Blockchain
-
-Jing's node maintains a complete copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As Jing's node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, Jing's node will examine the incoming block header and look for the "previous block hash".
-
-Let's assume for example that Jing's node has 277,314 blocks in the local copy of the blockchain. The last block Jing's node knows about is block 277314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
-
-Jing's node then receives a new block from the network, which it parses as follows:
-----
-{
-    "size" : 43560,
-    "version" : 2,
-    "previousblockhash" : 
-        "00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249",
-    "merkleroot" : 
-        "5e049f4030e0ab2debb92378f53c0a6e09548aea083f3ab25e1d94ea1155e29d",
-    "time" : 1388185038,
-    "difficulty" : 1180923195.25802612,
-    "nonce" : 4215469401,
-    "tx" : [
-        "257e7497fb8bc68421eb2c7b699dbab234831600e7352f0d9e6522c7cf3f6c77",
-
- [... many more transactions omitted ...]
-
-        "05cfd38f6ae6aa83674cc99e4d75a1458c165b7ab84725eda41d018a09176634"
-    ]
-}
-----
-
-Looking at this new block, Jing's node sees the "previousblockhash" field contains the hash of its parent block. It is a hash known to Jing's node, that of the last block on the chain at height 277314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. Jing's node adds this new block to the end of the chain, making its heigh 277315. 
-
-The moment Jing's node received this block (height 277315), this event signified that another node on the network had won this round of the mining competition. Jing's mining node then created the candidate block for the new round of the competition. After filling the candidate block with transactions, Jing's node needs to populate the header of the candidate block and therefore link it to the rest of the blockchain. The existing block at height 277315 will be the parent of Jing's new candidate block. Jing's node will therefore populate the "previous block hash" field in the candidate block with the hash of the block at height 277315. 
-
-
-[[chain_of_blocks]]
-.Blocks linked in a chain, by reference to the previous block header hash
-image::images/ChainOfBlocks.png["chain_of_blocks"]
-
 
 [[mining]]
 === Proof-of-Work (Mining) and Consensus
@@ -292,7 +314,6 @@ The process of new coin generation is called mining, because the reward is desig
 Bitcoin miners also earn fees from transactions. Every transaction may include a transaction fee, in the form of a surplus of bitcoin between the transaction's inputs and outputs. The bitcoin miner gets to "keep the change" on the transactions. 
 
 Today the fees represent 1% or less of a bitcoin miner's income, the vast majority coming from the newly minted bitcoins. However, as the reward decreases over time and the number of transactions per block increases, a greater proportion of bitcoin mining earnings will come from fees. After 2140 all bitcoin miner earnings will be in the form of transaction fees.
-
 
 
 [[figure_sha256_logical]]
@@ -482,6 +503,7 @@ Bitcoin experts argue that deflation is not bad *per se*. Rather, we associate d
 
 In practice, it has become evident that the hoarding instinct caused by a deflationary currency can be overcome by discounting from vendors, until the discount overcomes the hoarding instinct of the buyer. Since the seller is also motivated to hoard, the discount becomes the equilibrium price at which the two hoarding instincts are matched. With discounts of 30% on the bitcoin price, most bitcoin retailers are not experiencing difficulty overcoming the hoarding instinct and generating revenue. It remains to be seen whether the deflationary aspect of the currency is really a problem when it is not driven by rapid economic retraction.
 
+[[forks]]
 ==== Blockchain Forks
 
 {Discuss chain selection: As new blocks are found they are added to the chain. Each full node constructs a chain and calculates the cumulative difficulty of that chain. As blocks are constructed and propagated across the network,}
