@@ -6,11 +6,27 @@
 === Introduction
 
 === Peer-to-Peer Network Architecture
-=== Nodes and Roles
-=== Network Discovery
-=== Network Protocol Messages
 
-=== Node Types
+Bitcoin is structured as a peer-to-peer network architecture on top of the Internet. The term peer-to-peer or P2P means that the computers that participate in the network are peers to each other, they are all equal there are no "special" nodes and all nodes share the burden of providing network services. The network nodes interconnect in a mesh network with a "flat" topology. There is no "server", no centralized service and no hierarchy within the network. Nodes in a peer-to-peer network both provide and consume services at the same time, with reciprocity acting as the incentive for participation. Peer-to-peer networks are inherently resilient, de-centralized and open. The pre-eminent example of a P2P network architecture was the early Internet itself, where nodes on the IP network were equal. Today's Internet architecture is more hierarchical, but the Internet Protocol still retains its flat-topology essence. Beyond bitcoin, the largest and most successful application of P2P technologies is file sharing, with Napster as the pioneer and bittorrent as the most recent evolution of the architecture.
+
+Bitcoins P2P network architecture is much more than a topology choice. Bitcoin is a peer-to-peer digital cash system by design, and the network architecture is both a reflection and a foundation of that core characteristic. De-centralization of control is a core design principle and that can only be achieved and maintained by a flat, de-centralized P2P consensus network. 
+
+=== Nodes Types and Roles
+
+While nodes in the bitcoin P2P network are equal, they may take on different "roles", depending on the functionality they are supporting. A bitcoin node is a collection of functions: routing, the blockchain database, mining, and wallet services. All nodes include the routing function to participate in the network and may include other functionality. All nodes validate and propagate transactions and blocks, discover and maintain connections to peers. Some nodes, called full nodes, also maintain a complete and up-to-date copy of the blockchain. Full nodes can autonomously and authoritatively verify any transaction without external reference. Some nodes maintain only a subset of the blockchain and verify transactions using a method called _Simple Payment Verification_ or SPV. These nodes are known as SPV or Lightweight nodes. Mining nodes compete to create new blocks by running specialized hardware to solve the proof-of-work algorithm. Some mining nodes are also full nodes, maintaining a full copy of the blockchain while others are lightweight nodes participating in pool mining and depending on a pool server to maintain a full node. User wallets may be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly many user wallets, especially those running on resource constrained devices such as smart phones, are SPV nodes. 
+
+=== Network Discovery
+
+When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. While there are no special nodes in bitcoin, there are some long running stable nodes that are named in software. These are called seed nodes. While a new node does not have to connect with the Seed Nodes, it can use them to quickly discover other nodes in the network. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node after which it can establish connections through further introductions. The geographic location of the other nodes is irrelevant, the bitcoin network topology is not geographically defined.
+
+A node must establish a few connections to different peers (5-10) in order to establish diverse paths into the bitcoin network. These paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. Its also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
+
+If there is no traffic on a connection, nodes will periodically send a message to maintain the connection. If a node has not communicated on a connection for more than 30 minutes it is assumed to be disconnected and a new peer will be sought. Thus the network dynamically adjusts to transient nodes, network problems, and can organically grow and shrink as needed without any central control. 
+
+
+{Protocol command getaddr. The response will receive is a list of known nodes. }
+
+=== Network Protocol Messages
 
 === Full Node
 
@@ -18,7 +34,7 @@
 
 === Bloom Filters
 
-=== Independently Verifying Transactions
+=== Independent Verification of Transactions
 
 In the previous chapter we saw how wallet software creates transactions by collecting UTXO, providing the appropriate unlocking scripts and then constructing new outputs assigned to a new owner. The resulting transaction is then sent to the neighboring nodes in the bitcoin network so that it may be propagated across the entire bitcoin network. 
 
@@ -58,7 +74,7 @@ As transactions are received and verified using the criteria in the previous sec
 
 When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any orphans found are pulled from the orphan pool and validated using the above checklist. If valid, they are also added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
 
-Some implementations of the bitcoin client also maintain a UTXO pool which is the set of all unspent outputs on the blockchain. This may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
+Some implementations of the bitcoin client also maintain a UTXO pool which is the set of all unspent outputs on the blockchain. This may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a single nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 
 [[merkle_trees]]
