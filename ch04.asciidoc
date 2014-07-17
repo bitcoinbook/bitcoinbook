@@ -12,6 +12,52 @@ In the payment portion of a bitcoin transaction, the recipient's public key is r
 In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored and managed. We will review the various encoding formats used to represent private and public keys, addresses and script addresses. Finally we will look at special uses of keys: to sign messages, to prove ownership and to create vanity addresses and paper wallets. 
 
 
+=== ECDSA Arithmetic
+
+Just as RSA uses integer arithmetic operators over a prime modulus to provide cryptographic functions, ECDSA defines an arithmetic that has some features in common with traditional arithmetic.
+
+Wikipedia has a good article that explains the details of how arithmetic operations work on an elliptic curve. See http://en.wikipedia.org/wiki/Elliptic_curve_cryptography for more information.
+
+Glossing over details, here are the fundamental facts:
+
+An elliptic curve field is a set of points (x, y) each of which that satisfies the equation
+
+y^2^ = x^3^ + ax + b (mod P)
+
+for some constants a, b and P (where P is prime). Bitcoin uses a standard curve known as secp256, where a=0, b=7, and P = 2^256^ - 2^32^ - 2^9^ - 2^8^ - 2^7^ - 2^6^ - 2^4^ - 1.
+
+So for example, (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424) is a point on the secp256 curve. You can check this yourself using Python.
+
+----
+Python 3.4.0 (default, Mar 30 2014, 19:23:13)
+[GCC 4.2.1 Compatible Apple LLVM 5.1 (clang-503.0.38)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> p = 115792089237316195423570985008687907853269984665640564039457584007908834671663
+>>> x = 55066263022277343669578718895168534326250603453777594175500187360389116729240
+>>> y = 32670510020758816978083085130507043184471273380659243275938904335757337482424
+>>> (x ** 3 + 7 - y**2) % p
+0
+----
+
+In addition, there is also a "point at infinity", which roughly corresponds to the role of 0 in addition. On computers, it's sometimes represented by x = y = 0 (which doesn't satisfy the elliptic curve equation -- but it's an easy separate case that can be checked).
+
+There is also an operator "+", called "addition" which has some properties similar to the traditional addition of real numbers that grade school children learn. Given two points P~1~ and P~2~ on the elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the elliptic curve.
+
+Geometrically, this third point P~3~ is calculated by drawing a line between P~1~ and P~2~. This line will intersect the elliptic curve in exactly one additional place. Call this point P~3~' = (x, y). Then reflect in the X axis to get P~3~ = (x, -y).
+
+There are a couple of special cases which explain the need for the "point at infinity".
+
+If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~ should extend to be the tangent on the curve at this point P~1~. This tangent will intersect the curve in exactly one new point. You can use techniques from calculus to determine the slope of the tangent line (techniques which curiously work even though we are restricting our interest to points on the curve with to integer coordinates!).
+
+In some cases (ie. if P~1~ and P~2~ have the same x values but different y values), the tangent line will be exactly vertical, in which case P3 = "point at infinity".
+
+If one of P~1~ is the "point at infinity", then the sum P~1~ + P~2~ = P~2~. Similary, if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows how the point at infinity plays the roll of 0.
+
+It turns out that + is commutative, which means that (A+B)+C = A+(B+C). That means we can write A+B+C without parantheses without any ambiguity.
+
+Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case. (It would make a lot more sense to call it this if we used an operator that looked like multiplication rather than "+".)
+
+
 === Keys
 
 ==== Public key cryptography and crypto-currency
@@ -28,7 +74,7 @@ When spending bitcoins, the current bitcoin owner presents their public key and 
 
 [TIP]
 ====
-In most implementations, the private and public keys are stored together as a _key pair_ for convenience. However, it is trivial to reproduce the public key if one has the private key, so storing only the private key is also possible. 
+In most implementations, the private and public keys are stored together as a _key pair_ for convenience. However, the public key can be calculated from the private key, so storing only the private key is also possible.
 ====
 
 ==== Private and Public Keys
@@ -100,7 +146,7 @@ A private key is just a number. A public key can be generated from any number, u
 [[pubkey]]
 ==== Public Keys
 
-The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, division -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e. a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
+The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e. a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
 
 [[elliptic_curve]]
 ==== Elliptic Curve Cryptography Explained
