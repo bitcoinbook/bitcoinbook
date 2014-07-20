@@ -39,9 +39,9 @@ image::images/BitcoinNodeTypes.png["BitcoinNodeTypes"]
 
 === The Extended Bitcoin Network
 
-The extended bitcoin network is made up of a variety of network protocols, node types and node roles. The main bitcoin network, running the bitcoin P2P protocol consists of between 7,000 to 10,000 nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as BitcoinJ, Libbitcoin and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top. 
+The main bitcoin network, running the bitcoin P2P protocol consists of between 7,000 to 10,000 nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as BitcoinJ, Libbitcoin and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top. 
 
-Attached to the main bitcoin P2P network are a number of pool servers and protocol gateways that connect nodes running other protocols, mostly pool mining nodes (see <<mining>>) and lightweight wallet clients, which do not carry a full copy of the blockchain. 
+The extended bitcoin network includes the network running the bitcoin P2P protocol, described above, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of pool servers and protocol gateways that connect nodes running other protocols, mostly pool mining nodes (see <<mining>>) and lightweight wallet clients, which do not carry a full copy of the blockchain. 
 
 The diagram below shows the extended bitcoin network with the various types of nodes, gateway servers, edge routers and wallet clients and the various protocols they use to connect to each other. 
 
@@ -51,20 +51,93 @@ image::images/BitcoinNetwork.png["BitcoinNetwork"]
 
 === Network Discovery
 
-When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. While there are no special nodes in bitcoin, there are some long running stable nodes that are named in software. These are called seed nodes. While a new node does not have to connect with the Seed Nodes, it can use them to quickly discover other nodes in the network. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node after which it can establish connections through further introductions. The geographic location of the other nodes is irrelevant, the bitcoin network topology is not geographically defined.
+When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. To start this process, a new node must discover at least one existing node on the network and connect to it. The geographic location of the other nodes is irrelevant, the bitcoin network topology is not geographically defined. Therefore, any existing bitcoin nodes can be selected at random. 
 
-A node must establish a few connections to different peers (5-10) in order to establish diverse paths into the bitcoin network. These paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. Its also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
+To connect to a known peer, nodes establish a TCP connection, usually to port 8333 (the bitcoin "well known" port), or an alternative port if one is provided. Upon establishing a connection, the node will start a "handshake" by transmitting a +version+ message, which contains basic identifying information, including:
 
-If there is no traffic on a connection, nodes will periodically send a message to maintain the connection. If a node has not communicated on a connection for more than 30 minutes it is assumed to be disconnected and a new peer will be sought. Thus the network dynamically adjusts to transient nodes, network problems, and can organically grow and shrink as needed without any central control. 
+* PROTOCOL_VERSION, a constant that defines the bitcoin P2P protocol version the client "speaks". E.g. 70002
+* nLocalServices, a list of local services supported by the node, currently just NODE_NETWORK
+* nTime, the current time
+* addrYou, the IP address of the remote node as seen from this node
+* addrMe, the IP address of the local node, as discovered by the local node
+* subver, a sub-version showing the type of software running on this node, e.g. "/Satoshi:0.9.2.1/"
+* BestHeight, the block height of this node's blockchain
 
+(See https://github.com/bitcoin/bitcoin/blob/d3cb2b8acfce36d359262b4afd7e7235eff106b0/src/net.cpp#L562 for an example of the +version+ network message)
 
-{Protocol command getaddr. The response will receive is a list of known nodes. }
+The peer node responds with +verack+ to acknowledge and establish a connection, and optionally sends its own +version+ message if it wishes to reciprocate the connection and connect back as a peer. 
 
-=== Network Protocol Messages
+How does a new node find peers? While there are no special nodes in bitcoin, there are some long running stable nodes that are listed in the client as _seed nodes_. While a new node does not have to connect with the seed nodes, it can use them to quickly discover other nodes in the network. In the Bitcoin Core client, the option to use the seed nodes is controlled by the option switch +-dnsseed+, which is set to 1, to use the seed nodes, by default. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node after which it can establish connections through further introductions. The command line argument +-seednode+ can be used to connect to one node just for introductions, using it as a DNS seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
 
-=== Full Node
+Once one or more connections is established, the new node will send an +addr+ message containing its own IP address, to its neighbors. The neighbors will in turn forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. On a node running the Bitcoin Core client, you can list the peer connections with the command +getpeerinfo+:
 
-=== Simple Payment Verification Node
+----
+$ bitcoin-cli getpeerinfo
+[
+    {
+        "addr" : "85.213.199.39:8333",
+        "services" : "00000001",
+        "lastsend" : 1405634126,
+        "lastrecv" : 1405634127,
+        "bytessent" : 23487651,
+        "bytesrecv" : 138679099,
+        "conntime" : 1405021768,
+        "pingtime" : 0.00000000,
+        "version" : 70002,
+        "subver" : "/Satoshi:0.9.2.1/",
+        "inbound" : false,
+        "startingheight" : 310131,
+        "banscore" : 0,
+        "syncnode" : true
+    },
+    {
+        "addr" : "58.23.244.20:8333",
+        "services" : "00000001",
+        "lastsend" : 1405634127,
+        "lastrecv" : 1405634124,
+        "bytessent" : 4460918,
+        "bytesrecv" : 8903575,
+        "conntime" : 1405559628,
+        "pingtime" : 0.00000000,
+        "version" : 70001,
+        "subver" : "/Satoshi:0.8.6/",
+        "inbound" : false,
+        "startingheight" : 311074,
+        "banscore" : 0,
+        "syncnode" : false
+    }
+]
+----
+
+A node must connect to a few different peers in order to establish diverse paths into the bitcoin network. These paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. Its also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
+
+To override the automatic management of peers and to specify a list of IP addresses, users can provide the option +-connect=<IPAddress>+ and specify one or more IP addresses. If this option is used, the node will only connect to the selected IP addresses, instead of discovering and maintaining the peer connections automatically. 
+
+If there is no traffic on a connection, nodes will periodically send a message to maintain the connection. If a node has not communicated on a connection for more than 90 minutes it is assumed to be disconnected and a new peer will be sought. Thus the network dynamically adjusts to transient nodes, network problems, and can organically grow and shrink as needed without any central control.
+
+=== Full Nodes
+
+Full nodes are nodes that maintain a full blockchain. More accurately they probably should be called "full blockchain nodes". In the early years of bitcoin, all nodes were full nodes and currently the Bitcoin Core client is a full blockchain node. In the last two years however, new forms of bitcoin clients have been introduced, which do not maintain a full blockchain but run as lightweight clients. These are examined in more detail in the next section. 
+
+Full blockchain nodes maintain a complete and up-to-date copy of the bitcoin blockchain, which they independently build and verify, starting with the very first block (genesis block) and up to the latest known block in the network. A full blockchain node can independently and authoritatively verify any transaction, without recourse or reliance on any other node or source of information. The full blockchain node relies on the network to receive updates about new blocks of transactions, which it then verifies and incorporates into its local copy of the blockchain. 
+
+Running a full blockchain node gives you the pure bitcoin experience: independent verification of all transactions without the need to rely on, or trust, any other systems. It's easy to tell if you're running a full node because it requires several gigabytes of persistent storage (disk space) to store the full blockchain. If you need a lot of disk and it takes 2-3 days to "sync" to the network you are running a full node. That is the price of complete independence and freedom from central authority. 
+
+There are a few alternative implementations of full-blockchain bitcoin clients, built using different programming languages and software architectures. However, the most common implementation is the reference client Bitcoin Core, also known as the Satoshi Client. More than 90% of the nodes on the bitcoin network run various versions of Bitcoin Core. It is identified as "Satoshi" in the sub-version string sent in the +version+ message and shown by the command +getpeerinfo+ as we saw above, for example +/Satoshi:0.8.6/+.
+
+=== Exchanging "Inventory"
+
+The first thing a full node will do once it connects to peers is try to construct a complete blockchain. If it is a brand-new node and has no blockchain at all, then it only knows one block (the genesis block), which is statically embedded in the client software. Starting with block #0, the genesis block, the new node will have to download hundreds of thousands of blocks to synchronize with the network and establish a full blockchain. 
+
+The process of "syncing" the blockchain starts with the +version+ message, as that contains +BestHeight+, a node's current blockchain height (number of blocks). A node will see the +version+ messages from its peers, know how many blocks they each have and be able to compare to how many blocks it has in its own blockchain. Peered nodes will exchange a +getblocks+ message that contains the hash (fingerprint) of the top block on their local blockchain. One of the peers will be able to identify the received hash as belonging to a block that is not at the top, but rather belongs to an older block, thus deducing that its own local blockchain is longer than its peer's. 
+
+The peer that has the longer blockchain has more blocks that the other node and can identify which blocks the other node needs to "catch up". It will identify the first 500 blocks to share and transmit their hashes using an +inv+ (inventory) message. The node missing these blocks will then retrieve them, by issuing a series of +getdata+ messages requesting the full block data and identifying the requested blocks using the hashes from the +inv+ message.
+
+Let's assume for example that a node only has the genesis block. It will then receive an +inv+ message from its peers containing the hashes of the next 500 blocks in the chain. It will start requesting blocks from all its connected peers, spreading the load and ensuring that it doesn't overwhelm any peer with requests. The node keeps track of how many blocks are "in transit" per peer connection, meaning blocks that it has requested but not received, checking that it does not exceed a limit (MAX_BLOCKS_IN_TRANSIT_PER_PEER). This way, if it needs a lot of blocks, it will only request new ones as previous requests are fulfilled, allowing the peers to control the pace of updates and not overwhelming the network. As each block is received, it is added to the blockchain as we will see in the next chapter <<blockchain>>. The local blockchain is gradually built up, more blocks are requested and received and the process continues until the node catches up to the rest of the network. 
+
+This process of comparing the local blockchain with the peers and retrieving any missing blocks happens any time a node goes offline for any period of time. Whether a node has been offline for a few minutes and is missing a few blocks, or a month and is missing a few thousand blocks, it starts by sending +getblocks+, gets an +inv+ response and starts downloading the missing blocks. 
+
+=== Simple Payment Verification Nodes
 
 === Bloom Filters
 
