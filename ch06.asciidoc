@@ -1,8 +1,6 @@
 [[ch6]]
 == Chapter 6 - The Bitcoin Network
 
-*DRAFT - DO NOT SUBMIT ISSUES OR PULL REQUESTS YET PLEASE - CONSTANT CHANGES HAPPENING*
-
 === Introduction
 
 === Peer-to-Peer Network Architecture
@@ -73,14 +71,16 @@ image::images/NetworkHandshake.png["NetworkHandshake"]
 
 How does a new node find peers? While there are no special nodes in bitcoin, there are some long running stable nodes that are listed in the client as _seed nodes_. While a new node does not have to connect with the seed nodes, it can use them to quickly discover other nodes in the network. In the Bitcoin Core client, the option to use the seed nodes is controlled by the option switch +-dnsseed+, which is set to 1, to use the seed nodes, by default. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node after which it can establish connections through further introductions. The command line argument +-seednode+ can be used to connect to one node just for introductions, using it as a DNS seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
 
-Once one or more connections is established, the new node will send an +addr+ message containing its own IP address, to its neighbors. The neighbors will in turn forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. On a node running the Bitcoin Core client, you can list the peer connections with the command +getpeerinfo+:
+Once one or more connections is established, the new node will send an +addr+ message containing its own IP address, to its neighbors. The neighbors will in turn forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. 
 
 
 [[address_propagation]]
 .Address Propagation and Discovery
 image::images/AddressPropagation.png["AddressPropagation"]
 
+A node must connect to a few different peers in order to establish diverse paths into the bitcoin network. These paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. Its also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
 
+On a node running the Bitcoin Core client, you can list the peer connections with the command +getpeerinfo+:
 ----
 $ bitcoin-cli getpeerinfo
 [
@@ -118,8 +118,6 @@ $ bitcoin-cli getpeerinfo
     }
 ]
 ----
-
-A node must connect to a few different peers in order to establish diverse paths into the bitcoin network. These paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. Its also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
 
 To override the automatic management of peers and to specify a list of IP addresses, users can provide the option +-connect=<IPAddress>+ and specify one or more IP addresses. If this option is used, the node will only connect to the selected IP addresses, instead of discovering and maintaining the peer connections automatically. 
 
@@ -192,7 +190,9 @@ Bloom filters serve this function by allowing an SPV node to specify a search pa
 
 An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a Pay-to-Public-Key-Hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a P2SH address, then the search pattern will be a Pay-to-Script-Hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node. 
 
-Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy. In the example below, we use a very small array of 16 bits and a set of 3 hash functions to demonstrate how bloom filters work. 
+Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy. 
+
+In the example below, we use a very small array of 16 bits and a set of 3 hash functions to demonstrate how bloom filters work. 
 
 [[bloom1]]
 .An example of a simplistic bloom filter, with 16 bit field and 3 hash functions
@@ -273,6 +273,10 @@ Alert messages are propagated by the +alert+ message. The alert message contains
 
 Alerts are cryptographically signed by a public key. The corresponding private key is held by a few select members of the core development team. The digital signature ensures that fake alerts will not be propagated on the network.
 
-Each node receiving this alert message will verify it, check for expiration and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, each node may implement a user interface function to present the alert to the user. In the Bitcoin Core client, the alert is configured with the command line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the alertnotify command. Most commonly, the alertnotify command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. Other implementations of the bitcoin protocol may handle the alert in different ways. Many hardware-embedded bitcoin mining systems do not implement the alert message function, as they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes. 
+Each node receiving this alert message will verify it, check for expiration and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, each node may implement a user interface function to present the alert to the user. 
+
+In the Bitcoin Core client, the alert is configured with the command line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the alertnotify command. Most commonly, the alertnotify command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. 
+
+Other implementations of the bitcoin protocol may handle the alert in different ways. Many hardware-embedded bitcoin mining systems do not implement the alert message function, as they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes. 
 
 
