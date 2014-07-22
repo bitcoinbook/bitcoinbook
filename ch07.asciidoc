@@ -140,6 +140,63 @@ The moment Jing's node received this block (height 277315), this event signified
 .Blocks linked in a chain, by reference to the previous block header hash
 image::images/ChainOfBlocks.png["chain_of_blocks"]
 
+[[merkle_trees]]
+=== Merkle Trees
+
+Each block in the bitcoin blockchain contains a summary of all the transactions in the block, using a _Merkle Tree_.
+
+A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow.
+
+Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, which can be used to prove that a transaction is included in the set. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
+
+When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure.  
+
+The merkle tree is constructed bottom-up. In the example below, we start with four transactions A, B, C and D, which form the _leaves_ of the Merkle Tree, shown in the diagram at the bottom. The transactions are not stored in the merkle tree, rather their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~ and H~D~:
+
++H~A~ = SHA256(SHA256(Transaction A))+
+
+Consecutive pairs of leaf nodes are then summarized in a parent node, by concatenating the two hashes and hashing them together. For example, to construct the parent node H~AB~, the two 32-byte hashes of the children are concatenated to create a 64-byte string. That string is then double-hashed to produce the parent node's hash:
+
++H~AB~ = SHA256(SHA256(H~A~ + H~B~))+
+
+The process continues until there is only one node at the top, the node known as the Merkle Root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
+
+[[simple_merkle]]
+.Calculating the nodes in a Merkle Tree
+image::images/MerkleTree.png["merkle_tree"]
+
+Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash is duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
+
+[[merkle_tree_odd]]
+.An even number of data elements, by duplicating one data element
+image::images/MerkleTreeOdd.png["merkle_tree_odd"]
+
+The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32-bytes of data from a single merkle root. In the diagram below, you will see a tree built from 16 transactions: 
+
+[[merkle_tree_large]]
+.A Merkle Tree summarizing many data elements
+image::images/MerkleTreeLarge.png["merkle_tree_large"]
+
+To prove that a specific transaction is included in a block, a node need only produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ that lead to the merkle root. 
+
+[[merkle_tree_path]]
+.A Merkle Path used to prove inclusion of a data element
+image::images/MerkleTreePathToK.png["merkle_tree_path"]
+
+The efficiency of merkle trees becomes obvious as the scale increases. For example, proving that a transaction is part of a block requires:
+
+[[block_structure]]
+.Merkle Tree Efficiency
+[options="header"]
+|=======
+|Number of Transactions| Approx. Size of Block | Path Size (Hashes) | Path Size (Bytes)
+| 16 transactions | 4 kilobytes | 4 hashes | 128 bytes
+| 512 transactions | 128 kilobytes | 9 hashes | 288 bytes
+| 2048 transactions | 512 kilobytes | 11 hashes | 352 bytes
+| 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
+|=======
+
+As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. 
 
 
 ==== Highest Difficulty Chain Selection
