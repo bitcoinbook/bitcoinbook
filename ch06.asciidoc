@@ -260,3 +260,19 @@ Whereas the transaction and orphan pools represent a single node's local perspec
 
 === Alert Messages
 
+Alert messages are a seldom used function, which is nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system", a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably in the Spring of 2013 when a critical database bug caused a multi-block fork to occur in the bitcoin blockchain. 
+
+Alert messages are propagated by the +alert+ message. The alert message contains several fields, including:
+
+* ID - An alert identified so that duplicate alerts can be detected
+* Expiration - a time after which the alert expires
+* RelayUntil - a time after which the alert should not be relayed
+* MinVer, MaxVer - the range of bitcoin protocol versions that this alert applies to
+* subVer - The client software version that this alert applies to
+* Priority - An alert priority level, currently unused
+
+Alerts are cryptographically signed by a public key. The corresponding private key is held by a few select members of the core development team. The digital signature ensures that fake alerts will not be propagated on the network.
+
+Each node receiving this alert message will verify it, check for expiration and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, each node may implement a user interface function to present the alert to the user. In the Bitcoin Core client, the alert is configured with the command line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the alertnotify command. Most commonly, the alertnotify command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. Other implementations of the bitcoin protocol may handle the alert in different ways. Many hardware-embedded bitcoin mining systems do not implement the alert message function, as they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes. 
+
+
