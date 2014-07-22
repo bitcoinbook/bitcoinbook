@@ -172,20 +172,74 @@ For most practical purposes, well-connected SPV nodes are secure enough, strikin
 A full blockchain node verifies a transaction by checking the chain of thousands of blocks below it and checks the UTXO is not spent, whereas an SPV node checks how deep the block is buried by a handful of blocks above it. 
 ====
 
+To get the block headers, SPV nodes use a +getheaders+ message instead of +getblocks+. The responding peer will send up to 2000 block headers using a single +headers+ message. The process is otherwise the same as that used by a full node to retrieve full blocks. SPV nodes also set a filter on the connection to peers, to filter the stream of future blocks and transactions sent by the peers. Any transactions of interest are retrieved using a +getdata+ request. The peer generates a +tx+ message containing the transactions, in response.
+
+[[spv_synchronization]]
+.SPV Node synchronizing the block headers
+image::images/SPVSynchronization.png["SPVSynchronization"]
+
 Because SPV nodes need to retrieve specific transactions in order to selectively verify them, they also create a privacy risk. Unlike full-blockchain nodes, which collect all transactions within each block, the SPV node's requests for specific data can inadvertently reveal the addresses in their wallet. For example, a third party monitoring a network could keep track of all the transactions requested by a wallet on an SPV node and use those to associate bitcoin addresses with the user of that wallet, destroying the user's privacy. 
 
 Shortly after the introduction of SPV/lightweight nodes, the bitcoin developers added a feature called _bloom filters_ to address the privacy risks of SPV nodes. Bloom filters allow SPV nodes to receive a subset of the transactions without revealing precisely which addresses they are interested in, through a filtering mechanism that uses probabilities rather than fixed patterns. 
 
-=== SPV Node Inventory
-
-SPV nodes use a +getheaders+ message instead of +getblocks+. The responding peer will send up to 2000 block headers using a +headers+ message. The process is 
-
 === Bloom Filters
 
+A bloom filter is a probabilistic search filter, a way to describe a desired pattern without specifying it exactly. Bloom filters offer an efficient way to express a search pattern while protecting privacy. They are used by SPV nodes to ask their peers for transactions matching a specific pattern, without revealing exactly which addresses they are searching for. 
 
+Using our previous analogy of a tourist without a map asking for directions to a specific address "23 Church St". If they ask strangers for directions to this street, they inadvertently reveal their destination. A bloom filter is like asking "Are there any streets in this neighborhood whose name ends in R-C-H". A question like that reveals slightly less about the desired destination, than asking for "23 Church St". Using this technique, a tourist could specify the desired address in more detail as "ending in U-R-C-H" or less detail as "ending in H". By varying the precision of the search, the tourist reveals more or less information, at the expense of getting more or less specific results. If they ask a less specific pattern, they get a lot more possible addresses and better privacy but many of the results are irrelevant. If they ask for a very specific pattern then they get fewer results but they lose privacy. 
 
+Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned towards precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what addresses are used in the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy. 
 
+An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a Pay-to-Public-Key-Hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a P2SH address, then the search pattern will be a Pay-to-Script-Hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node. 
 
+Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy. In the example below, we use a very small array of 16 bits and a set of 3 hash functions to demonstrate how bloom filters work. 
+
+[[bloom1]]
+.An example of a simplistic bloom filter, with 16 bit field and 3 hash functions
+image::images/Bloom1.png["Bloom1"]
+
+The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on and so forth. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits have been changed from +0+ to +1+. 
+
+Here's an example of adding a pattern "A" to the simple bloom filter shown above:
+
+[[bloom2]]
+.Adding a pattern "A" to our simple bloom filter
+image::images/Bloom2.png["Bloom2"]
+
+Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result may coincide with a bit that is already set to +1+ in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure - it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
+
+Below is an example of adding a second pattern "B" to the simple bloom filter:
+
+[[bloom3]]
+.Adding a second pattern "B" to our simple bloom filter
+image::images/Bloom3.png["Bloom3"]
+
+To test if a pattern is part of a bloom filter, the pattern is hashed by each hash function and the resulting bit pattern is tested against the bit array. If all the bits indexed by the hash functions are set to +1+, then the patten is _probably_ recorded in the bloom filter. Since the bits may be set because of overlap from multiple patterns, the answer is not certain, but is rather probabilistic. In simple terms, a bloom filter positive match is a "Maybe, Yes". 
+
+Below is an example of testing the existence of pattern "X" in the simple bloom filter. The corresponding bits are set to +1+, so the pattern is probably a match:
+
+[[bloom4]]
+.Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe"
+image::images/Bloom4.png["Bloom4"]
+
+On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, then this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely No". 
+
+Below is an example of testing the existence of pattern "Y" in the simple bloom filter. One of the corresponding bits is set to +0+, so the pattern is definitely not a match:
+
+[[bloom5]]
+.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No"
+image::images/Bloom5.png["Bloom5"]
+
+Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<bip0037>> or visit:
+https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki
+
+=== Bloom Filters and Inventory Updates
+
+Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions which match the filter are sent to the node. 
+
+In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (See <<merkle_trees>>) for each matching transaction. The peer will also then send +tx+ messages containing the transactions matched by the filter.
+
+The node setting the bloom filter can interactively add patterns to the filter by sending a +filteradd+ message. To clear the bloom filter, the node can send a +filterclear+ message. Since it is not possible to remove a pattern from a bloom filter, a node has to clear and re-send a new bloom filter if a pattern is no longer desired. 
 
 === Independent Verification of Transactions
 
@@ -230,61 +284,6 @@ When a transaction is added to the transaction pool, the orphan pool is checked 
 Some implementations of the bitcoin client also maintain a UTXO pool which is the set of all unspent outputs on the blockchain. This may be housed in local memory or as an indexed database table on persistent storage. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. Whereas the transaction and orphan pools represent a single nodes local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 
-[[merkle_trees]]
-=== Merkle Trees
-
-As part of populating the block header, a mining node will create a summary of all the transactions added to the block. This summary is created by computing the _root_ of the Merkle Tree, which is a binary hash tree data structure. The merkle root is a 32-byte hash that provides a shortcut to identify individual transactions contained within that block.
-
-A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure created by Ralph Merkle used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow. 
-
-Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, which can be used to prove that a transaction is included in the set. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
-
-The merkle tree is constructed bottom-up. In the example below, we start with four transactions A, B, C and D, which form the _leaves_ of the Merkle Tree, shown in the diagram at the bottom. The transactions are not stored in the merkle tree, rather their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~ and H~D~:
-
-+H~A~ = SHA256(SHA256(Transaction A))+
-
-Consecutive pairs of leaf nodes are then summarized in a parent node, by concatenating the two hashes and hashing them together. For example, to construct the parent node H~AB~, the two 32-byte hashes of the children are concatenated to create a 64-byte string. That string is then double-hashed to produce the parent node's hash:
-
-+H~AB~ = SHA256(SHA256(H~A~ + H~B~))+
-
-The process continues until there is only one node at the top, the node known as the Merkle Root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
-
-[[simple_merkle]]
-.Calculating the nodes in a Merkle Tree
-image::images/MerkleTree.png["merkle_tree"]
-
-Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash is duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
-
-[[merkle_tree_odd]]
-.An even number of data elements, by duplicating one data element
-image::images/MerkleTreeOdd.png["merkle_tree_odd"]
-
-The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32-bytes of data from a single merkle root. In the diagram below, you will see a tree built from 16 transactions: 
-
-[[merkle_tree_large]]
-.A Merkle Tree summarizing many data elements
-image::images/MerkleTreeLarge.png["merkle_tree_large"]
-
-To prove that a specific transaction is included in a block, a node need only produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ that lead to the merkle root. 
-
-[[merkle_tree_path]]
-.A Merkle Path used to prove inclusion of a data element
-image::images/MerkleTreePathToK.png["merkle_tree_path"]
-
-The efficiency of merkle trees becomes obvious as the scale increases. For example, proving that a transaction is part of a block requires:
-
-[[block_structure]]
-.Merkle Tree Efficiency
-[options="header"]
-|=======
-|Number of Transactions| Approx. Size of Block | Path Size (Hashes) | Path Size (Bytes)
-| 16 transactions | 4 kilobytes | 4 hashes | 128 bytes
-| 512 transactions | 128 kilobytes | 9 hashes | 288 bytes
-| 2048 transactions | 512 kilobytes | 11 hashes | 352 bytes
-| 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
-|=======
-
-As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. 
 
 === Block Propagation and Verification
 
