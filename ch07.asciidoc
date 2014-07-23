@@ -6,8 +6,6 @@
 [[blockchain]]
 === The Blockchain
 
-{Now that the Jing's node has built a candidate block and populated the transactions and merkle root, this block must be linked to the other blocks in the blockchain {must be ready to link to other blocks (if he wins the competition)}. In this section we will look at the blockchain data structure in more detail and see how Jing will extend this chain with the new block. MOVE TO 8?}
-
 The blockchain data structure is an ordered linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. 
 
 Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent, creates a chain going back all the way to the first block ever created, known as the _genesis block_. A block can have multiple children, each of which refers to it as its parent and contains the same hash in the "previous block hash" field. However, since a block only hash one single "previous block hash", that means each block can only have one parent. {one of which will win out while the others die...}
@@ -16,30 +14,24 @@ The hash of the parent is also part of the data (the block header) that creates 
 
 === Structure of a Block
 
-A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of it's size. 
+A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of it's size. The block header is 80 bytes, whereas the average transaction is at least 250 bytes and the average block contains more than 500 transactions. A complete block, with all transactions, is therefore 1000 times larger than the block header. 
 
 [[block_structure]]
 .The structure of a block
 [options="header"]
 |=======
 |Size| Field | Description
-| 4 bytes | Magic Number | A constant (0xD9B4BEF9) used to easily recognize bitcoin blocks
 | 4 bytes | Block Size | The size of the block, in bytes, following this field
 | 80 bytes | Block Header | Several fields form the block header (see below)
 | 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
 | Variable | Transactions | The transactions recorded in this block
 |=======
 
-Jing's mining node creates a candidate block by building an empty data structure and then filling it with transactions and the appropriate metadata. We'll ignore the header for now, as it is the last thing filled in by a node and concentrate instead on the transactions and how they are added to the block. Jing's node uses a selection algorithm to pick transactions from the memory pool (and the orphan pool if the parent has arrived) and adds them after the block header. The selection algorithm is detailed in the next section. 
-
-
 [[block_header]]
 === Block Header
 
 The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. 
-    
-Jing's node will next assemble the metadata and fill in the candidate block's header. 
-    
+        
 [[block_structure]]
 .The structure of the block header
 [options="header"]
@@ -53,6 +45,7 @@ Jing's node will next assemble the metadata and fill in the candidate block's he
 | 4 bytes | Nonce | A counter used for the proof-of-work algorithm
 |=======
 
+The Nonce, Difficulty Target and Timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
 
 [[block_hash]]
 === Block Identifiers - Block Header Hash and Block Height
@@ -73,6 +66,11 @@ A block's _block hash_ always identifies a single block uniquely. A block also a
 === The Genesis Block
 
 The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
+
+Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
+
+See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp, line 123:
+https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp#L123
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
 
@@ -102,14 +100,15 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 }
 ----
 
+The genesis block contains a hidden message within it. The coinbase transaction input contains the text "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks". This message provides proof of the earliest date this block was created, by referencing the headline of the british newspaper _The Times_. It also serves as a tongue-in-cheek reminder of the importance of an independent monetary system, with bitcoin's launch occurring at the same time as an unprecedented worldwide monetary crisis. The message was embedded in the first block by Satoshi Nakamoto, bitcoin's creator. 
 
 === Linking Blocks in the Blockchain
 
-Jing's node maintains a complete copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As Jing's node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, Jing's node will examine the incoming block header and look for the "previous block hash".
+Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As a node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, a node will examine the incoming block header and look for the "previous block hash".
 
-Let's assume for example that Jing's node has 277,314 blocks in the local copy of the blockchain. The last block Jing's node knows about is block 277314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
+Let's assume for example that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
 
-Jing's node then receives a new block from the network, which it parses as follows:
+The bitcoin node then receives a new block from the network, which it parses as follows:
 ----
 {
     "size" : 43560,
@@ -131,10 +130,7 @@ Jing's node then receives a new block from the network, which it parses as follo
 }
 ----
 
-Looking at this new block, Jing's node sees the "previousblockhash" field contains the hash of its parent block. It is a hash known to Jing's node, that of the last block on the chain at height 277314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. Jing's node adds this new block to the end of the chain, making its heigh 277315. 
-
-The moment Jing's node received this block (height 277315), this event signified that another node on the network had won this round of the mining competition. Jing's mining node then created the candidate block for the new round of the competition. After filling the candidate block with transactions, Jing's node needs to populate the header of the candidate block and therefore link it to the rest of the blockchain. The existing block at height 277315 will be the parent of Jing's new candidate block. Jing's node will therefore populate the "previous block hash" field in the candidate block with the hash of the block at height 277315. 
-
+Looking at this new block, the node finds the "previousblockhash" field, which contains the hash of its parent block. It is a hash known to the node, that of the last block on the chain at height 277314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. The node adds this new block to the end of the chain, making the blockchain longer with a new height of 277,315. 
 
 [[chain_of_blocks]]
 .Blocks linked in a chain, by reference to the previous block header hash
@@ -196,9 +192,5 @@ The efficiency of merkle trees becomes obvious as the scale increases. For examp
 | 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
 |=======
 
-As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. 
-
-
-==== Highest Difficulty Chain Selection
-
+As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks. s
 
