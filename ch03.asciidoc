@@ -1195,3 +1195,51 @@ With deterministic keys we can generate and re-generate thousands of keys, all d
 The sx toolkit offers many useful commands for encoding and decoding addresses, converting to and from different formats and representations. Use them to explore the various formats such as base58, base58check, hex etc.
 ====
 
+==== btcd
+btcd is a full node bitcoin implementation written in Go. It currently properly downloads, validates, and serves the block chain using the exact rules (including bugs) for block acceptance as the reference implementation, bitcoind. It also properly relays newly mined blocks, maintains a transaction pool, and relays individual transactions that have not yet made it into a block. It ensures all individual transactions admitted to the pool follow the rules required into the block chain and also includes the vast majority of the more strict checks which filter transactions based on miner requirements ("standard" transactions).
+
+One key difference between btcd and bitcoind is that btcd does not include wallet functionality and this was a very intentional design decision. This means you can't actually make or receive payments directly with btcd. That functionality is provided by the btcwallet and btcgui projects which are both under active development.
+
+===== Installing btcd
+
+To install btcd, for Windows, download and run the msi available at https://github.com/conformal/btcd/releases or run the following command on Linux, assuming you already have installed the Go language:
+
+----
+$ go get github.com/conformal/btcd/...
+----
+
+===== Controlling btcd
+
+btcd has a number of configuration options, which can be viewed by running: 
+
+----
+$ btcd --help
+----
+
+btcd comes prepacked with some goodies such as btcctl, a command line utility that can be used to both control and query btcd via RPC. btcd does not enable its RPC server by default; you must configure at minimum both an RPC username and password:
+
+* btcd.conf configuration file
+----
+[Application Options]
+rpcuser=myuser
+rpcpass=SomeDecentp4ssw0rd
+----
+* btcctl.conf configuration file
+----
+[Application Options]
+rpcuser=myuser
+rpcpass=SomeDecentp4ssw0rd
+----
+
+Or if you want to override the configuration files from the command line:
+
+----
+$ btcd -u myuser -P SomeDecentp4ssw0rd
+$ btcctl -u myuser -P SomeDecentp4ssw0rd
+----
+
+For a list of available options, run: 
+
+----
+$ btcctl --help
+----
