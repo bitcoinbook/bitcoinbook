@@ -54,6 +54,19 @@ These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +C
 
 By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid new transactions (the transaction pool), roughly in the same order. 
 
+[[mining]]
+=== Mining
+
+Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners act as a decentralized clearinghouse, validating new transactions and recording them on the global ledger. A new block, containing transactions which occurred since the last block, is "mined" every 10 minutes thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed", which allows the new owners of bitcoin to spend the bitcoin they received in those transactions.  Miners receive two types of reward for mining: new coins created with each new block and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the Proof-of-Work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the Proof-of-Work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
+
+Bitcoin's security is underpinned by computation. New blocks are added to the blockchain through a consensus mechanism called the _Proof-of-Work_ (PoW) that requires a predictable computational effort, one that takes approximately 10 minutes to solve on average. Specialized bitcoin nodes called _miners_ validate transactions and collect them into blocks, then attempt to find the solution that satisfies the Proof-of-Work algorithm. The first miner to find such a solution, propagates the newly created block across the network. All other nodes on the network verify that the new block contains valid transactions and satisfies the Proof-of-Work algorithm, then they add it to the blockchain, thereby extending it by one block. The miners add a special coin generation transaction into the blocks they build, which creates new bitcoin from nothing and is payable to the miner's own bitcoin address.  Once the block is accepted as valid by the entire network, that transaction is also recorded on the blockchain, thereby rewarding the miner for the computational effort it took to satisfy the Proof-of-Work. This de-centralized consensus mechanism, based on a global competition and requiring computation to create new blocks, is the basis for the security of the bitcoin transaction ledger and also for the issuance of new bitcoin. {move the last sentence to the beginning of the paragraph - to explain more about security} The equilibrium between the incentive of bitcoin reward and the immense computing effort required to win it force the participants to behave honestly, without the need for a centralized clearinghouse or currency issuer. The bitcoin consensus mechanism is a dynamic, self-regulating and completely decentralized security model that operates at very large scale. 
+
+The process of new coin generation is called mining, because the reward is designed to simulate diminishing returns, just like mining for precious metals. Bitcoin's money supply is created through mining, just like a central bank issues new money by printing bank notes. The amount of newly created bitcoin a miner can add to a block decreases approximately every four years (or precisely every 210,000 blocks). It started at 50 bitcoin per block in January of 2009 and halved to 25 bitcoin per block in November of 2012. It will halve again to 12.5 bitcoin per block sometime in 2016. Based on this formula, bitcoin mining rewards decrease exponentially until approximately the year 2140 when all 21 million bitcoin have been issued. 
+
+Bitcoin miners also earn fees from transactions. Every transaction may include a transaction fee, in the form of a surplus of bitcoin between the transaction's inputs and outputs. The bitcoin miner gets to "keep the change" on the transactions. 
+
+Today the fees represent 1% or less of a bitcoin miner's income, the vast majority coming from the newly minted bitcoins. However, as the reward decreases over time and the number of transactions per block increases, a greater proportion of bitcoin mining earnings will come from fees. After 2140 all bitcoin miner earnings will be in the form of transaction fees.
+
 === Mining Nodes
 
 Some of the nodes on the bitcoin network are specialized nodes called _miners_. In Chapter 1 we introduced Jing, a computer engineering student in Shanghai China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig" which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node as we will see in <<mining pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
@@ -192,8 +205,7 @@ $ bitcoin-cli getrawtransaction d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda1
 ----
 ====
 
-
-Unlike regular transactions, the generation transaction does not consume (spend) UTXO as inputs. Instead, it has only one input, called the _coinbase_, which creates bitcoin from nothing. The generation transaction has one output, payable to the miner's own bitcoin address.
+Unlike regular transactions, the generation transaction does not consume (spend) UTXO as inputs. Instead, it has only one input, called the _coinbase_, which creates bitcoin from nothing. The generation transaction has one output, payable to the miner's own bitcoin address. The output of the generation transaction sends the value of 25.09094928 bitcoins to the miner's bitcoin address, in this case +1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N+. 
 
 === Coinbase Reward and Fees
 
@@ -258,11 +270,8 @@ As you can see in <<generation_tx_example>>, the generation transaction has a sp
 | 4 bytes | Sequence Number | Currently-disabled Tx-replacement feature, set to 0xFFFFFFFF
 |=======
 
-In a generation transaction, the first two fields are set to values that do not represent a UTXO reference. Instead of a "Transaction Hash", the first field is filled with 32 bytes all set to zero. The "Output Index" is filled with 4 bytes all set to 0xFF (255 decimal). 
 
-The "Unlocking Script", also known as the +scriptSig+ field that follows is no longer used as an unlocking script. Instead, it is replaced by coinbase data, a field used by miners, which must be between 2 and 100 bytes. Except for the first few bytes (see below) the rest of the coinbase data can be used by miners in any way they want, it is arbitrary data. Most often, miners use the coinbase data to include extra nonce values and strings identifying the mining pool, as we will see in the following sections. 
-
-The generation transaction input, therefore, looks like this:
+The generation transaction input, however, looks like this:
 
 .The structure of a generation transaction input
 [options="header"]
@@ -276,6 +285,14 @@ In v2 blocks, must begin with block height
 | 4 bytes | Sequence Number | Set to 0xFFFFFFFF
 |=======
 
+In a generation transaction, the first two fields are set to values that do not represent a UTXO reference. Instead of a "Transaction Hash", the first field is filled with 32 bytes all set to zero. The "Output Index" is filled with 4 bytes all set to 0xFF (255 decimal). The "Unlocking Script" is replaced by coinbase data, an arbitrary data field used by the miners. 
+
+==== Coinbase Data
+
+Generation transactions do not have an unlocking script (a.k.a scriptSig) field. Instead, this field is replaced by coinbase data, which must be between 2 and 100 bytes. Except for the first few bytes (see below) the rest of the coinbase data can be used by miners in any way they want, it is arbitrary data. 
+
+In the genesis block, for example, Satoshi Nakamoto added the text "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks" in the coinbase data, using it as a proof of the date and to convey a message. Currently, miners use the coinbase data to include extra nonce values (see <<mining>>) and strings identifying the mining pool, as we will see in the following sections. 
+
 The first few bytes of the coinbase used to be arbitrary, but that is no longer the case. As per Bitcoin Improvement Proposal 34 (BIP0034), version-2 blocks (blocks with the version field set to 2) must contain the block height index as a script "push" operation in the beginning of the coinbase field. 
 
 In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which is in the "Unlocking Script" or scriptSig field of the transaction input, contains the hexadecimal value +03443b0403858402062f503253482f+. Let's decode this value. 
@@ -284,9 +301,7 @@ The first byte, +03+ instructs the script execution engine to push the next 3 by
 
 The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_, or random value, used to find a suitable proof-of-work solution. This is discussed in more detail in the next section on <<mining>>
 
-The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string "/P2SH/", which indicates that mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include "/P2SH/" in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string "/P2SH/" in their coinbase to indicate support for this feature. 
-
-Finally, the output of the generation transaction sends the value of 25.09094928 bitcoins to the miner's bitcoin address, in this case +1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N+. 
+The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string "/P2SH/", which indicates that mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include "/P2SH/" in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string "/P2SH/" in their coinbase to indicate support for this feature.
 
 === Constructing the Block Header
 
@@ -319,22 +334,7 @@ The final field is the nonce, which is initialized to zero.
 
 With all the other fields filled, the block header is now complete and the process of mining can begin. The goal is now to find a value for the nonce that results in a block header hash that is less than the difficulty target. The mining node will need to test billions or trillions of nonce values before a nonce is found that satisfies the requirement.
 
-[[mining]]
-=== Proof-of-Work (Mining)
-((("Mining", "Proof of Work", "SHA256", "hashing power", "difficulty", "nonce")))
-Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners act as a decentralized clearinghouse, validating new transactions and recording them on the global ledger. A new block, containing transactions which occurred since the last block, is "mined" every 10 minutes thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed", which allows the new owners of bitcoin to spend the bitcoin they received in those transactions.  Miners receive two types of reward for mining: new coins created with each new block and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the Proof-of-Work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the Proof-of-Work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
-
-Bitcoin's security is underpinned by computation. New blocks are added to the blockchain through a consensus mechanism called the _Proof-of-Work_ (PoW) that requires a predictable computational effort, one that takes approximately 10 minutes to solve on average. Specialized bitcoin nodes called _miners_ validate transactions and collect them into blocks, then attempt to find the solution that satisfies the Proof-of-Work algorithm. The first miner to find such a solution, propagates the newly created block across the network. All other nodes on the network verify that the new block contains valid transactions and satisfies the Proof-of-Work algorithm, then they add it to the blockchain, thereby extending it by one block. The miners add a special coin generation transaction into the blocks they build, which creates new bitcoin from nothing and is payable to the miner's own bitcoin address.  Once the block is accepted as valid by the entire network, that transaction is also recorded on the blockchain, thereby rewarding the miner for the computational effort it took to satisfy the Proof-of-Work. This de-centralized consensus mechanism, based on a global competition and requiring computation to create new blocks, is the basis for the security of the bitcoin transaction ledger and also for the issuance of new bitcoin. {move the last sentence to the beginning of the paragraph - to explain more about security} The equilibrium between the incentive of bitcoin reward and the immense computing effort required to win it force the participants to behave honestly, without the need for a centralized clearinghouse or currency issuer. The bitcoin consensus mechanism is a dynamic, self-regulating and completely decentralized security model that operates at very large scale. 
-
-The process of new coin generation is called mining, because the reward is designed to simulate diminishing returns, just like mining for precious metals. Bitcoin's money supply is created through mining, just like a central bank issues new money by printing bank notes. The amount of newly created bitcoin a miner can add to a block decreases approximately every four years (or precisely every 210,000 blocks). It started at 50 bitcoin per block in January of 2009 and halved to 25 bitcoin per block in November of 2012. It will halve again to 12.5 bitcoin per block sometime in 2016. Based on this formula, bitcoin mining rewards decrease exponentially until approximately the year 2140 when all 21 million bitcoin have been issued. 
-
-Bitcoin miners also earn fees from transactions. Every transaction may include a transaction fee, in the form of a surplus of bitcoin between the transaction's inputs and outputs. The bitcoin miner gets to "keep the change" on the transactions. 
-
-Today the fees represent 1% or less of a bitcoin miner's income, the vast majority coming from the newly minted bitcoins. However, as the reward decreases over time and the number of transactions per block increases, a greater proportion of bitcoin mining earnings will come from fees. After 2140 all bitcoin miner earnings will be in the form of transaction fees.
-
-[[figure_sha256_logical]]
-.The Secure Hash Algorithm (SHA-256)
-image::images/sha256-logical.png["SHA256"]
+=== Proof-of-Work
 
 With SHA-256, the output is always 256 bits long, regardless of the size of the input. In the example below, we will use the Python interpreter to calculate the SHA256 hash of the phrase "I am Satoshi Nakamoto". 
 
