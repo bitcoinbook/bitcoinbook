@@ -245,7 +245,7 @@ Finally, the coinbase reward (+nSubsidy+) is added to the transaction fees (+nFe
 
 With these calculations, Jing's node then constructs the generation transaction to pay himself 25.09094928 bitcoin. The generation transaction is the first transaction in the block, so we can see it in more detail using the Bitcoin Core command-line interface:
 
-As you can see in <<generation_tx_example>>, the generation transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. A regular transaction input looks like this:
+As you can see in <<generation_tx_example>>, the generation transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. Let's compare a regular transaction input with a generation transaction input. A regular transaction looks like this:
 
 .The structure of a "normal" transaction input
 [options="header"]
@@ -260,9 +260,23 @@ As you can see in <<generation_tx_example>>, the generation transaction has a sp
 
 In a generation transaction, the first two fields are set to values that do not represent a UTXO reference. Instead of a "Transaction Hash", the first field is filled with 32 bytes all set to zero. The "Output Index" is filled with 4 bytes all set to 0xFF (255 decimal). 
 
-The "Unlocking Script", also known as the +scriptSig+ field that follows must be between 2 and 100 bytes. This is where miners put the coinbase data. Except for the first few bytes (see below) the rest of the coinbase data can be used by miners in any way they want, it is arbitrary data. 
+The "Unlocking Script", also known as the +scriptSig+ field that follows is no longer used as an unlocking script. Instead, it is replaced by coinbase data, a field used by miners, which must be between 2 and 100 bytes. Except for the first few bytes (see below) the rest of the coinbase data can be used by miners in any way they want, it is arbitrary data. Most often, miners use the coinbase data to include extra nonce values and strings identifying the mining pool, as we will see in the following sections. 
 
-The first few bytes of the coinbase used to be arbitrary, but that is no longer the case. As per Bitcoin Improvement Proposal 34 (BIP0034), version-2 blocks (blocks with the version field set to 2) must contain the block height index (little endian) as a script "push" operation in the beginning of the coinbase field. 
+The generation transaction input, therefore, looks like this:
+
+.The structure of a generation transaction input
+[options="header"]
+|=======
+|Size| Field | Description
+| 32 bytes | Transaction Hash | All bits are zero: Not a transaction hash reference
+| 4 bytes | Output Index | All bits are ones: 0xFFFF
+| 1-9 bytes (VarInt) | Coinbase Data Size | Length of the Coinbase Data, from 2 to 100 bytes
+| Variable | Coinbase Data | Arbitrary Data used for extra nonce and mining tags
+In v2 blocks, must begin with block height
+| 4 bytes | Sequence Number | Set to 0xFFFFFFFF
+|=======
+
+The first few bytes of the coinbase used to be arbitrary, but that is no longer the case. As per Bitcoin Improvement Proposal 34 (BIP0034), version-2 blocks (blocks with the version field set to 2) must contain the block height index as a script "push" operation in the beginning of the coinbase field. 
 
 In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which is in the "Unlocking Script" or scriptSig field of the transaction input, contains the hexadecimal value +03443b0403858402062f503253482f+. Let's decode this value. 
 
@@ -272,7 +286,7 @@ The next few hexadecimal digits (+03858402062+) are used to encode an extra _non
 
 The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string "/P2SH/", which indicates that mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include "/P2SH/" in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string "/P2SH/" in their coinbase to indicate support for this feature. 
 
-The single output of the generation transaction sends the value of 25.09094928 bitcoins to the miner's bitcoin address, in this case +1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N+. 
+Finally, the output of the generation transaction sends the value of 25.09094928 bitcoins to the miner's bitcoin address, in this case +1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N+. 
 
 === Constructing the Block Header
 
