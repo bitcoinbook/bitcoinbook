@@ -16,7 +16,7 @@ One way to think about the blockchain is like layers in a geological formation, 
 
 === Structure of a Block
 
-A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of it's size. The block header is 80 bytes, whereas the average transaction is at least 250 bytes and the average block contains more than 500 transactions. A complete block, with all transactions, is therefore 1000 times larger than the block header. 
+A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of its size. The block header is 80 bytes, whereas the average transaction is at least 250 bytes and the average block contains more than 500 transactions. A complete block, with all transactions, is therefore 1000 times larger than the block header. 
 
 [[block_structure]]
 .The structure of a block
@@ -34,7 +34,7 @@ A block is a container data structure that aggregates transactions for inclusion
 
 The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. 
         
-[[block_structure]]
+[[block_header_structure]]
 .The structure of the block header
 [options="header"]
 |=======
@@ -47,7 +47,7 @@ The block header consists of three sets of block metadata. First, there is a ref
 | 4 bytes | Nonce | A counter used for the proof-of-work algorithm
 |=======
 
-The Nonce, Difficulty Target and Timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
+The Nonce, Difficulty Target, and Timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
 
 [[block_hash]]
 === Block Identifiers - Block Header Hash and Block Height
@@ -62,17 +62,17 @@ Unlike the block hash, the block height is not a unique identifier. While a sing
     
 [TIP]
 ====
-A block's _block hash_ always identifies a single block uniquely. A block also always has a specific _block height_. However, it is not always the case that a specific block height can identify a single block, rather more than one blocks can compete for a single position in the blockchain. 
+A block's _block hash_ always identifies a single block uniquely. A block also always has a specific _block height_. However, it is not always the case that a specific block height can identify a single block. Rather, two or more blocks may compete for a single position in the blockchain. 
 ====
 
 === The Genesis Block
 
-The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time you will eventually arrive at the _genesis block_. 
+The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time, you will eventually arrive at the _genesis block_. 
 
 Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
 
-See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp, line 123:
-https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp#L123
+See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp:
+https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
 
@@ -108,7 +108,7 @@ The genesis block contains a hidden message within it. The coinbase transaction 
 
 Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As a node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, a node will examine the incoming block header and look for the "previous block hash".
 
-Let's assume for example that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277,314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
+Let's assume, for example, that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277,314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
 
 The bitcoin node then receives a new block from the network, which it parses as follows:
 ----
@@ -163,7 +163,7 @@ The process continues until there is only one node at the top, the node known as
 .Calculating the nodes in a Merkle Tree
 image::images/MerkleTree.png["merkle_tree"]
 
-Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash is duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
+Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash will be duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
 
 [[merkle_tree_odd]]
 .An even number of data elements, by duplicating one data element
@@ -200,7 +200,7 @@ As you can see from the table above, while the block size increases rapidly, fro
 
 Merkle trees are used extensively by Simple Payment Verification nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an _authentication path_, or merkle path. 
 
-Consider for example an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is a thousand times less than a full block (about 1 megabyte currently)
+Consider for example an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is more than a thousand times less than a full block (about 1 megabyte currently)
 
 
 
