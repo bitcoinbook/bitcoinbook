@@ -47,13 +47,13 @@ Geometrically, this third point P~3~ is calculated by drawing a line between P~1
 
 There are a couple of special cases which explain the need for the "point at infinity".
 
-If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~ should extend to be the tangent on the curve at this point P~1~. This tangent will intersect the curve in exactly one new point. You can use techniques from calculus to determine the slope of the tangent line (techniques which curiously work even though we are restricting our interest to points on the curve with to integer coordinates!).
+If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~ should extend to be the tangent on the curve at this point P~1~. This tangent will intersect the curve in exactly one new point. You can use techniques from calculus to determine the slope of the tangent line. These techniques curiously work even though we are restricting our interest to points on the curve with two integer coordinates!
 
-In some cases (ie. if P~1~ and P~2~ have the same x values but different y values), the tangent line will be exactly vertical, in which case P3 = "point at infinity".
+In some cases (i.e., if P~1~ and P~2~ have the same x values but different y values), the tangent line will be exactly vertical, in which case P3 = "point at infinity".
 
 If one of P~1~ is the "point at infinity", then the sum P~1~ + P~2~ = P~2~. Similary, if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows how the point at infinity plays the roll of 0.
 
-It turns out that + is commutative, which means that (A+B)+C = A+(B+C). That means we can write A+B+C without parantheses without any ambiguity.
+It turns out that + is commutative, which means that `(A+B)+C = A+(B+C)`. That means we can write A+B+C without parentheses without any ambiguity.
 
 Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case. (It would make a lot more sense to call it this if we used an operator that looked like multiplication rather than "+".)
 
@@ -74,7 +74,7 @@ When spending bitcoins, the current bitcoin owner presents their public key and 
 
 [TIP]
 ====
-In most implementations, the private and public keys are stored together as a _key pair_ for convenience. However, the public key can be calculated from the private key, so storing only the private key is also possible.
+In most wallet implementations, the private and public keys are stored together as a _key pair_ for convenience. However, the public key can be calculated from the private key, so storing only the private key is also possible.
 ====
 
 ==== Private and Public Keys
@@ -92,14 +92,14 @@ A +private key+ is simply a number, picked at random. Ownership and control over
 
 [TIP]
 ====
-The bitcoin private key is just a number. A public key can be generated from any private key. Therefore, a public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using a method as simple as dice, pencil and paper. 
+The bitcoin private key is just a number. You can pick your private keys randomly using just a coin, pencil and paper: Toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. The public key can be then generated from the private key.
 ====
 
 ===== Generating a private key from a random number
 
 The first and most important step in generating keys is to find a secure source of entropy, or randomness. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^". The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software uses the underlying operating system's random number generators to produce 256 bits of entropy (randomness). Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil and paper.
 
-More accurately, the private key can be any number between +1+ and +n - 1+, where n is a constant (n = 1.158 * 10^77^ or slightly less than 2^256^) defined as the order of the elliptic curve used in bitcoin (see <<elliptic_curve>>). To create such a key, we randomly pick a 256-bit number and check that it is less than +n - 1+. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. If the result is less than +n - 1+, we have a suitable private key. Otherwise, we simply try again with another random number. 
+More accurately, the private key can be any number between +1+ and +n - 1+, where n is a constant (n = 1.158 * 10^77^, slightly less than 2^256^) defined as the order of the elliptic curve used in bitcoin (see <<elliptic_curve>>). To create such a key, we randomly pick a 256-bit number and check that it is less than +n - 1+. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically-secure source of randomness, into the SHA-256 hash algorithm which will conveniently produce a 256-bit number. If the result is less than +n - 1+, we have a suitable private key. Otherwise, we simply try again with another random number. 
 	
 [TIP]
 ====
@@ -138,15 +138,10 @@ $ sx newkey
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 ----
 
-[TIP]
-====
-A private key is just a number. A public key can be generated from any number, up to 256 bits long. You can pick your keys randomly using just a coin, pencil and paper. Toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. Keys really are just a pair of numbers, one calculated from the other.
-====
-
 [[pubkey]]
 ==== Public Keys
 
-The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e. a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
+The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
 
 [[elliptic_curve]]
 ==== Elliptic Curve Cryptography Explained
@@ -215,7 +210,7 @@ x = F028892BAD...DC341A
 y = 07CF33DA18...505BDB
 ----
 
-To visualize multiplication of a point with an integer, we will use the simpler elliptic curve over the real numbers - remember, the math is the same. Our goal is to find the multiple kG of the generator point G. That is the same as adding G to itself, k times in a row. In elliptic curves, adding a point to itself is the equivalent of drawing a tangent line on the point and finding where it intersects the curve again, then reflecting that point on the x-axis. 
+To visualize multiplication of a point with an integer, we will use the simpler elliptic curve over the real numbers -- remember, the math is the same. Our goal is to find the multiple kG of the generator point G. That is the same as adding G to itself, k times in a row. In elliptic curves, adding a point to itself is the equivalent of drawing a tangent line on the point and finding where it intersects the curve again, then reflecting that point on the x-axis. 
 
 Starting with the generator point G, we take the tangent of the curve at G until it crosses the curve again at another point. This new point is -2G. Reflecting that point across the x-axis gives us 2G. If we take the tangent at 2G, it crosses the curve at -4G, which again we reflect on the x-axis to find G. Continuing this process, we can bounce around the curve finding the multiples of G, 2G, 4G, 8G, etc. As you can see, a randomly selected large number k, when multiplied against the generator point G is like bouncing around the curve k times, until we land on the point kG which is the public key. This process is irreversible, meaning that it is infeasible to find the factor k (the secret k) in any way other than trying all multiples of G (1G, 2G, 4G, etc) in a brute-force search for k. Since k can be an enormous number, that brute-force search would take an infeasible amount of computation and time. 
 
@@ -234,7 +229,7 @@ A private key can be converted into a public key, but a public key cannot be con
 
 An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses produced from public keys begin with the digit "1". The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper cheque, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of". On a paper cheque, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions or even cash. Because paper cheques do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper cheques very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
     
-A bitcoin address derived from a public key is a string of numbers and letters that begins with the number one, such as +1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+. The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, script addresses and in the mining "Proof-of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
+A bitcoin address derived from a public key is a string of numbers and letters that begins with the number one, such as +1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+. The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, in script addresses and in the mining "Proof-of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
 
 Starting with the public key K, we compute the SHA256 hash and then compute the RIPEMD160 hash of the result, producing a 160 bit (20 byte) number:
 [latexmath]
@@ -332,11 +327,11 @@ $ sx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
 ----
 
-The result is the hexadecimal key, followed by the Wallet Import Format (WIF) version prefix 128
+The result is the hexadecimal key, followed by the Wallet Import Format (WIF) version prefix 128.
 
 ===== Encode from Hex to Base58Check
 
-To encode into Base58Check, we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128
+To encode into Base58Check, we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128:
 ----
 $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
@@ -350,7 +345,7 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 ----
 
-The resulting WIF-compressed format, starts with a "K". This denotes that the private key within has a suffix of "01" and will be used to produce compressed public keys only (See <<comp_pub>> below)
+The resulting WIF-compressed format, starts with a "K". This denotes that the private key within has a suffix of "01" and will be used to produce compressed public keys only (See <<comp_pub>> below).
 
 ===== Public Key Formats
 
@@ -404,7 +399,7 @@ To resolve this issue, when private keys are exported from a wallet, the Wallet 
 
 Ironically, the name "compressed private key" is misleading, because when a private key is exported as WIF-compressed it is actually one byte _longer_ than an "uncompressed" private key. That is because it has the added 01 suffix which signifies it comes from a newer wallet and should only be used to produce compressed public keys. Private keys are not compressed and cannot be compressed. The term "compressed private key" really means "private key from which compressed public keys should be derived", whereas "uncompressed private key" really means "private key from which uncompressed public keys should be derived". You should only refer to the export format as "WIF-compressed" or "WIF" and not refer to the private key as "compressed" to avoid further confusion.
 
-Remember, these formats are _not_ used interchangeably. In a newer wallet that implements compressed public keys, the private keys will only ever be exported as WIF-compressed (K/L prefix). If the wallet is an older implementation and does not use compressed public keys, the private keys will only ever be exported as WIF (5 prefix). The goal here is to signal to the wallet importing these private keys whether it must search the blockchain for compressed or uncompressed public keys and addresses.
+Remember, these formats are _not_ used interchangeably. In a newer wallet that implements compressed public keys, the private keys will only ever be exported as WIF-compressed (with a K or L prefix). If the wallet is an older implementation and does not use compressed public keys, the private keys will only ever be exported as WIF (5 prefix). The goal here is to signal to the wallet importing these private keys whether it must search the blockchain for compressed or uncompressed public keys and addresses.
 
 If a bitcoin wallet is able to implement compressed public keys, then it will use those in all transactions. The private keys in the wallet will be used to derive the public key points on the curve, which will be compressed. The compressed public keys will be used to produce bitcoin addresses and those will be used in transactions. When exporting private keys from a new wallet that implements compressed public keys, the Wallet Import Format is modified, with the addition of a one-byte suffix +01+to the private key. The resulting base58check encoded private key is called a "Compressed WIF" and starts with the letter K or L, instead of starting with "5" as is the case with WIF encoded (non-compressed) keys from older wallets. 
 
@@ -470,7 +465,7 @@ In the first implementations of bitcoin clients, wallets were simply collections
 .Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
 image::images/non-deterministic_wallet.png["non-deterministic wallet"]
 
-==== Deterministic (Seeded)
+==== Deterministic (Seeded) Wallets
 
 Deterministic, or "seeded" wallets are wallets that contain private keys which are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number which is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
 
@@ -541,8 +536,7 @@ Private keys must remain secret. The need for _confidentiality_ of the private k
     
 BIP0038 proposes a common standard for encrypting private keys with a passphrase and encoding them with Base58Check so that they can be stored securely on backup media, transported securely between wallets or in any other conditions where the key might be exposed. The standard for encryption uses the Advanced Encryption Standard (AES), a standard established by the National Institute of Standards and Technology (NIST) and used broadly in data encryption implementations for commercial and military applications. 
 
-A BIP0038 encryption scheme takes a bitcoin private key, usually encoded in the Wallet Import Format (WIF), as a Base58Check string with a prefix of "5".
-Additionally, the BIP0038 encryption scheme takes a passphrase -- a long password -- usually composed of several words or a complex string of alphanumeric characters. The result of the BIP0038 encryption scheme is a Base58Check encoded encrypted private key that begins with the prefix +6P+. If you see a key that starts with +6P+ that means it is encrypted and requires a passphrase in order to convert (decrypt) it back into a WIF-formatted private key (prefix +5+) that can be used in any wallet. Many wallet applications now recognize BIP0038 encrypted private keys and will prompt the user for a passphrase to decrypt and import the key. Third party applications, such as the incredibly useful browser-based bitaddress.org (Wallet Details tab), can be used to decrypt BIP0038 keys. 
+A BIP0038 encryption scheme takes as input a bitcoin private key, usually encoded in the Wallet Import Format (WIF), as a Base58Check string with a prefix of "5".  Additionally, the BIP0038 encryption scheme takes a passphrase -- a long password -- usually composed of several words or a complex string of alphanumeric characters. The result of the BIP0038 encryption scheme is a Base58Check encoded encrypted private key that begins with the prefix +6P+. If you see a key that starts with +6P+ that means it is encrypted and requires a passphrase in order to convert (decrypt) it back into a WIF-formatted private key (prefix +5+) that can be used in any wallet. Many wallet applications now recognize BIP0038 encrypted private keys and will prompt the user for a passphrase to decrypt and import the key. Third party applications, such as the incredibly useful browser-based bitaddress.org (Wallet Details tab), can be used to decrypt BIP0038 keys. 
 
 The most common use case for BIP0038 encrypted keys is for paper wallets that can be used to backup private keys on a piece of paper. As long as the user selects a strong passphrase, a paper wallet with BIP0038 encrypted private keys is incredibly secure and a great way to create offline bitcoin storage (also known as "cold storage").
 
