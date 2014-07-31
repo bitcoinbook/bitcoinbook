@@ -28,6 +28,7 @@ func PayToAddrScript(addressStr string) {
 	// the address type.  It is also required for the upcoming call to
 	// PayToAddrScript.
 	address, err := btcutil.DecodeAddress(addressStr, &btcnet.MainNetParams)
+	handle(err)
 
 	// Create a public key script that pays to the address.
 	script, err := btcscript.PayToAddrScript(address)
