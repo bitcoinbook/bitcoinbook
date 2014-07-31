@@ -72,7 +72,7 @@ There are no accounts or balances in bitcoin, there are only _unspent transactio
 
 Unlike cash, which exists in specific denominations (one dollar, five dollars, ten dollars), a UTXO can have any arbitrary value denominated as a multiple of satoshis (the smallest bitcoin unit equal to 100 millionth of a bitcoin). While UTXO can be any arbitrary value, once created it is indivisible just like a coin that cannot be cut in half. If a UTXO is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. In other words, if you have a 20 bitcoin UTXO and want to pay 1 bitcoin, your transaction must consume the entire 20 bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result, most bitcoin transactions will generate change. 
 
-In simple terms, transactions consume the sender's available UTXO and create new UTXO locked to the recipient's bitcoin address. Imagine a shopper buying a $1.50 beverage, reaching into their wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If they hand too much money, say $5, to the shop owner they will expect $3.50 change, which they will return to their wallet and have available for future transactions. Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. They cannot cut a UTXO in half anymore than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO various units to compose an amount greater than or equal to the desired transaction amount. As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change.
+In simple terms, transactions consume the sender's available UTXO and create new UTXO locked to the recipient's bitcoin address. Imagine a shopper buying a $1.50 beverage, reaching into their wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If they hand too much money, say $5, to the shop owner they will expect $3.50 change, which they will return to their wallet and have available for future transactions. Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. They cannot cut a UTXO in half any more than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO various units to compose an amount greater than or equal to the desired transaction amount. As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change.
 
 The UTXO consumed by a transaction are called transaction inputs, while the UTXO created by a transaction are called transaction outputs. This way, chunks of bitcoin value move forward from owner to owner in a chain of transactions consuming and creating UTXO. Transactions consume UTXO by unlocking it with the signature of the current owner and create UTXO by locking it to the bitcoin address of the new owner. 
 
@@ -356,7 +356,7 @@ The two scripts together would form the combined validation script below:
 OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
-When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script, that is if the unlocking script has a valid signature from the two private keys which correspond to two of the three public keys set as an encumbrance. 
+When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In this case, the condition is whether the unlocking script has a valid signature from the two private keys that correspond to two of the three public keys set as an encumbrance. 
 
 [[op_return]]
 ==== Data Output (OP_RETURN)
@@ -375,7 +375,7 @@ OP_RETURN <data>
 
 where the data portion is limited to 40 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the proofofexistence.com digital notarization service uses the 8-byte prefix "DOCPROOF" which is ASCII encoded as 444F4350524F4F46 in hexadecimal.
 
-Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN, that can be used to "spend" an OP_RETURN output. The whole point of OP_RETURN is that you can't spend the money locked in that output and therefore it does not need to be held in the UTXO set as potentially spendable - OP_RETURN is _provably un-spendable_. OP_RETURN is usually an output with a zero bitcoin amount, since any bitcoin assigned to such an output is effectively lost forever. If an OP_RETURN is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an OP_RETURN output as an input in a transaction, that transaction is invalid. 
+Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN that could possibly be used to "spend" an OP_RETURN output. The whole point of OP_RETURN is that you can't spend the money locked in that output and therefore it does not need to be held in the UTXO set as potentially spendable - OP_RETURN is _provably un-spendable_. OP_RETURN is usually an output with a zero bitcoin amount, since any bitcoin assigned to such an output is effectively lost forever. If an OP_RETURN is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an OP_RETURN output as an input in a transaction, that transaction is invalid. 
 
 A valid transaction can have only one OP_RETURN output. However, a single OP_RETURN output can be combined in a transaction with outputs of any other type. 
 
@@ -399,7 +399,7 @@ Pay-to-Script-Hash (P2SH) was developed to resolve these practical difficulties 
 In P2SH transactions, the locking script that is replaced by a hash is referred to as the _redeemScript_ because it is presented to the system at redemption time rather than as a locking script. 
 
 [[without_p2sh]]
-.Complex Script Without P2SH
+.Complex Script without P2SH
 |=======
 | Locking Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
 | Unlocking Script | Sig1 Sig2   
@@ -443,7 +443,7 @@ A P2SH transaction locks the output to this hash instead of the longer script, u
 ----
 OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
-which, as you can see is much much shorter. Instead of "pay to this 5-key multi-signature script", the P2SH equivalent transaction is "pay to a script with this hash". A customer making a payment to Mohammed's company need only include this much shorter locking script in their payment. When Mohammed wants to spend this UTXO, they must present the original redeemScript (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
+which, as you can see is much shorter. Instead of "pay to this 5-key multi-signature script", the P2SH equivalent transaction is "pay to a script with this hash". A customer making a payment to Mohammed's company need only include this much shorter locking script in their payment. When Mohammed wants to spend this UTXO, they must present the original redeemScript (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
 
 ----
 <Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
@@ -504,7 +504,7 @@ P2SH locking scripts contain the hash of a redeemScript which gives no clues as 
 | OP_1NEGATE | 0x4f | Push the value "-1" onto the stack
 | OP_RESERVED | 0x50 | Halt - Invalid transaction unless found in an unexecuted OP_IF clause
 | OP_1 or OP_TRUE| 0x51 | Push the value "1" onto the stack
-| OP_2 to OP_16 | 0x52 to 0x60 |  For OP_N, push the value "N" onto the stack. eg. OP_2 pushes "2"
+| OP_2 to OP_16 | 0x52 to 0x60 |  For OP_N, push the value "N" onto the stack. E.g., OP_2 pushes "2"
 |=======
 
 [[tx_script_ops_table_control]]
