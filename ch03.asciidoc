@@ -5,7 +5,7 @@
 
 You can download the Reference Client, also known as _Bitcoin Core_ from bitcoin.org. The reference client implements all aspects of the bitcoin system, including wallets, a transaction verification engine with a full copy of the entire transaction ledger (blockchain) and a full network node in the peer-to-peer bitcoin network.
 
-Go to http://bitcoin.org/en/choose-your-wallet and select "Bitcoin Core" to download the reference client. Depending on your operating system, you will download an executable installer. For Windows, this is either a ZIP archive or an EXE executable. For Mac OS it is DMG disk image. Linux versions include a PPA package for Ubuntu or a TAR.GZ archive.
+Go to http://bitcoin.org/en/choose-your-wallet and select "Bitcoin Core" to download the reference client. Depending on your operating system, you will download an executable installer. For Windows, this is either a ZIP archive or an EXE executable. For Mac OS it is a DMG disk image. Linux versions include a PPA package for Ubuntu or a TAR.GZ archive.
 
 [[bitcoin-choose-client]]
 .Bitcoin - Choose A Bitcoin Client
@@ -53,7 +53,7 @@ When the git cloning operation has completed, you will have a complete local cop
 $ cd bitcoin
 ----
  
-By default, the local copy will be synchronized with the most recent code which may be an unstable or "beta" version of bitcoin. Before compiling the code, we want to select a specific version by checking out a release _tag_. This will synchronize the local copy with a specific snapshot of the code repository identified by a keyword tag. Tags are used by the developers to mark specific releases of the code by version number. First, to find the available tags, we use the +git tag+ command:
+By default, the local copy will be synchronized with the most recent code, which may be an unstable or "beta" version of bitcoin. Before compiling the code, we want to select a specific version by checking out a release _tag_. This will synchronize the local copy with a specific snapshot of the code repository identified by a keyword tag. Tags are used by the developers to mark specific releases of the code by version number. First, to find the available tags, we use the +git tag+ command:
 
 ----
 $ git tag
@@ -378,7 +378,7 @@ $ bitcoind getinfo
 }
 ----
 
-The data is returned in JavaScript Object Notation (JSON), a format which can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version of the bitcoin software client (90000), protocol (70002) and wallet version (60000). We see the current balance contained in the wallet, which is zero. We see the current block height, showing us how many blocks are known to this client, 286216. We also see various statistics about the bitcoin network and the settings related to this client. We will explore these settings in more detail in the rest of this chapter. 
+The data is returned in JavaScript Object Notation (JSON), a format which can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version numbers for the bitcoin software client (90000), protocol (70002) and wallet (60000). We see the current balance contained in the wallet, which is zero. We see the current block height, showing us how many blocks are known to this client, 286216. We also see various statistics about the bitcoin network and the settings related to this client. We will explore these settings in more detail in the rest of this chapter. 
 
 [TIP]
 ====
@@ -397,7 +397,7 @@ wallet encrypted; Bitcoin server stopping, restart to run with encrypted wallet.
 $
 ----
 
-We can verify the wallet has been encrypted by running +getinfo+ again. This time you will notice a new entry +unlocked_until+ which is a counter showing how long the wallet decryption password will be stored in memory, keeping the wallet unlocked. At first this will be set to zero, meaning the wallet is locked:
+We can verify the wallet has been encrypted by running +getinfo+ again. This time you will notice a new entry +unlocked_until+ that is a counter showing how long the wallet decryption password will be stored in memory, keeping the wallet unlocked. At first this will be set to zero, meaning the wallet is locked:
 
 ----
 $ bitcoind getinfo
@@ -577,7 +577,7 @@ $ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309ac
 Transaction IDs are not authoritative until a transaction has been confirmed. Absence of a transaction hash in the blockchain does not mean the transaction was not processed. This is known as "transaction malleability", as transaction hashes can be modified prior to confirmation in a block. After confirmation, the txid is immutable and authoritative.
 ====
 
-The transaction form shown above with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it we will use two commands, +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the transaction hash (txid) as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the bitcoin network:
+The transaction form shown above with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it we will use two commands, +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the _transaction hash (txid)_ as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the bitcoin network:
 
 ----
 $ bitcoind getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
@@ -636,9 +636,9 @@ $ bitcoind decoderawtransaction 0100000001d717...388ac00000000
 
 The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 milliBits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+ above). The two outputs correspond to the 50 millibit credit and an output with change back to the sender. 
 
-We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (eg. +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
+We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
 
-Once the transaction we received has been confirmed by inclusion in a block, the +gettransaction+ command will return additional information, showing the block hash (identifier) in which the transaction was included:
+Once the transaction we received has been confirmed by inclusion in a block, the +gettransaction+ command will return additional information, showing the _block hash (identifier)_ in which the transaction was included:
 
 ----
 $ bitcoind gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
@@ -773,7 +773,7 @@ $ bitcoind listunspent
 
 We see that the transaction +9ca8f9...+ created an output (with vout index 0) assigned to the address +1hvzSo...+ for the amount of 50 millibits, which at this point has received 7 confirmations. Transactions use previously created outputs as their inputs by referring to them by the previous txid and vout index. We will now create a transaction that will spend the 0th vout of the txid +9ca8f9...+ as its input and assign it to a new output that sends value to a new address. 
 
-First, let's look at the specific output in more detail. We use the +gettxout+ to get the details of this unspent output above. Transaction outputs are always referenced by txid and vout and these are the parameters we pass to +gettxout+:
+First, let's look at the specific output in more detail. We use the +gettxout+ to get the details of this unspent output above. Transaction outputs are always referenced by txid and vout, and these are the parameters we pass to +gettxout+:
 
 ----
 $ bitcoind gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3 0
@@ -795,7 +795,7 @@ $ bitcoind gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c1
 }
 ----
 
-What we see above is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to send the money to:
+What we see above is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to which we will send the money:
 
 ----
 $ bitcoind getnewaddress 
@@ -943,7 +943,7 @@ $ bitcoind sendrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f
 ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
 ----
 
-The command +sendrawtransaction+ returns a transaction hash (txid) as it submits the transaction on the network. We can now query that transaction id with +gettransaction+:
+The command +sendrawtransaction+ returns a _transaction hash (txid)_ as it submits the transaction on the network. We can now query that transaction id with +gettransaction+:
 
 ----
 $ bitcoind gettransaction ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
