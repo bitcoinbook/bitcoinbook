@@ -400,6 +400,9 @@ Running this will produce the hashes of several phrases, made different by addin
 [source,bash]
 ----
 $ python hash_example.py
+----
+
+----
 I am Satoshi Nakamoto0 => a80a81401765c8eddee25df36728d732...
 I am Satoshi Nakamoto1 => f7bc9a6304a4647bb41241a677b5345f...
 I am Satoshi Nakamoto2 => ea758a8134b115298a1583ffb80ae629...
@@ -518,30 +521,43 @@ At the time of writing this, the network is attempting to find a block whose hea
 
 ==== Difficulty Representation
 
+In <<block277316>> we saw that the block contains the difficulty target, in a notation called "difficulty bits" or just "bits", which in block 277,316 has the value of +0x1903a30c+. This notation expresses the difficulty target as a coefficient/exponent format, with the first two hexadecimal digits for the exponent and the next six hex digits as the coefficient. In this block, therefore, the exponent is +0x19+ and the coefficient is +0x03a30c+.
+    
 The formula to calculate the difficulty target from this representation is:
 
 target = coefficient * 2^(8 * (exponent - 3))
 
-Using that formula, we can 
-difficulty bits is 0x1903a30c
+Using that formula, and the difficulty bits value 0x1903a30c, we get:
 
 target = 0x03a30c * 2^(0x08 * (0x19 - 0x03))^ 
 
 => target = 0x03a30c * 2^(0x08 * 0x16)^
 
-=> target = 238,348 * 2^176^
+=> target = 0x03a30c * 2^0xB0^
+
+which in decimal is:
 
 => target = 238,348 * 2^176^
 
 => target = 9,223,372,036,854,775,807
 
+switching back to hexadecimal:
+
 => target = 0x0000000000000003A30C00000000000000000000000000000000000000000000
+
+This means that a valid block for height 277,316 is one that has a block header hash that is less than the target. In binary that number would have more than the first 60 bits set to zero. With this level of difficulty, a single miner processing 1 trillion hashes per second (1 tera-hash per second or 1 TH/sec) would only find a solution once every 8,496 blocks or once every 59 days, on average. 
 
 ==== Difficulty Target and Re-Targetting
 
 As we saw above the target determines the difficulty and therefore affects how long it takes to find a solution to the Proof-of-Work algorithm. This leads to the obvious questions: Why is the difficulty adjustable, who adjusts it and how?
 
 Bitcoin's blocks are generated every 10 minutes, on average. This is bitcoin's heartbeat and underpins the frequency of currency issuance and the speed of transaction settlement. It has to remain constant not just over the short term, but over a period of many decades. Over this time, it is expected that computer power will continue to increase at a rapid pace. Furthermore, the number of participants in mining and the computers they use will also constantly change. To keep the block generation time at 10 minutes, the difficulty of mining must be adjusted to account for these changes. In fact, difficulty is a dynamic parameter that will be periodically adjusted to meet a 10-minute block target. In simple terms, the difficulty target is set to whatever mining power will result in a 10-minute block interval. 
+
+In the chart below, we see the bitcoin network's hashing power increase over the past two years. As you can see, the competition between miners and the growth of bitcoin has resulted in an exponential increase in the hashing power (total hashes per second across the network):
+
+[[network_hashing_power]]
+.Total hashing power, giga-hashes per second, over two years
+image::images/NetworkHashingRate.png["NetworkHashingRate"]
 
 How then is such an adjustment made in a completely de-centralized network? Difficulty re-targeting occurs automatically and on every full node independently. Every 2016 blocks, all nodes re-target the Proof-of-Work difficulty. The equation for retargeting difficulty measures the time it took to find the last 2016 blocks and compares that to the expected time of 20160 minutes (two weeks based upon a desired 10 minute block time). The ratio between the actual timespan and desired timespan is calculated and a corresponding adjustment (up or down) is made to the difficulty. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty decreases. 
 
@@ -593,6 +609,12 @@ To avoid extreme volatility in the difficulty, the retargeting adjustment must b
 ====
 The difficulty of finding a bitcoin block is approximately '10 minutes of processing' for the entire network, based on the time it took to find the previous 2016 blocks, adjusted every 2016 blocks.
 ====
+
+The periodic adjustment of difficulty to match the amount of hashing power available and to keep the block generation time constant at 10 minutes has resulted in an exponential increase in difficulty. As the amount of hashing power applied to mining bitcoin has exploded, the difficulty has risen to match it. The difficulty metric is measured as a ratio of existing difficulty over minimum difficulty (the difficulty of the first block):
+
+[[bitcoin_difficulty]]
+.Bitcoin's mining difficulty metric, over two years
+image::images/BitcoinDifficulty.png["BitcoinDifficulty"]
 
 Note that the target difficulty is independent of the number of transactions or the value of transactions. This means that the amount of hashing power and therefore electricity expended to secure bitcoin is also entirely independent of the number of transactions. Bitcoin can scale up, achieve broader adoption and remain secure without any increase in hashing power from today's level. The increase in hashing power represents market forces as new miners enter the market to compete for the reward. As long as enough hashing power is under the control of miners acting honestly in pursuit of the reward, it is enough to prevent "takeover" attacks and therefore it is enough to secure bitcoin. 
 
@@ -646,57 +668,47 @@ In the next section we will look at how discrepancies between competing chains (
 
 Because the blockchain is a decentralized data structure, different copies of it are not always consistent. Blocks may arrive at different nodes at different times, causing them to have a different perspective of the blockchain. To resolve this, each node always selects and attempts to extend the chain of blocks that represents the most Proof-of-Work, also known as the longest chain or greatest cumulative difficulty chain. By summing the difficulty recorded in each block in a chain, a node can calculate the total amount of Proof-of-Work that has been expended to create that chain. As long as all nodes select the longest cumulative difficulty chain, the global bitcoin network eventually converges to a consistent state. Forks occur as temporary inconsistencies between versions of the blockchain, which are resolved by eventual re-convergence as more blocks are added to one of the forks.
 
+In the next few diagrams, we follow the progress of a "fork" event across the network. The diagram is a simplified representation of bitcoin as a global network. In reality, the bitcoin network's topology is not organized geographically. Rather, it forms a mesh network of interconnected nodes, which may be located very far from each other geographically. The representation of a geographic topology is a simplification used for the purposes of illustrating a fork. In the real bitcoin network, the "distance" between nodes is measured in "hops" from node to node, not in terms of their location. For illustration purposes, different blocks are shown as different colors, spreading across the network and coloring the connections they traverse.
+
+In the first diagram below, the network has a unified perspective of the blockchain, with the blue block as the tip of the main chain. 
+
 [[fork1]]
 .Visualization of a blockchain fork event - Before the Fork
 image::images/GlobalFork1.png["globalfork1"]
 
-A "fork" occurs whenever there are two candidate blocks competing to form the longest blockchain. This occurs under normal conditions whenever two miners solve the Proof-of-Work algorithm within a short period of time from each other. As both miners discover a solution for their respective candidate blocks, they immediately broadcast their own "winning" block to their immediate neighbors who begin propagating the block across the network. Each node that receives a valid block will incorporate it into their blockchain, extending the blockchain by one block. If that node later sees another candidate block extending the same parent, they ignore the second candidate. As a result, some nodes will "see" one candidate block first, while other nodes will see the other candidate block and two competing versions of the blockchain will emerge. 
+A "fork" occurs whenever there are two candidate blocks competing to form the longest blockchain. This occurs under normal conditions whenever two miners solve the Proof-of-Work algorithm within a short period of time from each other. As both miners discover a solution for their respective candidate blocks, they immediately broadcast their own "winning" block to their immediate neighbors who begin propagating the block across the network. Each node that receives a valid block will incorporate it into their blockchain, extending the blockchain by one block. If that node later sees another candidate block extending the same parent, they connect the second candidate on a secondary chain. As a result, some nodes will "see" one candidate block first, while other nodes will see the other candidate block and two competing versions of the blockchain will emerge. 
 
-{create a graphic with the globe, two miners each - bitcoin topology map}
+In the diagram below, we see two miners who mine two different blocks almost simultaneously. Both of these blocks are children of the blue block, meant to extend the chain by building on top of the blue block. To help us track it, one is visualized as a red block originating from Canada, the other is marked as a green block originating from Australia. 
 
 [[fork2]]
 .Visualization of a blockchain fork event - Two blocks found simultaneously 
 image::images/GlobalFork2.png["globalfork2"]
 
-Let's assume for example that a miner in Canada finds a Proof-of-Work solution for block "A" that extends the blockchain from height 315000 to height 315001, building on top of parent block "P". Almost simultaneously, an Australian miner who was also extending block "P", finds a solution for block "B", their candidate block. Now, there are two possible candidates for block height 315001, one we call "A", originating in Canada and one we call "B", originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
+Let's assume for example that a miner in Canada finds a Proof-of-Work solution for a block "red" that extends the blockchain, building on top of the parent block "blue". Almost simultaneously, an Australian miner who was also extending block "blue", finds a solution for block "green", their candidate block. Now, there are two possible blocks, one we call "red", originating in Canada and one we call "green", originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
+
+As the two blocks propagate, some nodes receive block "red" first and some receive block "green" first. The network splits into two different perspectives of the blockchain, one side topped with a red block, the other with a green block. 
 
 [[fork2]]
 .Visualization of a blockchain fork event - Two blocks propagate, splitting the network
 image::images/GlobalFork3.png["globalfork3"]
 
-From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "A" first and will create a new greatest-cumulative-difficulty blockchain with height 315001 and "A" as the last block in the chain (e.g. P-A), ignoring the candidate block "B" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain to height 315001 with "B" as the last block (e.g. P-B), ignoring "A" when it arrives a few seconds later. Any miners that saw "A" first will immediately build candidate blocks that reference "A" as the parent and start trying to solve the PoW for these candidate blocks. The miners that accepted "B" instead, will start extending that chain. 
-
-----
-Block "A" extends the chain: P-A
-Block "B" also extends the chain: P-B
-----
+From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "red" first and will create a new greatest-cumulative-difficulty blockchain with "red" as the last block in the chain (e.g. blue-red), ignoring the candidate block "green" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain with "green" as the last block (e.g. blue-green), ignoring "red" when it arrives a few seconds later. Any miners that saw "red" first will immediately build candidate blocks that reference "red" as the parent and start trying to solve the PoW for these candidate blocks. The miners that accepted "green" instead, will start building on top of "green" and extending that chain. 
 
 [[fork4]]
 .Visualization of a blockchain fork event - A new block extends one fork
 image::images/GlobalFork4.png["globalfork4"]
 
-Forks are almost always resolved within one block. As part of the network's hashing power is dedicated to building on top of "A" as the parent, another part of the hashing power is focused on building on top of "B". Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say for example that the miners building on top of "B" find a new block "X" that extends the chain to height 315002 (e.g. P-B-X). They immediately propagate this new block and the entire network sees it as a valid solution. 
+Forks are almost always resolved within one block. As part of the network's hashing power is dedicated to building on top of "red" as the parent, another part of the hashing power is focused on building on top of "green". Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say for example that the miners building on top of "green" find a new block "pink" that extends the chain (e.g. blue-green-pink). They immediately propagate this new block and the entire network sees it as a valid solution. 
 
-All nodes that had chosen "B" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "A" as the winner, however, will now see a block extending an even longer chain (greater-cumulative difficulty), that does not include "A" in it. Any miners working on extending the chain P-A will now stop that work because their candidate block is an "orphan", as its parent "A" is no longer on the longest chain. The block "A" is removed from the blockchain by any nodes that had accepted it and any transactions within it are queued up again for processing in the next block. The entire network re-converges on a single blockchain P-B-X, with "X" as the last block in the chain. All miners immediately start working on candidate blocks that reference "X" as their parent to extend the P-B-X chain. 
+[[fork5]]
+.Visualization of a blockchain fork event - The network re-converges on a new longest chain
+image::images/GlobalFork5.png["globalfork5"]
+
+All nodes that had chosen "green" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "red" as the winner, however, will now see two chains: blue-green-pink and blue-red. The chain blue-green-pink is now longer (more cumulative difficulty) than the chain blue-red. As a result, those nodes will set the chain blue-green-pink as main chain and change the blue-red chain to being a secondary chain. This is a chain re-convergence, as those nodes are forced to revise their view of the blockchain to incorporate the new evidence of a longer chain. Any miners working on extending the chain blue-red will now stop that work because their candidate block is an "orphan", as its parent "red" is no longer on the longest chain. The transactions within "red" are queued up again for processing in the next block, as that block is no longer in the main chain. The entire network re-converges on a single blockchain blue-green-pink, with "pink" as the last block in the chain. All miners immediately start working on candidate blocks that reference "pink" as their parent to extend the blue-green-pink chain. 
 
 It is theoretically possible for a fork to extend to two blocks, if two blocks are found almost simultaneously by miners on opposite "sides" of a previous fork. However, the chance of that happening is very low. Whereas a one-block fork may occur every week, a two-block fork is exceedingly rare.
-----
-Block "X" extends the chain: P-B-X
-Old chain is now "shorter": P-A
-----
 
-[TIP]
-====
-As of version 0.9, Bitcoin Core's +alertnotify+ option will send alerts whenever a 6-block or longer fork occurs
-====
-
-[[chainforks]]
-.A blockchain showing two instances of forking
-image::images/BlockChainWithForks.png["chainforks"]
-
-
-{ balance between confirmation time and fork frequency }
-
+Bitcoin's block interval of 10 minutes is a design compromise between fast confirmation times (settlement of transactions) and the probability of a fork. A faster block time would make transactions clear faster but lead to more frequent blockchain forks, whereas a slower block time would decrease the number of forks but make settlement slower. 
 
 === Mining Pools
 
