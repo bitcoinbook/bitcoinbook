@@ -620,14 +620,14 @@ In the next section we'll look at the process each node uses to validate a block
 
 The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the blockchain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward but also waste the effort expended to find a Proof-of-Work solution, thus incurring the cost of electricity without compensation. 
 
-When a node receives a new block, it will validate the block by checking it against a long list of criteria. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+. These criteria include:
+When a node receives a new block, it will validate the block by checking it against a long list of criteria that must all be met; otherwise the block is rejected. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
 
-* Check the syntactic validity of the block data structure
-* Check the Proof-of-Work, by checking the block header hash is less than the target difficulty
-* Check the block timestamp is less than two hours in the future (allowing for time errors)
-* Check the block size is within acceptable limits
-* Check the first transaction (and only the first) is a coinbase generation transaction
-* Validate all transactions within the block, using the transaction checklist discussed in <<tx_verification>>
+* The block data structure is syntactically valid
+* The block header hash is less than the target difficulty (enforces the Proof-of-Work)
+* The block timestamp is less than two hours in the future (allowing for time errors)
+* The block size is within acceptable limits
+* The first transaction (and only the first) is a coinbase generation transaction
+* All transactions within the block are valid using the transaction checklist discussed in <<tx_verification>>
 
 The independent validation of each new block by every node on the network ensures that the miners can't cheat. In previous sections we saw how the miners get to write a transaction that awards them the new bitcoins created within the block and claim the transaction fees. Why doesn't the miner write themselves a transaction for a thousand bitcoin instead of the correct reward? Because every node validates blocks according to the same rules. An invalid coinbase transaction would make the entire block invalid, which would result in the block being rejected and therefore that transaction would never become part of the ledger. The miner has to construct a perfect block, based on the shared rules that all nodes follow and mine it with a correct solution to the Proof-of-Work. To do so they expend a lot of electricity in mining and if they cheat all the electricity and effort is wasted. This is why independent validation is a key component of decentralized consensus.
 
