@@ -23,7 +23,9 @@ In addition to the Proof-of-Work consensus mechanism used in bitcoin, alternativ
 
 Finally, there are a number of bitcoin contenders that offer digital currency or digital payment networks, but without using a de-centralized ledger or consensus mechanism based on Proof-of-Work, such as Ripple and others. These non-blockchain technologies are outside of the scope of this book and will not be covered in this chapter. 
 
-=== Alt-coins
+=== Alt-coins 
+
+{define alt-coin}
 
 The first alt-coins appeared in August of 2011 as "forks" of the bitcoin source code. Strictly speaking, the first major fork of bitcoin's code was not an alt-coin but the alt-chain _Namecoin_, which will be discussed in the next section. 
 
@@ -96,9 +98,9 @@ Freicoin was introduced in July 2012. It is a _demurrage currency_, meaning that
 * Consensus algorithm: SHA256 Proof-of-Work
 * Market capitalization: $130,000 USD in Summer 2014
 
-==== Consensus Innovation: Peercoin, Myriad, Blackcoin, Vericoin
+==== Consensus Innovation: Peercoin, Myriad, Blackcoin, Vericoin, NXT
 
-Bitcoin's consensus mechanism is based on Proof-of-Work using the SHA256 algorithm. The first alt-coins introduced scrypt as an alternative Proof-of-Work algorithms, as a way to make mining more CPU-friendly and less susceptible to centralization with ASICs. Since then, innovation in the consensus mechanism has continued at a frenetic pace. Several alt-coins adopted a variety of algorithms such as scrypt, scrypt-N, Skein, Groestl, SHA3, X11, Blake and others. Some alt-coins combined multiple algorithms for Proof-of-Work. In 2013 we saw the invention of an alternative to Proof-of-Work, called _Proof-of-Stake_, which forms the basis of many modern alt-coins. Proof-of-Stake issues coins to owners of existing coins who present signatures from addresses containing more than a target value. For example, those owning 1% of the coins can generate 1% of the reward with signatures instead of Proof-of-Work. In this section we will look at examples of alt-coins innovating on the consensus mechanism.
+Bitcoin's consensus mechanism is based on Proof-of-Work using the SHA256 algorithm. The first alt-coins introduced scrypt as an alternative Proof-of-Work algorithms, as a way to make mining more CPU-friendly and less susceptible to centralization with ASICs. Since then, innovation in the consensus mechanism has continued at a frenetic pace. Several alt-coins adopted a variety of algorithms such as scrypt, scrypt-N, Skein, Groestl, SHA3, X11, Blake and others. Some alt-coins combined multiple algorithms for Proof-of-Work. In 2013 we saw the invention of an alternative to Proof-of-Work, called _Proof-of-Stake_, which forms the basis of many modern alt-coins. Proof-of-Stake issues coins to owners of existing coins who present signatures from addresses containing more than a target value. For example, those owning 1% of the coins can generate 1% of the reward with signatures instead of Proof-of-Work. {explain proof of stake - certificate of deposit example} In this section we will look at examples of alt-coins innovating on the consensus mechanism.
 
 *Peercoin*
 
@@ -135,6 +137,16 @@ Vericoin was launched in May 2014. It uses a Proof-of-Stake consensus algorithm 
 * Total currency: No limit
 * Consensus algorithm: Proof-of-Stake
 * Market capitalization: $1.1 million USD in Summer 2014
+
+*NXT*
+
+NXT (pronounced "Next") is a "pure" Proof-of-Stake alt-coin, in that it does not use Proof-of-Work mining. NXT is a from-scratch implementation of a crypto-currency, not a fork of bitcoin or any other alt-coins. NXT implements many advanced features, such as a name registry (similar to Namecoin), a de-centralized asset exchange (similar to Colored Coins), integrated de-centralized and secure messaging (similar to Bitmessage) and stake delegation (delegate Proof-of-Stake to others). NXT adherents call it a "next-generation" or 2.0 crypto-currency. 
+
+* Block generation: 1 minute
+* Total currency: No limit
+* Consensus algorithm: Proof-of-Stake
+* Market capitalization: $30 million USD in Summer 2014
+
 
 ==== Dual-Purpose Mining Innovation: Primecoin, Curecoin, Gridcoin
 
@@ -208,15 +220,82 @@ Darkcoin was launched in March of 2014. Darkcoin implements anonymous currency u
 
 === Non-currency alt-chains
 
+Alt-chains are alternative implementations of the blockchain design pattern, which are not primarily used as currency. Many include a currency, but the currency is used as a token for allocating something else, such as a resource or a contract. The currency, in other words, is not the main "point" of the platform, it is a secondary feature.  
+
 ==== Namecoin
 
-==== NXT
+Namecoin was the first "fork" of the bitcoin code. Namecoin is a de-centralized key-value registration and transfer platform using a blockchain. It supports a global domain name registry similar to the domain-name registration system on the Internet. Namecoin is currently used as an alternative Domain Name Service (DNS) for the root-level domain +.bit+. Namecoin can also be used to register names and key-value pairs in other namespaces, for storing things like email addresses, encryption keys, SSL certificates, file signatures, voting systems, stock certificates and a myriad other applications. 
+
+The Namecoin system includes the namecoin currency (symbol NMC), which is used to pay transaction fees for registration and transfer of names. At current prices, the fee to register a name is 0.01 NMC or approximately 1 US cent. As in bitcoin, the fees are collected by Namecoin miners.
+
+Namecoin's basic parameters are the same as bitcoin's:  
+
+* Block generation: 10 minutes
+* Total currency: 21 million NMC by 2140
+* Consensus algorithm: SHA256 Proof-of-Work
+* Market capitalization: $10 million USD in Summer 2014
+
+Namecoin currently has two namespaces:
+
+* +d/+ is the domain-name namespace for +.bit+ domains
+* +id/+ is the namespace for storing person identifiers such as email addresses, PGP keys etc.
+
+The Namecoin client is very similar to Bitcoin Core, as it is derived from the same source code. Upon installation, the client will download a full copy of the namecoin blockchain and then will be ready to query and register names. There are three main commands: 
+
+* +name_new+: Query or pre-register a name
+* +name_firstupdate+: Register a name and make the registration public
+* +name_update+: Change the details or refresh a name registration
+
+For example, to register the domain +mastering-bitcoin.bit+, we use the command +name_new+ as follows:
+
+----
+$ namecoind name_new d/mastering-bitcoin
+[
+    "21cbab5b1241c6d1a6ad70a2416b3124eb883ac38e423e5ff591d1968eb6664a",
+    "a05555e0fc56c023"
+]
+----
+
+The +name_new+ command registers a claim on the name, by creating a hash of the name with a random key. The two strings returned by +name_new+ are the hash and the random key (+a05555e0fc56c023+ in the example above) that can be used to make the name registration public.  Once that claim has been recorded on the namecoin blockchain it can be converted to a public registration with the +name_firstupdate+ command, by supplying the random key:
+
+----
+$ namecoind name_firstupdate d/mastering-bitcoin a05555e0fc56c023 "{"map": {"www": {"ip":"1.2.3.4"}}}}"
+b7a2e59c0a26e5e2664948946ebeca1260985c2f616ba579e6bc7f35ec234b01
+----
+
+The example above will map the domain name +www.mastering-bitcoin.bit+ to IP address 1.2.3.4. The hash returned is the transaction id that can be used to track this registration. 
+
+Namecoin registrations need to be updated every 36,000 blocks (approximately 200 to 250 days), though the +name_update+ has no fee and therefore renewing domains in Namecoin is free. Third party providers can handle registration, automatic renewal and updating via a web interface, for a small fee. With a third-party provider you avoid the need to run a namecoin client, but you lose the independent control of a de-centralized name registry offered by Namecoin. 
+
+==== Bitmessage
+
+Bitmessage is a bitcoin alt-chain that implements a de-centralized secure messaging service, essentially a server-less encrypted email system. Bitmessage allows users to compose and send message to each other, using a bitmessage address. The messages operate in much the same way as a bitcoin transaction, but they are transient - they do not persist beyond 2 days and if not delivered to the destination node in that time, they are lost. Senders and recipients are pseudonymous, they have no identifiers other than a bitmessage address, but are strongly authenticated, meaning that messages cannot be "spoofed". Bitmessages are encrypted to the recipient and therefore the bitmessage network is resistant to holistic surveillance - an eavesdropper has to compromise the recipient's device in order to intercept messages. 
 
 ==== Ethereum
 
-=== Meta-Coin Platforms
+Ethereum is a Turing-complete contract processing and execution platform based on a blockchain ledger. It is not a clone of bitcoin, but a completely independent design and implementation. Ethereum has a built-in currency, called _ether_, which is required in order to pay for contract execution. Ethereum's blockchain records _contracts_, which are expressed in a low-level, byte-code like, Turing-complete language. Essentially, a contract is a program that runs on every node in the Ethereum system. Ethereum contracts can store data, send and receive ether payments, store ether and execute an infinite range (hence Turing-complete) of computable actions, acting as de-centralized autonomous software agents.
+
+Ethereum can implement quite complex systems that are otherwise implemented as alt-chains themselves. For example, below is a Namecoin-like name registration contract written in Ethereum (or more accurately, written in a high-level language that can be compiled to Ethereum code):
+
+----
+if !contract.storage[msg.data[0]]: # Is the key not yet taken?
+    # Then take it!
+    contract.storage[msg.data[0]] = msg.data[1]
+    return(1)
+else:
+
+    return(0) // Otherwise do nothing
+----
+
+=== Meta-Coin Platforms 
+
+{move this up}
+
+Meta-coins and meta-chains are software layers implemented on top of bitcoin, either implementing a currency-inside-a-currency, or a platform/protocol overlay inside the bitcoin system. These function layers extend the core bitcoin protocol and add features and capabilities by encoding additional data inside bitcoin transactions and bitcoin addresses. The first implementations of meta-coins used various "hacks" to add meta-data to the bitcoin blockchain, such as using bitcoin addresses to encode data or using unused transaction fields (eg. the transaction sequence field) to encode meta-data about the added protocol layer. Since the introduction of the OP_RETURN transaction scripting opcode, the meta-coins have been able to record meta-data more directly in the blockchain and most are migrating to using that instead. 
 
 ==== Colored Coins
+
+Colored Coins are 
 
 ==== Mastercoin
 
