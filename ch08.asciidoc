@@ -60,24 +60,24 @@ However, before forwarding transactions to its neighbors, every bitcoin node tha
 
 Each node verifies every transaction against a long checklist of criteria:
 
-* Check the syntactic correctness of the transaction's data structure
-* Make sure neither lists of inputs or outputs are empty
+* The transaction's syntax and data structure must be correct
+* Neither lists of inputs or outputs are empty
 * The transaction size in bytes is less than MAX_BLOCK_SIZE
 * Each output value, as well as the total, must be within the allowed range of values (less than 21m coins, more than 0)
-* Check that none of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
-* Check that nLockTime is less than or equal to INT_MAX
-* Check that the transaction size in bytes is greater than or equal to 100
-* Check that the number of signature operations contained in the transaction is less than the signature operation limit
-* Reject "nonstandard" transactions: unlocking script (scriptSig) doing anything other than pushing numbers on the stack, or the locking script (scriptPubkey) not matching isStandard forms
-* Check for a matching transaction in the pool, or in a block in the main branch, if so reject this transaction
+* None of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
+* nLockTime is less than or equal to INT_MAX
+* The transaction size in bytes is greater than or equal to 100
+* The number of signature operations contained in the transaction is less than the signature operation limit
+* Unlocking script (scriptSig) only push numbers on the stack, and the locking script (scriptPubkey) must match isStandard forms (this rejects "nonstandard" transactions)
+* A matching transaction in the pool, or in a block in the main branch, must exist
 * For each input, if the referenced output exists in any other transaction in the pool, reject this transaction
 * For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions, if a matching transaction is not already in the pool
-* For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations; else reject this transaction
-* For each input, if the referenced output does not exist (e.g. never existed or has already been spent), reject this transaction
+* For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations 
+* For each input, the referenced output must exist and cannot already be spent
 * Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0)
 * Reject if the sum of input values < sum of output values
 * Reject if transaction fee would be too low to get into an empty block
-* Verify the unlocking scripts for each input against the corresponding output locking scripts
+* The unlocking scripts for each input must validate against the corresponding output locking scripts
 
 These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +CheckTransaction+, and +CheckInputs+ in the bitcoin reference client. Note that the conditions change over time, to address new types of Denial-of-Service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
