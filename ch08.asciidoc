@@ -4,7 +4,7 @@
 [[mining]]
 === Introduction - Mining and Consensus
 
-Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners act as a decentralized clearinghouse, validating new transactions and recording them on the global ledger. A new block, containing transactions that occurred since the last block, is "mined" every 10 minutes, thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed", which allows the new owners of bitcoin to spend the bitcoin they received in those transactions. Miners receive two types of reward for mining: new coins created with each new block and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the Proof-of-Work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the Proof-of-Work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
+Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners provide processing power to the bitcoin network in exchange for the opportunity to be rewarded bitcoin. Miners validate new transactions and recording them on the global ledger. A new block, containing transactions that occurred since the last block, is "mined" every 10 minutes, thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed", which allows the new owners of bitcoin to spend the bitcoin they received in those transactions. Miners receive two types of reward for mining: new coins created with each new block and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the Proof-of-Work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the Proof-of-Work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
 
 The process of new coin generation is called mining, because the reward is designed to simulate diminishing returns, just like mining for precious metals. Bitcoin's money supply is created through mining, similar to how a central bank issues new money by printing bank notes. The amount of newly created bitcoin a miner can add to a block decreases approximately every four years (or precisely every 210,000 blocks). It started at 50 bitcoin per block in January of 2009 and halved to 25 bitcoin per block in November of 2012. It will halve again to 12.5 bitcoin per block sometime in 2016. Based on this formula, bitcoin mining rewards decrease exponentially until approximately the year 2140 when all bitcoin (20.99999998 million) will have been issued. After 2140, no new bitcoins are issued.
 
@@ -16,7 +16,7 @@ In this chapter, we will first examine mining as a monetary supply mechanism and
 
 ==== Bitcoin Economics and Currency Creation
 
-Bitcoins are "minted" during the creation of each block at a fixed and diminishing rate. Each block, generated on average every 10 minutes, contains entirely new bitcoins, created ex nihilo (from nothing). Every 210,000 blocks or approximately every four years the currency issuance rate is decreased by 50%. For the first four years of operation of the network, each block contained 50 new bitcoin. In November of 2012, the new bitcoin issuance rate was decreased to 25 bitcoin per block and it will decrease again to 12.5 bitcoin at block 420,000, which will be mined sometime in 2016. The rate of new coins decreases like this exponentially over 64 "halvings", until block 13,230,000 (mined approximately in year 2137) when it reaches the minimum currency unit of 1 satoshi. Finally, after 13.44 million blocks, in approximately 2140, all 2,099,999,997,690,000 satoshis, or almost 21 million bitcoin will be issued. Thereafter, blocks will contain no new bitcoin, and miners will be rewarded solely through the transaction fees.
+Bitcoins are "minted" during the creation of each block at a fixed and diminishing rate. Each block, generated on average every 10 minutes, contains entirely new bitcoins, created from nothing. Every 210,000 blocks or approximately every four years the currency issuance rate is decreased by 50%. For the first four years of operation of the network, each block contained 50 new bitcoin. In November of 2012, the new bitcoin issuance rate was decreased to 25 bitcoin per block and it will decrease again to 12.5 bitcoin at block 420,000, which will be mined sometime in 2016. The rate of new coins decreases like this exponentially over 64 "halvings", until block 13,230,000 (mined approximately in year 2137) when it reaches the minimum currency unit of 1 satoshi. Finally, after 13.44 million blocks, in approximately 2140, all 2,099,999,997,690,000 satoshis, or almost 21 million bitcoin will be issued. Thereafter, blocks will contain no new bitcoin, and miners will be rewarded solely through the transaction fees.
 
 [[bitcoin_money_supply]]
 .Supply of bitcoin currency over time based on a geometrically decreasing issuance rate
@@ -60,24 +60,24 @@ However, before forwarding transactions to its neighbors, every bitcoin node tha
 
 Each node verifies every transaction against a long checklist of criteria:
 
-* Check the syntactic correctness of the transaction's data structure
-* Make sure neither lists of inputs or outputs are empty
+* The transaction's syntax and data structure must be correct
+* Neither lists of inputs or outputs are empty
 * The transaction size in bytes is less than MAX_BLOCK_SIZE
 * Each output value, as well as the total, must be within the allowed range of values (less than 21m coins, more than 0)
-* Check that none of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
-* Check that nLockTime is less than or equal to INT_MAX
-* Check that the transaction size in bytes is greater than or equal to 100
-* Check that the number of signature operations contained in the transaction is less than the signature operation limit
-* Reject "nonstandard" transactions: unlocking script (scriptSig) doing anything other than pushing numbers on the stack, or the locking script (scriptPubkey) not matching isStandard forms
-* Check for a matching transaction in the pool, or in a block in the main branch, if so reject this transaction
+* None of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
+* nLockTime is less than or equal to INT_MAX
+* The transaction size in bytes is greater than or equal to 100
+* The number of signature operations contained in the transaction is less than the signature operation limit
+* Unlocking script (scriptSig) only push numbers on the stack, and the locking script (scriptPubkey) must match isStandard forms (this rejects "nonstandard" transactions)
+* A matching transaction in the pool, or in a block in the main branch, must exist
 * For each input, if the referenced output exists in any other transaction in the pool, reject this transaction
 * For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions, if a matching transaction is not already in the pool
-* For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations; else reject this transaction
-* For each input, if the referenced output does not exist (e.g. never existed or has already been spent), reject this transaction
+* For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations 
+* For each input, the referenced output must exist and cannot already be spent
 * Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0)
 * Reject if the sum of input values < sum of output values
 * Reject if transaction fee would be too low to get into an empty block
-* Verify the unlocking scripts for each input against the corresponding output locking scripts
+* The unlocking scripts for each input must validate against the corresponding output locking scripts
 
 These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +CheckTransaction+, and +CheckInputs+ in the bitcoin reference client. Note that the conditions change over time, to address new types of Denial-of-Service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
@@ -95,7 +95,7 @@ After validating transactions, a bitcoin node will add them to the _memory pool_
 
 Let's follow the blocks that were created during the time Alice bought a cup of coffee from Bob's Cafe (see <<cup_of_coffee>>). Alice's transaction was included in block 277,316. For the purpose of demonstrating the concepts in this chapter let's assume that block was mined by Jing's mining system and follow Alice's transaction as it becomes part of this new block.
 
-Jing's mining node maintains a local copy of the blockchain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain of 277,314 blocks. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. As Jing's node is mining, it receives block 277,315 through the bitcoin network. The arrival of this block signifies the end of the competition for block 277,315 and the beginning of the competition to create block 277,316.  
+Jing's mining node maintains a local copy of the blockchain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain up to block 277,314. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. As Jing's node is mining, it receives block 277,315 through the bitcoin network. The arrival of this block signifies the end of the competition for block 277,315 and the beginning of the competition to create block 277,316.  
 
 During the previous 10 minutes, while Jing's node was searching for a solution to block 277,315, it was also collecting transactions in preparation for the next block. By now it has collected a few hundred transactions in the memory pool. Upon receiving block 277,315 and validating it, Jing's node will also check all the transactions in the memory pool and remove any that were included in block 277,315. Whatever transaction remain in the memory pool are unconfirmed and are waiting to be recorded in a new block. 
 
@@ -356,7 +356,7 @@ In the simplest terms, mining is the process of hashing the block header repeate
 
 ==== Proof-of-Work Algorithm
 
-A hash algorithm takes an arbitrary-length data input and produces a fixed-length deterministic result, a digital fingerprint of the input. For any specific input, the resulting hash will always be the same and can be easily calculated and verified by anyone implementing the same hash algorithm. The key characteristic of a cryptographic hash algorithm is that it is impossible to find two different inputs that produce the same fingerprint. As a corollary, it is also impossible to select an input in such a way as to produce a desired fingerprint, other than trying random inputs.
+A hash algorithm takes an arbitrary-length data input and produces a fixed-length deterministic result, a digital fingerprint of the input. For any specific input, the resulting hash will always be the same and can be easily calculated and verified by anyone implementing the same hash algorithm. The key characteristic of a cryptographic hash algorithm is that it is virtually impossible to find two different inputs that produce the same fingerprint. As a corollary, it is also virtually impossible to select an input in such a way as to produce a desired fingerprint, other than trying random inputs.
 
 With SHA-256, the output is always 256 bits long, regardless of the size of the input. In the example below, we will use the Python interpreter to calculate the SHA256 hash of the phrase "I am Satoshi Nakamoto". 
 
@@ -432,7 +432,7 @@ To make a challenge out of this algorithm, let's set an arbitrary target: find a
  
 To give a simple analogy, imagine a game where players throw a pair of dice repeatedly, trying to throw less than a specified target. In the first round, the target is 12. Unless you throw double-six, you win. In the next round the target is 11. Players must throw 10 or less to win, again an easy task. Let's say a few rounds later the target is down to 5. Now, more than half the dice throws will add up to more than 5 and therefore be invalid. It takes exponentially more dice throws to win, the lower the target gets. Eventually, when the target is 2 (the minimum possible), only one throw out of every 36, or 2% of them will produce a winning result. 
 
-In the example above, the winning "nonce" is 13 and this result can be confirmed by anyone independently. Anyone can add the number 13 as a suffix to the phrase "I am Satoshi Nakamoto" and compute the hash, verifying that it is less than the target. The successful result is also proof-of-work, as it proves we did the work to find that nonce. While it only takes one hash computation to verify, it took us 13 hash computations to find a nonce that worked. If we had a lower target (higher difficulty) it would take many more hash computations to find a suitable nonce, but only one hash computation for anyone to verify. Furthermore, by knowing the target, anyone can estimate the difficulty using statistics and therefore know how much work was needed to find such a nonce.
+In the hashing example above, the winning "nonce" is 13 and this result can be confirmed by anyone independently. Anyone can add the number 13 as a suffix to the phrase "I am Satoshi Nakamoto" and compute the hash, verifying that it is less than the target. The successful result is also proof-of-work, as it proves we did the work to find that nonce. While it only takes one hash computation to verify, it took us 13 hash computations to find a nonce that worked. If we had a lower target (higher difficulty) it would take many more hash computations to find a suitable nonce, but only one hash computation for anyone to verify. Furthermore, by knowing the target, anyone can estimate the difficulty using statistics and therefore know how much work was needed to find such a nonce.
 
 Bitcoin's Proof-of-Work is very similar to the problem above. The miner constructs a candidate block filled with transactions. Next, the miner calculates the hash of this block's header and see if it is smaller than the current _target_. If the hash is not less than the target, the miner will modify the nonce (usually just incrementing it by one) and try again. At the current difficulty in the bitcoin network, miners have to try quadrillions of times before finding a nonce that results in a low enough block header hash.
 
@@ -620,14 +620,14 @@ In the next section we'll look at the process each node uses to validate a block
 
 The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the blockchain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward but also waste the effort expended to find a Proof-of-Work solution, thus incurring the cost of electricity without compensation. 
 
-When a node receives a new block, it will validate the block by checking it against a long list of criteria. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+. These criteria include:
+When a node receives a new block, it will validate the block by checking it against a long list of criteria that must all be met; otherwise the block is rejected. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
 
-* Check the syntactic validity of the block data structure
-* Check the Proof-of-Work, by checking the block header hash is less than the target difficulty
-* Check the block timestamp is less than two hours in the future (allowing for time errors)
-* Check the block size is within acceptable limits
-* Check the first transaction (and only the first) is a coinbase generation transaction
-* Validate all transactions within the block, using the transaction checklist discussed in <<tx_verification>>
+* The block data structure is syntactically valid
+* The block header hash is less than the target difficulty (enforces the Proof-of-Work)
+* The block timestamp is less than two hours in the future (allowing for time errors)
+* The block size is within acceptable limits
+* The first transaction (and only the first) is a coinbase generation transaction
+* All transactions within the block are valid using the transaction checklist discussed in <<tx_verification>>
 
 The independent validation of each new block by every node on the network ensures that the miners can't cheat. In previous sections we saw how the miners get to write a transaction that awards them the new bitcoins created within the block and claim the transaction fees. Why doesn't the miner write themselves a transaction for a thousand bitcoin instead of the correct reward? Because every node validates blocks according to the same rules. An invalid coinbase transaction would make the entire block invalid, which would result in the block being rejected and therefore that transaction would never become part of the ledger. The miner has to construct a perfect block, based on the shared rules that all nodes follow and mine it with a correct solution to the Proof-of-Work. To do so they expend a lot of electricity in mining and if they cheat all the electricity and effort is wasted. This is why independent validation is a key component of decentralized consensus.
 
@@ -781,5 +781,5 @@ The massive increase of total hashing power has arguably made bitcoin impervious
 
 Not all attackers will be motivated by profit, however. One potential attack scenario is where an attacker intends to disrupt the bitcoin network without the possibility of profiting from such disruption. A malicious attack aimed at crippling bitcoin would require enormous investment and covert planning, but could conceivably be launched by a well funded, most likely state-sponsored attacker. Alternatively, a well-funded attacker could attack bitcoin's consensus by simultaneously amassing mining hardware, compromising pool operators and attacking other pools with denial-of-service. All of these scenarios are theoretically possible, but increasingly impractical as the bitcoin network's overall hashing power continues to grow exponentially. Recent advancements in bitcoin, such as P2Pool mining, aim to further de-centralize mining control, making bitcoin consensus even harder to attack.  
 
-Undoubtedly, a serious consensus attack would erode confidence in bitcoin in the short term, possibly causing a significant price decline. However, the bitcoin network and software is constantly evolving, so consensus attacks would be met with immediate counter-measures by the bitcoin community, making bitcoin hardier, stealthier and more robust.
+Undoubtedly, a serious consensus attack would erode confidence in bitcoin in the short term, possibly causing a significant price decline. However, the bitcoin network and software is constantly evolving, so consensus attacks would be met with immediate counter-measures by the bitcoin community, making bitcoin hardier, stealthier, and more robust.
 
