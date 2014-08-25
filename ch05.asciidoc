@@ -201,7 +201,11 @@ A locking script is an encumbrance placed on an output, and it specifies the con
 
 An unlocking script is a script that "solves", or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input and most of the time they contain a digital signature produced by the user's wallet from their private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In this book we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, as not all unlocking scripts must contain signatures. As mentioned above, in most bitcoin applications the source code will refer to the unlocking script as "scriptSig".
 
-Every bitcoin client will validate transactions by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and concatenate them. The locking script is added to the end of the unlocking script and then the entire combined script is executed using the script execution engine. If the result of executing the combined script is "TRUE", the unlocking script has succeeded in resolving the conditions imposed by the locking script and therefore the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid as it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available (unspent) UTXO.
+Every bitcoin client will validate transactions by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and execute the two scripts. 
+
+In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack and corrupt the locking script. In the current implementation the scripts are executed separately with the stack transferred between the two executions, as described below.
+
+First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g it has no "dangling" operators leftover), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE", the unlocking script has succeeded in resolving the conditions imposed by the locking script and therefore the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid as it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available (unspent) UTXO.
 
 Below is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation: 
 
@@ -315,7 +319,7 @@ image::images/Tx_Script_P2PubKeyHash_2.png["Tx_Script_P2PubKeyHash_2"]
 [[p2pk]]    
 ==== Pay-to-Public-Key
 
-Pay-to-Public-Key is a simpler form of a bitcoin payment than Pay-to-Public-Key-Hash. With this script form, the public key itself is stored in the locking script, rather than a public-key-hash as with P2PKH above, which is much shorter. The disadvantage of this form of locking script is that it consumes more space in the blockchain to store these types of payments, because a public key is 264 or 520 bits long (depending on whether it is compressed), whereas a public key hash is only 160 bits long. For legacy compatibility, Pay-to-Public-Key is used in all coinbase generation transactions, the transactions that pay the reward to the miners. 
+Pay-to-Public-Key is a simpler form of a bitcoin payment than Pay-to-Public-Key-Hash. With this script form, the public key itself is stored in the locking script, rather than a public-key-hash as with P2PKH above, which is much shorter. Pay-to-Public-Key-Hash was invented by Satoshi to make bitcoin addresses shorter, for ease of use. Pay-to-Public-Key is now most often seen in coinbase transactions, generated by older mining software that has not been updated to use P2PKH. 
 
 A Pay-to-Public-Key locking script looks like this:
 ----
@@ -385,7 +389,7 @@ where the data portion is limited to 40 bytes and most often represents a hash, 
 
 Keep in mind that there is no "unlocking script" that corresponds to OP_RETURN that could possibly be used to "spend" an OP_RETURN output. The whole point of OP_RETURN is that you can't spend the money locked in that output and therefore it does not need to be held in the UTXO set as potentially spendable - OP_RETURN is _provably un-spendable_. OP_RETURN is usually an output with a zero bitcoin amount, since any bitcoin assigned to such an output is effectively lost forever. If an OP_RETURN is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an OP_RETURN output as an input in a transaction, that transaction is invalid. 
 
-A valid transaction can have only one OP_RETURN output. However, a single OP_RETURN output can be combined in a transaction with outputs of any other type. 
+A standard transaction (one that conforms to the +isStandard()+ checks) can have only one OP_RETURN output. However, a single OP_RETURN output can be combined in a transaction with outputs of any other type. 
 
 [[p2sh]]
 ==== Pay to Script Hash (P2SH)
@@ -404,7 +408,7 @@ While multi-signature scripts are a powerful feature, they are cumbersome to use
 
 Pay-to-Script-Hash (P2SH) was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script which will be presented later when this output is spent". 
 
-In P2SH transactions, the locking script that is replaced by a hash is referred to as the _redeemScript_ because it is presented to the system at redemption time rather than as a locking script. 
+In P2SH transactions, the locking script that is replaced by a hash is referred to as the _redeem script_ because it is presented to the system at redemption time rather than as a locking script. 
 
 [[without_p2sh]]
 .Complex Script without P2SH
@@ -417,11 +421,11 @@ In P2SH transactions, the locking script that is replaced by a hash is referred 
 .Complex Script as P2SH
 |=======
 | Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
-| Locking Script | OP_HASH160 <20-byte hash of redeemScript> OP_EQUAL
-| Unlocking Script | Sig1 Sig2 redeemScript 
+| Locking Script | OP_HASH160 <20-byte hash of redeem script> OP_EQUAL
+| Unlocking Script | Sig1 Sig2 redeem script 
 |=======
 
-As you can see from the tables above, with P2SH the complex script that details the conditions for spending the output (redeemScript) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeemScript itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction. 
+As you can see from the tables above, with P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeem script itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction. 
 
 Let's look at Mohammed's company, their complex multi-signature script and the resulting P2SH scripts. 
 
@@ -451,17 +455,17 @@ A P2SH transaction locks the output to this hash instead of the longer script, u
 ----
 OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
-which, as you can see is much shorter. Instead of "pay to this 5-key multi-signature script", the P2SH equivalent transaction is "pay to a script with this hash". A customer making a payment to Mohammed's company need only include this much shorter locking script in their payment. When Mohammed wants to spend this UTXO, they must present the original redeemScript (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
+which, as you can see is much shorter. Instead of "pay to this 5-key multi-signature script", the P2SH equivalent transaction is "pay to a script with this hash". A customer making a payment to Mohammed's company need only include this much shorter locking script in their payment. When Mohammed wants to spend this UTXO, they must present the original redeem script (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
 
 ----
 <Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
 ----
 
-The two scripts are combined in two stages. First, the redeemScript is checked against the locking script to make sure the hash matches:
+The two scripts are combined in two stages. First, the redeem script is checked against the locking script to make sure the hash matches:
 ----
-<2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <redeemScriptHash> OP_EQUAL
+<2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <redeem scriptHash> OP_EQUAL
 ----
-If the redeemScript hash matches, then the unlocking script is executed on its own, to unlock the redeemScript:
+If the redeem script hash matches, then the unlocking script is executed on its own, to unlock the redeem script:
 ----
 <Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG
 ----
@@ -481,19 +485,21 @@ The Pay-to-Script-Hash feature offers the following benefits compared to the dir
 * P2SH shifts the burden of constructing the script to the recipient not the sender
 * P2SH shifts the burden in data storage for the long script from the output (which is in the UTXO set and therefore impacts memory) to the input (only stored on the blockchain)
 * P2SH shifts the burden in data storage for the long script from the present time (payment) to a future time (when it is spent)
-* P2SH shifts the transaction fee cost of a long script from the sender to the recipient who has to include the long redeemScript to spend it
+* P2SH shifts the transaction fee cost of a long script from the sender to the recipient who has to include the long redeem script to spend it
 
 ===== Redeem Script and isStandard Validation
 
-Pay-to-Script-Hash is currently limited to the standard types of bitcoin transaction scripts, by the +isStandard()+ function. That means that the redeemScript presented in the spending transaction must be one of the standard types: P2PK, P2PKH or Multi-Sig, excluding OP_RETURN and P2SH itself. You cannot reference a P2SH script inside a redeemScript and you can't use an OP_RETURN inside a P2SH redeemScript. 
+Prior to version 0.9.2 of the Bitcoin Core client, Pay-to-Script-Hash was limited to the standard types of bitcoin transaction scripts, by the +isStandard()+ function. That means that the redeem script presented in the spending transaction could only be one of the standard types: P2PK, P2PKH or Multi-Sig, excluding OP_RETURN and P2SH itself.
 
-This limitation of redeemScript to only standard transaction scripts is temporary and will likely be removed in future versions of the bitcoin reference implementation, allowing the use of any valid script inside a P2SH redeemScript. You will still not be able to put a P2SH inside a P2SH redeemScript, because the P2SH specification is not recursive. You will still not be able to use OP_RETURN in a redeemScript because OP_RETURN cannot be redeemed by definition. But you will be able someday to use all the other operators to create a vast range of complex and novel scripts that can be used as redeemScripts and referenced as P2SH payment to their hash. 
+As of version 0.9.2 of the Bitcoin Core client, P2SH transactions can contain any valid script, making the P2SH standard much more flexible and allowing for experimentation with many novel and complex types of transactions.  
 
-Note that since the redeemScript is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of a non-standard transaction it will be processed as valid. However, you will not be able to spend it as the spending transaction which includes the redeemScript will not be accepted, as it is non-standard. This creates a risk, as you can lock bitcoin in a P2SH which cannot be later spent. The network will accept the P2SH encumbrance even if it corresponds to a non-standard or invalid redeemScript, because the script hash gives no indication of the script it represents. 
+Note that you are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. You are also still not be able to use OP_RETURN in a redeem script because OP_RETURN cannot be redeemed by definition.
+
+Note that since the redeem script is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of an invalid transaction it will be processed regardless. However, you will not be able to spend it as the spending transaction which includes the redeem script will not be accepted, as it is an invalid script. This creates a risk, because you can lock bitcoin in a P2SH which cannot be later spent. The network will accept the P2SH encumbrance even if it corresponds to an invalid redeem script, because the script hash gives no indication of the script it represents. 
 
 [WARNING]
 ====
-P2SH locking scripts contain the hash of a redeemScript which gives no clues as to the content of the redeemScript itself. The P2SH transaction will be considered valid and accepted even if the redeemScript is invalid or non-standard. You may accidentally lock bitcoin in such a way that it cannot later be spent. 
+P2SH locking scripts contain the hash of a redeem script which gives no clues as to the content of the redeem script itself. The P2SH transaction will be considered valid and accepted even if the redeem script is invalid. You may accidentally lock bitcoin in such a way that it cannot later be spent. 
 ====
 
 [[tx_script_ops]]
