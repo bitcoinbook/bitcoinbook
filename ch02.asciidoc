@@ -83,7 +83,7 @@ Transactions are like lines in a double-entry bookkeeping ledger. In simple term
 .Transaction as Double-Entry Bookkeeping 
 image::images/Transaction_Double_Entry.png["Transaction Double-Entry"]
 
-The transaction also contains proof of ownership for each amount of bitcoin (inputs) whose value is transferred, in the form of a digital signature from the owner, which can be independently validated by anyone. In bitcoin terms, "spending" is signing the value of a previous transaction for which you have the keys over to a new owner identified by a bitcoin address. 
+The transaction also contains proof of ownership for each amount of bitcoin (inputs) whose value is transferred, in the form of a digital signature from the owner, which can be independently validated by anyone. In bitcoin terms, "spending" is signing a transaction which transfers value from a previous transaction over to a new owner identified by a bitcoin address. 
 
 
 [TIP]
@@ -93,7 +93,7 @@ _Transactions_ move value *from* _transaction inputs_ *to* _transaction outputs_
 
 
 [[blockchain-mnemonic]]
-.Transaction Chain
+.A chain of transactions, where the output of one transaction is the input of the next transaction
 image::images/Transaction_Chain.png["Transaction chain"]
 
 Alice's payment to Bob's Cafe utilizes a previous transaction as its input. In the previous chapter Alice received bitcoin from her friend Joe in return for cash. That transaction has a number of bitcoins locked (encumbered) against Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature which unlocks those previous transaction outputs, thereby proving to the bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob.
@@ -124,11 +124,11 @@ Alice's wallet application contains all the logic for selecting appropriate inpu
 
 ==== Getting the right inputs
 
-Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of *every unspent output* from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. 
+Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallet applications keep a small database of "unspent transaction outputs" that are locked (encumbered) with the wallet's own keys. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction which was created in exchange for cash (see <<getting bitcoin>>). A bitcoin wallet application that runs as a full-index client actually contains a copy of every unspent output from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as to quickly verify incoming transactions as having correct inputs. However, since a full-index client takes up a lot of disk space, most user wallets run "lightweight" clients that track only the user's own unspent outputs. 
 	
 If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information, using a variety of APIs available by different providers, or by asking a full-index node using the bitcoin JSON RPC API. Below we see an example of a RESTful API request, constructed as an HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response:
 
-.Look up all the unspent outputs for Alice's address 1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
+.Look up all the unspent outputs for Alice's bitcoin address
 ----
 $ curl https://blockchain.info/unspent?active=1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK
 
@@ -154,7 +154,7 @@ The response above shows that the bitcoin network knows of one unspent output (o
 
 [TIP]
 ====
-Look up the transaction from Joe to Alice to see the information referenced above as it is stored in the bitcoin blockchain. Using the blockchain explorer web application, follow the URL below:
+Use the following link to look up the transaction from Joe to Alice:
 
 https://blockchain.info/tx/7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18
 ====
@@ -176,13 +176,13 @@ The resulting transaction can be seen using a blockchain explorer web applicatio
 .Alice's transaction to Bob's Cafe
 image::images/AliceCoffeeTransaction.png["Alice Coffee Transaction"]
 
-Use the following link to see the transaction on the bitcoin blockchain:
-
 [[transaction-alice-url]]
-.Link to Alice's transaction on the bitcoin blockchain
-----
+[TIP]
+====
+Use the following link to look up the transaction from Alice to Bob's Cafe:
+
 https://blockchain.info/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2
-----
+====
 
 ==== Adding the transaction to the ledger
 
@@ -214,7 +214,7 @@ The bitcoin system of trust is based on computation. Transactions are bundled in
 * Mining creates new bitcoins in each block, almost like a central bank printing new money. The amount of bitcoin created per block is fixed and diminishes with time.
 * Mining creates trust by ensuring that transactions are only confirmed if enough computational power was devoted to the block that contains them. More blocks mean more computation which means more trust. 
 
-A good way to describe mining is like a giant competitive game of sudoku that resets every time someone finds a solution and whose difficulty automatically adjusts so that it takes approximately 10 minutes to find a solution. Imagine a giant sudoku puzzle, several thousand rows and columns in size. If I show you a completed puzzle you can verify it quite quickly. If it is empty, however, it takes a lot of work to solve! The difficulty of the sudoku can be adjusted by changing its size (more or fewer rows and columns), but it can still be verified quite easily even if it is very large. The "puzzle" used in bitcoin is based on a cryptographic hash and exhibits similar characteristics: it is asymmetrically hard to solve but easy to verify, and its difficulty can be adjusted.
+A good way to describe mining is like a giant competitive game of sudoku that resets every time someone finds a solution and whose difficulty automatically adjusts so that it takes approximately 10 minutes to find a solution. Imagine a giant sudoku puzzle, several thousand rows and columns in size. If I show you a completed puzzle you can verify it quite quickly. However, if the puzzle has a few squares filled and the rest is empty, it takes a lot of work to solve! The difficulty of the sudoku can be adjusted by changing its size (more or fewer rows and columns), but it can still be verified quite easily even if it is very large. The "puzzle" used in bitcoin is based on a cryptographic hash and exhibits similar characteristics: it is asymmetrically hard to solve but easy to verify, and its difficulty can be adjusted.
 
 In <<user-stories>> we introduced Jing, a computer engineering student in Shanghai. Jing is participating in the bitcoin network as a miner. Every 10 minutes or so, Jing joins thousands of other miners in a global race to find a solution to a block of transactions. Finding such a solution, the so-called "Proof-of-Work", requires quadrillions of hashing operations per second across the entire bitcoin network. The algorithm for "Proof-of-Work" involves repeatedly hashing the header of the block and a random number with the SHA256 cryptographic algorithm until a solution matching a pre-determined pattern emerges. The first miner to find such a solution wins the round of competition and publishes that block into the blockchain. 
 

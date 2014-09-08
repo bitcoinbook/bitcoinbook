@@ -11,55 +11,6 @@ In the payment portion of a bitcoin transaction, the recipient's public key is r
 
 In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored and managed. We will review the various encoding formats used to represent private and public keys, addresses and script addresses. Finally we will look at special uses of keys: to sign messages, to prove ownership and to create vanity addresses and paper wallets. 
 
-
-=== ECDSA Arithmetic
-
-Just as RSA uses integer arithmetic operators over a prime modulus to provide cryptographic functions, ECDSA defines an arithmetic that has some features in common with traditional arithmetic.
-
-Wikipedia has a good article that explains the details of how arithmetic operations work on an elliptic curve. See http://en.wikipedia.org/wiki/Elliptic_curve_cryptography for more information.
-
-Glossing over details, here are the fundamental facts:
-
-An elliptic curve field is a set of points (x, y) each of which satisfies the equation
-
-y^2^ = x^3^ + ax + b (mod P)
-
-for some constants a, b and P (where P is prime). Bitcoin uses a curve known as secp256k1, where a=0, b=7, and P = 2^256^ - 2^32^ - 2^9^ - 2^8^ - 2^7^ - 2^6^ - 2^4^ - 1.
-
-So for example, (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424) is a point on the secp256k1 curve. You can check this yourself using Python.
-
-----
-Python 3.4.0 (default, Mar 30 2014, 19:23:13)
-[GCC 4.2.1 Compatible Apple LLVM 5.1 (clang-503.0.38)] on darwin
-Type "help", "copyright", "credits" or "license" for more information.
->>> p = 115792089237316195423570985008687907853269984665640564039457584007908834671663
->>> x = 55066263022277343669578718895168534326250603453777594175500187360389116729240
->>> y = 32670510020758816978083085130507043184471273380659243275938904335757337482424
->>> (x ** 3 + 7 - y**2) % p
-0
-----
-
-In addition, there is also a "point at infinity", which roughly corresponds to the role of 0 in addition. On computers, it's sometimes represented by x = y = 0 (which doesn't satisfy the elliptic curve equation -- but it's an easy separate case that can be checked).
-
-There is also an operator "+", called "addition" which has some properties similar to the traditional addition of real numbers that grade school children learn. Given two points P~1~ and P~2~ on the elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the elliptic curve.
-
-Geometrically, this third point P~3~ is calculated by drawing a line between P~1~ and P~2~. This line will intersect the elliptic curve in exactly one additional place. Call this point P~3~' = (x, y). Then reflect in the X axis to get P~3~ = (x, -y).
-
-There are a couple of special cases which explain the need for the "point at infinity".
-
-If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~ should extend to be the tangent on the curve at this point P~1~. This tangent will intersect the curve in exactly one new point. You can use techniques from calculus to determine the slope of the tangent line. These techniques curiously work even though we are restricting our interest to points on the curve with two integer coordinates!
-
-In some cases (i.e., if P~1~ and P~2~ have the same x values but different y values), the tangent line will be exactly vertical, in which case P3 = "point at infinity".
-
-If one of P~1~ is the "point at infinity", then the sum P~1~ + P~2~ = P~2~. Similary, if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows how the point at infinity plays the roll of 0.
-
-It turns out that + is associative, which means that `(A+B)+C = A+(B+C)`. That means we can write A+B+C without parentheses without any ambiguity.
-
-Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case. (It would make a lot more sense to call it this if we used an operator that looked like multiplication rather than "+".)
-
-
-=== Keys
-
 ==== Public key cryptography and crypto-currency
 ((("public key")))
 Public key cryptography was invented in the 1970s and is a mathematical foundation for computer and information security.
@@ -85,7 +36,6 @@ A bitcoin wallet contains a collection of key pairs, each consisting of a privat
 .Private Key, Public Key and Bitcoin Address
 image::images/privk_to_pubK_to_addressA.png["privk_to_pubK_to_addressA"]
 
-
 ==== Private Keys
 
 A +private key+ is simply a number, picked at random. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. The private key is used to create signatures that are required to spend bitcoins by proving ownership of funds used in a transaction. The private key must remain secret at all times, as revealing it to a third party is equivalent to giving them control over the bitcoins secured by that key. The private key must also be backed up and protected from accidental loss, since if lost it cannot be recovered and the funds secured by it are forever lost too. 
@@ -103,7 +53,7 @@ More accurately, the private key can be any number between +1+ and +n - 1+, wher
 	
 [TIP]
 ====
-Do not try and design your own pseudo random number generator (PRNG). Use a cryptographically-secure pseudo-random number generator (CSPRNG) with a seed from a source of sufficient entropy, the choice of which depends on the operating-system. Correct implementation of the CSPRNG is critical to the security of the keys. DIY is highly discouraged unless you are a professional cryptographer. 
+Do not write your own code to create a random number or use a "simple" random number generator offered by your programming language. Use a cryptographically-secure pseudo-random number generator (CSPRNG) with a seed from a source of sufficient entropy. Study the documentation of the random number generator library you choose to make sure it is cryptographically secure. Correct implementation of the CSPRNG is critical to the security of the keys.
 ====
 
 Below is a randomly generated private key shown in hexadecimal format (256 binary digits shown as 64 hexadecimal digits, each 4 bits):
@@ -143,6 +93,7 @@ $ sx newkey
 
 The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
 
+
 [[elliptic_curve]]
 ==== Elliptic Curve Cryptography Explained
 ((("elliptic curve cryptography", "ECC")))
@@ -180,6 +131,43 @@ Because this curve is defined over a finite field of prime order instead of over
 .Elliptic Curve Cryptography: Visualizing an elliptic curve over F(p), with p=17
 image::images/ecc-over-F17-math.png["ecc-over-F17-math"]
 
+So for example, below is a point P with coordinates (x,y) that is a point on the secp256k1 curve. You can check this yourself using Python:
+----
+P = (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424) 
+----
+
+====
+[source, pycon]
+----
+Python 3.4.0 (default, Mar 30 2014, 19:23:13)
+[GCC 4.2.1 Compatible Apple LLVM 5.1 (clang-503.0.38)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> p = 115792089237316195423570985008687907853269984665640564039457584007908834671663
+>>> x = 55066263022277343669578718895168534326250603453777594175500187360389116729240
+>>> y = 32670510020758816978083085130507043184471273380659243275938904335757337482424
+>>> (x ** 3 + 7 - y**2) % p
+0
+----
+====
+
+In elliptic curve math, there is a point called the "point at infinity", which roughly corresponds to the role of 0 in addition. On computers, it's sometimes represented by x = y = 0 (which doesn't satisfy the elliptic curve equation -- but it's an easy separate case that can be checked).
+
+There is also an operator "+", called "addition" which has some properties similar to the traditional addition of real numbers that grade school children learn. Given two points P~1~ and P~2~ on the elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the elliptic curve.
+
+Geometrically, this third point P~3~ is calculated by drawing a line between P~1~ and P~2~. This line will intersect the elliptic curve in exactly one additional place. Call this point P~3~' = (x, y). Then reflect in the X axis to get P~3~ = (x, -y).
+
+There are a couple of special cases which explain the need for the "point at infinity".
+
+If P~1~ and P~2~ are the same point, the line "between" P~1~ and P~2~ should extend to be the tangent on the curve at this point P~1~. This tangent will intersect the curve in exactly one new point. You can use techniques from calculus to determine the slope of the tangent line. These techniques curiously work even though we are restricting our interest to points on the curve with two integer coordinates!
+
+In some cases (i.e., if P~1~ and P~2~ have the same x values but different y values), the tangent line will be exactly vertical, in which case P3 = "point at infinity".
+
+If P~1~ is the "point at infinity", then the sum P~1~ + P~2~ = P~2~. Similary, if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows how the point at infinity plays the roll of 0.
+
+It turns out that + is associative, which means that `(A+B)+C = A+(B+C)`. That means we can write A+B+C without parentheses without any ambiguity. 
+
+Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case. 
+
 [[public_key_derivation]]
 ==== Generating a public key 
 
@@ -192,7 +180,12 @@ Starting with a private key in the form of a randomly generated number +k+, we m
 \end{equation}
 ++++
 
-where +k+ is the private key, +G+ is a fixed point on the curve called the _generator point_, ((("generator point"))) and +K+ is the resulting public key, another point on the curve. Since the generator point is always the same, a private key k multiplied with G will always produce the same public key K. 
+where +k+ is the private key, +G+ is the generator point, ((("generator point"))) and +K+ is the resulting public key, a point on the curve. Since the generator point is always the same for all bitcoin users, a private key k multiplied with G will always result in the same public key K. The relationship between k and K is fixed, but can only be calculated in one direction, from k to K. That's why a bitcoin address (derived from K) can be shared with anyone and does not reveal the user's private key (k). 
+
+[TIP]
+====
+A private key can be converted into a public key, but a public key cannot be converted back into a private key because the math only works one way. 
+====
 
 Implementing the elliptic curve multiplication above, we take the private key generated previously and multiply it by G:
 
@@ -212,9 +205,7 @@ y = 07CF33DA18...505BDB
 
 To visualize multiplication of a point with an integer, we will use the simpler elliptic curve over the real numbers -- remember, the math is the same. Our goal is to find the multiple kG of the generator point G. That is the same as adding G to itself, k times in a row. In elliptic curves, adding a point to itself is the equivalent of drawing a tangent line on the point and finding where it intersects the curve again, then reflecting that point on the x-axis. 
 
-Starting with the generator point G, we take the tangent of the curve at G until it crosses the curve again at another point. This new point is -2G. Reflecting that point across the x-axis gives us 2G. If we take the tangent at 2G, it crosses the curve at -4G, which again we reflect on the x-axis to find 4G. Continuing this process, we can bounce around the curve finding the multiples of G, 2G, 4G, 8G, etc. As you can see, a randomly selected large number k, when multiplied against the generator point G is like bouncing around the curve k times, until we land on the point kG which is the public key. This process is irreversible, meaning that it is infeasible to find the factor k (the secret k) in any way other than trying all multiples of G (1G, 2G, 4G, etc) in a brute-force search for k. Since k can be an enormous number, that brute-force search would take an infeasible amount of computation and time. 
-
-
+The diagram below shows the process for deriving G, 2G, 4G, as a geometric operation on the curve.
 
 [[ecc_illustrated]]
 .Elliptic Curve Cryptography: Visualizing the multiplication of a point G by an integer k on an elliptic curve
@@ -222,14 +213,21 @@ image::images/ecc_illustrated.png["ecc_illustrated"]
 
 [TIP]
 ====
-A private key can be converted into a public key, but a public key cannot be converted back into a private key because the math only works one way. 
+Most bitcoin implementations use the OpenSSL cryptographic library to do the elliptic curve math. For example, to derive the public key, the function +EC_POINT_mul()+ is used. See http://wiki.openssl.org/index.php/Elliptic_Curve_Cryptography
 ====
 
 === Bitcoin Addresses
 
-An address is a string of digits and characters that can be shared with anyone who wants to send you money. In bitcoin, addresses produced from public keys begin with the digit "1". The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper cheque, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of". On a paper cheque, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions or even cash. Because paper cheques do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper cheques very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
-    
-A bitcoin address derived from a public key is a string of numbers and letters that begins with the number one, such as +1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+. The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, in script addresses and in the mining "Proof-of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
+A bitcoin address is a string of digits and characters that can be shared with anyone who wants to send you money. Addresses produced from public keys consist of a string of numbers and letters, beginning with the digit "1". Here's an example of a bitcoin address:
+
+----
+1thMirt546nngXqyPEz532S8fLwbozud8
+----
+
+
+The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper cheque, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of". On a paper cheque, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions or even cash. Because paper cheques do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper cheques very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
+
+The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, in script addresses and in the mining "Proof-of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
 
 Starting with the public key K, we compute the SHA256 hash and then compute the RIPEMD160 hash of the result, producing a 160 bit (20 byte) number:
 [latexmath]
@@ -239,6 +237,12 @@ Starting with the public key K, we compute the SHA256 hash and then compute the 
 \end{equation}
 ++++
 where K is the public key and A is the resulting bitcoin address. 
+
+
+[TIP]
+====
+A bitcoin address is *not* the same as a public key. Bitcoin addresses are derived from a public key using a one-way function. 
+====
 
 Bitcoin addresses are almost always presented to users in an encoding called "Base58Check" (see <<base58check>> below), which uses 58 characters (a base-58 number system) and a checksum to help human readability, avoid ambiguity and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. 
 
@@ -318,10 +322,11 @@ The private key we generated earlier can be represented as:
 
 All of the above representations are different ways of showing the same number, the same private key. They look different, but any one format can easily be converted to any other format. 
 
-
 ===== Decode from Base58Check to Hex
 
-The sx-tools package (See <<sx_tools>>) makes Base58Check format decoding easy on the command line. We use the base58check-decode command:
+The sx-tools package (See <<sx_tools>>) makes it easy to write shell-scripts and command-line "pipes" that manipulate bitcoin keys, addresses, and transactions. You can use sx-tools to decode the Base58Check format on the command line:
+
+We use the base58check-decode command:
 ----
 $ sx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
@@ -331,7 +336,7 @@ The result is the hexadecimal key, followed by the Wallet Import Format (WIF) ve
 
 ===== Encode from Hex to Base58Check
 
-To encode into Base58Check, we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128:
+To encode into Base58Check (the opposite of the previous command), we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128:
 ----
 $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
@@ -459,7 +464,7 @@ Wallets contain keys, not coins. The coins are stored on the blockchain in the f
 
 ==== Non-Deterministic (Random) Wallets
 
-In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. For example, the Bitcoin Core Client pre-generates 100 random private keys when first started and generates more keys as needed, trying to use each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys", or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, backup and import. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed-up frequently. Each key must be backed-up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 wallet is a poor choice of wallet, especially if you want to avoid address re-use as that means managing many keys, which creates the need for very frequent backups. The Bitcoin Core Client includes a wallet that is implemented as a Type-0 wallet, but the use of this wallet is actively discouraged by the Bitcoin Core developers.
+In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. The types of wallets are called _Type-0 Non-Deterministic Wallets_. For example, the Bitcoin Core Client pre-generates 100 random private keys when first started and generates more keys as needed, trying to use each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys", or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, backup and import. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed-up frequently. Each key must be backed-up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 non-deterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use as that means managing many keys, which creates the need for very frequent backups. The Bitcoin Core Client includes a wallet that is implemented as a Type-0 wallet, but the use of this wallet is actively discouraged by the Bitcoin Core developers.
 
 [[Type0_wallet]]
 .Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
@@ -471,7 +476,7 @@ Deterministic, or "seeded" wallets are wallets that contain private keys which a
 
 ==== Mnemonic Code Words (DRAFT:BIP0039)
 
-Mnemonic codes are English word sequences that are generated from a random sequence and used to produce a seed for use in deterministic wallets. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12-24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. 
+Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12-24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets, as they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
 Mnemonic codes are defined in Bitcoin Improvement Proposal 39 (see <<bip0039>>), currently in Draft status. Note that BIP0039 is a draft proposal and not a standard. Specifically, there is a different standard, with a different set of words used by the Electrum wallet and _predating_ BIP0039. BIP0039 is used by the Trezor wallet and a few other wallets but is incompatible with Electrum's implementation. 
     
