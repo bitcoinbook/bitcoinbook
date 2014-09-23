@@ -600,6 +600,19 @@ Think of an extended key as the root of a branch in the tree structure of the HD
 An extended key consists of a private or public key and chain code. An extended key can create children generating its own branch in the tree structure. Sharing an extended key gives access to the entire branch. 
 ==== 
 
+Extended keys are encoded using Base58Check, to easily export and import between different BIP0032 compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in base 58 characters, to make them easily recognizable. Since the extended key is 512 or 513 bits, it is also much longer than other Base58Check encoded strings we have seen previously.
+
+Here's an example of an extended private key, encoded in Base58Check:
+----
+xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
+----
+
+Here's the corresponding extended public key, also encoded in Base58Check:
+----
+xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
+----
+
+
 [[public_key_derivation]]
 ===== Public child key derivation
 
@@ -676,6 +689,29 @@ On the fourth level "change", an HD wallet has two sub-trees, one for creating r
 | M/44'/0'/3'/1/14 | The fifteenth change-address public key for the fourth bitcoin account
 | m/44'/2'/0'/0/1 | The first private key in the Litecoin main account, for signing transactions
 |=======
+
+===== Experimenting with HD wallets using sx-tools
+
+Using the command line tool +sx+, introduced in chapter 3, you can experiment with generating and extending BIP0032 deterministic keys, as well as displaying them in different formats:
+
+====
+[source, bash]
+----
+$ sx hd-seed > m # create a new master private key from a seed and store in file "m"
+$ cat m # show the master extended private key
+xprv9s21ZrQH143K38iQ9Y5p6qoB8C75TE71NfpyQPdfGvzghDt39DHPFpovvtWZaRgY5uPwV7RpEgHs7cvdgfiSjLjjbuGKGcjRyU7RGGSS8Xa
+$ cat m | sx hd-pub 0 # generate the M/0 extended public key
+xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
+$ cat m | sx hd-priv 0 # generate the m/0 extended private key
+xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
+$ cat m | sx hd-priv 0 | sx hd-to-wif # show the private key of m/0 as a WIF
+L1pbvV86crAGoDzqmgY85xURkz3c435Z9nirMt52UbnGjYMzKBUN
+$ cat m | sx hd-pub 0 | sx hd-to-address # show the bitcoin address of M/0
+1CHCnCjgMNb6digimckNQ6TBVcTWBAmPHK
+$ cat m | sx hd-priv 0 | sx hd-priv 12 --hard | sx hd-priv 4 # generate m/0/12'/4
+xprv9yL8ndfdPVeDWJenF18oiHguRUj8jHmVrqqD97YQHeTcR3LCeh53q5PXPkLsy2kRaqgwoS6YZBLatRZRyUeAkRPe1kLR1P6Mn7jUrXFquUt
+----
+====
 
 === Advanced Keys and Addresses
 
