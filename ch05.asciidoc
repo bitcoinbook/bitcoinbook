@@ -1,5 +1,6 @@
 [[ch5]]
-== Chapter 5 - Transactions
+[[transactions]]
+== Transactions
 
 [[ch5_intro]]
 === Introduction
@@ -11,37 +12,39 @@ In this chapter we will examine all the various forms of transactions, what they
 [[tx_lifecycle]]
 === Transaction Lifecycle
 
-A transaction's lifecycle starts with the transaction's creation, also known as origination. The transaction is then signed, with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spent in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
+A transaction's lifecycle starts with the transaction's creation, also known as origination. The transaction is then signed, with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. 
+
+Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spent in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
 
 [[tx_origination]]
 ==== Creating Transactions
 
-In some ways it helps to think of a transaction in the same way as a paper cheque. Like a cheque, a transaction is an instrument that expresses the intent to transfer money and is not visible to the financial system until it is submitted for execution. Like a cheque, the originator of the transaction does not have to be the one signing the transaction. Transactions can be created online or offline by anyone, even if the person creating the transaction is not an authorized signer on the account. For example an accounts payable clerk might process payable cheques for signature by the CEO. Similarly, an accounts payable clerk can create bitcoin transactions and then have the CEO apply digital signatures to make them valid. While a cheque references a specific account as the source of the funds, a bitcoin transaction references a specific previous transaction as its source, rather than an account. 
+In some ways it helps to think of a transaction in the same way as a paper cheque. Like a cheque, a transaction is an instrument that expresses the intent to transfer money and is not visible to the financial system until it is submitted for execution. Like a cheque, the originator of the transaction does not have to be the one signing the transaction. 
+
+Transactions can be created online or offline by anyone, even if the person creating the transaction is not an authorized signer on the account. For example an accounts payable clerk might process payable cheques for signature by the CEO. Similarly, an accounts payable clerk can create bitcoin transactions and then have the CEO apply digital signatures to make them valid. While a cheque references a specific account as the source of the funds, a bitcoin transaction references a specific previous transaction as its source, rather than an account. 
 
 Once a transaction has been created, it is signed by the owner (or owners) of the source funds. If it was properly formed and signed, the signed transaction is now valid and contains all the information needed to execute the transfer of funds. Finally, the valid transaction has to reach the bitcoin network so that it can be propagated until it reaches a miner for inclusion in the pubic ledger, the blockchain.
 
 [[tx_bcast]]
 ==== Broadcasting Transactions to the Bitcoin Network
 
-First, a transaction needs to be delivered to the bitcoin network so that it can be propagated and be included in the blockchain. In essence, a bitcoin transaction is just 300-400 bytes of data and has to reach any one of tens of thousands of bitcoin nodes. The sender does not need to trust the nodes they use to broadcast the transaction, as long as they use more than one to ensure that it propagates. The nodes don't need to trust the sender or establish the sender's "identity". Since the transaction is signed and contains no confidential information, private keys or credentials, it can be publicly broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network. As long as the transaction can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node. Bitcoin transactions can therefore be transmitted to the bitcoin network over insecure networks such as Wifi, Bluetooth, NFC, Chirp, barcodes or by copying and pasting into a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay or shortwave using burst transmission, spread spectrum or frequency hopping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a public forum or sent as a text message or Skype chat message. Bitcoin has turned money into a data structure, making it virtually impossible to stop anyone from creating and executing a bitcoin transaction. 
+First, a transaction needs to be delivered to the bitcoin network so that it can be propagated and be included in the blockchain. In essence, a bitcoin transaction is just 300-400 bytes of data and has to reach any one of tens of thousands of bitcoin nodes. The sender does not need to trust the nodes they use to broadcast the transaction, as long as they use more than one to ensure that it propagates. The nodes don't need to trust the sender or establish the sender's "identity". Since the transaction is signed and contains no confidential information, private keys or credentials, it can be publicly broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network. As long as the transaction can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node. 
+
+Bitcoin transactions can therefore be transmitted to the bitcoin network over insecure networks such as Wifi, Bluetooth, NFC, Chirp, barcodes or by copying and pasting into a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay or shortwave using burst transmission, spread spectrum or frequency hopping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a public forum or sent as a text message or Skype chat message. Bitcoin has turned money into a data structure, making it virtually impossible to stop anyone from creating and executing a bitcoin transaction. 
 
 [[tx_propagation]]
 ==== Propagating Transactions on the Bitcoin Network
 
-Once a bitcoin transaction is sent to any node connected to the bitcoin network, the transaction will be validated by that node. If valid, that node will propagate it to the other nodes to which it is connected and a success message will be returned synchronously to the originator. If the transaction is invalid, the node will reject it and synchronously return a rejection message to the originator. The bitcoin network is a peer-to-peer network meaning that each bitcoin node is connected to a few other bitcoin nodes that it discovers during startup through the peer-to-peer protocol. The entire network forms a loosely connected mesh without a fixed topology or any structure making all nodes equal peers. Messages, including transactions and blocks, are propagated from each node to the peers to which it is connected. A new validated transaction injected into any node on the network will be sent to 3 to 4 of the neighboring nodes, each of which will send it to 3 to 4 more nodes and so on. In this way, within a few seconds a valid transaction will propagate in an exponentially expanding ripple across the network until all connected nodes have received it. The bitcoin network is designed to propagate transactions and blocks to all nodes in an efficient and resilient manner that is resistant to attacks. To prevent spamming, denial of service attacks, or other nuisance attacks against the bitcoin system, every node will independently validate every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<tx_validation>>. 
+Once a bitcoin transaction is sent to any node connected to the bitcoin network, the transaction will be validated by that node. If valid, that node will propagate it to the other nodes to which it is connected and a success message will be returned synchronously to the originator. If the transaction is invalid, the node will reject it and synchronously return a rejection message to the originator. 
 
-[[tx_mining]]
-==== Mining Transactions into Blocks
+The bitcoin network is a peer-to-peer network meaning that each bitcoin node is connected to a few other bitcoin nodes that it discovers during startup through the peer-to-peer protocol. The entire network forms a loosely connected mesh without a fixed topology or any structure making all nodes equal peers. Messages, including transactions and blocks, are propagated from each node to the peers to which it is connected. A new validated transaction injected into any node on the network will be sent to 3 to 4 of the neighboring nodes, each of which will send it to 3 to 4 more nodes and so on. In this way, within a few seconds a valid transaction will propagate in an exponentially expanding ripple across the network until all connected nodes have received it. 
 
-Some of the nodes in the bitcoin network participate in "mining". Mining is the process creating new blocks of transactions that will become part of the blockchain. Miners collect transactions and group them into blocks, they then attempt to prove each block with the proof-of-work algorithm. Blocks with a valid proof of work are added to and extend the linked chain of blocks called the blockchain. Once a transaction is added to the blockchain, the new owner of the funds can reference it in a new transaction and spend the funds.
-
-The blockchain forms the authoritative ledger of all transactions since bitcoin's beginning in 2009. The blockchain is the subject of the next chapter, where we will examine the formation of the authoritative record through the competitive process of proof-of-work, also known as mining. 
-
+The bitcoin network is designed to propagate transactions and blocks to all nodes in an efficient and resilient manner that is resistant to attacks. To prevent spamming, denial of service attacks, or other nuisance attacks against the bitcoin system, every node will independently validate every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<tx_verification>>. 
 
 [[tx_structure]]
 === Transaction Structure
 
-A transaction is a data structure that encodes a transfer of value from a source of funds, called an "input", to a destination, called an "output". Transaction inputs and outputs are not related to accounts or identities. Instead you should think of them as bitcoin amounts, chunks of bitcoin, being locked with a specific secret which only the owner, or person who knows the secret, can unlock. 
+A transaction is a _data structure_ that encodes a transfer of value from a source of funds, called an _input_, to a destination, called an _output_. Transaction inputs and outputs are not related to accounts or identities. Instead you should think of them as bitcoin amounts, chunks of bitcoin, being locked with a specific secret which only the owner, or person who knows the secret, can unlock. 
 
 A transaction contains a number of fields, as follows:
 
@@ -58,7 +61,10 @@ A transaction contains a number of fields, as follows:
 | 4 bytes | Locktime | A unix timestamp or block number
 |=======
 
-Note: Locktime defines the earliest time that a transaction can be added to the blockchain. It is set to zero in most transactions to indicate immediate execution. If locktime is non-zero and below 500 million, it is interpreted as a block height, meaning the transaction is not included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not included in the blockchain prior to the specified time. The use of locktime is equivalent to post-dating a paper cheque.
+.Transaction Locktime
+****
+Locktime defines the earliest time that a transaction can be added to the blockchain. It is set to zero in most transactions to indicate immediate execution. If locktime is non-zero and below 500 million, it is interpreted as a block height, meaning the transaction is not included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not included in the blockchain prior to the specified time. The use of locktime is equivalent to post-dating a paper cheque.
+****
 
 [[tx_inputs_outputs]]
 === Transaction Outputs and Inputs
@@ -72,7 +78,11 @@ There are no accounts or balances in bitcoin, there are only _unspent transactio
 
 A UTXO can have an arbitrary value denominated as a multiple of satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoins can be divided down to eight decimal places as satoshis. While UTXO can be any arbitrary value, once created it is indivisible just like a coin that cannot be cut in half. If a UTXO is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. In other words, if you have a 20 bitcoin UTXO and want to pay 1 bitcoin, your transaction must consume the entire 20 bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result, most bitcoin transactions will generate change. 
 
-In simple terms, transactions consume the sender's available UTXO and create new UTXO locked to the recipient's bitcoin address. Imagine a shopper buying a $1.50 beverage, reaching into their wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If they hand too much money, say $5, to the shop owner they will expect $3.50 change, which they will return to their wallet and have available for future transactions. Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. They cannot cut a UTXO in half any more than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO various units to compose an amount greater than or equal to the desired transaction amount. As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change. All of this complex assembly of spendable UTXO is done by the user's wallet automatically and is invisible to users. It is only relevant if you are programmatically constructing raw transactions from UTXO. 
+Imagine a shopper buying a $1.50 beverage, reaching into their wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If they hand too much money, say $5, to the shop owner they will expect $3.50 change, which they will return to their wallet and have available for future transactions.
+
+Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. They cannot cut a UTXO in half any more than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO various units to compose an amount greater than or equal to the desired transaction amount. 
+
+As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change. All of this complex assembly of spendable UTXO is done by the user's wallet automatically and is invisible to users. It is only relevant if you are programmatically constructing raw transactions from UTXO. 
 
 The UTXO consumed by a transaction are called transaction inputs, while the UTXO created by a transaction are called transaction outputs. This way, chunks of bitcoin value move forward from owner to owner in a chain of transactions consuming and creating UTXO. Transactions consume UTXO unlocking it with the signature of the current owner and create UTXO locking it to the bitcoin address of the new owner. 
 
@@ -164,7 +174,10 @@ If we run the select-utxo.py script without a parameter it will attempt to const
 ----
 $ python select-utxo.py 50000000
 For transaction amount 50000000 Satoshis (0.500000 bitcoin) use: 
-([<7dbc497969c7475e45d952c4a872e213fb15d45e5cd3473c386a71a1b0c136a1:0 with 25000000 Satoshis>, <7f42eda67921ee92eae5f79bd37c68c9cb859b899ce70dba68c48338857b7818:0 with 16100000 Satoshis>, <6596fd070679de96e405d52b51b8e1d644029108ec4cbfe451454486796a1ecf:0 with 16050000 Satoshis>], 'Change: 7150000 Satoshis')
+([<7dbc497969c7475e45d952c4a872e213fb15d45e5cd3473c386a71a1b0c136a1:0 with 25000000 Satoshis>, \
+  <7f42eda67921ee92eae5f79bd37c68c9cb859b899ce70dba68c48338857b7818:0 with 16100000 Satoshis>, \
+  <6596fd070679de96e405d52b51b8e1d644029108ec4cbfe451454486796a1ecf:0 with 16050000 Satoshis>],\
+  'Change: 7150000 Satoshis')
 ----
 ====
 
@@ -219,7 +232,11 @@ If you forget to add a change output in a manually constructed transaction you w
 
 Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.001. That will mean that the total cost of the transaction will be 0.016. Her wallet must therefore source a set of UTXO that adds up to 0.016 bitcoin or more and if necessary create change. Let's say her wallet has a 0.2 bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.184 bitcoin in change back to her own wallet, leaving 0.001 bitcoin unallocated, as an implicit fee for the transaction. 
 
-Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines has completed a fundraiser to purchase school books for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin. Now she wants to purchase hundreds of school books from a local publisher, paying in bitcoin. The charity received thousands of small donations from all around the world. As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2-3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin. Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size - the fee is independent of the transaction's bitcoin value. 
+Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines has completed a fundraiser to purchase school books for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin. Now she wants to purchase hundreds of school books from a local publisher, paying in bitcoin. The charity received thousands of small donations from all around the world, so her wallet is full of very small payments (UTXO). 
+
+As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2-3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin. 
+
+Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size - the fee is independent of the transaction's bitcoin value. 
 
 [[tx_chains]]
 === Transaction Chaining and Orphan Transactions
@@ -352,7 +369,8 @@ The locking script above can be satisfied with an unlocking script of the form:
 The two scripts together would form the combined validation script below:
 
 ----
-<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
+<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160 \
+<Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In other words, the result will be TRUE if the unlocking script has a valid signature from the Cafe's private key which corresponds to the public key hash set as an encumbrance. 
@@ -416,7 +434,8 @@ _Note: The prefix OP_0 is required because of a bug in the original implementati
 
 The two scripts together would form the combined validation script below:
 ----
-OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+OP_0 <Signature B> <Signature C>\
+2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In this case, the condition is whether the unlocking script has a valid signature from the two private keys that correspond to two of the three public keys set as an encumbrance. 
@@ -452,7 +471,8 @@ In chapter 1 we introduced Mohammed, an electronics importer based in Dubai. Moh
 The resulting script is quite long and looks like this:
 
 ----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> \
+<Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
     
 While multi-signature scripts are a powerful feature, they are cumbersome to use. Given the script above, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, as this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex output scripts difficult in practice. 
@@ -482,18 +502,25 @@ Let's look at Mohammed's company, their complex multi-signature script and the r
 
 First, the multi-signature script that Mohammed's company uses for all incoming payments from customers:
 ----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> \
+<Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
 
 If the placeholders above are replaced by actual public keys (shown below as 520 bit numbers starting with 04) you can see that this script becomes very long:
 ----
 2 
-04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C587 
-04A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49
-047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D9977965
-0421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5
-043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800
-5 OP_CHECKMULTISIG
+04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370\
+D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD\
+4193AF5DE762C58704A2192968D8655D6A935BEAF2CA23E3FB87A3495\
+E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B\
+1D5CE65C97D78D0E34224858008E8B49047E63248B75DB7379BE9CDA8\
+CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1\
+A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D99779650421D65CB\
+D7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4\
+AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2\
+AFD94A5043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0\
+AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AA\
+B59E0B000EB7ED238F4D800 5 OP_CHECKMULTISIG
 ----
 
 The entire script above can instead be represented by a 20-byte cryptographic hash, by first applying the SHA256 hashing algorithm and then applying the RIPEMD160 algorithm on the result. The 20-byte hash of the above script is:
