@@ -1,8 +1,9 @@
 [[ch7]]
+[[blockchain]]
 == The Blockchain
 
-[[blockchain]]
-=== The Blockchain
+
+=== Introduction
 
 The blockchain data structure is an ordered back-linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. Blocks are linked "back", each referring to the previous block in the chain. The blockchain is often visualized as a vertical stack, with blocks layered on top of each other and the first block ever serving as the foundation of the stack. The visualization of blocks stacked on top of each other results in the use of terms like "height" to refer to the distance from the first block, and "top" or "tip" to refer to the most recently added block. 
 
@@ -72,6 +73,7 @@ The first block in the blockchain is called the _genesis block_ and was created 
 Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
 
 See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp:
+
 https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
@@ -82,8 +84,12 @@ https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c1
 
 Using the Bitcoin Core reference client on the command-line:
 
+[source,bash]
 ----
 $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+----
+[source,json]
+----
 {
     "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
     "confirmations" : 308321,
@@ -111,6 +117,8 @@ Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis b
 Let's assume, for example, that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277,314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
 
 The bitcoin node then receives a new block from the network, which it parses as follows:
+
+[source,json]
 ----
 {
     "size" : 43560,
@@ -125,7 +133,7 @@ The bitcoin node then receives a new block from the network, which it parses as 
     "tx" : [
         "257e7497fb8bc68421eb2c7b699dbab234831600e7352f0d9e6522c7cf3f6c77",
 
- [... many more transactions omitted ...]
+ #[... many more transactions omitted ...]
 
         "05cfd38f6ae6aa83674cc99e4d75a1458c165b7ab84725eda41d018a09176634"
     ]
@@ -175,7 +183,7 @@ The same method for constructing a tree from four transactions can be generalize
 .A Merkle Tree summarizing many data elements
 image::images/MerkleTreeLarge.png["merkle_tree_large"]
 
-To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ that lead to the merkle root. 
+To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes (noted in blue in the diagram below) H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ (noted in green in the diagram below) is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ (outlined in a dotted line in the diagram below) that lead to the merkle root. 
 
 [[merkle_tree_path]]
 .A Merkle Path used to prove inclusion of a data element

@@ -5,6 +5,10 @@
 
 Ownership of bitcoin is established through _digital keys_, _bitcoin addresses_ and _digital signatures_. The digital keys are not actually stored in the network, but are instead created and stored by end-users in a file, or simple database, called a _wallet_. The digital keys in a user's wallet are completely independent of the bitcoin protocol and can be generated and managed by the user's wallet software without reference to the blockchain or access to the Internet. Keys enable many of the interesting properties of bitcoin, including de-centralized trust and control, ownership attestation and the cryptographic-proof security model. 
 
+
+HNFUzKACoVNLnyx4PlW7hJg3dpko2UlDwttaxaUPan4afMmK9ZAtHMKB4PqJgYFe8VDIp0x7OpruTFugxA5hBTE=
+
+
 Every bitcoin transaction requires a valid signature to be included in the blockchain, which can only be generated with valid digital keys, therefore anyone with a copy of those keys has control of the bitcoin in that account. Keys come in pairs consisting of a private (secret) and public key. Think of the public key as similar to a bank account number and the private key as similar to the secret PIN number, or signature on a cheque that provides control over the account. These digital keys are very rarely seen by the users of bitcoin. For the most part, they are stored inside the wallet file and managed by the bitcoin wallet software. 
 
 In the payment portion of a bitcoin transaction, the recipient's public key is represented by its digital fingerprint, called a _bitcoin address_, which is used in the same way as the beneficiary name on a cheque (i.e. "Pay to the order of"). In most cases, a bitcoin address is generated from and corresponds to a public key. However, not all bitcoin addresses represent public keys; they can also represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper cheques: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills or pay to cash. The bitcoin address is the only representation of the keys that users will routinely see, as this is the part they need to share with the world.
@@ -36,6 +40,7 @@ A bitcoin wallet contains a collection of key pairs, each consisting of a privat
 .Private Key, Public Key and Bitcoin Address
 image::images/privk_to_pubK_to_addressA.png["privk_to_pubK_to_addressA"]
 
+[[private_keys]]
 ==== Private Keys
 
 A +private key+ is simply a number, picked at random. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. The private key is used to create signatures that are required to spend bitcoins by proving ownership of funds used in a transaction. The private key must remain secret at all times, as revealing it to a third party is equivalent to giving them control over the bitcoins secured by that key. The private key must also be backed up and protected from accidental loss, since if lost it cannot be recovered and the funds secured by it are forever lost too. 
@@ -91,7 +96,7 @@ $ sx newkey
 [[pubkey]]
 ==== Public Keys
 
-The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)]+ where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
+The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)] where +k+ is the private key, +G+ is a constant point called the _Generator Point_ and +K+ is the resulting public key. The reverse operation, known as "finding the discrete logarithm" -- calculating +k+ if you know +K+ -- is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at Elliptic Curve Cryptography in a bit more detail. 
 
 
 [[elliptic_curve]]
@@ -111,7 +116,7 @@ Bitcoin uses a specific elliptic curve and set of mathematical constants, as def
 [latexmath]
 ++++
 \begin{equation}
-{y^2 = (x^3 \+ 7)} \text{over} \mathbb{F}_p
+{y^2 = (x^3 \+ 7)} \text{over} \(\mathbb{F}_p\)
 \end{equation}
 ++++
 or 
@@ -123,7 +128,7 @@ or
 \end{equation}
 ++++
 
-The +mod p+ (modulo prime number p) indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)], where p = 2^256^ - 2^32^ - 2^9^ - 2^8^ - 2^7^ - 2^6^ - 2^4^ - 1\)], a very large prime number. 
+The +mod p+ (modulo prime number p) indicates that this curve is over a finite field of prime order +p+, also written as latexmath:[\(\mathbb{F}_p\)], where p = 2^256^ - 2^32^ - 2^9^ - 2^8^ - 2^7^ - 2^6^ - 2^4^ - 1, a very large prime number. 
 
 Because this curve is defined over a finite field of prime order instead of over the real numbers it looks like a pattern of dots scattered in two dimensions, which makes it difficult to visualize. However, the math is identical as that of an elliptic curve over the real numbers shown above. As an example, below is the same elliptic curve over a much smaller finite field of prime order 17, showing a pattern of dots on a grid. The +secp256k1+ bitcoin elliptic curve can be thought of as a much more complex pattern of dots on a unfathomably large grid. 
 
@@ -133,7 +138,8 @@ image::images/ecc-over-F17-math.png["ecc-over-F17-math"]
 
 So for example, below is a point P with coordinates (x,y) that is a point on the secp256k1 curve. You can check this yourself using Python:
 ----
-P = (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424) 
+P = (55066263022277343669578718895168534326250603453777594175500187360389116729240,\
+     32670510020758816978083085130507043184471273380659243275938904335757337482424) 
 ----
 
 ====
@@ -270,9 +276,15 @@ To add extra security against typos or transcription errors, Base58Check is a Ba
 
 To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte", which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown below in <<base58check_versions>>.
 
-Next compute the "double-SHA" checksum, meaning we apply the SHA256 hash-algorithm twice on the previous result (prefix and data): +checksum = SHA256(SHA256(prefix\+data))+ From the resulting 32-byte hash (hash-of-a-hash), we take only the first four bytes. These four bytes serve as the error-checking code, or checksum. The checksum is concatenated (appended) to the end. 
+Next compute the "double-SHA" checksum, meaning we apply the SHA256 hash-algorithm twice on the previous result (prefix and data):
+ 
+----
+checksum = SHA256(SHA256(prefix+data)) 
+----
 
-The result of the above is now a prefix, the data and a checksum, concatenated (bytewise). This result is encoded using the base-58 alphabet described in the section above.
+From the resulting 32-byte hash (hash-of-a-hash), we take only the first four bytes. These four bytes serve as the error-checking code, or checksum. The checksum is concatenated (appended) to the end. 
+
+The result of the above is now a prefix, the data and a checksum. This result is encoded using the base-58 alphabet described in the section above.
 
 [[base58check_encoding]]
 .Base58Check Encoding: A base-58, versioned and checksummed format for unambiguously encoding bitcoin data
@@ -437,18 +449,31 @@ include::code/key-to-address-ecc-example.py[]
 ----
 
 Here's the output from running this code:
+[source,bash]
 ----
 $ python key-to-address-ecc-example.py 
-Private Key (hex) is:  3aba4162c7251c891207b747840551a71939b0de081f85c4e44cf7c13e41daa6
-Private Key (decimal) is:  26563230048437957592232553826663696440606756685920117476832299673293013768870
-Private Key (WIF) is:  5JG9hT3beGTJuUAmCQEmNaxAuMacCTfXuw1R3FCXig23RQHMr4K
-Private Key Compressed (hex) is:  3aba4162c7251c891207b747840551a71939b0de081f85c4e44cf7c13e41daa601
-Private Key (WIF-Compressed) is:  KyBsPXxTuVD82av65KZkrGrWi5qLMah5SdNq6uftawDbgKa2wv6S
-Public Key (x,y) coordinates is: (41637322786646325214887832269588396900663353932545912953362782457239403430124L, 16388935128781238405526710466724741593761085120864331449066658622400339362166L)
-Public Key (hex) is: 045c0de3b9c8ab18dd04e3511243ec2952002dbfadc864b9628910169d9b9b00ec243bcefdd4347074d44bd7356d6a53c495737dd96295e2a9374bf5f02ebfc176
-Compressed Public Key (hex) is: 025c0de3b9c8ab18dd04e3511243ec2952002dbfadc864b9628910169d9b9b00ec
-Bitcoin Address (b58check) is: 1thMirt546nngXqyPEz532S8fLwbozud8
-Compressed Bitcoin Address (b58check) is: 14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3
+Private Key (hex) is:  
+ 3aba4162c7251c891207b747840551a71939b0de081f85c4e44cf7c13e41daa6
+Private Key (decimal) is:  
+ 26563230048437957592232553826663696440606756685920117476832299673293013768870
+Private Key (WIF) is:  
+ 5JG9hT3beGTJuUAmCQEmNaxAuMacCTfXuw1R3FCXig23RQHMr4K
+Private Key Compressed (hex) is:  
+ 3aba4162c7251c891207b747840551a71939b0de081f85c4e44cf7c13e41daa601
+Private Key (WIF-Compressed) is:  
+ KyBsPXxTuVD82av65KZkrGrWi5qLMah5SdNq6uftawDbgKa2wv6S
+Public Key (x,y) coordinates is: 
+ (41637322786646325214887832269588396900663353932545912953362782457239403430124L, 
+ 16388935128781238405526710466724741593761085120864331449066658622400339362166L)
+Public Key (hex) is: 
+ 045c0de3b9c8ab18dd04e3511243ec2952002dbfadc864b9628910169d9b9b00ec
+   243bcefdd4347074d44bd7356d6a53c495737dd96295e2a9374bf5f02ebfc176
+Compressed Public Key (hex) is: 
+ 025c0de3b9c8ab18dd04e3511243ec2952002dbfadc864b9628910169d9b9b00ec
+Bitcoin Address (b58check) is: 
+ 1thMirt546nngXqyPEz532S8fLwbozud8
+Compressed Bitcoin Address (b58check) is: 
+ 14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3
 ----
 
 
@@ -509,7 +534,8 @@ Here are some examples of mnemonic codes and the seeds they produce:
 |=======
 | entropy input (128 bits) | 0c1e24e5917779d297e14d45f14e1a1a
 | mnemonic (12 words) | army van defense carry jealous true garbage claim echo media make crunch
-| seed  (512 bits) | 3338a6d2ee71c7f28eb5b882159634cd46a898463e9d2d0980f8e80dfbba5b0fa0291e5fb888a599b44b93187be6ee3ab5fd3ead7dd646341b2cdb8d08d13bf7
+| seed  (512 bits) | 3338a6d2ee71c7f28eb5b882159634cd46a898463e9d2d0980f8e80dfbba5b0fa0291e5fb88\
+8a599b44b93187be6ee3ab5fd3ead7dd646341b2cdb8d08d13bf7
 |=======
 
 
@@ -518,8 +544,8 @@ Here are some examples of mnemonic codes and the seeds they produce:
 | entropy input (256 bits) | 2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c
 | mnemonic (24 words) | cake apple borrow silk endorse fitness top denial coil riot stay wolf 
 luggage oxygen faint major edit measure invite love trap field dilemma oblige
-| seed  (512 bits) | 3972e432e99040f75ebe13a660110c3e29d131a2c808c7ee5f1631d0a977
-fcf473bee22fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343 
+| seed  (512 bits) | 3972e432e99040f75ebe13a660110c3e29d131a2c808c7ee5f1631d0a977fcf473bee22\
+fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343 
 |=======
 
 [[hd_wallets]]
@@ -699,17 +725,21 @@ Using the command line tool +sx+, introduced in chapter 3, you can experiment wi
 ----
 $ sx hd-seed > m # create a new master private key from a seed and store in file "m"
 $ cat m # show the master extended private key
-xprv9s21ZrQH143K38iQ9Y5p6qoB8C75TE71NfpyQPdfGvzghDt39DHPFpovvtWZaRgY5uPwV7RpEgHs7cvdgfiSjLjjbuGKGcjRyU7RGGSS8Xa
+xprv9s21ZrQH143K38iQ9Y5p6qoB8C75TE71NfpyQPdfGvzghDt39DHPFpovvtWZaRgY5uPwV7RpEgHs7cvd\
+gfiSjLjjbuGKGcjRyU7RGGSS8Xa
 $ cat m | sx hd-pub 0 # generate the M/0 extended public key
-xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
+xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJun\
+SDMstweyLXhRgPxdp14sk9tJPW9
 $ cat m | sx hd-priv 0 # generate the m/0 extended private key
-xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
+xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6\
+GoNMKUga5biW6Hx4tws2six3b9c
 $ cat m | sx hd-priv 0 | sx hd-to-wif # show the private key of m/0 as a WIF
 L1pbvV86crAGoDzqmgY85xURkz3c435Z9nirMt52UbnGjYMzKBUN
 $ cat m | sx hd-pub 0 | sx hd-to-address # show the bitcoin address of M/0
 1CHCnCjgMNb6digimckNQ6TBVcTWBAmPHK
 $ cat m | sx hd-priv 0 | sx hd-priv 12 --hard | sx hd-priv 4 # generate m/0/12'/4
-xprv9yL8ndfdPVeDWJenF18oiHguRUj8jHmVrqqD97YQHeTcR3LCeh53q5PXPkLsy2kRaqgwoS6YZBLatRZRyUeAkRPe1kLR1P6Mn7jUrXFquUt
+xprv9yL8ndfdPVeDWJenF18oiHguRUj8jHmVrqqD97YQHeTcR3LCeh53q5PXPkLsy2kRaqgwoS6YZBLatRZR\
+yUeAkRPe1kLR1P6Mn7jUrXFquUt
 ----
 ====
 
@@ -735,14 +765,14 @@ Test the following encrypted keys using bitaddress.org to see how you can get th
 |=======
 
 
-[[p2sh]]
+[[p2sh_addresses]]
 ==== Pay To Script Hash (P2SH) and Multi-Sig Addresses 
 
 As we know, traditional bitcoin addresses begin with the number “1” and are derived from the public key, which is derived from the private key.  While anyone can send bitcoin to a “1” address, that bitcoin can only be spent by presenting the corresponding private key signature and public key hash. 
 
 Bitcoin addresses that begin with the number “3” are pay-to-script-hash (P2SH) addresses, sometimes erroneously called multi-signature or multi-sig addresses. They designate the beneficiary of a bitcoin transaction as the hash of a script, instead of the owner of a public key. The feature was introduced in January 2012 with Bitcoin Improvement Proposal 16 or BIP0016 (see <<bip0016>>) and is being widely adopted because it provides the opportunity to add functionality to the address itself. Unlike transactions that "send" funds to traditional “1” bitcoin addresses, also known as pay-to-public-key-hash (P2PKH), funds sent to “3” addresses require something more than the presentation of one public key hash and one private key signature as proof of ownership. The requirements are designated at the time the address is created, within the script, and all inputs to this address will be encumbered with the same requirements.
     
-A pay-to-script-hash address is created from a transaction script, which defines who can spend a transaction output (for more detail, see <<transactions>>). Encoding a pay-to-script hash address involves using the same double-hash function as used during creation of a bitcoin address, only applied on the script instead of the public key.
+A pay-to-script-hash address is created from a transaction script, which defines who can spend a transaction output (for more detail, see <<p2sh>>). Encoding a pay-to-script hash address involves using the same double-hash function as used during creation of a bitcoin address, only applied on the script instead of the public key.
     
 ----
 script hash = RIPEMD160(SHA256(script))
@@ -823,6 +853,7 @@ In both cases, one of the risks of using a single fixed address (rather than a s
 So does a vanity address increase security? If Eugenia generates the vanity address "1Kids33q44erFfpeXrmDSz7zEqG2FesZEN", 
 users are likely to look at the vanity pattern word _and a few characters beyond_, for example noticing the "1Kids33" part of the address. That would force an attacker to generate a vanity address matching at least 6 characters (2 more), expending an effort that is 3,364 times (58 x 58) higher than the effort Eugenia expended for her 4 character vanity. Essentially, the effort Eugenia expends (or pays a vanity pool for) "pushes" the attacker into having to produce a longer pattern vanity. If Eugenia pays a pool to generate an 8 character vanity address, the attacker would be pushed into the realm of 10 characters which is infeasible on a personal computer and expensive even with a custom vanity-mining rig or vanity pool. What is affordable for Eugenia becomes unaffordable for the attacker, especially if the potential reward of fraud is not high enough to cover the cost of the vanity address generation. 
 
+[[paper_wallets]]
 ==== Paper Wallets
 
 Paper wallets are bitcoin private keys printed on paper. Often the paper wallet also includes the corresponding bitcoin address, for convenience, but this is not necessary since it can be derived from the private key. Paper wallets are a very effective way to create backups or offline bitcoin storage, also known as "cold storage". As a backup mechanism, a paper wallet can provide security against the loss of key due to a computer mishap such as a hard drive failure, theft, or accidental deletion. As a "cold storage" mechanism, if the paper wallet keys are generated offline and never stored on a computer system, they are much more secure against hackers, key-loggers and other online computer threats. 
