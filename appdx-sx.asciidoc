@@ -1,4 +1,4 @@
-[[sx_cmds]]
+[[appdx_sx]]
 == Appendix: Available commands with sx tools
 
 ----
@@ -131,3 +131,71 @@ UTILITY
 See 'sx help COMMAND' for more information on a specific command.
 
 ----
+
+Below, we look at some examples of using sx tools to experiment with keys and addresses.
+
+Generate a new private key with the operating system's random number generator by using the +newkey+ command. We save the standard output into the file +private_key+:
+
+----
+$ sx newkey > private_key
+$ cat private_key 
+5Jgx3UAaXw8AcCQCi1j7uaTaqpz2fqNR9K3r4apxdYn6rTzR1PL
+----
+
+Now, generate the public key from that private key using the +pubkey+ command. Pass the +private_key+ file into the standard input and save the standard output of the command into a new file +public_key+:
+
+----
+$ sx pubkey < private_key > public_key
+$ cat public_key 
+02fca46a6006a62dfdd2dbb2149359d0d97a04f430f12a7626dd409256c12be500
+----
+
+We can re-format the public_key as an address using the +addr+ command. We pass the +public_key+ into standard input:
+
+----
+$ sx addr < public_key 
+17re1S4Q8ZHyCP8Kw7xQad1Lr6XUzWUnkG
+----
+
+The keys generated above are so called type-0 non-deterministic keys. That means that each one is generated from a random number generator. The sx tools also support type-2 deterministic keys, where a "master" key is created and then extended to produce a chain or tree of subkeys. 
+
+First, we generate a "seed" that will be used as the basis to derive a chain of keys, compatible with the Electrum wallet and other similar implementations. We use the +newseed+ command to produce a seed value:
+
+----
+$ sx newseed > seed
+$ cat seed
+eb68ee9f3df6bd4441a9feadec179ff1
+----
+
+The seed value can also be exported as a word mnemonic that is human readable and easier to store and type than a hexadecimal string
+ using the +mnemonic+ command:
+
+----
+$ sx mnemonic < seed > words
+$ cat words
+adore repeat vision worst especially veil inch woman cast recall dwell appreciate
+----
+
+The mnemonic words can be used to reproduce the seed using the +mnemonic+ command again:
+
+----
+$ sx mnemonic < words
+eb68ee9f3df6bd4441a9feadec179ff1
+----
+
+With the seed, we can now generate a sequence of private and public keys, a key chain. We use the +genpriv+ command to generate a sequence of private keys from a seed and the +addr+ command to generate the corresponding public key. 
+
+[source,bash]
+----
+$ sx genpriv 0 < seed
+5JzY2cPZGViPGgXZ4Syb9Y4eUGjJpVt6sR8noxrpEcqgyj7LK7i
+$ sx genpriv 0 < seed | sx addr
+1esVQV2vR9JZPhFeRaeWkAhzmWq7Fi7t7
+
+$ sx genpriv 1 < seed
+5JdtL7ckAn3iFBFyVG1Bs3A5TqziFTaB9f8NeyNo8crnE2Sw5Mz
+$ sx genpriv 1 < seed | sx addr
+1G1oTeXitk76c2fvQWny4pryTdH1RTqSPW
+----
+
+With deterministic keys we can generate and re-generate thousands of keys, all derived from a single seed in a deterministic chain. This technique is used in many wallet applications to generate keys that can be backed up and restored with a simple multi-word mnemonic. This is easier than having to back up the wallet with all its randomly generated keys every time a new key is created.
