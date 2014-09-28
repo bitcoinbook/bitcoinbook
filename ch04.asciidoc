@@ -305,6 +305,35 @@ In bitcoin, most of the data presented to the user is Base58Check encoded to mak
 | BIP32 Extended Public Key | 0x0488B21E | xpub  
 |=======
 
+===== Creating a bitcoin address from a private key
+
+Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address and finally the Base58Check encoding. The C++ code in <<addr_example>> shows the complete process, from private key, to Base58Check encoded bitcoin address, step-by-step. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions:
+
+[[addr_example]]
+.Creating a Base58Check encoded bitcoin address from a private key
+====
+[source, cpp]
+----
+include::code/addr.cpp[]
+----
+====
+
+The code uses a pre-defined private key, so that it produces the same bitcoin address every time it is run:
+
+[[addr_example_run]]
+.Compiling and running the addr code
+====
+[source,bash]
+----
+# Compile the addr.cpp code
+$ g++ -o addr addr.cpp $(pkg-config --cflags --libs libbitcoin)
+# Run the addr executable
+$ ./addr
+Public key: 0202a406624211f2abbdc68da3df929f938c3399dd79fac1b51b0e4ad1d26a47aa
+Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
+----
+====
+
 ==== Key Formats
 
 [[priv_formats]]
@@ -442,13 +471,20 @@ Here's the same key, encoded in WIF and WIF-compressed formats
 
 The most comprehensive bitcoin library in Python is "pybitcointools"by Vitalik Buterin (https://github.com/vbuterin/pybitcointools). In the following code example, we use the pybitcointools library (imported as "bitcoin") to generate and display keys and addresses in various formats:
 
+[[key-to-address_script]]
 .Key and Address generation and formatting with the pybitcointools library
+====
 [source,python]
 ----
 include::code/key-to-address-ecc-example.py[]
 ----
+====
 
 Here's the output from running this code:
+
+[[key-to-address_script_run]]
+.Running key-to-address-ecc-example.py
+====
 [source,bash]
 ----
 $ python key-to-address-ecc-example.py 
@@ -475,7 +511,39 @@ Bitcoin Address (b58check) is:
 Compressed Bitcoin Address (b58check) is: 
  14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3
 ----
+====
 
+
+Here's another example, using the Python ECDSA library for the Elliptic Curve math and without using any specialized bitcoin libraries:
+
+[[ec_math]]
+.A script demonstrating Elliptic Curve math used for bitcoin keys
+====
+[source, python]
+----
+include::code/ec-math.py[]
+----
+====
+
+Running the script:
+
+[[ec_math_run]]
+.Installing the Python ECDSA library and running the ec_math.py script
+====
+[source,bash]
+----
+$ # Install Python PIP package manager
+$ sudo apt-get install python-pip
+$ # Install the Python ECDSA library
+$ sudo pip install ecdsa
+$ # Run the script
+$ python ec-math.py 
+Secret:  38090835015954358862481132628887443905906204995912378278060168703580660294000
+EC point: (70048853531867179489857750497606966272382583471322935454624595540007269312627,\
+  105262206478686743191060800263479589329920209527285803935736021686045542353380)
+BTC public key: 029ade3effb0a67d5c8609850d797366af428f4a0d5194cb221d807770a1522873
+----
+====
 
 === Wallets
 
@@ -833,6 +901,47 @@ Let's look at the pattern "1Kids" as a number and see how frequently we might fi
 As you can see, Eugenia won't be creating the vanity address "1KidsCharity" any time soon, even if she had access to several thousand computers. Each additional character increases the difficulty by a factor of 58. Patterns with more than seven characters are usually found by specialized hardware, such as custom-built desktops with multiple Graphical Processing Units (GPUs). These are often re-purposed bitcoin mining "rigs" that are no longer profitable for bitcoin mining but can be used effectively to find vanity addresses. Vanity searches on GPU systems are many orders of magnitude faster than on a general-purpose CPU. 
 
 Another way to find a vanity address is to outsource the work to a pool of vanity-miners, such as the pool at vanitypool.appspot.com. A pool is a service that allows those with GPU hardware to earn bitcoin searching for vanity addresses for others. For a small payment (0.01 bitcoin or approximately $5 when this was written), Eugenia can outsource the search for a 7-character pattern vanity address and get results in a few hours instead of having to run a CPU search for months. 
+
+Generating a vanity address is a brute-force exercise: try a random key, check the resulting address to see if it matches the desired pattern, repeat until successful. Here's an example of a "vanity miner", a program designed to find vanity addresses, written in C++. The example uses the libbitcoin library, which we introduced in <<alt_libraries>>.
+
+[[vanity_miner_code]]
+.Vanity Address Miner
+====
+[source,cpp]
+----
+include::code/vanity-miner.cpp[]
+----
+====
+
+The example code must be compiled using a C++ compiler and linked against the libbitcoin library (which must be first installed on that system). To run the example, run the +vanity-minder+ executable with no parameters and it will attempt to find a vanity address starting with "1kid":
+
+[[vanity_miner_run]]
+.Compiling and running the vanity-miner example
+====
+[source,bash]
+----
+$ # Compile the code with g++
+$ g++ -o vanity-miner vanity-miner.cpp $(pkg-config --cflags --libs libbitcoin)
+$ # Run the example
+$ ./vanity-miner
+Found vanity address! 1KiDzkG4MxmovZryZRj8tK81oQRhbZ46YT
+Secret: 57cc268a05f83a23ac9d930bc8565bac4e277055f4794cbd1a39e5e71c038f3f
+$ # Run it again for a different result
+$ ./vanity-miner
+Found vanity address! 1Kidxr3wsmMzzouwXibKfwTYs5Pau8TUFn
+Secret: 7f65bbbbe6d8caae74a0c6a0d2d7b5c6663d71b60337299a1a2cf34c04b2a623
+# Use "time" to see how long it takes to find a result
+$ time ./vanity-miner
+Found vanity address! 1KidPWhKgGRQWD5PP5TAnGfDyfWp5yceXM
+Secret: 2a802e7a53d8aa237cd059377b616d2bfcfa4b0140bc85fa008f2d3d4b225349
+
+real	0m8.868s
+user	0m8.828s
+sys	0m0.035s
+----
+====
+
+The example code will take a few seconds to find a match for the three-character pattern "kid", as we can see when we use the +time+ Unix command to measure the execution time. Change the +search+ pattern in the source code and see how much longer it takes for four- or five-character patterns!
 
 ===== Vanity Address Security
 
