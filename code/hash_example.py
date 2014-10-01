@@ -5,7 +5,14 @@ import hashlib
     
 text = "I am Satoshi Nakamoto"
 
-for nonce in xrange(20):  # iterate nonce from 0 to 19
-    input = text + str(nonce)  # add the nonce to the end of the text
-    hash = hashlib.sha256(input).hexdigest() # calculate the SHA-256 hash of the input (text+nonce)
-    print input, '=>',  hash # show the input and hash result
+# iterate nonce from 0 to 19
+for nonce in xrange(20): 
+    
+    # add the nonce to the end of the text
+    input = text + str(nonce) 
+     
+    # calculate the SHA-256 hash of the input (text+nonce)
+    hash = hashlib.sha256(input).hexdigest() 
+    
+    # show the input and hash result
+    print input, '=>',  hash 

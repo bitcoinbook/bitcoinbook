@@ -1,8 +1,9 @@
 [[ch7]]
+[[blockchain]]
 == The Blockchain
 
-[[blockchain]]
-=== The Blockchain
+
+=== Introduction
 
 The blockchain data structure is an ordered back-linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. Blocks are linked "back", each referring to the previous block in the chain. The blockchain is often visualized as a vertical stack, with blocks layered on top of each other and the first block ever serving as the foundation of the stack. The visualization of blocks stacked on top of each other results in the use of terms like "height" to refer to the distance from the first block, and "top" or "tip" to refer to the most recently added block. 
 
@@ -72,6 +73,7 @@ The first block in the blockchain is called the _genesis block_ and was created 
 Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
 
 See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp:
+
 https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
@@ -82,8 +84,12 @@ https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c1
 
 Using the Bitcoin Core reference client on the command-line:
 
+[source,bash]
 ----
 $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+----
+[source,json]
+----
 {
     "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
     "confirmations" : 308321,
@@ -111,6 +117,8 @@ Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis b
 Let's assume, for example, that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277,314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
 
 The bitcoin node then receives a new block from the network, which it parses as follows:
+
+[source,json]
 ----
 {
     "size" : 43560,
@@ -125,7 +133,7 @@ The bitcoin node then receives a new block from the network, which it parses as 
     "tx" : [
         "257e7497fb8bc68421eb2c7b699dbab234831600e7352f0d9e6522c7cf3f6c77",
 
- [... many more transactions omitted ...]
+ #[... many more transactions omitted ...]
 
         "05cfd38f6ae6aa83674cc99e4d75a1458c165b7ab84725eda41d018a09176634"
     ]
@@ -145,7 +153,7 @@ Each block in the bitcoin blockchain contains a summary of all the transactions 
 
 A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow.
 
-Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, which can be used to prove that a transaction is included in the set. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
+Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, providing a very efficient process to verify if a transaction is included in a block. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
 
 When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure.  
 
@@ -175,11 +183,46 @@ The same method for constructing a tree from four transactions can be generalize
 .A Merkle Tree summarizing many data elements
 image::images/MerkleTreeLarge.png["merkle_tree_large"]
 
-To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ that lead to the merkle root. 
+To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes (noted in blue in the diagram below) H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ (noted in green in the diagram below) is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ (outlined in a dotted line in the diagram below) that lead to the merkle root. 
 
 [[merkle_tree_path]]
 .A Merkle Path used to prove inclusion of a data element
 image::images/MerkleTreePathToK.png["merkle_tree_path"]
+
+
+The code in <<merkle_example>> demonstrates the process of creating a merkle tree from the leaf-node hashes up to the root, using the libbitcoin library for some helper functions:
+
+[[merkle_example]]
+.Building a merkle tree
+====
+[source, cpp]
+----
+include::code/merkle.cpp[]
+----
+====
+
+Compiling and running the merkle code:
+
+[[merkle_example_run]]
+.Compiling and running the merkle example code
+====
+[source,bash]
+----
+$ # Compile the merkle.cpp code
+$ g++ -o merkle merkle.cpp $(pkg-config --cflags --libs libbitcoin)
+$ # Run the merkle executable
+$ ./merkle
+Current merkle hash list:
+  32650049a0418e4380db0af81788635d8b65424d397170b8499cdc28c4d27006
+  30861db96905c8dc8b99398ca1cd5bd5b84ac3264a4e1b3e65afa1bcee7540c4
+
+Current merkle hash list:
+  d47780c084bad3830bcdaf6eace035e4c6cbf646d103795d22104fb105014ba3
+
+Result: d47780c084bad3830bcdaf6eace035e4c6cbf646d103795d22104fb105014ba3
+
+----
+====
 
 The efficiency of merkle trees becomes obvious as the scale increases. For example, proving that a transaction is part of a block requires:
 
@@ -194,11 +237,11 @@ The efficiency of merkle trees becomes obvious as the scale increases. For examp
 | 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
 |=======
 
-As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simple Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks.
+As you can see from the table above, while the block size increases rapidly, from 4KB with 16 transactions to a block size of 16 MB to fit 65,535 transactions, the merkle path required to prove the inclusion of a transaction increases much more slowly, from 128 bytes to only 512 bytes. With merkle trees, a node can download just the block headers (80 bytes per block) and still be able to identify a transaction's inclusion in a block by retrieving a small merkle path from a full node, without storing or transmitting the vast majority of the blockchain which may be several gigabytes in size. Nodes which do not maintain a full blockchain, called Simplified Payment Verification or SPV nodes use merkle paths to verify transactions without downloading full blocks.
 
-=== Merkle Trees and Simple Payment Verification (SPV)
+=== Merkle Trees and Simplified Payment Verification (SPV)
 
-Merkle trees are used extensively by Simple Payment Verification nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an _authentication path_, or merkle path. 
+Merkle trees are used extensively by Simplified Payment Verification nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an _authentication path_, or merkle path. 
 
 Consider for example an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is more than a thousand times less than a full block (about 1 megabyte currently).
 
