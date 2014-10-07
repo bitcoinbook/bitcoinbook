@@ -16,7 +16,7 @@ While nodes in the bitcoin P2P network are equal, they may take on different "ro
 
 [[full_node_reference]]
 .A bitcoin network node with all four functions: Wallet, Miner, full Blockchain database, and Network routing
-image::images/FullNodeReferenceClient_Small.png["FullNodeReferenceClient_Small"]
+image::images/msbt_0601.png["FullNodeReferenceClient_Small"]
 
 All nodes include the routing function to participate in the network and may include other functionality. All nodes validate and propagate transactions and blocks, and discover and maintain connections to peers. In the full node example above, the routing function is indicated by an orange circle named "Network Routing Node". 
 
@@ -32,7 +32,7 @@ Here are the most common node types on the extended bitcoin network:
 
 [[node_type_ledgend]]
 .Different types of nodes on the extended bitcoin network
-image::images/BitcoinNodeTypes.png["BitcoinNodeTypes"]
+image::images/msbt_0602.png["BitcoinNodeTypes"]
 
 === The Extended Bitcoin Network
 
@@ -44,7 +44,7 @@ The diagram below shows the extended bitcoin network with the various types of n
 
 [[bitcoin_network]]
 .The extended bitcoin network showing various node types, gateways and protocols
-image::images/BitcoinNetwork.png["BitcoinNetwork"]
+image::images/msbt_0603.png["BitcoinNetwork"]
 
 === Network Discovery
 
@@ -66,7 +66,7 @@ The peer node responds with +verack+ to acknowledge and establish a connection, 
 
 [[network_handshake]]
 .The initial handshake between peers
-image::images/NetworkHandshake.png["NetworkHandshake"]
+image::images/msbt_0604.png["NetworkHandshake"]
 
 How does a new node find peers? While there are no special nodes in bitcoin, there are some long running stable nodes that are listed in the client as _seed nodes_. While a new node does not have to connect with the seed nodes, it can use them to quickly discover other nodes in the network. In the Bitcoin Core client, the option to use the seed nodes is controlled by the option switch +-dnsseed+, which is set to 1, to use the seed nodes, by default. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node after which it can establish connections through further introductions. The command line argument +-seednode+ can be used to connect to one node just for introductions, using it as a DNS seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
 
@@ -75,7 +75,7 @@ Once one or more connections are established, the new node will send an +addr+ m
 
 [[address_propagation]]
 .Address Propagation and Discovery
-image::images/AddressPropagation.png["AddressPropagation"]
+image::images/msbt_0605.png["AddressPropagation"]
 
 A node must connect to a few different peers in order to establish diverse paths into the bitcoin network. Paths are not reliable, nodes come and go, and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, as the first node can offer introductions to its peer nodes and those peers can offer further introductions. It's also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping, a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
 
@@ -151,7 +151,7 @@ This process of comparing the local blockchain with the peers and retrieving any
 
 [[inventory_synchronization]]
 .Node synchronizing the blockchain by retrieving blocks from a peer
-image::images/InventorySynchronization.png["InventorySynchronization"]
+image::images/msbt_0606.png["InventorySynchronization"]
 
 [[spv_nodes]]
 === Simplified Payment Verification (SPV) Nodes
@@ -179,7 +179,7 @@ To get the block headers, SPV nodes use a +getheaders+ message instead of +getbl
 
 [[spv_synchronization]]
 .SPV Node synchronizing the block headers
-image::images/SPVSynchronization.png["SPVSynchronization"]
+image::images/msbt_0607.png["SPVSynchronization"]
 
 Because SPV nodes need to retrieve specific transactions in order to selectively verify them, they also create a privacy risk. Unlike full-blockchain nodes, which collect all transactions within each block, the SPV node's requests for specific data can inadvertently reveal the addresses in their wallet. For example, a third party monitoring a network could keep track of all the transactions requested by a wallet on an SPV node and use those to associate bitcoin addresses with the user of that wallet, destroying the user's privacy. 
 
@@ -201,7 +201,7 @@ In the example below, we use a very small array of 16 bits and a set of 3 hash f
 
 [[bloom1]]
 .An example of a simplistic bloom filter, with 16 bit field and 3 hash functions
-image::images/Bloom1.png["Bloom1"]
+image::images/msbt_0608.png["Bloom1"]
 
 The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on and so forth. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits have been changed from +0+ to +1+. 
 
@@ -209,7 +209,7 @@ Here's an example of adding a pattern "A" to the simple bloom filter shown above
 
 [[bloom2]]
 .Adding a pattern "A" to our simple bloom filter
-image::images/Bloom2.png["Bloom2"]
+image::images/msbt_0609.png["Bloom2"]
 
 Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result may coincide with a bit that is already set to +1+ in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure -- it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
 
@@ -217,7 +217,7 @@ Below is an example of adding a second pattern "B" to the simple bloom filter:
 
 [[bloom3]]
 .Adding a second pattern "B" to our simple bloom filter
-image::images/Bloom3.png["Bloom3"]
+image::images/msbt_0610.png["Bloom3"]
 
 To test if a pattern is part of a bloom filter, the pattern is hashed by each hash function and the resulting bit pattern is tested against the bit array. If all the bits indexed by the hash functions are set to +1+, then the pattern is _probably_ recorded in the bloom filter. Since the bits may be set because of overlap from multiple patterns, the answer is not certain, but is rather probabilistic. In simple terms, a bloom filter positive match is a "Maybe, Yes". 
 
@@ -225,7 +225,7 @@ Below is an example of testing the existence of pattern "X" in the simple bloom 
 
 [[bloom4]]
 .Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe"
-image::images/Bloom4.png["Bloom4"]
+image::images/msbt_0611.png["Bloom4"]
 
 On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, then this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely No". 
 
@@ -233,7 +233,7 @@ Below is an example of testing the existence of pattern "Y" in the simple bloom 
 
 [[bloom5]]
 .Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No"
-image::images/Bloom5.png["Bloom5"]
+image::images/msbt_0612.png["Bloom5"]
 
 Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<bip0037>> or visit: 
 https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki.

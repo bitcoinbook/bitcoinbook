@@ -144,7 +144,7 @@ Looking at this new block, the node finds the "previousblockhash" field, which c
 
 [[chain_of_blocks]]
 .Blocks linked in a chain, by reference to the previous block header hash
-image::images/ChainOfBlocks.png["chain_of_blocks"]
+image::images/msbt_0701.png["chain_of_blocks"]
 
 [[merkle_trees]]
 === Merkle Trees
@@ -169,25 +169,25 @@ The process continues until there is only one node at the top, the node known as
 
 [[simple_merkle]]
 .Calculating the nodes in a Merkle Tree
-image::images/MerkleTree.png["merkle_tree"]
+image::images/msbt_0702.png["merkle_tree"]
 
 Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash will be duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
 
 [[merkle_tree_odd]]
 .An even number of data elements, by duplicating one data element
-image::images/MerkleTreeOdd.png["merkle_tree_odd"]
+image::images/msbt_0703.png["merkle_tree_odd"]
 
 The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way producing just 32 bytes of data as the single merkle root. In the diagram below, you will see a tree built from 16 transactions. Note that while the root looks bigger than the leaf nodes in the diagram, it is the exact same size, just 32 bytes. Whether there is one transaction or a hundred thousand transactions in the block, the merkle root always summarizes them into 32 bytes: 
 
 [[merkle_tree_large]]
 .A Merkle Tree summarizing many data elements
-image::images/MerkleTreeLarge.png["merkle_tree_large"]
+image::images/msbt_0704.png["merkle_tree_large"]
 
 To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of ten or twelve hashes (320-384 bytes) which can provide proof of a single transaction out of more than a thousand transactions in a megabyte sized block. In the example below, a node can prove that a transaction K is included in the block by producing a merkle path that is only four 32-byte hashes long (128 bytes total). The path consists of the four hashes (noted in blue in the diagram below) H~L~, H~IJ~, H~MNOP~ and H~ABCDEFGH~. With those four hashes provided as an authentication path, any node can prove that H~K~ (noted in green in the diagram below) is included in the merkle root by computing four additional pair-wise hashes H~KL~, H~IJKL~ and H~IJKLMNOP~ (outlined in a dotted line in the diagram below) that lead to the merkle root. 
 
 [[merkle_tree_path]]
 .A Merkle Path used to prove inclusion of a data element
-image::images/MerkleTreePathToK.png["merkle_tree_path"]
+image::images/msbt_0705.png["merkle_tree_path"]
 
 
 The code in <<merkle_example>> demonstrates the process of creating a merkle tree from the leaf-node hashes up to the root, using the libbitcoin library for some helper functions:

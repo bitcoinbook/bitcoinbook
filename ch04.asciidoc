@@ -38,7 +38,7 @@ A bitcoin wallet contains a collection of key pairs, each consisting of a privat
 
 [[k_to_K_to_A]]
 .Private Key, Public Key and Bitcoin Address
-image::images/privk_to_pubK_to_addressA.png["privk_to_pubK_to_addressA"]
+image::images/msbt_0401.png["privk_to_pubK_to_addressA"]
 
 [[private_keys]]
 ==== Private Keys
@@ -108,7 +108,7 @@ Below we see an example of an elliptic curve, similar to that used by bitcoin:
 
 [[ecc-curve]]
 .An Elliptic Curve
-image::images/ecc-curve.png["ecc-curve"]
+image::images/msbt_0402.png["ecc-curve"]
 
 Bitcoin uses a specific elliptic curve and set of mathematical constants, as defined in a standard called +secp256k1+, established by the National Institute of Standards and Technology (NIST). The +secp256k1+ curve is defined by the following function, which produces an elliptic curve:
 
@@ -134,7 +134,7 @@ Because this curve is defined over a finite field of prime order instead of over
 
 [[ecc-over-F17-math]]
 .Elliptic Curve Cryptography: Visualizing an elliptic curve over F(p), with p=17
-image::images/ecc-over-F17-math.png["ecc-over-F17-math"]
+image::images/msbt_0403.png["ecc-over-F17-math"]
 
 So for example, below is a point P with coordinates (x,y) that is a point on the secp256k1 curve. You can check this yourself using Python:
 ----
@@ -215,7 +215,7 @@ The diagram below shows the process for deriving G, 2G, 4G, as a geometric opera
 
 [[ecc_illustrated]]
 .Elliptic Curve Cryptography: Visualizing the multiplication of a point G by an integer k on an elliptic curve
-image::images/ecc_illustrated.png["ecc_illustrated"]
+image::images/msbt_0404.png["ecc_illustrated"]
 
 [TIP]
 ====
@@ -254,7 +254,7 @@ Bitcoin addresses are almost always presented to users in an encoding called "Ba
 
 [[pubkey_to_adddress]]
 .Public Key to Bitcoin Address: Conversion of a public key into a bitcoin address 
-image::images/PubKey_to_Bitcoin_Address.png["pubkey_to_address"]
+image::images/msbt_0405.png["pubkey_to_address"]
 
 ==== Base58 and Base58Check Encoding
 
@@ -288,7 +288,7 @@ The result of the above is now a prefix, the data and a checksum. This result is
 
 [[base58check_encoding]]
 .Base58Check Encoding: A base-58, versioned and checksummed format for unambiguously encoding bitcoin data
-image::images/Base58CheckEncoding.png["Base58CheckEncoding"]
+image::images/msbt_0406.png["Base58CheckEncoding"]
 
 In bitcoin, most of the data presented to the user is Base58Check encoded to make it compact, easy to read and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base-58 contain specific characters at the beginning of the Base58Check encoded payload, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check encoded bitcoin address that starts with a "1" from a Base58Check encoded private key WIF format that starts with a "5". Some example version prefixes and the resulting Base-58 characters are shown below:
 
@@ -425,7 +425,7 @@ Whereas uncompressed public keys have a prefix of +04+, compressed public keys s
 
 [[pubkey_compression]]
 .Public Key Compression
-image::images/pubkey_compression.png["pubkey_compression"]
+image::images/msbt_0407.png["pubkey_compression"]
 
 Here's the same public key generated previously, shown as a +compressed public key+ stored in 264-bits (66 hex digits) with the prefix +03+ indicating the +y+ coordinate is odd:
 
@@ -562,7 +562,7 @@ In the first implementations of bitcoin clients, wallets were simply collections
 
 [[Type0_wallet]]
 .Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
-image::images/non-deterministic_wallet.png["non-deterministic wallet"]
+image::images/msbt_0408.png["non-deterministic wallet"]
 
 ==== Deterministic (Seeded) Wallets
 
@@ -623,7 +623,7 @@ Deterministic wallets were developed to make it easy to derive many keys from a 
 
 [[Type2_wallet]]
 .Type-2 Hierarchical Deterministic Wallet: A Tree of Keys Generated from a Seed
-image::images/HD_wallet.png["HD wallet"]
+image::images/msbt_0409.png["HD wallet"]
 
 [TIP]
 ====
@@ -642,7 +642,7 @@ The process of creating the master keys and master chain code for an HD wallet i
 
 [[HDWalletFromSeed]]
 .Creating master keys and chain code from a root seed
-image::images/HDWalletFromRootSeed.png["HDWalletFromRootSeed"]
+image::images/msbt_0410.png["HDWalletFromRootSeed"]
 
 The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is used to create a _master private key_ (m) and a _master chain code_. The master private key (m) then generates a corresponding master public key (M), using the normal elliptic curve multiplication process +m * G+ that we saw previously in this chapter. The chain code is used to introduce entropy in the function that creates child keys from parent keys, as we will see in the next section.
 
@@ -664,7 +664,7 @@ The parent public key, chain code and the index number are combined and hashed w
 
 [[CKDpriv]]
 .Extending a parent private key to create a child private key
-image::images/ChildPrivateDerivation.png["ChildPrivateDerivation"]
+image::images/msbt_0411.png["ChildPrivateDerivation"]
 
 Changing the index allows us to extend the parent and create the other children in the sequence, e.g. Child 0, Child 1, Child 2 etc. Each parent key can have 2 billion children keys. 
 
@@ -722,7 +722,7 @@ Another common application of this solution is for cold-storage or hardware wall
 
 [[CKDpub]]
 .Extending a parent public key to create a child public key
-image::images/ChildPublicDerivation.png["ChildPublicDerivation"]
+image::images/msbt_0412.png["ChildPublicDerivation"]
 
 ===== Hardened child key derivation
 
@@ -732,7 +732,7 @@ To counter this risk, HD wallets use an alternative derivation function called _
 
 [[CKDprime]]
 .Hardened derivation of a child key, omits the parent public key
-image::images/ChildHardPrivateDerivation.png["ChildHardPrivateDerivation"]
+image::images/msbt_0413.png["ChildHardPrivateDerivation"]
 
 When the hardened private derivation function is used, the resulting child private key and chain code are completely different from what would result from the normal derivation function. The resulting "branch" of keys can be used to produce extended public keys which are not vulnerable, since the chain code they contain cannot be exploited to reveal any private keys. Hardened derivation is therefore used to create a "gap" in the tree above the level where extended public keys are used. 
 
@@ -978,12 +978,12 @@ Paper wallets come in many shapes, sizes and designs, but at a very basic level 
 Paper wallets can be generated easily using a tool such as the client-side Javascript generator at bitaddress.org. This page contains all the code necessary to generate keys and paper wallets, even while completely disconnected from the Internet. To use it, save the HTML page on your local drive or on an external USB flash drive. Disconnect from the Internet and open the file in a browser. Even better, boot your computer using a pristine operating system, such as a CDROM bootable Linux OS. Any keys generated with this tool while offline can be printed on a local printer over a USB cable (not wirelessly), thereby creating paper wallets whose keys exist only on the paper and have never been stored on any online system. Put these paper wallets in a fire-proof safe and "send" bitcoin to their bitcoin address, to implement a simple yet highly effective "cold storage" solution. 
 
 .An example of a simple paper wallet from bitaddress.org
-image::images/paper_wallet_simple.png["paper_wallet_simple"]
+image::images/msbt_0414.png["paper_wallet_simple"]
 
 The disadvantage of the simple paper wallet system is that the printed keys are vulnerable to theft. A thief who is able to gain access to the paper can either steal it or photograph the keys and take control of the bitcoins locked with those keys. A more sophisticated paper wallet storage system uses BIP0038 encrypted private keys. The keys printed on the paper wallet are protected by a passphrase that the owner has memorized. Without the passphrase, the encrypted keys are useless. Yet, they still are superior to a passphrase protected wallet because the keys have never been online and must be physically retrieved from a safe or other physically secured storage. 
 
 .An example of an encrypted paper wallet from bitaddress.org. The passphrase is "test"
-image::images/paper_wallet_encrypted.png["paper_wallet_encrypted"]
+image::images/msbt_0415.png["paper_wallet_encrypted"]
 
 [WARNING]
 ====
@@ -993,15 +993,15 @@ While you can deposit funds into a paper wallet several times, you should withdr
 Paper wallets come in many designs and sizes, with many different features. Some are intended to be given as gifts and have seasonal themes, such as Christmas and New Year's themes. Others are designed for storage in a bank vault or safe with the private key hidden in some way, either with opaque scratch-off stickers, or folded and sealed with tamper-proof adhesive foil.
 
 .An example of a paper wallet from bitcoinpaperwallet.com with the private key on a folding flap.
-image::images/paper_wallet_bpw.png["paper_wallet_bpw"]
+image::images/msbt_0416.png["paper_wallet_bpw"]
 
 .The bitcoinpaperwallet.com paper wallet with the private key concealed.
-image::images/paper_wallet_bpw_folded.jpg["paper_wallet_bpw_folded"]
+image::images/msbt_0417.png["paper_wallet_bpw_folded"]
 
 Other designs feature additional copies of the key and address, in the form of detachable stubs similar to ticket stubs, allowing you to store multiple copies to protect against fire, flood or other natural disasters. 
 
 .An example of a paper wallet with additional copies of the keys on a backup "stub"
-image::images/paper_wallet_spw.png["paper_wallet_spw"]
+image::images/msbt_0418.png["paper_wallet_spw"]
 
 
 
