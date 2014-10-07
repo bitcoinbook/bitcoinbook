@@ -26,7 +26,7 @@ Bitcoins are "minted" during the creation of each block at a fixed and diminishi
 
 In November of 2012, the new bitcoin issuance rate was decreased to 25 bitcoin per block and it will decrease again to 12.5 bitcoin at block 420,000, which will be mined sometime in 2016. The rate of new coins decreases like this exponentially over 64 "halvings", until block 13,230,000 (mined approximately in year 2137) when it reaches the minimum currency unit of 1 satoshi. Finally, after 13.44 million blocks, in approximately 2140, all 2,099,999,997,690,000 satoshis, or almost 21 million bitcoin will be issued. Thereafter, blocks will contain no new bitcoin, and miners will be rewarded solely through the transaction fees.
 
-In the example code in <<max_money_>>, we calculate the total amount of bitcoin that will be issued:
+In the example code in <<max_money>>, we calculate the total amount of bitcoin that will be issued:
 
 [[max_money]]
 .A script for calculating how much total bitcoin will be issued
@@ -117,7 +117,7 @@ By independently verifying each transaction as it is received and before propaga
 
 === Mining Nodes
 
-Some of the nodes on the bitcoin network are specialized nodes called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced Jing, a computer engineering student in Shanghai, China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig", which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node as we will see in <<mining pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
+Some of the nodes on the bitcoin network are specialized nodes called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced Jing, a computer engineering student in Shanghai, China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig", which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node as we will see in <<mining_pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
     
 Jing's node is listening for new blocks, propagated on the bitcoin network, as do all nodes. However, the arrival of a new block has special significance for a mining node. The competition among miners effectively ends with the propagation of a new block which acts as an announcement of a winner. To a miner, receiving a new block means someone else won the competition and they lost. However, the end of one round of a competition is also the beginning of the next round. The new block is not just a checkered flag, marking the end of the race, it is also the starting pistol starting the race for the next block.
 
@@ -349,7 +349,7 @@ In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which
 
 The first byte, +03+ instructs the script execution engine to push the next 3 bytes onto the script stack (see <<tx_script_ops_table_pushdata>>). The next 3 bytes, +0x443b04+, are the block height encoded in little-endian format (backwards, least significant byte first). Reverse the order of the bytes and the result is +0x043b44+ which is 277,316 in decimal. 
 
-The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (See <<extra_nonce_>>), or random value, used to find a suitable Proof-of-Work solution.
+The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (See <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
 
 The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string "/P2SH/", which indicates that the mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include "/P2SH/" in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string "/P2SH/" in their coinbase to indicate support for this feature.
 
@@ -383,7 +383,7 @@ $ ./satoshi-words
 
 To construct the block header, the mining node needs to fill in six fields:
 
-[[block_header_structure]]
+[[block_header_structure_ch08]]
 .The structure of the block header
 [options="header"]
 |=======
@@ -738,7 +738,7 @@ Let's assume for example that a miner in Canada finds a Proof-of-Work solution f
 
 As the two blocks propagate, some nodes receive block "red" first and some receive block "green" first. The network splits into two different perspectives of the blockchain, one side topped with a red block, the other with a green block. 
 
-[[fork2]]
+[[fork3]]
 .Visualization of a blockchain fork event - Two blocks propagate, splitting the network
 image::images/msbt_0804.png["globalfork3"]
 
@@ -819,15 +819,14 @@ Pool miners connect to the pool server using a mining protocol such as Stratum (
 
 ===== P2Pool
 
-Managed pools create the possibility of cheating by the pool operator, who might direct the pool effort to double-spend transactions or invalidate blocks (see <<51pct>>). Furthermore, centralized pool servers represent a single-point-of-failure. If the pool server is down or is attacked by Denial-of-Service, the pool miners cannot mine. In 2011, to resolve these issues of centralization, a new pool mining method was proposed and implemented: P2Pool is a peer-to-peer mining pool, without a central operator. 
+Managed pools create the possibility of cheating by the pool operator, who might direct the pool effort to double-spend transactions or invalidate blocks (see <<consensus_attacks>>). Furthermore, centralized pool servers represent a single-point-of-failure. If the pool server is down or is attacked by Denial-of-Service, the pool miners cannot mine. In 2011, to resolve these issues of centralization, a new pool mining method was proposed and implemented: P2Pool is a peer-to-peer mining pool, without a central operator. 
     
 P2Pool works by de-centralizing the functions of the pool server, implementing a parallel blockchain-like system called a _sharechain_. A sharechain is a blockchain running at a lower difficulty than the bitcoin blockchain. The sharechain allows pool miners to collaborate in a de-centralized pool, by mining shares on the sharechain at a rate of one share block every 30 seconds. Each of the blocks on the sharechain records a proportionate share reward for the pool miners who contribute work, carrying the shares forward from the previous share block. When one of the share blocks also achieves the difficulty target of the bitcoin network it is propagated and included on the bitcoin blockchain, rewarding all the pool miners who contributed to the all the shares that preceded the winning share block. Essentially, instead of a pool server keeping track of pool miner shares and rewards, the sharechain allows all pool miners to keep track of all shares using a de-centralized consensus mechanism like bitcoin's blockchain consensus mechanism. 
 
 P2Pool mining is more complex than pool mining, as it requires that the pool miners run a dedicated computer with enough disk space, memory and internet bandwidth to support a full bitcoin node and the p2pool node software. P2Pool miners connect their mining hardware to their local p2pool node, which simulates the functions of a pool server by sending block templates to the mining hardware. On P2Pool, individual pool miners construct their own candidate blocks, aggregating transactions much like solo-miners but then mine collaboratively on the sharechain. P2Pool is a hybrid approach that has the advantage of much more granular payouts than solo mining, but without giving too much control to a pool operator like managed pools. 
 
-Recently, participation in P2Pool has increased significantly as mining concentration in mining pools has approached levels that create concerns of a 51% attack (see <<51pct>>). Further development of the P2Pool protocol continues with the expectation of removing the need for running a full node and therefore making de-centralized mining even easier to use. 
+Recently, participation in P2Pool has increased significantly as mining concentration in mining pools has approached levels that create concerns of a 51% attack (see <<consensus_attacks>>). Further development of the P2Pool protocol continues with the expectation of removing the need for running a full node and therefore making de-centralized mining even easier to use. 
 
-[[51pct]]
 [[consensus_attacks]]
 === Consensus Attacks
 
