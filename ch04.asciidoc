@@ -623,15 +623,15 @@ image::images/msbt_0409.png["HD wallet"]
 If you are implementing a bitcoin wallet, it should be built as an HD wallet following the BIP0032 and BIP0044 standards. 
 ====
 
-HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions or accounting categories. 
+HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions, or accounting categories. 
 
-The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be pre-loaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
+The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be preloaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
 
 ===== HD wallet creation from a seed
 
-HD wallets are created from a single _root seed_, which is a 128, 256 or 512 bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to backup, restore, export and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. The root seed is most often represented by a _mnemonic word sequence_, as described in the previous section <<mnemonic_code_words>>, to make it easier for people to transcribe and store it.
+HD wallets are created from a single _root seed_, which is a 128-, 256- or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. The root seed is most often represented by a _mnemonic word sequence_, as described in the previous section <<mnemonic_code_words>>, to make it easier for people to transcribe and store it.
 
-The process of creating the master keys and master chain code for an HD wallet is shown below:
+The process of creating the master keys and master chain code for an HD wallet is shown in <<HDWalletFromSeed>>.
 
 [[HDWalletFromSeed]]
 .Creating master keys and chain code from a root seed
@@ -643,7 +643,7 @@ The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is 
 
 Hierarchical Deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
 
-The child key derivation functions are based on one-way hash functions that combines: 
+The child key derivation functions are based on a one-way hash function that combines: 
 
 * A parent private or public key (ECDSA uncompressed key)
 * A seed called a chain code (256 bits)
@@ -651,9 +651,9 @@ The child key derivation functions are based on one-way hash functions that comb
 
 The chain code is used to introduce seemingly random data to the process, so that the index is not sufficient to derive other child keys. Thus, having a child key does not make it possible to find its siblings, unless you also have the chain code. The initial chain code seed (at the root of the tree) is made from random data, while subsequent chain codes are derived from each parent chain code. 
 
-These three items are combined and hashed to generate children keys, as follows:
+These three items are combined and hashed to generate children keys, as follows.
 
-The parent public key, chain code and the index number are combined and hashed with the HMAC-SHA512 algorithm to produce a 512 bit hash. The resulting hash is split into two halfs. The right-half 256 bits of the hash output become the chain code for the child. The left-half 256 bits of the hash and the index number are added to the parent private key to produce the child private key. In the diagram below, we see this illustrated with the index set to 0 to produce the 0'th (first by index) child of the parent.
+The parent public key, chain code, and the index number are combined and hashed with the HMAC-SHA512 algorithm to produce a 512-bit hash. The resulting hash is split into two halves. The right-half 256 bits of the hash output become the chain code for the child. The left-half 256 bits of the hash and the index number are added to the parent private key to produce the child private key. In <<CKDpriv>>, we see this illustrated with the index set to 0 to produce the 0'th (first by index) child of the parent.
 
 [[CKDpriv]]
 .Extending a parent private key to create a child private key
