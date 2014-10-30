@@ -287,10 +287,10 @@ image::images/msbt_0406.png["Base58CheckEncoding"]
 In bitcoin, most of the data presented to the user is Base58Check-encoded to make it compact, easy to read, and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base58 contain specific characters at the beginning of the Base58Check-encoded payload, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check-encoded bitcoin address that starts with a 1 from a Base58Check-encoded private key WIF format that starts with a 5. Some example version prefixes and the resulting Base58 characters are shown in <<base58check_versions>>.
 
 [[base58check_versions]]
-.Base58Check Version Prefix and Encoded Result Examples
+.Base58Check version prefix and encoded result examples
 [options="header"]
 |=======
-|Type| Version prefix (hex)| Base-58 result prefix
+|Type| Version prefix (hex)| Base58 result prefix
 | Bitcoin Address | 0x00 | 1 
 | Pay-to-Script-Hash Address | 0x05 | 3 
 | Bitcoin Testnet Address | 0x6F | m or n 
@@ -301,10 +301,10 @@ In bitcoin, most of the data presented to the user is Base58Check-encoded to mak
 
 ===== Creating a bitcoin address from a private key
 
-Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address and finally the Base58Check encoding. The C++ code in <<addr_example>> shows the complete process, from private key, to Base58Check encoded bitcoin address, step-by-step. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions:
+Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address and finally, the Base58Check encoding. The C++ code in <<addr_example>> shows the complete step-by-step process, from private key to Base58Check-encoded bitcoin address. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions.
 
 [[addr_example]]
-.Creating a Base58Check encoded bitcoin address from a private key
+.Creating a Base58Check-encoded bitcoin address from a private key
 ====
 [source, cpp]
 ----
@@ -312,7 +312,7 @@ include::code/addr.cpp[]
 ----
 ====
 
-The code uses a pre-defined private key, so that it produces the same bitcoin address every time it is run:
+The code uses a predefined private key, so that it produces the same bitcoin address every time it is run as shown in <<addr_example_run>>.
 
 [[addr_example_run]]
 .Compiling and running the addr code
@@ -330,21 +330,23 @@ Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
 
 ==== Key Formats
 
+Both private and public keys can be represented in a number of different formats. These representations all encode the same number, even though they look different. These formats are primarily used to make it easy for people to read and transcribe keys without introducing errors.
+
 [[priv_formats]]
-===== Private Key Formats
+===== Private key formats
 
-The private key can be represented in a number of different formats, all of which correspond to the same 256-bit number. These formats include:
+The private key can be represented in a number of different formats, all of which correspond to the same 256-bit number. <<priv_formats>> shows three common formats used to represent private keys.
 
-.Private Key Representations (Encoding Formats)
+.Private key representations (encoding formats)
 [options="header"]
 |=======
 |Type|Prefix|Description
 | Hex | None | 64 hexadecimal digits
-| WIF |  5 | Base58Check encoding: Base-58 with version prefix of 128 and 32-bit checksum
+| WIF |  5 | Base58Check encoding: Base58 with version prefix of 128 and 32-bit checksum
 | WIF-compressed | K or L | As above, with added suffix 0x01 before encoding
 |=======
 
-The private key we generated earlier can be represented as:
+Table 4-3 shows the private key generated earlier in these three formats.
 
 .Example: Same Key, Different Formats
 [options="header"]
@@ -355,13 +357,13 @@ The private key we generated earlier can be represented as:
 | WIF-compressed | KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 |=======
 
-All of the above representations are different ways of showing the same number, the same private key. They look different, but any one format can easily be converted to any other format. 
+All of the these representations are different ways of showing the same number, the same private key. They look different, but any one format can easily be converted to any other format. 
 
-===== Decode from Base58Check to Hex
+===== Decode from Base58Check to hex
 
-The sx-tools package (See <<sx_tools>>) makes it easy to write shell-scripts and command-line "pipes" that manipulate bitcoin keys, addresses, and transactions. You can use sx-tools to decode the Base58Check format on the command line:
+The sx tools package (See <<sx_tools>>) makes it easy to write shell-scripts and command-line "pipes" that manipulate bitcoin keys, addresses, and transactions. You can use sx tools to decode the Base58Check format on the command line.
 
-We use the base58check-decode command:
+We use the +base58check-decode+ command:
 ----
 $ sx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
@@ -369,7 +371,7 @@ $ sx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 
 The result is the hexadecimal key, followed by the Wallet Import Format (WIF) version prefix 128.
 
-===== Encode from Hex to Base58Check
+===== Encode from hex to Base58Check
 
 To encode into Base58Check (the opposite of the previous command), we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128:
 ----
@@ -377,7 +379,7 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 ----
 
-===== Encode from Hex (Compressed Key) to Base58Check encoding
+===== Encode from hex (compressed key) to Base58Check encoding
 
 To encode into Base58Check as a "compressed" private key (see <<comp_priv>>), we add the suffix +01+ to the end of the hex key and then encode as above:
 ----
@@ -385,7 +387,7 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 ----
 
-The resulting WIF-compressed format, starts with a "K". This denotes that the private key within has a suffix of "01" and will be used to produce compressed public keys only (See <<comp_pub>> below).
+The resulting WIF-compressed format starts with a "K". This denotes that the private key within has a suffix of "01" and will be used to produce compressed public keys only (see <<comp_pub>>).
 
 ===== Public Key Formats
 
