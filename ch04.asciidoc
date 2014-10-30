@@ -551,32 +551,32 @@ Wallets contain keys, not coins. The coins are stored on the blockchain in the f
 [[random_wallet]]
 ==== Nondeterministic (Random) Wallets
 
-In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. This type of wallet is called a _Type-0 nondeterministic wallet_. For example, the Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys," or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed-up frequently. Each key must be backed-up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 non-deterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use as that means managing many keys, which creates the need for frequent backups. While the Bitcoin Core Client includes a wallet that is implemented as a Type-0 wallet, the use of this wallet is actively discouraged by developers of the Bitcoin Core.
+In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. This type of wallet is called a _Type-0 nondeterministic wallet_. For example, the Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys," or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a wallet that is implemented as a Type-0 wallet, the use of this wallet is actively discouraged by developers of the Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
 
 [[Type0_wallet]]
-.Type-0 Non-Deterministic (Random) Wallet: A Collection of Randomly Generated Keys
+.Type-0 nondeterministic (random) wallet: a collection of randomly generated keys
 image::images/msbt_0408.png["non-deterministic wallet"]
 
 ==== Deterministic (Seeded) Wallets
 
-Deterministic, or "seeded" wallets are wallets that contain private keys which are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number which is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
+Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
 
 [[mnemonic_code_words]]
 ==== Mnemonic Code Words
 
-Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12-24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets, as they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
+Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
 Mnemonic codes are defined in Bitcoin Improvement Proposal 39 (see <<bip0039>>), currently in Draft status. Note that BIP0039 is a draft proposal and not a standard. Specifically, there is a different standard, with a different set of words used by the Electrum wallet and _predating_ BIP0039. BIP0039 is used by the Trezor wallet and a few other wallets but is incompatible with Electrum's implementation. 
     
 BIP0039 defines the creation of a mnemonic code and seed as a follows:
 
-1. Create a random sequence (entropy) of 128 to 256 bits
-2. Create a checksum of the random sequence by taking the first few bits of its SHA256 hash
-3. Add the checksum to the end of the random sequence
-4. Divide the sequence into sections of 11 bits, using those to index a dictionary of 2048 pre-defined words
-5. Produce 12-24 words representing the mnemonic code
+1. Create a random sequence (entropy) of 128 to 256 bits.
+2. Create a checksum of the random sequence by taking the first few bits of its SHA256 hash.
+3. Add the checksum to the end of the random sequence.
+4. Divide the sequence into sections of 11 bits, using those to index a dictionary of 2048 predefined words.
+5. Produce 12 to 24 words representing the mnemonic code.
 
-.Mnemonic Codes: Entropy and Word Length
+.Mnemonic codes: entropy and word length
 [options="header"]
 |=======
 |Entropy (bits) | Checksum (bits) | Entropy+Checksum | Word Length
@@ -587,9 +587,9 @@ BIP0039 defines the creation of a mnemonic code and seed as a follows:
 | 256 | 8 | 264 | 24
 |=======
 
-The mnemonic code represents 128 to 256 bits which are used to derive a longer (512 bit) seed through the use of the key-stretching function PBKDF2. The resulting seed is used to create a deterministic wallet and all of its derived keys. 
+The mnemonic code represents 128 to 256 bits, which are used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The resulting seed is used to create a deterministic wallet and all of its derived keys. 
 
-Here are some examples of mnemonic codes and the seeds they produce:
+Table 4-6 and Table 4-7 list some examples of mnemonic codes and the seeds they produce.
 
 .128-bit entropy mnemonic code and resulting seed
 |=======
@@ -612,10 +612,10 @@ fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343
 [[hd_wallets]]
 ==== Hierarchical Deterministic Wallets (BIP0032/BIP0044)
 
-Deterministic wallets were developed to make it easy to derive many keys from a single "seed". The most advanced form of deterministic wallets is the _Hierarchical Deterministic Wallet_ or _HD Wallet_ defined by the BIP0032 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys and so on to an infinite depth. This tree structure is illustrated below:
+Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP0032 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.
 
 [[Type2_wallet]]
-.Type-2 Hierarchical Deterministic Wallet: A Tree of Keys Generated from a Seed
+.Type-2 hierarchical deterministic wallet: a tree of keys generated from a seed
 image::images/msbt_0409.png["HD wallet"]
 
 [TIP]
@@ -623,7 +623,7 @@ image::images/msbt_0409.png["HD wallet"]
 If you are implementing a bitcoin wallet, it should be built as an HD wallet following the BIP0032 and BIP0044 standards. 
 ====
 
-HD wallets offer two major advantages over random (non-deterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of sub-keys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions or accounting categories. 
+HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions or accounting categories. 
 
 The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be pre-loaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
 
