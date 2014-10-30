@@ -31,7 +31,6 @@ image::images/msbt_0302.png["bitcoin-qt first run"]
 
 For developers, there is also the option to download the full source code as a ZIP archive or by cloning the authoritative source repository from GitHub. Go to https://github.com/bitcoin/bitcoin and select "Download ZIP" from the sidebar. Alternatively, use the git command line to create a local copy of the source code on your system. In the following example, we are cloning the source code from a Unix-like command line, in Linux or Mac OS:
 
-[source,bash]
 ----
 $ git clone https://github.com/bitcoin/bitcoin.git
 Cloning into 'bitcoin'...
@@ -45,7 +44,7 @@ $
 
 [TIP]
 ====
-The instructions and resulting output may vary from version to version. Follow the documentation that comes with the code even if it differs from the instructions you see here and don't be surprised if the output displayed on your screen is slightly different from the examples here. 
+The instructions and resulting output may vary from version to version. Follow the documentation that comes with the code even if it differs from the instructions you see here, and don't be surprised if the output displayed on your screen is slightly different from the examples here. 
 ====
 
 When the git cloning operation has completed, you will have a complete local copy of the source code repository in the directory _bitcoin_. Change to this directory by typing +cd bitcoin+ at the prompt:
@@ -75,7 +74,7 @@ v0.8.6rc1
 v0.9.0rc1
 ----
 
-The list of tags shows all the released versions of bitcoin. By convention, _release candidates_, which are intended for testing, have the suffix "rc". Stable releases that can be run on production systems have no suffix. From the list above, we select the highest version release, which at this time is v0.9.0rc1. To synchronize the local code with this version, we use the +git checkout+ command:
+The list of tags shows all the released versions of bitcoin. By convention, _release candidates_, which are intended for testing, have the suffix "rc". Stable releases that can be run on production systems have no suffix. From the preceding list, we select the highest version release, which at this time is v0.9.0rc1. To synchronize the local code with this version, we use the +git checkout+ command:
 
 ----
 $ git checkout v0.9.0rc1
@@ -86,13 +85,13 @@ $
 ----
 
 
-The source code includes documentation, which can be found in a number of files. Review the main documentation located in README.md in the bitcoin directory by typing +more README.md+ at the prompt and using the space bar to progress to the next page. In this chapter we will build the command-line bitcoin client, also known as +bitcoind+ on Linux. Review the instructions for compiling the bitcoind command-line client on your platform by typing +more doc/build-unix.md+. Alternative instructions for Mac OSX and Windows can be found in the doc directory, as +build-os.md+ or +build-msw.md+ respectively. 
+The source code includes documentation, which can be found in a number of files. Review the main documentation located in _README.md_ in the bitcoin directory by typing +more README.md+ at the prompt and using the space bar to progress to the next page. In this chapter we will build the command-line bitcoin client, also known as +bitcoind+ on Linux. Review the instructions for compiling the bitcoind command-line client on your platform by typing +more doc/build-unix.md+. Alternative instructions for Mac OS X and Windows can be found in the _doc_ directory, as _build-osx.md_ or _build-msw.md_ respectively. 
 
-Carefully review the build pre-requisites which are in the first part of the build documentation. These are libraries that must be present on your system before you can begin to compile bitcoin. If these pre-requisites are missing the build process will fail with an error. If this happens because you missed a pre-requisite, you can install it and then resume the build process from where you left off. Assuming the pre-requisites are installed, we start the build process by generating a set of build scripts using the +autogen.sh+ script.
+Carefully review the build prerequisites, which are in the first part of the build documentation. These are libraries that must be present on your system before you can begin to compile bitcoin. If these prerequisites are missing, the build process will fail with an error. If this happens because you missed a prerequisite, you can install it and then resume the build process from where you left off. Assuming the pre-requisites are installed, you start the build process by generating a set of build scripts using the _autogen.sh_ script.
 
 [TIP]
 ====
-The Bitcoin Core build process was changed to use the autogen/configure/make system starting with version 0.9. Older versions use a simple Makefile and work slightly differently from the example below. Follow the instructions for the version you want to compile. The autogen/configure/make introduced in 0.9 is likely to be the build system used for all future versions of the code and is the system demonstrated in the examples below.
+The Bitcoin Core build process was changed to use the autogen/configure/make system starting with version 0.9. Older versions use a simple Makefile and work slightly differently from the following example. Follow the instructions for the version you want to compile. The autogen/configure/make introduced in 0.9 is likely to be the build system used for all future versions of the code and is the system demonstrated in the following examples.
 ====
 
 ----
@@ -105,7 +104,7 @@ src/Makefile.am: installing `src/build-aux/depcomp'
 $ 
 ----
 
-The +autogen.sh+ script creates a set of automatic configuration scripts that will interrogate your system to discover the correct settings and ensure you have all the necessary libraries to compile the code. The most important of these is the +configure+ script that offers a number of different options to customize the build process. Type +./configure --help+ to see the various options:
+The _autogen.sh_ script creates a set of automatic configuration scripts that will interrogate your system to discover the correct settings and ensure you have all the necessary libraries to compile the code. The most important of these is the +configure+ script that offers a number of different options to customize the build process. Type +./configure --help+ to see the various options:
 
 ----
 $ ./configure --help
@@ -142,7 +141,7 @@ Report bugs to <info@bitcoin.org>.
 $
 ----
 
-The +configure+ script allows you to enable or disable certain features of bitcoind through the use of the +--enable-FEATURE+ and +--disable-FEATURE+ flags, where +FEATURE+ is replaced by the feature name, as listed in the help output above. In this chapter, we will build the bitcoind client with all the default features. We won't be using the configuration flags, but you should review them to understand what optional features are part of the client. Next, we run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for our system:
+The +configure+ script allows you to enable or disable certain features of bitcoind through the use of the +--enable-FEATURE+ and +--disable-FEATURE+ flags, where +FEATURE+ is replaced by the feature name, as listed in the help output. In this chapter, we will build the bitcoind client with all the default features. We won't be using the configuration flags, but you should review them to understand what optional features are part of the client. Next, we run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for our system:
 
 ----
 $ ./configure 
@@ -172,7 +171,7 @@ config.status: executing depfiles commands
 $
 ----
 
-If all goes well, the +configure+ command will end by creating the customized build scripts that will allow us to compile bitcoind. If there are any missing libraries or errors, the +configure+ command will terminate with an error instead of creating the build scripts as shown above. If an error occurs, it is most likely a missing or incompatible library. Review the build documentation again and make sure you install the missing pre-requisites. Then run +configure+ again and see if that fixes the error. Next, we will compile the source code, a process that can take up to an hour to complete. During the compilation process you should see output every few seconds or every few minutes, or an error if something goes wrong. The compilation process can be resumed at any time if interrupted. Type +make+ to start compiling:
+If all goes well, the +configure+ command will end by creating the customized build scripts that will allow us to compile bitcoind. If there are any missing libraries or errors, the +configure+ command will terminate with an error instead of creating the build scripts. If an error occurs, it is most likely a missing or incompatible library. Review the build documentation again and make sure you install the missing prerequisites. Then run +configure+ again and see if that fixes the error. Next, we will compile the source code, a process that can take up to an hour to complete. During the compilation process you should see output every few seconds or every few minutes, or an error if something goes wrong. The compilation process can be resumed at any time if interrupted. Type +make+ to start compiling:
 
 ----
 $ make
@@ -229,7 +228,7 @@ $ which bitcoin-cli
 /usr/local/bin/bitcoin-cli
 ----
 
-The default installation of bitcoind puts it in +/usr/local/bin+. When we first run bitcoind it will remind us to create a configuration file with a strong password for the JSON-RPC interface. We run it by typing +bitcoind+ into the terminal:
+The default installation of bitcoind puts it in _/usr/local/bin_. When we first run bitcoind it will remind us to create a configuration file with a strong password for the JSON-RPC interface. We run it by typing +bitcoind+ into the terminal:
 
 ----
 $ bitcoind
@@ -245,7 +244,7 @@ It is also recommended to set alertnotify so you are notified of problems;
 for example: alertnotify=echo %s | mail -s "Bitcoin Alert" admin@foo.com
 ----
 
-Edit the configuration file in your preferred editor and set the parameters, replacing the password with a strong password as recommended by bitcoind. Do *not* use the password shown below. Create a file inside the +.bitcoin+ directory so that it is named +.bitcoin/bitcoin.conf+ and enter a username and password:
+Edit the configuration file in your preferred editor and set the parameters, replacing the password with a strong password as recommended by bitcoind. Do _not_ use the password shown here. Create a file inside the _.bitcoin_ directory so that it is named _.bitcoin/bitcoin.conf_ and enter a username and password:
 
 [source,ini]
 ----
@@ -253,9 +252,9 @@ rpcuser=bitcoinrpc
 rpcpassword=2XA4DuKNCbtZXsBQRRNDEwEY2nM6M4H9Tx5dFjoAVVbK
 ----
 
-While you're editing this configuration file, you may want to set a few other options, such as +txindex+ (See <<txindex>>). For a full listing of the available options type +bitcoind --help+.
+While you're editing this configuration file, you may want to set a few other options, such as +txindex+ (see <<txindex>>). For a full listing of the available options, type +bitcoind --help+.
 
-Now, run the Bitcoin Core client. The first time you run it, it will rebuild the bitcoin blockchain by downloading all the blocks. This is a multi-gigabyte file and will take on average 2 days to download in full. You can shorten the blockchain initialization time by downloading a partial copy of the blockchain using a bittorrent client from +http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/+. 
+Now, run the Bitcoin Core client. The first time you run it, it will rebuild the bitcoin blockchain by downloading all the blocks. This is a multigigabyte file and will take an average of two days to download in full. You can shorten the blockchain initialization time by downloading a partial copy of the blockchain using a bittorrent client from +http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/+. 
 
 Run bitcoind in the background with the option +-daemon+:
 
@@ -281,12 +280,12 @@ Opened LevelDB successfully
 
 ----
 
-=== Using Bitcoin Core's JSON-RPC API from the command line
+=== Using Bitcoin Core's JSON-RPC API from the Command Line
 
-The Bitcoin Core client implements a JSON-RPC interface that can also be accessed using the command line helper +bitcoin-cli+. The command line allows us to experiment interactively with the capabilities that are also available programmatically via the API. To start, we can invoke the +help+ command to see a list of the available bitcoin commands:
+The Bitcoin Core client implements a JSON-RPC interface that can also be accessed using the command line helper +bitcoin-cli+. The command-line allows us to experiment interactively with the capabilities that are also available programmatically via the API. To start, we can invoke the +help+ command to see a list of the available bitcoin RPC commands:
 
 [[bitcoind_commands]]
-.Bitcoin Core RPC commands
+
 ----
 $ bitcoin-cli help
 addmultisigaddress nrequired ["key",...] ( "account" )
@@ -366,7 +365,7 @@ walletpassphrasechange "oldpassphrase" "newpassphrase"
 ----
 
 
-==== Getting information on the Bitcoin Core client status
+==== Getting Information on the Bitcoin Core Client Status
 
 Commands: getinfo
 
