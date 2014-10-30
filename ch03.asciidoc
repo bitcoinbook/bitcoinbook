@@ -832,9 +832,9 @@ The +getblock+, +getblockhash+, and +gettransaction+ commands can be used to exp
 
 Commands: +listunspent+, +gettxout+, +createrawtransaction+, +decoderawtransaction+, +signrawtransaction+, +sendrawtransaction+
 
-Bitcoin's transactions are based on the concept of spending "outputs", which are the result of previous transactions, to create a transaction chain that transfers ownership from address to address. Our wallet has now received a transaction that assigned one such output to our address. Once this is confirmed, we can now spend that output. 
+Bitcoin's transactions are based on the concept of spending "outputs," which are the result of previous transactions, to create a transaction chain that transfers ownership from address to address. Our wallet has now received a transaction that assigned one such output to our address. Once this is confirmed, we can spend that output. 
 
-First, we use the +listunspent+ command to show all the unspent *confirmed* outputs in our wallet:
+First, we use the +listunspent+ command to show all the unspent _confirmed_ outputs in our wallet:
 
 [source,bash]
 ----
@@ -855,9 +855,9 @@ $ bitcoin-cli listunspent
 ]
 ----
 
-We see that the transaction +9ca8f9...+ created an output (with vout index 0) assigned to the address +1hvzSo...+ for the amount of 50 millibits, which at this point has received 7 confirmations. Transactions use previously created outputs as their inputs by referring to them by the previous txid and vout index. We will now create a transaction that will spend the 0th vout of the txid +9ca8f9...+ as its input and assign it to a new output that sends value to a new address. 
+We see that the transaction +9ca8f9...+ created an output (with vout index 0) assigned to the address +1hvzSo...+ for the amount of 50 millibits, which at this point has received seven confirmations. Transactions use previously created outputs as their inputs by referring to them by the previous txid and vout index. We will now create a transaction that will spend the 0th vout of the txid +9ca8f9...+ as its input and assign it to a new output that sends value to a new address. 
 
-First, let's look at the specific output in more detail. We use the +gettxout+ to get the details of this unspent output above. Transaction outputs are always referenced by txid and vout, and these are the parameters we pass to +gettxout+:
+First, let's look at the specific output in more detail. We use +gettxout+ to get the details of this unspent output. Transaction outputs are always referenced by txid and vout, and these are the parameters we pass to +gettxout+:
 
 [source,bash]
 ----
@@ -884,7 +884,7 @@ $ bitcoin-cli gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae
 }
 ----
 
-What we see above is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to which we will send the money:
+What we see here is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to which we will send the money:
 
 [source,bash]
 ----
@@ -892,9 +892,9 @@ $ bitcoin-cli getnewaddress
 1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb
 ----
 
-We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the *whole* output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
+We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the _whole_ output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
 
-We use the +createrawtransaction+ to create the transaction described above. As parameters to +createrawtransaction+ we provide the transaction input (the 50 millibit unspent output from our confirmed transaction) and the two transaction outputs (money sent to the new address and change sent back to the previous address):
+We use +createrawtransaction+ to create this transaction. As parameters to +createrawtransaction+ we provide the transaction input (the 50 millibit unspent output from our confirmed transaction) and the two transaction outputs (money sent to the new address and change sent back to the previous address):
 
 ----
 $ bitcoin-cli createrawtransaction \
@@ -969,7 +969,7 @@ $ bitcoin-cli decoderawtransaction \
 
 That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 millibits to our new address and one for 24.5 millibits as change back to the original address. The difference of 0.5 millibits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
 
-As you may notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless, we haven't yet proven that we *own* the address from which the unspent output is sourced. By signing, we remove the encumbrance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter.
+As you may notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless; we haven't yet proven that we _own_ the address from which the unspent output is sourced. By signing, we remove the encumbrance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter:
 
 [TIP]
 ====
@@ -995,7 +995,7 @@ bd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c
 }
 ----
 
-The +signrawtransaction+ command returns another hex encoded raw transaction. We decode it to see what changed, with +decoderawtransaction+:
+The +signrawtransaction+ command returns another hex-encoded raw transaction. We decode it to see what changed, with +decoderawtransaction+:
 
 [source,bash]
 ----
@@ -1066,7 +1066,7 @@ c50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac000000\
 
 Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the encumbrance on the output so that it can be spent. The signature makes this transaction verifiable by any node in the bitcoin network. 
 
-Now it's time to submit the newly created transaction to the network. We do that with the command +sendrawtransaction+ which takes the raw hex string produced by +signrawtransaction+. This is the same string we just decoded above:
+Now it's time to submit the newly created transaction to the network. We do that with the command +sendrawtransaction+, which takes the raw hex string produced by +signrawtransaction+. This is the same string we just decoded:
 
 ----
 $ bitcoin-cli sendrawtransaction\
@@ -1081,7 +1081,7 @@ c50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac000000\
 ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
 ----
 
-The command +sendrawtransaction+ returns a _transaction hash (txid)_ as it submits the transaction on the network. We can now query that transaction id with +gettransaction+:
+The command +sendrawtransaction+ returns a _transaction hash (txid)_ as it submits the transaction on the network. We can now query that transaction ID with +gettransaction+:
 
 ----
 $ bitcoin-cli gettransaction \
@@ -1130,7 +1130,7 @@ ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584ac17b346
 As before, we can also examine this in more detail using the +getrawtransaction+ and +decodetransaction+ commands. These commands will return the exact same hex string that we produced and decoded previously just before we sent it on the network. 
 
 [[alt_libraries]]
-=== Alternative clients, libraries and toolkits
+=== Alternative Clients, Libraries and Toolkits
 
 Beyond the reference client, bitcoind, there are other clients and libraries that can be used to interact with the bitcoin network and data structures. These are implemented in a variety of programming languages, offering programmers native interfaces in their own language. 
 
