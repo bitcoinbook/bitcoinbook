@@ -740,19 +740,19 @@ As the two blocks propagate, some nodes receive block "red" first and some recei
 .Visualization of a blockchain fork event—two blocks propagate, splitting the network
 image::images/msbt_0804.png["globalfork3"]
 
-From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "red" first and will create a new greatest-cumulative-difficulty blockchain with "red" as the last block in the chain (e.g., blue-red), ignoring the candidate block "green" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain with "green" as the last block (e.g. blue-green), ignoring "red" when it arrives a few seconds later. Any miners that saw "red" first will immediately build candidate blocks that reference "red" as the parent and start trying to solve the PoW for these candidate blocks. The miners that accepted "green" instead, will start building on top of "green" and extending that chain. 
+From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "red" first and will create a new greatest-cumulative-difficulty blockchain with "red" as the last block in the chain (e.g., blue-red), ignoring the candidate block "green" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain with "green" as the last block (e.g., blue-green), ignoring "red" when it arrives a few seconds later. Any miners that saw "red" first will immediately build candidate blocks that reference "red" as the parent and start trying to solve the Proof-Of-Work for these candidate blocks. The miners that accepted "green" instead, will start building on top of "green" and extending that chain. 
+
+Forks are almost always resolved within one block. As part of the network's hashing power is dedicated to building on top of "red" as the parent, another part of the hashing power is focused on building on top of "green." Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say, for example, that the miners building on top of "green" find a new block "pink" that extends the chain (e.g., blue-green-pink). They immediately propagate this new block and the entire network sees it as a valid solution as shown in <<fork4>>. 
 
 [[fork4]]
-.Visualization of a blockchain fork event - A new block extends one fork
+.Visualization of a blockchain fork event—a new block extends one fork
 image::images/msbt_0805.png["globalfork4"]
 
-Forks are almost always resolved within one block. As part of the network's hashing power is dedicated to building on top of "red" as the parent, another part of the hashing power is focused on building on top of "green". Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say for example that the miners building on top of "green" find a new block "pink" that extends the chain (e.g. blue-green-pink). They immediately propagate this new block and the entire network sees it as a valid solution. 
+All nodes that had chosen "green" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "red" as the winner, however, will now see two chains: blue-green-pink and blue-red. The chain blue-green-pink is now longer (more cumulative difficulty) than the chain blue-red. As a result, those nodes will set the chain blue-green-pink as main chain and change the blue-red chain to being a secondary chain, as shown in <<fork5>>. This is a chain reconvergence, because those nodes are forced to revise their view of the blockchain to incorporate the new evidence of a longer chain. Any miners working on extending the chain blue-red will now stop that work because their candidate block is an "orphan," as its parent "red" is no longer on the longest chain. The transactions within "red" are queued up again for processing in the next block, because that block is no longer in the main chain. The entire network re-converges on a single blockchain blue-green-pink, with "pink" as the last block in the chain. All miners immediately start working on candidate blocks that reference "pink" as their parent to extend the blue-green-pink chain.
 
 [[fork5]]
-.Visualization of a blockchain fork event - The network re-converges on a new longest chain
+.Visualization of a blockchain fork event—the network reconverges on a new longest chain
 image::images/msbt_0806.png["globalfork5"]
-
-All nodes that had chosen "green" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "red" as the winner, however, will now see two chains: blue-green-pink and blue-red. The chain blue-green-pink is now longer (more cumulative difficulty) than the chain blue-red. As a result, those nodes will set the chain blue-green-pink as main chain and change the blue-red chain to being a secondary chain. This is a chain re-convergence, as those nodes are forced to revise their view of the blockchain to incorporate the new evidence of a longer chain. Any miners working on extending the chain blue-red will now stop that work because their candidate block is an "orphan", as its parent "red" is no longer on the longest chain. The transactions within "red" are queued up again for processing in the next block, as that block is no longer in the main chain. The entire network re-converges on a single blockchain blue-green-pink, with "pink" as the last block in the chain. All miners immediately start working on candidate blocks that reference "pink" as their parent to extend the blue-green-pink chain. 
 
 It is theoretically possible for a fork to extend to two blocks, if two blocks are found almost simultaneously by miners on opposite "sides" of a previous fork. However, the chance of that happening is very low. Whereas a one-block fork may occur every week, a two-block fork is exceedingly rare.
 
@@ -760,16 +760,18 @@ Bitcoin's block interval of 10 minutes is a design compromise between fast confi
 
 === Mining and the Hashing Race
 
-Bitcoin mining is an extremely competitive industry. The hashing power has increased exponentially, every year of bitcoin's existence. Some years the growth has reflected a complete change of technology, such as in 2010 and 2011 when many miners switched from using CPU mining to Graphical Processing Unit (GPU) mining and Field Programmable Gate Array (FPGA) mining. In 2013 the introduction of Application Specific Integrated Circuit (ASIC) mining lead to another giant leap in mining power, by placing the SHA-256 function directly on silicon chips specialized for the purpose of mining. The first such chips could deliver more mining power in a single box than the entire bitcoin network in 2010. 
+Bitcoin mining is an extremely competitive industry. The hashing power has increased exponentially every year of bitcoin's existence. Some years the growth has reflected a complete change of technology, such as in 2010 and 2011 when many miners switched from using CPU mining to Graphical Processing Unit (GPU) mining and Field Programmable Gate Array (FPGA) mining. In 2013 the introduction of Application Specific Integrated Circuit (ASIC) mining lead to another giant leap in mining power, by placing the SHA256 function directly on silicon chips specialized for the purpose of mining. The first such chips could deliver more mining power in a single box than the entire bitcoin network in 2010.
 
-* 2009 - 0.5 MH/sec to 8 MH/sec (x 16 growth)
-* 2010 - 8 MH/sec to 116 GH/sec (x 14,500 growth)
-* 2011 - 16 GH/sec - 9 TH/sec (x 562 growth)
-* 2012 - 9 TH/sec - 23 TH/sec (x 2.5 growth)
-* 2013 - 23 TH/sec - 10 PH/sec (x 450 growth)
-* 2014 - 10 PH/sec - 150 PH/sec in August (x 15 growth)
+The following list shows the total hashing power of the bitcoin network, over the first five years of operation:
 
-In the chart below, we see the bitcoin network's hashing power increase over the past two years. As you can see, the competition between miners and the growth of bitcoin has resulted in an exponential increase in the hashing power (total hashes per second across the network):
+* 2009—0.5 MH/sec to 8 MH/sec (x 16 growth)
+* 2010—8 MH/sec to 116 GH/sec (x 14,500 growth)
+* 2011—16 GH/sec - 9 TH/sec (x 562 growth)
+* 2012—9 TH/sec - 23 TH/sec (x 2.5 growth)
+* 2013—23 TH/sec - 10 PH/sec (x 450 growth)
+* 2014—10 PH/sec - 150 PH/sec in August (x 15 growth)
+
+In the chart in <<network_hashing_power>>, we see the bitcoin network's hashing power increase over the past two years. As you can see, the competition between miners and the growth of bitcoin has resulted in an exponential increase in the hashing power (total hashes per second across the network).
 
 [[network_hashing_power]]
 .Total hashing power, giga-hashes per second, over two years
