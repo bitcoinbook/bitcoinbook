@@ -86,7 +86,7 @@ In the next few sections we will examine these processes and how they interact t
 [[tx_verification]]
 === Independent Verification of Transactions
 
-In Chapter 5 we saw how wallet software creates transactions by collecting UTXO, providing the appropriate unlocking scripts, and then constructing new outputs assigned to a new owner. The resulting transaction is then sent to the neighboring nodes in the bitcoin network so that it may be propagated across the entire bitcoin network. 
+In <<transactions>> we saw how wallet software creates transactions by collecting UTXO, providing the appropriate unlocking scripts, and then constructing new outputs assigned to a new owner. The resulting transaction is then sent to the neighboring nodes in the bitcoin network so that it may be propagated across the entire bitcoin network. 
 
 However, before forwarding transactions to its neighbors, every bitcoin node that receives a transaction will first verify the transaction. This ensures that only valid transactions are propagated across the network, while invalid transactions are discarded at the first node that encounters them. 
 
@@ -94,17 +94,17 @@ Each node verifies every transaction against a long checklist of criteria:
 
 * The transaction's syntax and data structure must be correct
 * Neither lists of inputs or outputs are empty
-* The transaction size in bytes is less than MAX_BLOCK_SIZE
+* The transaction size in bytes is less than +MAX_BLOCK_SIZE+
 * Each output value, as well as the total, must be within the allowed range of values (less than 21m coins, more than 0)
-* None of the inputs have hash=0, N=-1 (coinbase transactions should not be relayed)
-* nLockTime is less than or equal to INT_MAX
+* None of the inputs have hash=0, N=–1 (coinbase transactions should not be relayed)
+* <<nLockTime>> is less than or equal to <<INT_MAX>>
 * The transaction size in bytes is greater than or equal to 100
 * The number of signature operations contained in the transaction is less than the signature operation limit
-* The unlocking script (scriptSig) can only push numbers on the stack, and the locking script (scriptPubkey) must match isStandard forms (this rejects "nonstandard" transactions)
+* The unlocking script (+scriptSig+) can only push numbers on the stack, and the locking script (+scriptPubkey+) must match +isStandard+ forms (this rejects "nonstandard" transactions)
 * A matching transaction in the pool, or in a block in the main branch, must exist
 * For each input, if the referenced output exists in any other transaction in the pool, reject this transaction
-* For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool
-* For each input, if the referenced output transaction is a coinbase output, it must have at least COINBASE_MATURITY (100) confirmations 
+* For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool.
+* For each input, if the referenced output transaction is a coinbase output, it must have at least +COINBASE_MATURITY+ (100) confirmations 
 * For each input, the referenced output must exist and cannot already be spent
 * Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0)
 * Reject if the sum of input values < sum of output values
@@ -117,50 +117,50 @@ By independently verifying each transaction as it is received and before propaga
 
 === Mining Nodes
 
-Some of the nodes on the bitcoin network are specialized nodes called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced Jing, a computer engineering student in Shanghai, China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig", which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node as we will see in <<mining_pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
+Some of the nodes on the bitcoin network are specialized nodes called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced Jing, a computer engineering student in Shanghai, China, who is a bitcoin miner. Jing earns bitcoin by running a "mining rig," which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node, as we will see in <<mining_pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
     
-Jing's node is listening for new blocks, propagated on the bitcoin network, as do all nodes. However, the arrival of a new block has special significance for a mining node. The competition among miners effectively ends with the propagation of a new block which acts as an announcement of a winner. To a miner, receiving a new block means someone else won the competition and they lost. However, the end of one round of a competition is also the beginning of the next round. The new block is not just a checkered flag, marking the end of the race, it is also the starting pistol starting the race for the next block.
+Jing's node is listening for new blocks, propagated on the bitcoin network, as do all nodes. However, the arrival of a new block has special significance for a mining node. The competition among miners effectively ends with the propagation of a new block that acts as an announcement of a winner. To miners, receiving a new block means someone else won the competition and they lost. However, the end of one round of a competition is also the beginning of the next round. The new block is not just a checkered flag, marking the end of the race; it is also the starting pistol starting the race for the next block.
 
 === Aggregating Transactions into Blocks
 
-After validating transactions, a bitcoin node will add them to the _memory pool_, or _transaction pool_, where transactions await until they can be included (mined) into a block. Jing's node collects, validates and relays new transactions just like any other node. Unlike other nodes, however, Jing's node will then aggregate these transactions into a _candidate block_.
+After validating transactions, a bitcoin node will add them to the _memory pool_, or _transaction pool_, where transactions await until they can be included (mined) into a block. Jing's node collects, validates, and relays new transactions just like any other node. Unlike other nodes, however, Jing's node will then aggregate these transactions into a _candidate block_.
 
-Let's follow the blocks that were created during the time Alice bought a cup of coffee from Bob's Cafe (see <<cup_of_coffee>>). Alice's transaction was included in block 277,316. For the purpose of demonstrating the concepts in this chapter let's assume that block was mined by Jing's mining system and follow Alice's transaction as it becomes part of this new block.
+Let's follow the blocks that were created during the time Alice bought a cup of coffee from Bob's Cafe (see <<cup_of_coffee>>). Alice's transaction was included in block 277,316. For the purpose of demonstrating the concepts in this chapter, let's assume that block was mined by Jing's mining system and follow Alice's transaction as it becomes part of this new block.
 
 Jing's mining node maintains a local copy of the blockchain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain up to block 277,314. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. As Jing's node is mining, it receives block 277,315 through the bitcoin network. The arrival of this block signifies the end of the competition for block 277,315 and the beginning of the competition to create block 277,316.  
 
-During the previous 10 minutes, while Jing's node was searching for a solution to block 277,315, it was also collecting transactions in preparation for the next block. By now it has collected a few hundred transactions in the memory pool. Upon receiving block 277,315 and validating it, Jing's node will also check all the transactions in the memory pool and remove any that were included in block 277,315. Whatever transaction remain in the memory pool are unconfirmed and are waiting to be recorded in a new block. 
+During the previous 10 minutes, while Jing's node was searching for a solution to block 277,315, it was also collecting transactions in preparation for the next block. By now it has collected a few hundred transactions in the memory pool. Upon receiving block 277,315 and validating it, Jing's node will also check all the transactions in the memory pool and remove any that were included in block 277,315. Whatever transactions remain in the memory pool are unconfirmed and are waiting to be recorded in a new block. 
 
-Jing's node immediately constructs a new empty block, a candidate for block 277,316. This block is called a candidate block because it is not yet a valid block, as it does not contain a valid proof-of-work. The block becomes valid only if the miner succeeds in finding a solution to the Proof-of-Work algorithm.
+Jing's node immediately constructs a new empty block, a candidate for block 277,316. This block is called a candidate block because it is not yet a valid block, as it does not contain a valid Proof-Of-Work. The block becomes valid only if the miner succeeds in finding a solution to the Proof-Of-Work algorithm.
 
 ==== Transaction Age, Fees, and Priority
 
-To construct the candidate block Jing's bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block. 
+To construct the candidate block, Jing's bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block. 
 
 The priority of a transaction is calculated as the sum of the value and age of the inputs divided by the total size of the transaction:
 ----
 Priority = Sum (Value of input * Input Age) / Transaction Size
 ----
 
-In the equation above, the value of an input is measured in the base unit, satoshis (1/100m of a bitcoin). The age of a UTXO is the number of blocks that have elapsed since the UTXO was recorded on the blockchain, measuring how many blocks "deep" into the blockchain it is. The size of the transaction is measured in bytes.
+In this equation, the value of an input is measured in the base unit, satoshis (1/100m of a bitcoin). The age of a UTXO is the number of blocks that have elapsed since the UTXO was recorded on the blockchain, measuring how many blocks "deep" into the blockchain it is. The size of the transaction is measured in bytes.
 
-For a transaction to be considered "high priority" its priority must be greater than 57,600,000, which corresponds to one bitcoin (100m satoshis), aged one day (144 blocks) in a transaction of 250 bytes total size.
+For a transaction to be considered "high priority" its priority must be greater than 57,600,000, which corresponds to one bitcoin (100m satoshis), aged one day (144 blocks) in a transaction of 250 bytes total size:
 
 ----
 High Priority > 100,000,000 satoshis * 144 blocks / 250 bytes = 57,600,000
 ----
 
-The first 50 kilobytes of transaction space in a block are set aside for high priority transactions. Jing's node will fill the first 50 kilobytes, prioritizing the highest priority transactions first, regardless of fee. This allows high-priority transactions to be processed even if they carry zero fees.
+The first 50 kilobytes of transaction space in a block are set aside for high-priority transactions. Jing's node will fill the first 50 kilobytes, prioritizing the highest priority transactions first, regardless of fee. This allows high-priority transactions to be processed even if they carry zero fees.
 
-Jing's mining node then fills the rest of the block up to the maximum block size (MAX_BLOCK_SIZE in the code), with transactions that carry at least the minimum fee, prioritizing those with the highest fee per kilobyte of transaction.
+Jing's mining node then fills the rest of the block up to the maximum block size (+MAX_BLOCK_SIZE+ in the code), with transactions that carry at least the minimum fee, prioritizing those with the highest fee per kilobyte of transaction.
 
 If there is any space remaining in the block, Jing's mining node may choose to fill it with no-fee transactions. Some miners choose to mine transactions without fees on a best-effort basis. Other miners may choose to ignore transactions without fees. 
 
-Any transactions left in the memory pool, after the block is filled, will remain in the pool for inclusion in the next block. As transactions remain in the memory pool, their inputs "age", as the UTXO they spend get deeper into the blockchain with new blocks added on top. Since a transaction's priority depends on the age of its inputs, transactions remaining in the pool will age and therefore increase in priority. Eventually a transaction without fees may reach a high enough priority to be included in the block for free. 
+Any transactions left in the memory pool, after the block is filled, will remain in the pool for inclusion in the next block. As transactions remain in the memory pool, their inputs "age," as the UTXO they spend get deeper into the blockchain with new blocks added on top. Because a transaction's priority depends on the age of its inputs, transactions remaining in the pool will age and therefore increase in priority. Eventually a transaction without fees may reach a high enough priority to be included in the block for free. 
 
-Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, as it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software are expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time.
+Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, because it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software are expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time.
 
-When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the blockchain using the Bitcoin Core client command line interface:
+When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the blockchain using the Bitcoin Core client command-line interfaceas shown in <<source,bash>>.
 ====
 [source,bash]
 ----
