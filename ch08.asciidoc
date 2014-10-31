@@ -394,15 +394,15 @@ To construct the block header, the mining node needs to fill in six fields, as l
 | 4 bytes | Nonce | A counter used for the Proof-Of-Work algorithm
 |=======
 
-At the time block 277,316 was mined, the version number describing the block structure is version "2", which is encoded in little-endian format in 4 bytes as +0x02000000+. 
+At the time block 277,316 was mined, the version number describing the block structure is version "2," which is encoded in little-endian format in 4 bytes as +0x02000000+. 
 
-Next, the mining node needs to add the "Previous Block Hash". That is the hash of the block header of block 277,315, the previous block received from the network, which Jing's node has accepted and selected as the parent of the candidate block 277,316. The block header hash for block 277,315 is +0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569+. 
+Next, the mining node needs to add the "Previous Block Hash." That is the hash of the block header of block 277,315, the previous block received from the network, which Jing's node has accepted and selected as the parent of the candidate block 277,316. The block header hash for block 277,315 is +0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569+. 
 
-The next step is to summarize all the transactions with a Merkle Tree, in order to add the Merkle Root to the block header. The generation transaction is listed as the first transaction in the block. Then, 418 more transactions are added after it, for a total of 419 transactions in the block. As we saw in the <<merkle_trees>>, there must be an even number of "leaf" nodes in the tree, so the last transaction is duplicated, creating 420 nodes, each containing the hash of one transaction. The transaction hashes are then combined, in pairs, creating each level of the tree, until all the transactions are summarized into one node at the "root" of the tree. The root of the merkle tree summarizes all the transactions into a single 32 byte value +c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e+ which you can see listed as "merkle root" in <<block277316>>
+The next step is to summarize all the transactions with a merkle tree, in order to add the merkle root to the block header. The generation transaction is listed as the first transaction in the block. Then, 418 more transactions are added after it, for a total of 419 transactions in the block. As we saw in the <<merkle_trees>>, there must be an even number of "leaf" nodes in the tree, so the last transaction is duplicated, creating 420 nodes, each containing the hash of one transaction. The transaction hashes are then combined, in pairs, creating each level of the tree, until all the transactions are summarized into one node at the "root" of the tree. The root of the merkle tree summarizes all the transactions into a single 32-byte value +c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e+, which you can see listed as "merkle root" in <<block277316>>.
     
 The mining node will then add a 4-byte timestamp, encoded as a Unix "Epoch" timestamp, which is based on the number of seconds elapsed from January 1st, 1970, midnight UTC/GMT. The time +1388185914+ is equal to Friday, 27 Dec 2013, 23:11:54 UTC/GMT.
 
-The node then fills in the difficulty target, which defines the required Proof-of-Work difficulty to make this a valid block. The difficulty is stored in the block as a "difficulty bits" metric, which is a mantissa-exponent encoding of the target. The encoding has a one-byte exponent, followed by a 3 byte mantissa (coefficient). In block 277,316, for example, the difficulty bits value is +0x1903a30c+. The first part +0x19+ is a hexadecimal exponent, while the next part +0x03a30c+ is the coefficient. The concept of a difficulty target is explained in <<difficulty_target>> and the "difficulty bits" representation is explained in <<difficulty_bits>>.
+The node then fills in the difficulty target, which defines the required Proof-Of-Work difficulty to make this a valid block. The difficulty is stored in the block as a "difficulty bits" metric, which is a mantissa-exponent encoding of the target. The encoding has a 1-byte exponent, followed by a 3-byte mantissa (coefficient). In block 277,316, for example, the difficulty bits value is +0x1903a30c+. The first part +0x19+ is a hexadecimal exponent, while the next part +0x03a30c+ is the coefficient. The concept of a difficulty target is explained in <<difficulty_target>> and the "difficulty bits" representation is explained in <<difficulty_bits>>.
 
 The final field is the nonce, which is initialized to zero. 
 
@@ -410,18 +410,18 @@ With all the other fields filled, the block header is now complete and the proce
 
 === Mining the Block
 
-Now that a candidate block has been constructed by Jing's node, it is time for Jing's hardware mining rig to "mine" the block, to find a solution to the Proof-of-Work algorithm that makes the block valid. Throughout this book we have studied cryptographic hash functions as used in various aspects of the bitcoin system. The hash function SHA-256 is the function used in bitcoin's mining process. 
+Now that a candidate block has been constructed by Jing's node, it is time for Jing's hardware mining rig to "mine" the block, to find a solution to the Proof-Of-Work algorithm that makes the block valid. Throughout this book we have studied cryptographic hash functions as used in various aspects of the bitcoin system. The hash function SHA256 is the function used in bitcoin's mining process. 
 
 In the simplest terms, mining is the process of hashing the block header repeatedly, changing one parameter, until the resulting hash matches a specific target. The hash function's result cannot be determined in advance, nor can a pattern be created that will produce a specific hash value. This feature of hash functions means that the only way to produce a hash result matching a specific target, is to try again and again, randomly modifying the input until the desired hash result appears by chance. 
 
-==== Proof-of-Work Algorithm
+==== Proof-Of-Work Algorithm
 
 A hash algorithm takes an arbitrary-length data input and produces a fixed-length deterministic result, a digital fingerprint of the input. For any specific input, the resulting hash will always be the same and can be easily calculated and verified by anyone implementing the same hash algorithm. The key characteristic of a cryptographic hash algorithm is that it is virtually impossible to find two different inputs that produce the same fingerprint. As a corollary, it is also virtually impossible to select an input in such a way as to produce a desired fingerprint, other than trying random inputs.
 
-With SHA-256, the output is always 256 bits long, regardless of the size of the input. In the example below, we will use the Python interpreter to calculate the SHA256 hash of the phrase "I am Satoshi Nakamoto". 
+With SHA256, the output is always 256 bits long, regardless of the size of the input. In <<sha256_example1>>, we will use the Python interpreter to calculate the SHA256 hash of the phrase "I am Satoshi Nakamoto." 
 
 [[sha256_example1]]
-.SHA256 Example
+.SHA256 example
 ====
 [source,bash]
 ----
@@ -436,9 +436,9 @@ Python 2.7.1
 ----
 ====
 
-The example shows that if we calculate the hash of the phrase +"I am Satoshi Nakamoto"+, it will produce +5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e+. This 256-bit number is the _hash_ or _digest_ of the phrase and depends on every part of the phrase. Adding a single letter, punctuation mark or any character will produce a different hash.
+The example shows that if we calculate the hash of the phrase +"I am Satoshi Nakamoto"+, it will produce +5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e+. This 256-bit number is the _hash_ or _digest_ of the phrase and depends on every part of the phrase. Adding a single letter, punctuation mark, or any character will produce a different hash.
 
-Now, if we change the phrase, we will expect to see completely different hashes. Let's try that by adding a number to the end of our phrase, using this simple Python script
+Now, if we change the phrase, we will expect to see completely different hashes. Let's try that by adding a number to the end of our phrase, using the simple Python scriptin <<sha256_example_generator>>.
 
 [[sha256_example_generator]]
 .SHA256 A script for generating many hashes by iterating on a nonce
@@ -449,7 +449,7 @@ include::code/hash_example.py[]
 ----
 ====
 
-Running this will produce the hashes of several phrases, made different by adding a number at the end of the text. By incrementing the number, we can get different hashes.
+Running this will produce the hashes of several phrases, made different by adding a number at the end of the text. By incrementing the number, we can get different hashes, as shown in <<sha256_example_generator_output>>.
 
 ((("nonce")))
 [[sha256_example_generator_output]]
