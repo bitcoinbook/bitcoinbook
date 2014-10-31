@@ -4,19 +4,19 @@
 
 === Introduction
 
-The blockchain data structure is an ordered back-linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. Blocks are linked "back", each referring to the previous block in the chain. The blockchain is often visualized as a vertical stack, with blocks layered on top of each other and the first block ever serving as the foundation of the stack. The visualization of blocks stacked on top of each other results in the use of terms like "height" to refer to the distance from the first block, and "top" or "tip" to refer to the most recently added block. 
+The blockchain data structure is an ordered back-linked list of blocks of transactions. The blockchain can be stored as a flat file, or in a simple database. The bitcoin core client stores the blockchain metadata using Google's LevelDB database. Blocks are linked "back," each referring to the previous block in the chain. The blockchain is often visualized as a vertical stack, with blocks layered on top of each other and the first block serving as the foundation of the stack. The visualization of blocks stacked on top of each other results in the use of terms like "height" to refer to the distance from the first block, and "top" or "tip" to refer to the most recently added block. 
 
-Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent, creates a chain going back all the way to the first block ever created, known as the _genesis block_. 
+Each block within the blockchain is identified by a hash, generated using the SHA256 cryptographic hash algorithm on the header of the block. Each block also references a previous block, known as the _parent_ block, through the "previous block hash" field in the block header. In other words, each block contains the hash of its parent inside its own header. The sequence of hashes linking each block to its parent creates a chain going back all the way to the first block ever created, known as the _genesis block_. 
 
-While a block has just one parent, it can temporarily have multiple children. Each of the children refers to the same block as its parent and contains the same (parent) hash in the "previous block hash" field. Multiple children arise during a blockchain "fork", a temporary situation that occurs when different blocks are discovered almost simultaneously by different miners (see <<forks>>). Eventually, only one child block becomes part of the blockchain and the "fork" is resolved. Even though a block may have more than one child, each block can have only one parent. This is because a block has one single "previous block hash" field referencing its single parent. 
+Although a block has just one parent, it can temporarily have multiple children. Each of the children refers to the same block as its parent and contains the same (parent) hash in the "previous block hash" field. Multiple children arise during a blockchain "fork," a temporary situation that occurs when different blocks are discovered almost simultaneously by different miners (see <<forks>>). Eventually, only one child block becomes part of the blockchain and the "fork" is resolved. Even though a block may have more than one child, each block can have only one parent. This is because a block has one single "previous block hash" field referencing its single parent. 
 
-The "previous block hash" field is inside the block header and thereby affects the _current_ block's hash. The child's own identity changes if the parent's identity changes. When the parent is modified in any way, the parent's hash changes. The parent's changed hash necessitates a change in the "previous block hash" pointer of the child. This in turn causes the child's hash to change, which requires a change in the pointer of the grandchild, which in turn changes the grandchild and so on. This cascade effect ensures that once a block has many generations following it, it cannot be changed without forcing a recalculation of all subsequent blocks. Because such a recalculation would require enormous computation, the existence of a long chain of blocks makes the blockchain's deep history immutable, a key feature of bitcoin's security. 
+The "previous block hash" field is inside the block header and thereby affects the _current_ block's hash. The child's own identity changes if the parent's identity changes. When the parent is modified in any way, the parent's hash changes. The parent's changed hash necessitates a change in the "previous block hash" pointer of the child. This in turn causes the child's hash to change, which requires a change in the pointer of the grandchild, which in turn changes the grandchild, and so on. This cascade effect ensures that once a block has many generations following it, it cannot be changed without forcing a recalculation of all subsequent blocks. Because such a recalculation would require enormous computation, the existence of a long chain of blocks makes the blockchain's deep history immutable, which is a key feature of bitcoin's security. 
 
-One way to think about the blockchain is like layers in a geological formation, or glacier core sample. The surface layers may change with the seasons, or even be blown away before they have time to settle. But once you go a few inches deep, geological layers become more and more stable. By the time you look a few hundred feet down, you are looking at a snapshot of the past that has remained undisturbed for millennia or millions of years. In the blockchain, the most recent few blocks may be revised if there is a chain recalculation due to a fork. The top six blocks are like a few inches of topsoil. But once you go deeper into the blockchain, beyond 6 blocks, blocks are less and less likely to change. After 100 blocks back there is so much stability that the "coinbase" transaction, the transaction containing newly-mined bitcoins, can be spent. A few thousand blocks back (a month) and the blockchain is settled history. It will never change.  
+One way to think about the blockchain is like layers in a geological formation, or glacier core sample. The surface layers may change with the seasons, or even be blown away before they have time to settle. But once you go a few inches deep, geological layers become more and more stable. By the time you look a few hundred feet down, you are looking at a snapshot of the past that has remained undisturbed for millennia or millions of years. In the blockchain, the most recent few blocks may be revised if there is a chain recalculation due to a fork. The top six blocks are like a few inches of topsoil. But once you go deeper into the blockchain, beyond six blocks, blocks are less and less likely to change. After 100 blocks back there is so much stability that the "coinbase" transaction, the transaction containing newly mined bitcoins, can be spent. A few thousand blocks back (a month) and the blockchain is settled history. It will never change.  
 
 === Structure of a Block
 
-A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of its size. The block header is 80 bytes, whereas the average transaction is at least 250 bytes and the average block contains more than 500 transactions. A complete block, with all transactions, is therefore 1000 times larger than the block header. 
+A block is a container data structure that aggregates transactions for inclusion in the public ledger, the blockchain. The block is made of a header, containing metadata, followed by a long list of transactions that make up the bulk of its size. The block header is 80 bytes, whereas the average transaction is at least 250 bytes and the average block contains more than 500 transactions. A complete block, with all transactions, is therefore 1000 times larger than the block header. <<block_structure1>> describes the structure of a block.
 
 [[block_structure1]]
 .The structure of a block
@@ -24,7 +24,7 @@ A block is a container data structure that aggregates transactions for inclusion
 |=======
 |Size| Field | Description
 | 4 bytes | Block Size | The size of the block, in bytes, following this field
-| 80 bytes | Block Header | Several fields form the block header (see below)
+| 80 bytes | Block Header | Several fields form the block header
 | 1-9 bytes (VarInt) | Transaction Counter | How many transactions follow
 | Variable | Transactions | The transactions recorded in this block
 |=======
@@ -32,7 +32,7 @@ A block is a container data structure that aggregates transactions for inclusion
 [[block_header]]
 === Block Header
 
-The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. We will examine this in more detail in <<blockchain>>. The second set of metadata, namely the difficulty, timestamp and nonce, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the Merkle Tree root, a data structure used to efficiently summarize all the transactions in the block. 
+The block header consists of three sets of block metadata. First, there is a reference to a previous block hash, which connects this block to the previous block in the blockchain. The second set of metadata, namely the _difficulty_, _timestamp_, and _nonce_, relate to the mining competition, as detailed in <<mining>>. The third piece of metadata is the merkle tree root, a data structure used to efficiently summarize all the transactions in the block. 
         
 [[block_header_structure_ch07]]
 .The structure of the block header
@@ -41,24 +41,24 @@ The block header consists of three sets of block metadata. First, there is a ref
 |Size| Field | Description
 | 4 bytes | Version | A version number to track software/protocol upgrades
 | 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
-| 32 bytes | Merkle Root | A hash of the root of the Merkle-Tree of this block's transactions
+| 32 bytes | Merkle Root | A hash of the root of the merkle tree of this block's transactions
 | 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
-| 4 bytes | Difficulty Target | The proof-of-work algorithm difficulty target for this block
-| 4 bytes | Nonce | A counter used for the proof-of-work algorithm
+| 4 bytes | Difficulty Target | The Proof-Of-Work algorithm difficulty target for this block
+| 4 bytes | Nonce | A counter used for the Proof-Of-Work algorithm
 |=======
 
-The Nonce, Difficulty Target, and Timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
+The nonce, difficulty target, and timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
 
 [[block_hash]]
-=== Block Identifiers - Block Header Hash and Block Height
+=== Block Identifiers—Block Header Hash and Block Height
 
-The primary identifier of a block is its cryptographic hash, a digital fingerprint, made by hashing the block header twice through the SHA256 algorithm. The resulting 32-byte hash, is called the _block hash_, but is more accurately the _block *header* hash_, as only the block header is used to compute it. For example, the block hash of the first bitcoin block ever created is +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. The block hash identifies a block uniquely and unambiguously and can be independently derived by any node by simply hashing the block header. 
+The primary identifier of a block is its cryptographic hash, a digital fingerprint, made by hashing the block header twice through the SHA256 algorithm. The resulting 32-byte hash, is called the _block hash_ but is more accurately the _block header hash_, because only the block header is used to compute it. For example, the block hash of the first bitcoin block ever created is +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. The block hash identifies a block uniquely and unambiguously and can be independently derived by any node by simply hashing the block header. 
 
 Note that the block hash is not actually included inside the block's data structure, neither when the block is transmitted on the network, nor when it is stored on a node's persistence storage as part of the blockchain. Instead, the block's hash is computed by each node as the block is received from the network. The block hash may be stored in a separate database table as part of the block's metadata, to facilitate indexing and faster retrieval of blocks from disk.
 
-A second way to identify a block is by its position in the blockchain, called the _block height_. The first block ever created is at block height 0 (zero) and is the same block that was referenced by the block hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ above. A block can thus be identified two ways, either by referencing the block hash, or by referencing the block height. Each subsequent block added "on top" of that first block is one position "higher" in the blockchain, like boxes stacked one on top of the other. The block height on January 1st 2014 was approximately 278,000, meaning there were 278,000 blocks stacked on top of the first block created in January 2009. 
+A second way to identify a block is by its position in the blockchain, called the _block height_. The first block ever created is at block height 0 (zero) and is the same block that was referenced by the block hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ previously. A block can thus be identified two ways, either by referencing the block hash or by referencing the block height. Each subsequent block added "on top" of that first block is one position "higher" in the blockchain, like boxes stacked one on top of the other. The block height on January 1st 2014 was approximately 278,000, meaning there were 278,000 blocks stacked on top of the first block created in January 2009. 
 
-Unlike the block hash, the block height is not a unique identifier. While a single block will always have a specific and invariant block height, the reverse is not true - the block height does not always identify a single block. Two or more blocks may have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section on <<forks>>. The block height is also not a part of the block's data structure; it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the bitcoin network. The block height may also be stored as metadata in an indexed database table for faster retrieval. 
+Unlike the block hash, the block height is not a unique identifier. While a single block will always have a specific and invariant block height, the reverse is not true—the block height does not always identify a single block. Two or more blocks may have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section <<forks>>. The block height is also not a part of the block's data structure; it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the bitcoin network. The block height may also be stored as metadata in an indexed database table for faster retrieval. 
     
 [TIP]
 ====
@@ -69,11 +69,9 @@ A block's _block hash_ always identifies a single block uniquely. A block also a
 
 The first block in the blockchain is called the _genesis block_ and was created in 2009. It is the "common ancestor" of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backwards in time, you will eventually arrive at the _genesis block_. 
 
-Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
+Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created, and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain. 
 
-See the statically encoded genesis block inside the Bitcoin Core client, in chainparams.cpp:
-
-https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123
+See the statically encoded genesis block inside the Bitcoin Core client, in https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123[chainparams.cpp].
 
 The genesis block has the identifier hash +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. You can search for that block hash in any block explorer website, such as blockchain.info, and you will find a page describing the contents of this block, with a URL containing that hash:
 
@@ -81,7 +79,7 @@ https://blockchain.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172
 
 https://blockexplorer.com/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 
-Using the Bitcoin Core reference client on the command-line:
+Using the Bitcoin Core reference client on the command line:
 
 [source,bash]
 ----
@@ -107,11 +105,11 @@ $ bitcoind getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8c
 }
 ----
 
-The genesis block contains a hidden message within it. The coinbase transaction input contains the text "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks". This message provides proof of the earliest date this block was created, by referencing the headline of the british newspaper _The Times_. It also serves as a tongue-in-cheek reminder of the importance of an independent monetary system, with bitcoin's launch occurring at the same time as an unprecedented worldwide monetary crisis. The message was embedded in the first block by Satoshi Nakamoto, bitcoin's creator. 
+The genesis block contains a hidden message within it. The coinbase transaction input contains the text "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks." This message provides proof of the earliest date this block was created, by referencing the headline of the British newspaper _The Times_. It also serves as a tongue-in-cheek reminder of the importance of an independent monetary system, with bitcoin's launch occurring at the same time as an unprecedented worldwide monetary crisis. The message was embedded in the first block by Satoshi Nakamoto, bitcoin's creator. 
 
 === Linking Blocks in the Blockchain
 
-Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As a node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, a node will examine the incoming block header and look for the "previous block hash".
+Bitcoin nodes maintain a local copy of the blockchain, starting at the genesis block. The local copy of the blockchain is constantly updated as new blocks are found and used to extend the chain. As a node receives incoming blocks from the network, it will validate these blocks and then link them to the existing blockchain. To establish a link, a node will examine the incoming block header and look for the "previous block hash."
 
 Let's assume, for example, that a node has 277,314 blocks in the local copy of the blockchain. The last block the node knows about is block 277,314, with a block header hash of +00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249+. 
 
@@ -139,7 +137,7 @@ The bitcoin node then receives a new block from the network, which it parses as 
 }
 ----
 
-Looking at this new block, the node finds the "previousblockhash" field, which contains the hash of its parent block. It is a hash known to the node, that of the last block on the chain at height 277,314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. The node adds this new block to the end of the chain, making the blockchain longer with a new height of 277,315. 
+Looking at this new block, the node finds the +previousblockhash+ field, which contains the hash of its parent block. It is a hash known to the node, that of the last block on the chain at height 277,314. Therefore, this new block is a child of the last block on the chain and extends the existing blockchain. The node adds this new block to the end of the chain, making the blockchain longer with a new height of 277,315. <<chain_of_blocks>> shows the chain of three blocks, linked by references in the previousblockhash field.
 
 [[chain_of_blocks]]
 .Blocks linked in a chain, by reference to the previous block header hash
@@ -148,15 +146,15 @@ image::images/msbt_0701.png["chain_of_blocks"]
 [[merkle_trees]]
 === Merkle Trees
 
-Each block in the bitcoin blockchain contains a summary of all the transactions in the block, using a _Merkle Tree_.
+Each block in the bitcoin blockchain contains a summary of all the transactions in the block, using a _merkle tree_.
 
-A _Merkle Tree_, also known as a _Binary Hash Tree_ is a data structure used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow.
+A _merkle tree_, also known as a _binary hash tree_, is a data structure used for efficiently summarizing and verifying the integrity of large sets of data. Merkle Trees are binary trees containing cryptographic hashes. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow.
 
 Merkle trees are used in bitcoin to summarize all the transactions in a block, producing an overall digital fingerprint of the entire set of transactions, providing a very efficient process to verify if a transaction is included in a block. A merkle tree is constructed by recursively hashing pairs of nodes until there is only one hash, called the _root_, or _merkle root_. The cryptographic hash algorithm used in bitcoin's merkle trees is SHA256 applied twice, also known as double-SHA256. 
 
-When N data elements are hashed and summarized in a Merkle Tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure.  
+When N data elements are hashed and summarized in a merkle tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure.  
 
-The merkle tree is constructed bottom-up. In the example below, we start with four transactions A, B, C and D, which form the _leaves_ of the Merkle Tree, shown in the diagram at the bottom. The transactions are not stored in the merkle tree, rather their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~ and H~D~:
+The merkle tree is constructed bottom-up. In the following example, we start with four transactions, A, B, C and D, which form the _leaves_ of the Merkle Tree, as shown in <<simple_merkle>>. The transactions are not stored in the merkle tree; rather, their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~, and H~D~:
 
 +H~A~ = SHA256(SHA256(Transaction A))+
 
@@ -167,7 +165,7 @@ Consecutive pairs of leaf nodes are then summarized in a parent node, by concate
 The process continues until there is only one node at the top, the node known as the Merkle Root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
 
 [[simple_merkle]]
-.Calculating the nodes in a Merkle Tree
+.Calculating the nodes in a merkle tree
 image::images/msbt_0702.png["merkle_tree"]
 
 Since the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash will be duplicated to create an even number of leaf nodes, also known as a _balanced tree_. This is shown in the example below, where transaction C is duplicated:
