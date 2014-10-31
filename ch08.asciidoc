@@ -580,11 +580,11 @@ At the time of writing this, the network is attempting to find a block whose hea
 [[difficulty_bits]]
 ==== Difficulty Representation
 
-In <<block277316>> we saw that the block contains the difficulty target, in a notation called "difficulty bits" or just "bits", which in block 277,316 has the value of +0x1903a30c+. This notation expresses the difficulty target as a coefficient/exponent format, with the first two hexadecimal digits for the exponent and the next six hex digits as the coefficient. In this block, therefore, the exponent is +0x19+ and the coefficient is +0x03a30c+.
+In <<block277316>> we saw that the block contains the difficulty target, in a notation called "difficulty bits" or just "bits," which in block 277,316 has the value of +0x1903a30c+. This notation expresses the difficulty target as a coefficient/exponent format, with the first two hexadecimal digits for the exponent and the next six hex digits as the coefficient. In this block, therefore, the exponent is +0x19+ and the coefficient is +0x03a30c+.
     
 The formula to calculate the difficulty target from this representation is:
 
-target = coefficient * 2^(8 * (exponent - 3))
+target = coefficient * 2^(8 * (exponent – 3))
 
 Using that formula, and the difficulty bits value 0x1903a30c, we get:
 
@@ -607,22 +607,22 @@ switching back to hexadecimal:
 This means that a valid block for height 277,316 is one that has a block header hash that is less than the target. In binary that number would have more than the first 60 bits set to zero. With this level of difficulty, a single miner processing 1 trillion hashes per second (1 tera-hash per second or 1 TH/sec) would only find a solution once every 8,496 blocks or once every 59 days, on average. 
 
 [[difficulty_target]]
-==== Difficulty Target and Re-Targeting
+==== Difficulty Target and Retargeting
 
-As we saw above the target determines the difficulty and therefore affects how long it takes to find a solution to the Proof-of-Work algorithm. This leads to the obvious questions: Why is the difficulty adjustable, who adjusts it and how?
+As we saw, the target determines the difficulty and therefore affects how long it takes to find a solution to the Proof-Of-Work algorithm. This leads to the obvious questions: Why is the difficulty adjustable, who adjusts it, and how?
 
 Bitcoin's blocks are generated every 10 minutes, on average. This is bitcoin's heartbeat and underpins the frequency of currency issuance and the speed of transaction settlement. It has to remain constant not just over the short term, but over a period of many decades. Over this time, it is expected that computer power will continue to increase at a rapid pace. Furthermore, the number of participants in mining and the computers they use will also constantly change. To keep the block generation time at 10 minutes, the difficulty of mining must be adjusted to account for these changes. In fact, difficulty is a dynamic parameter that will be periodically adjusted to meet a 10-minute block target. In simple terms, the difficulty target is set to whatever mining power will result in a 10-minute block interval. 
 
-How then is such an adjustment made in a completely de-centralized network? Difficulty re-targeting occurs automatically and on every full node independently. Every 2016 blocks, all nodes re-target the Proof-of-Work difficulty. The equation for retargeting difficulty measures the time it took to find the last 2016 blocks and compares that to the expected time of 20160 minutes (two weeks based upon a desired 10 minute block time). The ratio between the actual timespan and desired timespan is calculated and a corresponding adjustment (up or down) is made to the difficulty. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty decreases. 
+How then is such an adjustment made in a completely decentralized network? Difficulty retargeting occurs automatically and on every full node independently. Every 2,016 blocks, all nodes retarget the Proof-Of-Work difficulty. The equation for retargeting difficulty measures the time it took to find the last 2,016 blocks and compares that to the expected time of 20,160 minutes (two weeks based upon a desired 10-minute block time). The ratio between the actual timespan and desired timespan is calculated and a corresponding adjustment (up or down) is made to the difficulty. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty decreases. 
 
 The equation can be summarized as:
 
 New Difficulty = Old Difficulty * (Actual Time of Last 2016 Blocks / 20160 minutes)
 
-Here's the code used in the Bitcoin Core client
+<<retarget_difficulty_code>> shows the code used in the Bitcoin Core client.
 
 [[retarget_difficulty_code]]
-.Re-targeting the Proof-of-Work difficulty - +GetNextWorkRequired()+ in +pow.cpp+, line 43
+.Retargeting the Proof-Of-Work difficulty—GetNextWorkRequired() in pow.cpp, line 43
 ====
 [source,cpp]
 ----
@@ -655,92 +655,92 @@ if (bnNew > Params().ProofOfWorkLimit())
 ----
 ====
 
-The parameters Interval (2016 blocks) and TargetTimespan (two weeks as 1,209,600 seconds) are defined in +chainparams.cpp+
+The parameters Interval (2,016 blocks) and TargetTimespan (two weeks as 1,209,600 seconds) are defined in _chainparams.cpp_.
 
-To avoid extreme volatility in the difficulty, the retargeting adjustment must be less than a factor of four (4) per cycle. If the required difficulty adjustment is greater than a factor of four, it will be adjusted by the maximum and not more. Any further adjustment will be accomplished in the next retargeting period as the imbalance will persist through the next 2016 blocks. Therefore, large discrepancies between hashing power and difficulty may take several 2016 block cycles to balance out. 
+To avoid extreme volatility in the difficulty, the retargeting adjustment must be less than a factor of four (4) per cycle. If the required difficulty adjustment is greater than a factor of four, it will be adjusted by the maximum and not more. Any further adjustment will be accomplished in the next retargeting period because the imbalance will persist through the next 2,016 blocks. Therefore, large discrepancies between hashing power and difficulty may take several 2,016 block cycles to balance out. 
 
 [TIP]
 ====
-The difficulty of finding a bitcoin block is approximately '10 minutes of processing' for the entire network, based on the time it took to find the previous 2016 blocks, adjusted every 2016 blocks.
+The difficulty of finding a bitcoin block is approximately '10 minutes of processing' for the entire network, based on the time it took to find the previous 2,016 blocks, adjusted every 2,016 blocks.
 ====
 
-Note that the target difficulty is independent of the number of transactions or the value of transactions. This means that the amount of hashing power and therefore electricity expended to secure bitcoin is also entirely independent of the number of transactions. Bitcoin can scale up, achieve broader adoption and remain secure without any increase in hashing power from today's level. The increase in hashing power represents market forces as new miners enter the market to compete for the reward. As long as enough hashing power is under the control of miners acting honestly in pursuit of the reward, it is enough to prevent "takeover" attacks and therefore it is enough to secure bitcoin. 
+Note that the target difficulty is independent of the number of transactions or the value of transactions. This means that the amount of hashing power and therefore electricity expended to secure bitcoin is also entirely independent of the number of transactions. Bitcoin can scale up, achieve broader adoption, and remain secure without any increase in hashing power from today's level. The increase in hashing power represents market forces as new miners enter the market to compete for the reward. As long as enough hashing power is under the control of miners acting honestly in pursuit of the reward, it is enough to prevent "takeover" attacks and, therefore, it is enough to secure bitcoin. 
 
-The target difficulty is closely related to the cost of electricity and the exchange rate of bitcoin vis-a-vis the currency used to pay for electricity. High performance mining systems are about as efficient as possible with the current generation of silicon fabrication, converting electricity into hashing computation at the highest rate possible. The primary influence on the mining market is the price of one kilowatt-hour in bitcoin, as that determines the profitability of mining and therefore the incentives to enter or exit the mining market.
+The target difficulty is closely related to the cost of electricity and the exchange rate of bitcoin vis-a-vis the currency used to pay for electricity. High-performance mining systems are about as efficient as possible with the current generation of silicon fabrication, converting electricity into hashing computation at the highest rate possible. The primary influence on the mining market is the price of one kilowatt-hour in bitcoin, because that determines the profitability of mining and therefore the incentives to enter or exit the mining market.
 
 === Successfully Mining the Block
 
 As we saw earlier, Jing's node has constructed a candidate block and prepared it for mining. Jing has several hardware mining rigs with Application Specific Integrated Circuits, where hundreds of thousands of integrated circuits run the SHA-256 algorithm in parallel at incredible speeds. These specialized machines are connected to his mining node over USB. Next, the mining node running on Jing's desktop transmits the block header to his mining hardware, which start testing trillions of nonces per second. 
 
-Almost eleven minutes after starting to mine block 277,316, one of the hardware mining machines finds a solution and sends it back to the mining node. The nonce 4,215,469,401 when inserted into the block header produces a block hash of +0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569+, which is less than the target of +0000000000000003A30C00000000000000000000000000000000000000000000+.
+Almost 11 minutes after starting to mine block 277,316, one of the hardware mining machines finds a solution and sends it back to the mining node. The nonce 4,215,469,401 when inserted into the block header produces a block hash of +0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569+, which is less than the target of +0000000000000003A30C00000000000000000000000000000000000000000000+.
 
-Immediately, Jing's mining node transmits the block to all its peers. They receive, validate and then propagate the new block. As the block ripples out across the network, each node adds it to its own copy of the blockchain, extending it to a new height of 277,316 blocks. As mining nodes receive and validate the block, they abandon their efforts to find a block at the same height and immediately start computing the next block in the chain. 
+Immediately, Jing's mining node transmits the block to all its peers. They receive, validate, and then propagate the new block. As the block ripples out across the network, each node adds it to its own copy of the blockchain, extending it to a new height of 277,316 blocks. As mining nodes receive and validate the block, they abandon their efforts to find a block at the same height and immediately start computing the next block in the chain. 
 
-In the next section we'll look at the process each node uses to validate a block and select the longest chain, creating the consensus that forms the de-centralized blockchain.
+In the next section we'll look at the process each node uses to validate a block and select the longest chain, creating the consensus that forms the decentralized blockchain.
 
 === Validating a New Block
 
-The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the blockchain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward but also waste the effort expended to find a Proof-of-Work solution, thus incurring the cost of electricity without compensation. 
+The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the blockchain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward, but also waste the effort expended to find a Proof-Of-Work solution, thus incurring the cost of electricity without compensation. 
 
-When a node receives a new block, it will validate the block by checking it against a long list of criteria that must all be met; otherwise the block is rejected. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
+When a node receives a new block, it will validate the block by checking it against a long list of criteria that must all be met; otherwise, the block is rejected. These criteria can be seen in the Bitcoin Core client in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
 
 * The block data structure is syntactically valid
-* The block header hash is less than the target difficulty (enforces the Proof-of-Work)
+* The block header hash is less than the target difficulty (enforces the Proof-Of-Work)
 * The block timestamp is less than two hours in the future (allowing for time errors)
 * The block size is within acceptable limits
 * The first transaction (and only the first) is a coinbase generation transaction
 * All transactions within the block are valid using the transaction checklist discussed in <<tx_verification>>
 
-The independent validation of each new block by every node on the network ensures that the miners can't cheat. In previous sections we saw how the miners get to write a transaction that awards them the new bitcoins created within the block and claim the transaction fees. Why doesn't the miner write themselves a transaction for a thousand bitcoin instead of the correct reward? Because every node validates blocks according to the same rules. An invalid coinbase transaction would make the entire block invalid, which would result in the block being rejected and therefore that transaction would never become part of the ledger. The miner has to construct a perfect block, based on the shared rules that all nodes follow and mine it with a correct solution to the Proof-of-Work. To do so they expend a lot of electricity in mining and if they cheat all the electricity and effort is wasted. This is why independent validation is a key component of decentralized consensus.
+The independent validation of each new block by every node on the network ensures that the miners can't cheat. In previous sections we saw how the miners get to write a transaction that awards them the new bitcoins created within the block and claim the transaction fees. Why don't miners write themselves a transaction for a thousand bitcoin instead of the correct reward? Because every node validates blocks according to the same rules. An invalid coinbase transaction would make the entire block invalid, which would result in the block being rejected and, therefore, that transaction would never become part of the ledger. The miners have to construct a perfect block, based on the shared rules that all nodes follow, and mine it with a correct solution to the Proof-of-Work. To do so they expend a lot of electricity in mining, and if they cheat, all the electricity and effort is wasted. This is why independent validation is a key component of decentralized consensus.
 
 === Assembling and Selecting Chains of Blocks
 
-The final step in bitcoin's de-centralized consensus mechanism is the assembly of blocks into chains and the selection of the chain with the most Proof-of-Work. Once a node has validated a new block, it will then attempt to assemble a chain, by connecting the block to the existing blockchain. 
+The final step in bitcoin's decentralized consensus mechanism is the assembly of blocks into chains and the selection of the chain with the most Proof-Of-Work. Once a node has validated a new block, it will then attempt to assemble a chain by connecting the block to the existing blockchain. 
 
-Nodes maintain three sets of blocks: those connected to the main blockchain, those that form branches off the main blockchain (secondary chains) and finally blocks that do not have a known parent in the known chains (orphans). Invalid blocks are rejected as soon as any one of the validation criteria fails and are therefore not included in any chain. 
+Nodes maintain three sets of blocks: those connected to the main blockchain, those that form branches off the main blockchain (secondary chains), and finally blocks that do not have a known parent in the known chains (orphans). Invalid blocks are rejected as soon as any one of the validation criteria fails and are therefore not included in any chain. 
 
-The "main chain" at any time is whichever chain of blocks has the most cumulative difficulty associated with it. Under most circumstances this is also the chain with the most blocks in it, unless there are two equal length chains and one has more proof-of-work. The main chain will also have branches with blocks that are "siblings" to the blocks on the main chain. These blocks are valid but not part of the main chain. They are kept for future reference, in case one of those chains is extended to exceed the main chain in difficulty. In the next section (<<forks>>), we will see how secondary chains occur as a result of an almost simultaneous mining of blocks at the same height. 
+The "main chain" at any time is whichever chain of blocks has the most cumulative difficulty associated with it. Under most circumstances this is also the chain with the most blocks in it, unless there are two equal-length chains and one has more Proof-Of-Work. The main chain will also have branches with blocks that are "siblings" to the blocks on the main chain. These blocks are valid but not part of the main chain. They are kept for future reference, in case one of those chains is extended to exceed the main chain in difficulty. In the next section (<<forks>>), we will see how secondary chains occur as a result of an almost simultaneous mining of blocks at the same height. 
     
 When a new block is received, a node will try to slot it into the existing blockchain. The node will look at the block's "previous block hash" field, which is the reference to the new block's parent. Then, the node will attempt to find that parent in the existing blockchain. Most of the time, the parent will be the "tip" of the main chain, meaning this new block extends the main chain. For example, the new block 277,316 has a reference to the hash of its parent block 277,315. Most nodes that receive 277,316 will already have block 277,315 as the tip of their main chain and will therefore link the new block and extend that chain. 
 
 Sometimes, as we will see in <<forks>>, the new block extends a chain that is not the main chain. In that case, the node will attach the new block to the secondary chain it extends and then compare the difficulty of the secondary chain to the main chain. If the secondary chain has more cumulative difficulty than the main chain, the node will _reconverge_ on the secondary chain, meaning it will select the secondary chain as its new main chain, making the old main chain a secondary chain. If the node is a miner, it will now construct a block extending this new, longer, chain.
 
-If a valid block is received and no parent is found in the existing chains, then that block is considered an "orphan". Orphan blocks are saved in the orphan block pool where they will stay until their parent is received. Once the parent is received and linked into the existing chains, the orphan can be pulled out of the orphan pool and linked to the parent, making it part of a chain. Orphan blocks usually occur when two blocks that were mined within a short time of each other are received in reverse order (child before parent). 
+If a valid block is received and no parent is found in the existing chains, that block is considered an "orphan." Orphan blocks are saved in the orphan block pool where they will stay until their parent is received. Once the parent is received and linked into the existing chains, the orphan can be pulled out of the orphan pool and linked to the parent, making it part of a chain. Orphan blocks usually occur when two blocks that were mined within a short time of each other are received in reverse order (child before parent). 
 
-By selecting the greatest-difficulty chain, all nodes eventually achieve network-wide consensus. Temporary discrepancies between chains are resolved eventually as more Proof-of-Work is added, extending one of the possible chains. Mining nodes "vote" with their mining power by choosing which chain to extend by mining the next block. When they mine a new block and extend the chain, the new block itself represents their vote. 
+By selecting the greatest-difficulty chain, all nodes eventually achieve network-wide consensus. Temporary discrepancies between chains are resolved eventually as more Proof-Of-Work is added, extending one of the possible chains. Mining nodes "vote" with their mining power by choosing which chain to extend by mining the next block. When they mine a new block and extend the chain, the new block itself represents their vote. 
 
 In the next section we will look at how discrepancies between competing chains (forks) are resolved by the independent selection of the longest difficulty chain.
 
 [[forks]]
 ==== Blockchain Forks
 
-Because the blockchain is a decentralized data structure, different copies of it are not always consistent. Blocks may arrive at different nodes at different times, causing the nodes to have different perspectives of the blockchain. To resolve this, each node always selects and attempts to extend the chain of blocks that represents the most Proof-of-Work, also known as the longest chain or greatest cumulative difficulty chain. By summing the difficulty recorded in each block in a chain, a node can calculate the total amount of Proof-of-Work that has been expended to create that chain. As long as all nodes select the longest cumulative difficulty chain, the global bitcoin network eventually converges to a consistent state. Forks occur as temporary inconsistencies between versions of the blockchain, which are resolved by eventual re-convergence as more blocks are added to one of the forks.
+Because the blockchain is a decentralized data structure, different copies of it are not always consistent. Blocks may arrive at different nodes at different times, causing the nodes to have different perspectives of the blockchain. To resolve this, each node always selects and attempts to extend the chain of blocks that represents the most Proof-Of-Work, also known as the longest chain or greatest cumulative difficulty chain. By summing the difficulty recorded in each block in a chain, a node can calculate the total amount of Proof-Of-Work that has been expended to create that chain. As long as all nodes select the longest cumulative difficulty chain, the global bitcoin network eventually converges to a consistent state. Forks occur as temporary inconsistencies between versions of the blockchain, which are resolved by eventual reconvergence as more blocks are added to one of the forks.
 
 In the next few diagrams, we follow the progress of a "fork" event across the network. The diagram is a simplified representation of bitcoin as a global network. In reality, the bitcoin network's topology is not organized geographically. Rather, it forms a mesh network of interconnected nodes, which may be located very far from each other geographically. The representation of a geographic topology is a simplification used for the purposes of illustrating a fork. In the real bitcoin network, the "distance" between nodes is measured in "hops" from node to node, not in terms of their physical location. For illustration purposes, different blocks are shown as different colors, spreading across the network and coloring the connections they traverse.
 
-In the first diagram below, the network has a unified perspective of the blockchain, with the blue block as the tip of the main chain. 
+In the first diagram (<<fork1>>), the network has a unified perspective of the blockchain, with the blue block as the tip of the main chain. 
 
 [[fork1]]
-.Visualization of a blockchain fork event - Before the Fork
+.Visualization of a blockchain fork event—before the fork
 image::images/msbt_0802.png["globalfork1"]
 
-A "fork" occurs whenever there are two candidate blocks competing to form the longest blockchain. This occurs under normal conditions whenever two miners solve the Proof-of-Work algorithm within a short period of time from each other. As both miners discover a solution for their respective candidate blocks, they immediately broadcast their own "winning" block to their immediate neighbors who begin propagating the block across the network. Each node that receives a valid block will incorporate it into their blockchain, extending the blockchain by one block. If that node later sees another candidate block extending the same parent, they connect the second candidate on a secondary chain. As a result, some nodes will "see" one candidate block first, while other nodes will see the other candidate block and two competing versions of the blockchain will emerge. 
+A "fork" occurs whenever there are two candidate blocks competing to form the longest blockchain. This occurs under normal conditions whenever two miners solve the Proof-of-Work algorithm within a short period of time from each other. As both miners discover a solution for their respective candidate blocks, they immediately broadcast their own "winning" block to their immediate neighbors who begin propagating the block across the network. Each node that receives a valid block will incorporate it into its blockchain, extending the blockchain by one block. If that node later sees another candidate block extending the same parent, it connects the second candidate on a secondary chain. As a result, some nodes will "see" one candidate block first, while other nodes will see the other candidate block and two competing versions of the blockchain will emerge. 
 
-In the diagram below, we see two miners who mine two different blocks almost simultaneously. Both of these blocks are children of the blue block, meant to extend the chain by building on top of the blue block. To help us track it, one is visualized as a red block originating from Canada, and the other is marked as a green block originating from Australia. 
+In <<fork2>>, we see two miners who mine two different blocks almost simultaneously. Both of these blocks are children of the blue block, meant to extend the chain by building on top of the blue block. To help us track it, one is visualized as a red block originating from Canada, and the other is marked as a green block originating from Australia. 
 
 [[fork2]]
-.Visualization of a blockchain fork event - Two blocks found simultaneously 
+.Visualization of a blockchain fork event—two blocks found simultaneously 
 image::images/msbt_0803.png["globalfork2"]
 
-Let's assume for example that a miner in Canada finds a Proof-of-Work solution for a block "red" that extends the blockchain, building on top of the parent block "blue". Almost simultaneously, an Australian miner who was also extending block "blue", finds a solution for block "green", their candidate block. Now, there are two possible blocks, one we call "red", originating in Canada and one we call "green", originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
+Let's assume, for example, that a miner in Canada finds a Proof-Of-Work solution for a block "red" that extends the blockchain, building on top of the parent block "blue." Almost simultaneously, an Australian miner who was also extending block "blue" finds a solution for block "green," his candidate block. Now, there are two possible blocks, one we call "red," originating in Canada and one we call "green," originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, and both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
 
-As the two blocks propagate, some nodes receive block "red" first and some receive block "green" first. The network splits into two different perspectives of the blockchain, one side topped with a red block, the other with a green block. 
+As the two blocks propagate, some nodes receive block "red" first and some receive block "green" first. As shown in <<fork3>>, the network splits into two different perspectives of the blockchain, one side topped with a red block, the other with a green block. 
 
 [[fork3]]
-.Visualization of a blockchain fork event - Two blocks propagate, splitting the network
+.Visualization of a blockchain fork event—two blocks propagate, splitting the network
 image::images/msbt_0804.png["globalfork3"]
 
-From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "red" first and will create a new greatest-cumulative-difficulty blockchain with "red" as the last block in the chain (e.g. blue-red), ignoring the candidate block "green" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain with "green" as the last block (e.g. blue-green), ignoring "red" when it arrives a few seconds later. Any miners that saw "red" first will immediately build candidate blocks that reference "red" as the parent and start trying to solve the PoW for these candidate blocks. The miners that accepted "green" instead, will start building on top of "green" and extending that chain. 
+From that moment, the bitcoin network nodes closest (topologically, not geographically) to the Canadian node will hear about block "red" first and will create a new greatest-cumulative-difficulty blockchain with "red" as the last block in the chain (e.g., blue-red), ignoring the candidate block "green" that arrives a bit later. Meanwhile, nodes closer to the Australian node will take that block as the winner and extend the blockchain with "green" as the last block (e.g. blue-green), ignoring "red" when it arrives a few seconds later. Any miners that saw "red" first will immediately build candidate blocks that reference "red" as the parent and start trying to solve the PoW for these candidate blocks. The miners that accepted "green" instead, will start building on top of "green" and extending that chain. 
 
 [[fork4]]
 .Visualization of a blockchain fork event - A new block extends one fork
