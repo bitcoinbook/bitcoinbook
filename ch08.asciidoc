@@ -160,7 +160,7 @@ Any transactions left in the memory pool, after the block is filled, will remain
 
 Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, because it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software are expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time.
 
-When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the blockchain using the Bitcoin Core client command-line interfaceas shown in <<source,bash>>.
+When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the blockchain using the Bitcoin Core client command-line interfaceas shown in <<block277316>>.
 ====
 [source,bash]
 ----
@@ -202,7 +202,7 @@ $ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2
 
 ==== The Generation Transaction
 
-The first transaction added to the block is a special transaction, called a _generation transaction_ or _coinbase transaction_. This transaction is constructed by Jing's node and is his reward for the mining effort. Jing's node creates the generation transaction as a payment to his own wallet: "Pay Jing's address 25.09094928 bitcoin". The total amount of reward that Jing collects for mining a block is the sum of the coinbase reward (25 new bitcoins) and the transaction fees (0.09094928) from all the transactions included in the block. 
+The first transaction added to the block is a special transaction, called a _generation transaction_ or _coinbase transaction_. This transaction is constructed by Jing's node and is his reward for the mining effort. Jing's node creates the generation transaction as a payment to his own wallet: "Pay Jing's address 25.09094928 bitcoin." The total amount of reward that Jing collects for mining a block is the sum of the coinbase reward (25 new bitcoins) and the transaction fees (0.09094928) from all the transactions included in the block as shown in <<generation_tx_example>>: 
 
 
 ====
@@ -214,7 +214,7 @@ $ bitcoin-cli getrawtransaction\
 ====
 
 [[generation_tx_example]]
-.Generation Transaction
+.Generation transaction
 ====
 [source,json]
 ----
@@ -267,12 +267,12 @@ Total Fees = Sum(Inputs) - Sum(Outputs)
 
 In block 277,316 the total transaction fees are 0.09094928 bitcoin. 
 
-Next, Jing's node calculates the correct reward for the new block. The reward is calculated based on the block height, starting at 50 bitcoin per block and reduced by half every 210,000 blocks. Since this block is at height 277,316, the correct reward is 25 bitcoin. 
+Next, Jing's node calculates the correct reward for the new block. The reward is calculated based on the block height, starting at 50 bitcoin per block and reduced by half every 210,000 blocks. Because this block is at height 277,316, the correct reward is 25 bitcoin. 
 
-The calculation can be seen in function +GetBlockValue+ in the Bitcoin Core client:
+The calculation can be seen in function +GetBlockValue+ in the Bitcoin Core client, as shown in <<getblockvalue_source>>.
 
 [[getblockvalue_source]]
-.Calculating the block reward - Function GetBlockValue, Bitcoin Core Client, main.cpp, line 1305
+.Calculating the block reward—Function GetBlockValue, Bitcoin Core Client, main.cpp, line 1305
 ====
 [source, cpp]
 ----
@@ -299,15 +299,15 @@ Next, the function calculates the number of +halvings+ that have occurred by div
 
 The maximum number of halvings allowed is 64, so the code imposes a zero reward (return only the fees) if the 64 halvings is exceeded.
 
-Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by 2 for each round of halving. In the case of block 277,316 this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoin. The binary-right-shift operator is used because it is more efficient for division by 2 than integer or floating point division. 
+Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by 2 for each round of halving. In the case of block 277,316 this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoin. The binary-right-shift operator is used because it is more efficient for division by 2 than integer or floating-point division. 
 
 Finally, the coinbase reward (+nSubsidy+) is added to the transaction fees (+nFees+), and the sum is returned. 
 
 ==== Structure of the Generation Transaction
 
-With these calculations, Jing's node then constructs the generation transaction to pay himself 25.09094928 bitcoin. The generation transaction is the first transaction in the block, so we can see it in more detail using the Bitcoin Core command-line interface:
+With these calculations, Jing's node then constructs the generation transaction to pay himself 25.09094928 bitcoin.
 
-As you can see in <<generation_tx_example>>, the generation transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. Let's compare a regular transaction input with a generation transaction input. A regular transaction looks like this:
+As you can see in <<generation_tx_example>>, the generation transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. Let's compare a regular transaction input with a generation transaction input. Table 8-1 shows the structure of a regular transaction, while Table 8-2 shows the structure of the generation transaction's input.
 
 .The structure of a "normal" transaction input
 [options="header"]
@@ -316,12 +316,10 @@ As you can see in <<generation_tx_example>>, the generation transaction has a sp
 | 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
 | 1-9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
-| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking-script.
-| 4 bytes | Sequence Number | Currently-disabled Tx-replacement feature, set to 0xFFFFFFFF
+| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script.
+| 4 bytes | Sequence Number | Currently disabled Tx-replacement feature, set to 0xFFFFFFFF
 |=======
 
-
-The generation transaction input, however, looks like this:
 
 .The structure of a generation transaction input
 [options="header"]
@@ -329,31 +327,31 @@ The generation transaction input, however, looks like this:
 |Size| Field | Description
 | 32 bytes | Transaction Hash | All bits are zero: Not a transaction hash reference
 | 4 bytes | Output Index | All bits are ones: 0xFFFFFFFF
-| 1-9 bytes (VarInt) | Coinbase Data Size | Length of the Coinbase Data, from 2 to 100 bytes
-| Variable | Coinbase Data | Arbitrary Data used for extra nonce and mining tags
-In v2 blocks, must begin with block height
+| 1-9 bytes (VarInt) | Coinbase Data Size | Length of the coinbase data, from 2 to 100 bytes
+| Variable | Coinbase Data | Arbitrary data used for extra nonce and mining tags
+in v2 blocks, must begin with block height
 | 4 bytes | Sequence Number | Set to 0xFFFFFFFF
 |=======
 
-In a generation transaction, the first two fields are set to values that do not represent a UTXO reference. Instead of a "Transaction Hash", the first field is filled with 32 bytes all set to zero. The "Output Index" is filled with 4 bytes all set to 0xFF (255 decimal). The "Unlocking Script" is replaced by coinbase data, an arbitrary data field used by the miners. 
+In a generation transaction, the first two fields are set to values that do not represent a UTXO reference. Instead of a "Transaction Hash," the first field is filled with 32 bytes all set to zero. The "Output Index" is filled with 4 bytes all set to 0xFF (255 decimal). The "Unlocking Script" is replaced by coinbase data, an arbitrary data field used by the miners. 
 
 ==== Coinbase Data
 
-Generation transactions do not have an unlocking script (a.k.a. scriptSig) field. Instead, this field is replaced by coinbase data, which must be between 2 and 100 bytes. Except for the first few bytes (see below) the rest of the coinbase data can be used by miners in any way they want; it is arbitrary data. 
+Generation transactions do not have an unlocking script (a.k.a. +scriptSig+) field. Instead, this field is replaced by coinbase data, which must be between 2 and 100 bytes. Except for the first few bytes, the rest of the coinbase data can be used by miners in any way they want; it is arbitrary data. 
 
 In the genesis block, for example, Satoshi Nakamoto added the text "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks" in the coinbase data, using it as a proof of the date and to convey a message. Currently, miners use the coinbase data to include extra nonce values and strings identifying the mining pool, as we will see in the following sections. 
 
 The first few bytes of the coinbase used to be arbitrary, but that is no longer the case. As per Bitcoin Improvement Proposal 34 (BIP0034), version-2 blocks (blocks with the version field set to 2) must contain the block height index as a script "push" operation in the beginning of the coinbase field. 
 
-In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which is in the "Unlocking Script" or scriptSig field of the transaction input, contains the hexadecimal value +03443b0403858402062f503253482f+. Let's decode this value. 
+In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which is in the "Unlocking Script" or +scriptSig+ field of the transaction input, contains the hexadecimal value +03443b0403858402062f503253482f+. Let's decode this value. 
 
-The first byte, +03+ instructs the script execution engine to push the next 3 bytes onto the script stack (see <<tx_script_ops_table_pushdata>>). The next 3 bytes, +0x443b04+, are the block height encoded in little-endian format (backwards, least significant byte first). Reverse the order of the bytes and the result is +0x043b44+ which is 277,316 in decimal. 
+The first byte, +03+, instructs the script execution engine to push the next three bytes onto the script stack (see <<tx_script_ops_table_pushdata>>). The next three bytes, +0x443b04+, are the block height encoded in little-endian format (backwards, least significant byte first). Reverse the order of the bytes and the result is +0x043b44+, which is 277,316 in decimal. 
 
-The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (See <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
+The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (see <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
 
-The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string "/P2SH/", which indicates that the mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include "/P2SH/" in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string "/P2SH/" in their coinbase to indicate support for this feature.
+The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string +/P2SH/+, which indicates that the mining node that mined this block supports the Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string "p2sh/CHV" in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
 
-The code example <<satoshi_words>> uses the libbitcoin library introduced in <<alt_libraries>> to extract the coinbase data from the genesis block, displaying Satoshi's message. Note that the libbitcoin library contains a static copy of the genesis block, so the example code below can use retrieve the genesis block directly from the library. 
+<<satoshi_words>> uses the libbitcoin library introduced in <<alt_libraries>> to extract the coinbase data from the genesis block, displaying Satoshi's message. Note that the libbitcoin library contains a static copy of the genesis block, so the example code can use retrieve the genesis block directly from the library. 
 
 [[satoshi_words]]
 .Extract the coinbase data from the genesis block
@@ -364,7 +362,7 @@ include::code/satoshi-words.cpp[]
 ----
 ====
 
-We compile the code with the GNU C++ compiler and run the resulting executable:
+We compile the code with the GNU C++ compiler and run the resulting executable, as shown in <<satoshi_words_run>>.
 
 [[satoshi_words_run]]
 .Compiling and running the satoshi-words example code
@@ -381,7 +379,7 @@ $ ./satoshi-words
 
 === Constructing the Block Header
 
-To construct the block header, the mining node needs to fill in six fields:
+To construct the block header, the mining node needs to fill in six fields, as listed in <<block_header_structure_ch08>>.
 
 [[block_header_structure_ch08]]
 .The structure of the block header
@@ -390,10 +388,10 @@ To construct the block header, the mining node needs to fill in six fields:
 |Size| Field | Description
 | 4 bytes | Version | A version number to track software/protocol upgrades
 | 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
-| 32 bytes | Merkle Root | A hash of the root of the Merkle-Tree of this block's transactions
+| 32 bytes | Merkle Root | A hash of the root of the merkle tree of this block's transactions
 | 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
-| 4 bytes | Difficulty Target | The Proof-of-Work algorithm difficulty target for this block
-| 4 bytes | Nonce | A counter used for the Proof-of-Work algorithm
+| 4 bytes | Difficulty Target | The Proof-Of-Work algorithm difficulty target for this block
+| 4 bytes | Nonce | A counter used for the Proof-Of-Work algorithm
 |=======
 
 At the time block 277,316 was mined, the version number describing the block structure is version "2", which is encoded in little-endian format in 4 bytes as +0x02000000+. 
