@@ -190,51 +190,51 @@ A bloom filter is a probabilistic search filter, a way to describe a desired pat
 
 In our previous analogy, a tourist without a map is asking for directions to a specific address, "23 Church St." If she asks strangers for directions to this street, she inadvertently reveals her destination. A bloom filter is like asking "Are there any streets in this neighborhood whose name ends in R-C-H." A question like that reveals slightly less about the desired destination than asking for "23 Church St." Using this technique, a tourist could specify the desired address in more detail as "ending in U-R-C-H" or less detail as "ending in H." By varying the precision of the search, the tourist reveals more or less information, at the expense of getting more or less specific results. If she asks a less specific pattern, she gets a lot more possible addresses and better privacy, but many of the results are irrelevant. If she asks for a very specific pattern, she gets fewer results but loses privacy. 
 
-Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned towards precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what addresses are used in the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy. 
+Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned toward precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what addresses are used in the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy. 
 
-An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a Pay-to-Public-Key-Hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a P2SH address, then the search pattern will be a Pay-to-Script-Hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node. 
+An SPV node will initialize a bloom filter as "empty." and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a Pay-to-Public-Key-Hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a P2SH address, the search pattern will be a Pay-to-Script-Hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node. 
 
 Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy. 
 
-In the example below, we use a very small array of 16 bits and a set of 3 hash functions to demonstrate how bloom filters work. 
+In <<bloom1>>, we use a very small array of 16 bits and a set of three hash functions to demonstrate how bloom filters work. 
 
 [[bloom1]]
-.An example of a simplistic bloom filter, with 16 bit field and 3 hash functions
+.An example of a simplistic bloom filter, with a 16-bit field and three hash functions
 image::images/msbt_0608.png["Bloom1"]
 
-The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on and so forth. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits have been changed from +0+ to +1+. 
+The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits have been changed from +0+ to +1+. 
 
-Here's an example of adding a pattern "A" to the simple bloom filter shown above:
+<<bloom2>> is an example of adding a pattern "A" to the simple bloom filter shown in <<bloom1>>.
 
 [[bloom2]]
 .Adding a pattern "A" to our simple bloom filter
 image::images/msbt_0609.png["Bloom2"]
 
-Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result may coincide with a bit that is already set to +1+ in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure -- it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
+Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result may coincide with a bit that is already set to +1+, in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure—it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
 
-Below is an example of adding a second pattern "B" to the simple bloom filter:
+<<bloom3>> is an example of adding a second pattern "B" to the simple bloom filter.
 
 [[bloom3]]
 .Adding a second pattern "B" to our simple bloom filter
 image::images/msbt_0610.png["Bloom3"]
 
-To test if a pattern is part of a bloom filter, the pattern is hashed by each hash function and the resulting bit pattern is tested against the bit array. If all the bits indexed by the hash functions are set to +1+, then the pattern is _probably_ recorded in the bloom filter. Since the bits may be set because of overlap from multiple patterns, the answer is not certain, but is rather probabilistic. In simple terms, a bloom filter positive match is a "Maybe, Yes". 
+To test if a pattern is part of a bloom filter, the pattern is hashed by each hash function and the resulting bit pattern is tested against the bit array. If all the bits indexed by the hash functions are set to +1+, then the pattern is _probably_ recorded in the bloom filter. Because the bits may be set because of overlap from multiple patterns, the answer is not certain, but is rather probabilistic. In simple terms, a bloom filter positive match is a "Maybe, Yes." 
 
-Below is an example of testing the existence of pattern "X" in the simple bloom filter. The corresponding bits are set to +1+, so the pattern is probably a match:
+<<bloom4>> is an example of testing the existence of pattern "X" in the simple bloom filter. The corresponding bits are set to +1+, so the pattern is probably a match.
 
 [[bloom4]]
-.Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe"
+.Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe."
 image::images/msbt_0611.png["Bloom4"]
 
-On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, then this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely No". 
+On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely No." 
 
-Below is an example of testing the existence of pattern "Y" in the simple bloom filter. One of the corresponding bits is set to +0+, so the pattern is definitely not a match:
+<<bloom5>> is an example of testing the existence of pattern "Y" in the simple bloom filter. One of the corresponding bits is set to +0+, so the pattern is definitely not a match.
 
 [[bloom5]]
-.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No"
+.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No."
 image::images/msbt_0612.png["Bloom5"]
 
-Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<bip0037>> or visit: 
+Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<bip0037>> or visit 
 https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki.
 
 === Bloom Filters and Inventory Updates
