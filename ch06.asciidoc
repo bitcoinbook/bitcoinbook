@@ -234,16 +234,16 @@ On the contrary, if a pattern is tested against the bloom filter and any one of 
 .Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No."
 image::images/msbt_0612.png["Bloom5"]
 
-Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<bip0037>> or visit 
+Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<appendix>> or visit 
 https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki.
 
 === Bloom Filters and Inventory Updates
 
-Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions which match the filter are sent to the node. 
+Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions that match the filter are sent to the node. 
 
-In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (See <<merkle_trees>>) for each matching transaction. The peer will also then send +tx+ messages containing the transactions matched by the filter.
+In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (see <<merkle_trees>>) for each matching transaction. The peer will also then send +tx+ messages containing the transactions matched by the filter.
 
-The node setting the bloom filter can interactively add patterns to the filter by sending a +filteradd+ message. To clear the bloom filter, the node can send a +filterclear+ message. Since it is not possible to remove a pattern from a bloom filter, a node has to clear and re-send a new bloom filter if a pattern is no longer desired. 
+The node setting the bloom filter can interactively add patterns to the filter by sending a +filteradd+ message. To clear the bloom filter, the node can send a +filterclear+ message. Because it is not possible to remove a pattern from a bloom filter, a node has to clear and resend a new bloom filter if a pattern is no longer desired. 
 
 [[transaction_pools]]
 === Transaction Pools
@@ -252,26 +252,26 @@ Almost every node on the bitcoin network maintains a temporary list of unconfirm
 
 As transactions are received and verified, they are added to the transaction pool and relayed to the neighboring nodes to propagate on the network.
 
-Some node implementations also maintain a separate pool of orphaned transactions as detailed in [XREF-orphan_transactions]. If a transaction's inputs refer to a transaction that is not yet known, a missing parent, then the orphan transaction will be stored temporarily in the orphan pool until the parent transaction arrives. 
+Some node implementations also maintain a separate pool of orphaned transactions. If a transaction's inputs refer to a transaction that is not yet known, such as a missing parent, the orphan transaction will be stored temporarily in the orphan pool until the parent transaction arrives. 
 
-When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any matching orphans are then validated. If valid, they are removed from the orphan pool and added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
+When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any matching orphans are then validated. If valid, they are removed from the orphan pool and added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction, which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
 
-Both the transaction pool and orphan pool (where implemented) are stored in local memory and are not saved on persistent storage, rather they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network.
+Both the transaction pool and orphan pool (where implemented) are stored in local memory and are not saved on persistent storage; rather, they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network.
 
-Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. While the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage. 
+Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage. 
 
 Whereas the transaction and orphan pools represent a single node's local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 === Alert Messages
 
-Alert messages are a seldom used function, which is nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system", a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably early 2013 when a critical database bug caused a multi-block fork to occur in the bitcoin blockchain. 
+Alert messages are a seldom used function, which is nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system," a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably early 2013 when a critical database bug caused a multiblock fork to occur in the bitcoin blockchain. 
 
 Alert messages are propagated by the +alert+ message. The alert message contains several fields, including:
 
 * ID - An alert identified so that duplicate alerts can be detected
-* Expiration - a time after which the alert expires
-* RelayUntil - a time after which the alert should not be relayed
-* MinVer, MaxVer - the range of bitcoin protocol versions that this alert applies to
+* Expiration - A time after which the alert expires
+* RelayUntil - A time after which the alert should not be relayed
+* MinVer, MaxVer - The range of bitcoin protocol versions that this alert applies to
 * subVer - The client software version that this alert applies to
 * Priority - An alert priority level, currently unused
 
@@ -279,8 +279,8 @@ Alerts are cryptographically signed by a public key. The corresponding private k
 
 Each node receiving this alert message will verify it, check for expiration, and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, each node may implement a user interface function to present the alert to the user. 
 
-In the Bitcoin Core client, the alert is configured with the command line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the alertnotify command. Most commonly, the alertnotify command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. 
+In the Bitcoin Core client, the alert is configured with the command-line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the +alertnotify+ command. Most commonly, the +alertnotify+ command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. 
 
-Other implementations of the bitcoin protocol may handle the alert in different ways. Many hardware-embedded bitcoin mining systems do not implement the alert message function, as they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes. 
+Other implementations of the bitcoin protocol may handle the alert in different ways. Many hardware-embedded bitcoin mining systems do not implement the alert message function because they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes. 
 
 
