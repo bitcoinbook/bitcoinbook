@@ -1,9 +1,11 @@
 [[tx_script_ops]]
 [appendix]
-== Appendix: Transaction Script Language Operators, Constants and Symbols
+== Appendix: Transaction Script Language Operators, Constants, and Symbols
+
+<<tx_script_ops_table_pushdata>> shows operators for pushing values onto the stack.
 
 [[tx_script_ops_table_pushdata]]
-.Push Value onto Stack
+.Push value onto stack
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -12,14 +14,16 @@
 | OP_PUSHDATA1 | 0x4c | The next script byte contains N, push the following N bytes onto the stack
 | OP_PUSHDATA2 | 0x4d | The next two script bytes contain N, push the following N bytes onto the stack
 | OP_PUSHDATA4 | 0x4e | The next four script bytes contain N, push the following N bytes onto the stack
-| OP_1NEGATE | 0x4f | Push the value "-1" onto the stack
+| OP_1NEGATE | 0x4f | Push the value "–1" onto the stack
 | OP_RESERVED | 0x50 | Halt - Invalid transaction unless found in an unexecuted OP_IF clause
 | OP_1 or OP_TRUE| 0x51 | Push the value "1" onto the stack
 | OP_2 to OP_16 | 0x52 to 0x60 |  For OP_N, push the value "N" onto the stack. E.g., OP_2 pushes "2"
 |=======
 
+<<tx_script_ops_table_control>> shows conditional flow control operators.
+
 [[tx_script_ops_table_control]]
-.Conditional Flow Control
+.Conditional flow control
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -30,13 +34,15 @@
 | OP_VERIF | 0x65 | Halt - Invalid transaction
 | OP_VERNOTIF | 0x66 | Halt - Invalid transaction
 | OP_ELSE | 0x67 | Execute only if the previous statements were not executed
-| OP_ENDIF | 0x68 | Ends the OP_IF, OP_NOTIF, OP_ELSE block
-| OP_VERIFY | 0x69 | Check the top of the stack, Halt and Invalidate transaction if not TRUE
+| OP_ENDIF | 0x68 | End the OP_IF, OP_NOTIF, OP_ELSE block
+| OP_VERIFY | 0x69 | Check the top of the stack, halt and invalidate transaction if not TRUE
 | OP_RETURN | 0x6a | Halt and invalidate transaction
 |=======
- 
+
+<<tx_script_ops_table_stack>> shows operators used to manipulate the stack.
+
 [[tx_script_ops_table_stack]]
-.Stack Operations
+.Stack operations
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -45,8 +51,8 @@
 | OP_2DROP | 0x6d | Pop top two stack items
 | OP_2DUP | 0x6e | Duplicate top two stack items
 | OP_3DUP | 0x6f | Duplicate top three stack items
-| OP_2OVER | 0x70 | Copies the third and fourth items in the stack to the top
-| OP_2ROT | 0x71 | Moves the fifth and sixth items in the stack to the top
+| OP_2OVER | 0x70 | Copy the third and fourth items in the stack to the top
+| OP_2ROT | 0x71 | Move the fifth and sixth items in the stack to the top
 | OP_2SWAP | 0x72 | Swap the two top pairs of items in the stack
 | OP_IFDUP | 0x73 | Duplicate the top item in the stack if it is not 0
 | OP_DEPTH | 0x74 | Count the items on the stack and push the resulting count
@@ -61,8 +67,10 @@
 | OP_TUCK | 0x7d | Copy the top item and insert it between the top and second item.
 |=======
 
+<<tx_script_ops_table_splice>> shows string operators.
+
 [[tx_script_ops_table_splice]]
-.String Splice Operations
+.String splice operations
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -73,8 +81,10 @@
 | OP_SIZE | 0x82 | Calculate string length of top item and push the result 
 |=======
 
+<<tx_script_ops_table_binmath>> shows binary arithmetic and boolean logic operators.
+
 [[tx_script_ops_table_binmath]]
-.Binary Arithmetic and Conditionals
+.Binary arithmetic and conditionals
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -87,6 +97,8 @@
 | OP_RESERVED1 | 0x89 | Halt - Invalid transaction unless found in an unexecuted OP_IF clause
 | OP_RESERVED2 | 0x8a | Halt - Invalid transaction unless found in an unexecuted OP_IF clause
 |=======
+
+<<tx_script_ops_table_numbers>> shows numeric (arithmetic) operators.
 
 [[tx_script_ops_table_numbers]]
 .Numeric Operators
@@ -102,7 +114,7 @@
 | OP_NOT | 0x91 | If top item is 0 or 1 boolean flip it, otherwise return 0
 | OP_0NOTEQUAL | 0x92 | If top item is 0 return 0, otherwise return 1
 | OP_ADD | 0x93 | Pop top two items, add them and push result
-| OP_SUB | 0x94 | Pop top two items, subtract first form second, push result
+| OP_SUB | 0x94 | Pop top two items, subtract first from second, push result
 | OP_MUL | 0x95 | Disabled (Multiply top two items)
 | OP_DIV | 0x96 | Disabled (Divide second item by first item)
 | OP_MOD | 0x97 | Disabled (Remainder divide second item by first item)
@@ -122,9 +134,10 @@
 | OP_WITHIN | 0xa5 | Return TRUE if the third item is between the second item (or equal) and first item
 |=======
 
+<<tx_script_ops_table_crypto>> shows cryptographic function operators.
 
 [[tx_script_ops_table_crypto]]
-.Cryptographic and Hashing Operations
+.Cryptographic and hashing operations
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
@@ -135,19 +148,22 @@
 | OP_HASH256 | 0xaa | Return SHA256(SHA256(x)) hash of top item
 | OP_CODESEPARATOR | 0xab | Mark the beginning of signature-checked data
 | OP_CHECKSIG | 0xac | Pop a public key and signature and validate the signature for the transaction's hashed data, return TRUE if matching
-| OP_CHECKSIGVERIFY | 0xad | Same as CHECKSIG, then OP_VEIRFY to halt if not TRUE
+| OP_CHECKSIGVERIFY | 0xad | Same as CHECKSIG, then OP_VERIFY to halt if not TRUE
 | OP_CHECKMULTISIG | 0xae | Run CHECKSIG for each pair of signature and public key provided. All must match. Bug in implementation pops an extra value, prefix with OP_NOP as workaround
 | OP_CHECKMULTISIGVERIFY | 0xaf | Same as CHECKMULTISIG, then OP_VERIFY to halt if not TRUE
 |=======
 
+<<tx_script_ops_table_nop>> shows non-operator symbols
+
 [[tx_script_ops_table_nop]]
-.Non-Operators
+.Non-operators
 [options="header"]
 |=======
 | Symbol | Value (hex) | Description
 | OP_NOP1-OP_NOP10 | 0xb0-0xb9 | Does nothing, ignored.
 |=======
 
+<<tx_script_ops_table_internal>> shows operator codes reserved for use by the internal script parser.
 
 [[tx_script_ops_table_internal]]
 .Reserved OP codes for internal use by the parser
