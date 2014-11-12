@@ -3,20 +3,20 @@
 
 === Introduction
 
-Ownership of bitcoin is established through _digital keys_, _bitcoin addresses_, and _digital signatures_. The digital keys are not actually stored in the network, but are instead created and stored by end users in a file, or simple database, called a _wallet_. The digital keys in a user's wallet are completely independent of the bitcoin protocol and can be generated and managed by the user's wallet software without reference to the blockchain or access to the Internet. Keys enable many of the interesting properties of bitcoin, including de-centralized trust and control, ownership attestation, and the cryptographic-proof security model. 
+((("bitcoin","establishing ownership of")))Ownership of bitcoin is established through _digital keys_, _bitcoin addresses_, and _digital signatures_. The digital keys are not actually stored in the network, but are instead created and stored by end users in a file, or simple database, called a _wallet_. The digital keys in a user's wallet are completely independent of the bitcoin protocol and can be generated and managed by the user's wallet software without reference to the blockchain or access to the Internet. Keys enable many of the interesting properties of bitcoin, including de-centralized trust and control, ownership attestation, and the cryptographic-proof security model. 
 
 
 Every bitcoin transaction requires a valid signature to be included in the blockchain, which can only be generated with valid digital keys; therefore, anyone with a copy of those keys has control of the bitcoin in that account. Keys come in pairs consisting of a private (secret) key and a public key. Think of the public key as similar to a bank account number and the private key as similar to the secret PIN, or signature on a check that provides control over the account. These digital keys are very rarely seen by the users of bitcoin. For the most part, they are stored inside the wallet file and managed by the bitcoin wallet software. 
 
-In the payment portion of a bitcoin transaction, the recipient's public key is represented by its digital fingerprint, called a _bitcoin address_, which is used in the same way as the beneficiary name on a check (i.e., "Pay to the order of"). In most cases, a bitcoin address is generated from and corresponds to a public key. However, not all bitcoin addresses represent public keys; they can also represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper checks: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills, or pay to cash. The bitcoin address is the only representation of the keys that users will routinely see, because this is the part they need to share with the world.
+In the payment portion of a bitcoin transaction, the recipient's public key is represented by its digital fingerprint, called a((("addresses, bitcoin","defined"))) _bitcoin address_, which is used in the same way as the beneficiary name on a check (i.e., "Pay to the order of"). In most cases, a bitcoin address is generated from and corresponds to a public key. However, not all bitcoin addresses represent public keys; they can also represent other beneficiaries such as scripts, as we will see later in this chapter. This way, bitcoin addresses abstract the recipient of funds, making transaction destinations flexible, similar to paper checks: a single payment instrument that can be used to pay into people's accounts, company accounts, pay for bills, or pay to cash. The bitcoin address is the only representation of the keys that users will routinely see, because this is the part they need to share with the world.
 
 In this chapter we will introduce wallets, which contain cryptographic keys. We will look at how keys are generated, stored, and managed. We will review the various encoding formats used to represent private and public keys, addresses, and script addresses. Finally, we will look at special uses of keys: to sign messages, to prove ownership, and to create vanity addresses and paper wallets. 
 
 ==== Public Key Cryptography and Crypto-Currency
-((("public key")))
-Public key cryptography was invented in the 1970s and is a mathematical foundation for computer and information security.
 
-Since the invention of public key cryptography, several suitable mathematical functions, such as prime number exponentiation and elliptic curve multiplication, have been discovered. These mathematical functions are practically irreversible, meaning that they are easy to calculate in one direction and infeasible to calculate in the opposite direction. Based on these mathematical functions, cryptography enables the creation of digital secrets and unforgeable digital signatures. Bitcoin uses elliptic curve multiplication as the basis for its public key cryptography.  
+((("keys", id="ix_ch04-asciidoc0", range="startofrange")))((("crypto-currency")))((("keys","crypto-currency and")))((("keys","public")))((("public key cryptography")))((("public key cryptography","implementation of")))Public key cryptography was invented in the 1970s and is a mathematical foundation for computer and information security.
+
+Since the invention of public key cryptography, several suitable mathematical functions, such as((("prime number exponentiation"))) prime number exponentiation and elliptic curve multiplication, have been discovered. These mathematical functions are practically irreversible, meaning that they are easy to calculate in one direction and infeasible to calculate in the opposite direction. Based on these mathematical functions, cryptography enables the creation of digital secrets and unforgeable digital signatures. Bitcoin uses elliptic curve multiplication as the basis for its public key cryptography.  
  
 In bitcoin, we use public key cryptography to create a key pair that controls access to bitcoins. The key pair consists of a private key and--derived from it--a unique public key. The public key is used to receive bitcoins, and the private key is used to sign transactions to spend those bitcoins.
 
@@ -26,13 +26,13 @@ When spending bitcoins, the current bitcoin owner presents her public key and a 
 
 [TIP]
 ====
-In most wallet implementations, the private and public keys are stored together as a _key pair_ for convenience. However, the public key can be calculated from the private key, so storing only the private key is also possible.
+((("wallets","key pairs in")))In most wallet implementations, the private and public keys are stored together as a _key pair_ for convenience. However, the public key can be calculated from the private key, so storing only the private key is also possible.
 ====
 
 [[private_public_keys]]
 ==== Private and Public Keys
 
-A bitcoin wallet contains a collection of key pairs, each consisting of a private key and a public key. The private key (k) is a number, usually picked at random. From the private key, we use elliptic curve multiplication, a one-way cryptographic function, to generate a public key (K). From the public key (K), we use a one-way cryptographic hash function to generate a bitcoin address (A). In this section we will start with generating the private key, look at the elliptic curve math that is used to turn that into a public key, and finally, generate a bitcoin address from the public key. The relationship between private key, public key, and bitcoin address is shown in <<k_to_K_to_A>>.
+((("keys","public/private")))((("keys","in wallets")))((("private keys")))((("public keys")))((("wallets","public/private keys in")))A bitcoin wallet contains a collection of key pairs, each consisting of a private key and a public key. The private key (k) is a number, usually picked at random. From the private key, we use elliptic curve multiplication, a one-way cryptographic function, to generate a public key (K). From the public key (K), we use a one-way cryptographic hash function to generate a bitcoin address (A). In this section we will start with generating the private key, look at the elliptic curve math that is used to turn that into a public key, and finally, generate a bitcoin address from the public key. The relationship between private key, public key, and bitcoin address is shown in <<k_to_K_to_A>>.
 
 [[k_to_K_to_A]]
 .Private key, public key, and bitcoin address
@@ -41,22 +41,22 @@ image::images/msbt_0401.png["privk_to_pubK_to_addressA"]
 [[private_keys]]
 ==== Private Keys
 
-A private key is simply a number, picked at random. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. The private key is used to create signatures that are required to spend bitcoins by proving ownership of funds used in a transaction. The private key must remain secret at all times, because revealing it to third parties is equivalent to giving them control over the bitcoins secured by that key. The private key must also be backed up and protected from accidental loss, because if it's lost it cannot be recovered and the funds secured by it are forever lost, too. 
+((("keys","private", id="ix_ch04-asciidoc1", range="startofrange")))((("private keys", id="ix_ch04-asciidoc2", range="startofrange")))A private key is simply a number, picked at random. Ownership and control over the private key is the root of user control over all funds associated with the corresponding bitcoin address. The private key is used to create signatures that are required to spend bitcoins by proving ownership of funds used in a transaction. The private key must remain secret at all times, because revealing it to third parties is equivalent to giving them control over the bitcoins secured by that key. The private key must also be backed up and protected from accidental loss, because if it's lost it cannot be recovered and the funds secured by it are forever lost, too. 
 
 [TIP]
 ====
-The bitcoin private key is just a number. You can pick your private keys randomly using just a coin, pencil, and paper: toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. The public key can be then generated from the private key.
+((("private keys","creating by hand")))The bitcoin private key is just a number. You can pick your private keys randomly using just a coin, pencil, and paper: toss a coin 256 times and you have the binary digits of a random private key you can use in a bitcoin wallet. The public key can be then generated from the private key.
 ====
 
 ===== Generating a private key from a random number
 
-The first and most important step in generating keys is to find a secure source of entropy, or randomness. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^." The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software uses the underlying operating system's random number generators to produce 256 bits of entropy (randomness). Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil, and paper.
+((("private keys","generating from random numbers", id="ix_ch04-asciidoc3", range="startofrange")))The first and most important step in generating keys is to find a secure source of entropy, or randomness. Creating a bitcoin key is essentially the same as "Pick a number between 1 and 2^256^." The exact method you use to pick that number does not matter as long as it is not predictable or repeatable. Bitcoin software uses the underlying operating system's random number generators to produce 256 bits of entropy (randomness). Usually, the OS random number generator is initialized by a human source of randomness, which is why you may be asked to wiggle your mouse around for a few seconds. For the truly paranoid, nothing beats dice, pencil, and paper.
 
 More accurately, the private key can be any number between +1+ and +n - 1+, where n is a constant (n = 1.158 * 10^77^, slightly less than 2^256^) defined as the order of the elliptic curve used in bitcoin (see <<elliptic_curve>>). To create such a key, we randomly pick a 256-bit number and check that it is less than +n - 1+. In programming terms, this is usually achieved by feeding a larger string of random bits, collected from a cryptographically secure source of randomness, into the SHA256 hash algorithm that will conveniently produce a 256-bit number. If the result is less than +n - 1+, we have a suitable private key. Otherwise, we simply try again with another random number. 
 	
 [TIP]
 ====
-Do not write your own code to create a random number or use a "simple" random number generator offered by your programming language. Use a cryptographically secure pseudo-random number generator (CSPRNG) with a seed from a source of sufficient entropy. Study the documentation of the random number generator library you choose to make sure it is cryptographically secure. Correct implementation of the CSPRNG is critical to the security of the keys.
+Do not write your own code to create a random number or use a "simple" random number generator offered by your programming language. Use a((("cryptographically secure pseudo-random number generator (CSPRNG)"))) cryptographically secure pseudo-random number generator (CSPRNG) with a seed from a source of sufficient entropy. Study the documentation of the random number generator library you choose to make sure it is cryptographically secure. Correct implementation of the CSPRNG is critical to the security of the keys.
 ====
 
 The following is a randomly generated private key (k) shown in hexadecimal format (256 binary digits shown as 64 hexadecimal digits, each 4 bits):
@@ -71,7 +71,7 @@ The following is a randomly generated private key (k) shown in hexadecimal forma
 The size of bitcoin's private key space, 2^256^ is an unfathomably large number. It is approximately 10^77^ in decimal. The visible universe is estimated to contain 10^80^ atoms.
 ====
 
-To generate a new key with the Bitcoin Core client (see <<ch03_bitcoin_client>>), use the +getnewaddress+ command. For security reasons it displays the public key only, not the private key. To ask bitcoind to expose the private key, use the +dumpprivkey+ command. The +dumpprivkey+ command shows the private key in a Base58 checksum-encoded format called the _Wallet Import Format_ (WIF), which we will examine in more detail in <<priv_formats>>. Here's an example of generating and displaying a private key using these two commands:
+To generate a new key with the Bitcoin Core client (see <<ch03_bitcoin_client>>), use the((("getnewaddress command (bitcoin-cli)"))) +getnewaddress+ command. For security reasons it displays the public key only, not the private key. ((("dumpprivkey command (bitcoin-cli)")))((("private keys","exposing with bitcoind")))To ask bitcoind to expose the private key, use the +dumpprivkey+ command. The +dumpprivkey+ command shows the private key in a Base58 checksum-encoded format called the _Wallet Import Format_ (WIF), which we will examine in more detail in <<priv_formats>>. Here's an example of generating and displaying a private key using these two commands:
 
 ----
 $ bitcoind getnewaddress
@@ -82,7 +82,7 @@ KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 
 The +dumpprivkey+ command opens the wallet and extracts the private key that was generated by the +getnewaddress+ command. It is not otherwise possible for bitcoind to know the private key from the public key, unless they are both stored in the wallet. 
 
-You can also use the command-line sx tools (see <<sx_tools>>) to generate and display private keys with the sx command +newkey+:
+You can also use the command-line sx tools (see <<sx_tools>>) to generate and display private keys with the sx command +newkey+: (((range="endofrange", startref="ix_ch04-asciidoc3")))(((range="endofrange", startref="ix_ch04-asciidoc2")))(((range="endofrange", startref="ix_ch04-asciidoc1")))
 
 ----
 $ sx newkey
@@ -92,13 +92,13 @@ $ sx newkey
 [[pubkey]]
 ==== Public Keys
 
-The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)] where _k_ is the private key, _G_ is a constant point called the _generator point_ and _K_ is the resulting public key. The reverse operation, known as "finding the discrete logarithm"—calculating _k_ if you know _K_—is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at elliptic curve cryptography in a bit more detail. 
+((("keys","public")))((("public keys","generating")))The public key is calculated from the private key using elliptic curve multiplication, which is irreversible: latexmath:[\(K = k * G\)] where _k_ is the private key, _G_ is a constant point called the _generator point_ and _K_ is the resulting public key. The reverse operation, known as "finding the discrete logarithm"—calculating _k_ if you know _K_—is as difficult as trying all possible values of +k+, i.e., a brute-force search. Before we demonstrate how to generate a public key from a private key, let's look at elliptic curve cryptography in a bit more detail. 
 
 
 [[elliptic_curve]]
 ==== Elliptic Curve Cryptography Explained
-((("elliptic curve cryptography", "ECC")))
-Elliptic curve cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
+
+((("elliptic curve cryptography", id="ix_ch04-asciidoc4", range="startofrange")))((("public key cryptography","elliptic curve cryptography", id="ix_ch04-asciidoc5", range="startofrange")))((("ECC", see="elliptic curve cryptography")))Elliptic curve cryptography is a type of asymmetric or public-key cryptography based on the discrete logarithm problem as expressed by addition and multiplication on the points of an elliptic curve. 
 
 <<ecc-curve>> shows we see an example of an elliptic curve, similar to that used by bitcoin.
 
@@ -106,9 +106,8 @@ Elliptic curve cryptography is a type of asymmetric or public-key cryptography b
 .An elliptic curve
 image::images/msbt_0402.png["ecc-curve"]
 
-Bitcoin uses a specific elliptic curve and set of mathematical constants, as defined in a standard called +secp256k1+, established by the National Institute of Standards and Technology (NIST). The +secp256k1+ curve is defined by the following function, which produces an elliptic curve:
+Bitcoin uses a specific elliptic curve and set of mathematical constants, as defined in a standard called((("secp256k1 curve standard"))) +secp256k1+, established by the((("National Institute of Standards and Technology (NIST)"))) National Institute of Standards and Technology (NIST). The +secp256k1+ curve is defined by the following function, which produces an elliptic curve:
 
-((("secp256k1")))
 [latexmath]
 ++++
 \begin{equation}
@@ -152,9 +151,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 ----
 ====
 
-In elliptic curve math, there is a point called the "point at infinity," which roughly corresponds to the role of 0 in addition. On computers, it's sometimes represented by x = y = 0 (which doesn't satisfy the elliptic curve equation, but it's an easy separate case that can be checked).
+In elliptic curve math, there is a point called the((("point at infinity (ECC)"))) "point at infinity," which roughly corresponds to the role of 0 in addition. On computers, it's sometimes represented by x = y = 0 (which doesn't satisfy the elliptic curve equation, but it's an easy separate case that can be checked).
 
-There is also a pass:[+] operator, called "addition," which has some properties similar to the traditional addition of real numbers that grade school children learn. Given two points P~1~ and P~2~ on the elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the elliptic curve.
+There is also((("+ operator")))((("elliptic curve cryptography","addition operator"))) a pass:[+] operator, called "addition," which has some properties similar to the traditional addition of real numbers that grade school children learn. Given two points P~1~ and P~2~ on the elliptic curve, there is a third point P~3~ = P~1~ + P~2~, also on the elliptic curve.
 
 Geometrically, this third point P~3~ is calculated by drawing a line between P~1~ and P~2~. This line will intersect the elliptic curve in exactly one additional place. Call this point P~3~' = (x, y). Then reflect in the x-axis to get P~3~ = (x, –y).
 
@@ -168,12 +167,12 @@ If P~1~ is the "point at infinity," then the sum P~1~ + P~2~ = P~2~. Similary, i
 
 It turns out that pass:[+] is associative, which means that (A+B)+C = A+(B+C). That means we can write A+B+C without parentheses without any ambiguity. 
 
-Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case. 
+Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case.(((range="endofrange", startref="ix_ch04-asciidoc5")))(((range="endofrange", startref="ix_ch04-asciidoc4"))) 
 
 [[public_key_derivation]]
 ==== Generating a Public Key 
 
-Starting with a private key in the form of a randomly generated number k, we multiply it by a predetermined point on the curve called the _generator point_ G to produce another point somewhere else on the curve, which is the corresponding public key K. The generator point is specified as part of the +secp256k1+ standard and is always the same for all keys in bitcoin: 
+((("keys","public, generating", id="ix_ch04-asciidoc6", range="startofrange")))((("public keys","generating", id="ix_ch04-asciidoc7", range="startofrange")))Starting with a private key in the form of a randomly generated number k, we multiply it by a predetermined point on the curve called the((("generator point")))((("secp256k1 curve standard","generator point definition in"))) _generator point_ G to produce another point somewhere else on the curve, which is the corresponding public key K. The generator point is specified as part of the +secp256k1+ standard and is always the same for all keys in bitcoin: 
 
 [latexmath]
 ++++
@@ -182,14 +181,14 @@ Starting with a private key in the form of a randomly generated number k, we mul
 \end{equation}
 ++++
 
-where k is the private key, G is the generator point, ((("generator point"))) and K is the resulting public key, a point on the curve. Because the generator point is always the same for all bitcoin users, a private key k multiplied with G will always result in the same public key K. The relationship between k and K is fixed, but can only be calculated in one direction, from k to K. That's why a bitcoin address (derived from K) can be shared with anyone and does not reveal the user's private key (k). 
+where k is the private key, G is the generator point, and K is the resulting public key, a point on the curve. Because the generator point is always the same for all bitcoin users, a private key k multiplied with G will always result in the same public key K. The relationship between k and K is fixed, but can only be calculated in one direction, from k to K. That's why a bitcoin address (derived from K) can be shared with anyone and does not reveal the user's private key (k). 
 
 [TIP]
 ====
 A private key can be converted into a public key, but a public key cannot be converted back into a private key because the math only works one way. 
 ====
 
-Implementing the elliptic curve multiplication, we take the private key k generated previously and multiply it with the generator point G to find the public key K:
+Implementing the((("elliptic curve multiplication"))) elliptic curve multiplication, we take the private key k generated previously and multiply it with the generator point G to find the public key K:
 
 ----
 K = 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD * G
@@ -214,12 +213,12 @@ image::images/msbt_0404.png["ecc_illustrated"]
 
 [TIP]
 ====
-Most bitcoin implementations use the OpenSSL cryptographic library to do the elliptic curve math. For example, to derive the public key, the function +EC_POINT_mul()+ is used. See http://wiki.openssl.org/index.php/Elliptic_Curve_Cryptography.
+Most bitcoin implementations use the((("OpenSSL cryptographic library"))) OpenSSL cryptographic library to do the elliptic curve math. For example, to derive the public key, the function((("EC_POINT_mul() function (OpenSSL)"))) +EC_POINT_mul()+ is used. See http://wiki.openssl.org/index.php/Elliptic_Curve_Cryptography. (((range="endofrange", startref="ix_ch04-asciidoc7")))(((range="endofrange", startref="ix_ch04-asciidoc6")))(((range="endofrange", startref="ix_ch04-asciidoc0")))
 ====
 
 === Bitcoin Addresses
 
-A bitcoin address is a string of digits and characters that can be shared with anyone who wants to send you money. Addresses produced from public keys consist of a string of numbers and letters, beginning with the digit "1". Here's an example of a bitcoin address:
+((("addresses, bitcoin", id="ix_ch04-asciidoc8", range="startofrange")))((("addresses, bitcoin","generally", id="ix_ch04-asciidoc9", range="startofrange")))A bitcoin address is a string of digits and characters that can be shared with anyone who wants to send you money. Addresses produced from public keys consist of a string of numbers and letters, beginning with the digit "1". Here's an example of a bitcoin address:
 
 ----
 1thMirt546nngXqyPEz532S8fLwbozud8
@@ -228,7 +227,7 @@ A bitcoin address is a string of digits and characters that can be shared with a
 
 The bitcoin address is what appears most commonly in a transaction as the "recipient" of the funds. If we were to compare a bitcoin transaction to a paper check, the bitcoin address is the beneficiary, which is what we write on the line after "Pay to the order of." On a paper check, that beneficiary can sometimes be the name of a bank account holder, but can also include corporations, institutions, or even cash. Because paper checks do not need to specify an account, but rather use an abstract name as the recipient of funds, that makes paper checks very flexible as payment instruments. Bitcoin transactions use a similar abstraction, the bitcoin address, to make them very flexible. A bitcoin address can represent the owner of a private/public key pair, or it can represent something else, such as a payment script, as we will see in <<p2sh>>. For now, let's examine the simple case, a bitcoin address that represents, and is derived from, a public key.
 
-The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary-sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, in script addresses, and in the mining "Proof-Of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the Secure Hash Algorithm (SHA) and the RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and RIPEMD160. 
+The bitcoin address is derived from the public key through the use of one-way cryptographic hashing; a "hashing algorithm" or simply "hash algorithm" is a one-way function that produces a fingerprint or "hash" of an arbitrary-sized input. Cryptographic hash functions are used extensively in bitcoin: in bitcoin addresses, in script addresses, and in the mining "Proof-Of-Work" algorithm. The algorithms used to make a bitcoin address from a public key are the((("Secure Hash Algorithm (SHA)"))) Secure Hash Algorithm (SHA) and the((("RACE Integrity Primitives Evaluation Message Digest (RIPEMD)"))) RACE Integrity Primitives Evaluation Message Digest (RIPEMD), specifically((("RIPEMD160")))((("SHA256"))) SHA256 and RIPEMD160. 
 
 Starting with the public key K, we compute the SHA256 hash and then compute the RIPEMD160 hash of the result, producing a 160-bit (20-byte) number:
 [latexmath]
@@ -242,10 +241,10 @@ where K is the public key and A is the resulting bitcoin address.
 
 [TIP]
 ====
-A bitcoin address is _not_ the same as a public key. Bitcoin addresses are derived from a public key using a one-way function. 
+((("addresses, bitcoin","public keys vs.")))((("public keys","bitcoin addresses vs.")))A bitcoin address is _not_ the same as a public key. Bitcoin addresses are derived from a public key using a one-way function. 
 ====
 
-Bitcoin addresses are almost always presented to users in an encoding called "Base58Check" (see <<base58>>), which uses 58 characters (a Base58 number system) and a checksum to help human readability, avoid ambiguity, and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. <<pubkey_to_address>> illustrates the conversion of a public key into a bitcoin address.
+Bitcoin addresses are almost always presented to users in an encoding called((("addresses, bitcoin","Base58 encoding", id="ix_ch04-asciidoc10", range="startofrange")))((("addresses, bitcoin","Base58Check encoding", id="ix_ch04-asciidoc11", range="startofrange")))((("Base58 encoding", id="ix_ch04-asciidoc12", range="startofrange")))((("Base58Check encoding", id="ix_ch04-asciidoc13", range="startofrange"))) "Base58Check" (see <<base58>>), which uses 58 characters (a Base58 number system) and a checksum to help human readability, avoid ambiguity, and protect against errors in address transcription and entry. Base58Check is also used in many other ways in bitcoin, whenever there is a need for a user to read and correctly transcribe a number, such as a bitcoin address, a private key, an encrypted key, or a script hash. In the next section we will examine the mechanics of Base58Check encoding and decoding, and the resulting representations. <<pubkey_to_address>> illustrates the conversion of a public key into a bitcoin address.(((range="endofrange", startref="ix_ch04-asciidoc13")))
 
 [[pubkey_to_address]]
 .Public key to bitcoin address: conversion of a public key into a bitcoin address 
@@ -255,7 +254,7 @@ image::images/msbt_0405.png["pubkey_to_address"]
 ==== Base58 and Base58Check Encoding
 
 
-In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the 10 numerals 0 through 9, the hexadecimal system uses 16, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact, Base-64 representation uses 26 lower-case letters, 26 capital letters, 10 numerals, and two more characters such as "\+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readability, and error detection and prevention. Base58 is a subset of Base64, using the upper- and lowercase letters and numbers, but omitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base58 is Base64 without the 0 (number zero), O (capital o), l (lower L), I (capital i), and the symbols "\+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) just mentioned.
+In order to represent long numbers in a compact way, using fewer symbols, many computer systems use mixed-alphanumeric representations with a base (or radix) higher than 10. For example, whereas the traditional decimal system uses the 10 numerals 0 through 9, the hexadecimal system uses 16, with the letters A through F as the six additional symbols. A number represented in hexadecimal format is shorter than the equivalent decimal representation. Even more compact,((("Base-64 representation"))) Base-64 representation uses 26 lower-case letters, 26 capital letters, 10 numerals, and two more characters such as "\+" and "/" to transmit binary data over text-based media such as email. Base-64 is most commonly used to add binary attachments to email. Base58 is a text-based binary-encoding format developed for use in bitcoin and used in many other crypto-currencies. It offers a balance between compact representation, readability, and error detection and prevention. Base58 is a subset of Base64, using the upper- and lowercase letters and numbers, but omitting some characters that are frequently mistaken for one another and can appear identical when displayed in certain fonts. Specifically, Base58 is Base64 without the 0 (number zero), O (capital o), l (lower L), I (capital i), and the symbols "\+" and "/". Or, more simply, it is a set of lower and capital letters and numbers without the four (0, O, l, I) just mentioned.
 
 [[base58alphabet]]
 .bitcoin's Base58 alphabet
@@ -268,7 +267,7 @@ In order to represent long numbers in a compact way, using fewer symbols, many c
 
 To add extra security against typos or transcription errors, Base58Check is a Base58 encoding format, frequently used in bitcoin, which has a built-in error-checking code. The checksum is an additional four bytes added to the end of the data that is being encoded. The checksum is derived from the hash of the encoded data and can therefore be used to detect and prevent transcription and typing errors. When presented with a Base58Check code, the decoding software will calculate the checksum of the data and compare it to the checksum included in the code. If the two do not match, that indicates that an error has been introduced and the Base58Check data is invalid. For example, this prevents a mistyped bitcoin address from being accepted by the wallet software as a valid destination, an error that would otherwise result in loss of funds.
 
-To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte," which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown in <<base58check_versions>>.
+((("data, converting to Base58Check")))To convert data (a number) into a Base58Check format, we first add a prefix to the data, called the "version byte," which serves to easily identify the type of data that is encoded. For example, in the case of a bitcoin address the prefix is zero (0x00 in hex), whereas the prefix used when encoding a private key is 128 (0x80 in hex). A list of common version prefixes is shown in <<base58check_versions>>.
 
 Next we compute the "double-SHA" checksum, meaning we apply the SHA256 hash-algorithm twice on the previous result (prefix and data):
  
@@ -276,7 +275,7 @@ Next we compute the "double-SHA" checksum, meaning we apply the SHA256 hash-algo
 checksum = SHA256(SHA256(prefix+data)) 
 ----
 
-From the resulting 32-byte hash (hash-of-a-hash), we take only the first four bytes. These four bytes serve as the error-checking code, or checksum. The checksum is concatenated (appended) to the end. 
+From the resulting 32-byte hash (hash-of-a-hash), we take only the first four bytes. These four bytes serve as the error-checking code, or((("checksum"))) checksum. The checksum is concatenated (appended) to the end. 
 
 The result is composed of three items, a prefix, the data, and a checksum. This result is encoded using the Base58 alphabet described previously. <<base58check_encoding>> illustrates the Base58Check encoding process.
 
@@ -284,7 +283,7 @@ The result is composed of three items, a prefix, the data, and a checksum. This 
 .Base58Check encoding: a Base58, versioned, and checksummed format for unambiguously encoding bitcoin data
 image::images/msbt_0406.png["Base58CheckEncoding"]
 
-In bitcoin, most of the data presented to the user is Base58Check-encoded to make it compact, easy to read, and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base58 contain specific characters at the beginning of the Base58Check-encoded payload, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check-encoded bitcoin address that starts with a 1 from a Base58Check-encoded private key WIF format that starts with a 5. Some example version prefixes and the resulting Base58 characters are shown in <<base58check_versions>>.
+In bitcoin, most of the data presented to the user is Base58Check-encoded to make it compact, easy to read, and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base58 contain specific characters at the beginning of the Base58Check-encoded payload, making it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check-encoded bitcoin address that starts with a 1 from a Base58Check-encoded private key WIF format that starts with a 5. Some example version prefixes and the resulting Base58 characters are shown in <<base58check_versions>>.((("Base58Check encoding","prefixes, listed")))
 
 [[base58check_versions]]
 .Base58Check version prefix and encoded result examples
@@ -300,7 +299,7 @@ In bitcoin, most of the data presented to the user is Base58Check-encoded to mak
 |=======
 
 
-Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address and finally, the Base58Check encoding. The C++ code in <<addr_example>> shows the complete step-by-step process, from private key to Base58Check-encoded bitcoin address. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions.
+Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address and finally, the Base58Check encoding. The C++ code in <<addr_example>> shows the complete step-by-step process, from private key to Base58Check-encoded bitcoin address. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions.((("Base58Check encoding","bitcoin address, complete code for")))
 
 [[addr_example]]
 .Creating a Base58Check-encoded bitcoin address from a private key
@@ -311,7 +310,7 @@ include::code/addr.cpp[]
 ----
 ====
 
-The code uses a predefined private key, so that it produces the same bitcoin address every time it is run as shown in <<addr_example_run>>.
+The code uses a predefined private key, so that it produces the same bitcoin address every time it is run as shown in <<addr_example_run>>.(((range="endofrange", startref="ix_ch04-asciidoc12")))(((range="endofrange", startref="ix_ch04-asciidoc11")))(((range="endofrange", startref="ix_ch04-asciidoc10")))(((range="endofrange", startref="ix_ch04-asciidoc9")))
 
 [[addr_example_run]]
 .Compiling and running the addr code
@@ -329,12 +328,12 @@ Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
 
 ==== Key Formats
 
-Both private and public keys can be represented in a number of different formats. These representations all encode the same number, even though they look different. These formats are primarily used to make it easy for people to read and transcribe keys without introducing errors.
+((("addresses, bitcoin","key formats", id="ix_ch04-asciidoc14", range="startofrange")))((("keys","formats of", id="ix_ch04-asciidoc15", range="startofrange")))Both private and public keys can be represented in a number of different formats. These representations all encode the same number, even though they look different. These formats are primarily used to make it easy for people to read and transcribe keys without introducing errors.
 
 [[priv_formats]]
 ===== Private key formats
 
-The private key can be represented in a number of different formats, all of which correspond to the same 256-bit number. <<table_4-2>> shows three common formats used to represent private keys.
+((("private keys","format")))((("sx tools","modifying private key formats with")))The private key can be represented in a number of different formats, all of which correspond to the same 256-bit number. <<table_4-2>> shows three common formats used to represent private keys.
 
 [[table_4-2]]
 .Private key representations (encoding formats)
@@ -362,9 +361,9 @@ All of the these representations are different ways of showing the same number, 
 
 ===== Decode from Base58Check to hex
 
-The sx tools package (See <<sx_tools>>) makes it easy to write shell-scripts and command-line "pipes" that manipulate bitcoin keys, addresses, and transactions. You can use sx tools to decode the Base58Check format on the command line.
+((("Base58Check encoding","decoding to hex")))((("sx tools","decoding Base58Check to/from hex")))The sx tools package (See <<sx_tools>>) makes it easy to write shell-scripts and command-line((("pipes"))) "pipes" that manipulate bitcoin keys, addresses, and transactions. You can use sx tools to decode the Base58Check format on the command line.
 
-We use the +base58check-decode+ command:
+We use the((("base58check-decode command (sx tools)"))) +base58check-decode+ command:
 ----
 $ sx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
@@ -374,7 +373,7 @@ The result is the hexadecimal key, followed by the Wallet Import Format (WIF) ve
 
 ===== Encode from hex to Base58Check
 
-To encode into Base58Check (the opposite of the previous command), we provide the hex private key, followed by the Wallet Import Format (WIF) version prefix 128:
+((("Base58Check encoding","from hex")))To encode into Base58Check (the opposite of the previous command), we provide the hex private key, followed by the((("Base58Check encoding","WIF prefix for")))((("Wallet Import Format (WIF)"))) Wallet Import Format (WIF) version prefix 128:
 ----
 $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd 128
 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
@@ -382,7 +381,7 @@ $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6
 
 ===== Encode from hex (compressed key) to Base58Check encoding
 
-To encode into Base58Check as a "compressed" private key (see <<comp_priv>>), we add the suffix +01+ to the end of the hex key and then encode as above:
+((("compressed keys","encoding/decoding from Base58Check")))To encode into Base58Check as a "compressed" private key (see <<comp_priv>>), we add the suffix +01+ to the end of the hex key and then encode as above:
 ----
 $ sx base58check-encode 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01 128
 KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
@@ -392,9 +391,9 @@ The resulting WIF-compressed format starts with a "K". This denotes that the pri
 
 ===== Public key formats
 
-Public keys are also presented in different ways, most importantly as either _compressed_ or _uncompressed_ public keys. 
+((("public keys","formats of")))Public keys are also presented in different ways, most importantly as either _compressed_ or _uncompressed_ public keys. 
 
-As we saw previously, the public key is a point on the elliptic curve consisting of a pair of coordinates +(x,y)+. It is usually presented with the prefix +04+ followed by two 256-bit numbers, one for the _x_ coordinate of the point, the other for the _y_ coordinate. The prefix +04+ is used to distinguish uncompressed public keys from compressed public keys that begin with a +02+ or a +03+.
+As we saw previously, the public key is a point on the elliptic curve consisting of a pair of coordinates +(x,y)+. It is usually presented with the prefix((("Wallet Import Format (WIF)","for uncompressed keys"))) +04+ followed by two 256-bit numbers, one for the _x_ coordinate of the point, the other for the _y_ coordinate. The prefix +04+ is used to distinguish uncompressed public keys from compressed public keys that begin with a +02+ or a +03+.
 
 Here's the public key generated by the private key we created earlier, shown as the coordinates +x+ and +y+:
 
@@ -412,32 +411,32 @@ K = 04F028892BAD...505BDB
 [[comp_pub]]
 ===== Compressed public keys
 
-Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
+((("compressed public keys", id="ix_ch04-asciidoc16", range="startofrange")))((("public keys","compressed", id="ix_ch04-asciidoc17", range="startofrange")))Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
 
 As we saw in the section <<pubkey>>, a public key is a point (x,y) on an elliptic curve. Because the curve expresses a mathematical function, a point on the curve represents a solution to the equation and, therefore, if we know the _x_ coordinate we can calculate the _y_ coordinate by solving the equation y^2^ mod p = (x^3^ + 7) mod p. That allows us to store only the _x_ coordinate of the public key point, omitting the _y_ coordinate and reducing the size of the key and the space required to store it by 256 bits. An almost 50% reduction in size in every transaction adds up to a lot of data saved over time!
 
-Whereas uncompressed public keys have a prefix of +04+, compressed public keys start with either a +02+ or a +03+ prefix. Let's look at why there are two possible prefixes: because the left side of the equation is y^2^, that means the solution for y is a square root, which can have a positive or negative value. Visually, this means that the resulting _y_ coordinate can be above the x-axis or below the x-axis. As you can see from the graph of the elliptic curve in <<ecc-curve>>, the curve is symmetric, meaning it is reflected like a mirror by the x-axis. So, while we can omit the _y_ coordinate we have to store the _sign_ of y (positive or negative), or in other words, we have to remember if it was above or below the x-axis because each of those options represents a different point and a different public key. When calculating the elliptic curve in binary arithmetic on the finite field of prime order p, the _y_ coordinate is either even or odd, which corresponds to the positive/negative sign as explained earlier. Therefore, to distinguish between the two possible values of y, we store a compressed public key with the prefix +02+ if the +y+ is even, and +03+ if it is odd, allowing the software to correctly deduce the _y_ coordinate from the _x_ coordinate and uncompress the public key to the full coordinates of the point. Public key compression is illustrated in <<pubkey_compression>>. 
+Whereas uncompressed public keys have a prefix of +04+, ((("Wallet Import Format (WIF)","for compressed keys")))compressed public keys start with either a +02+ or a +03+ prefix. Let's look at why there are two possible prefixes: because the left side of the equation is y^2^, that means the solution for y is a square root, which can have a positive or negative value. Visually, this means that the resulting _y_ coordinate can be above the x-axis or below the x-axis. As you can see from the graph of the elliptic curve in <<ecc-curve>>, the curve is symmetric, meaning it is reflected like a mirror by the x-axis. So, while we can omit the _y_ coordinate we have to store the _sign_ of y (positive or negative), or in other words, we have to remember if it was above or below the x-axis because each of those options represents a different point and a different public key. When calculating the elliptic curve in binary arithmetic on the finite field of prime order p, the _y_ coordinate is either even or odd, which corresponds to the positive/negative sign as explained earlier. Therefore, to distinguish between the two possible values of y, we store a compressed public key with the prefix +02+ if the +y+ is even, and +03+ if it is odd, allowing the software to correctly deduce the _y_ coordinate from the _x_ coordinate and uncompress the public key to the full coordinates of the point. Public key compression is illustrated in <<pubkey_compression>>. 
 
 [[pubkey_compression]]
 .Public key compression
 image::images/msbt_0407.png["pubkey_compression"]
 
-Here's the same public key generated previously, shown as a compressed public key stored in 264 bits (66 hex digits) with the prefix +03+ indicating the _y_ coordinate is odd:
+((("public keys","compression")))Here's the same public key generated previously, shown as a compressed public key stored in 264 bits (66 hex digits) with the prefix +03+ indicating the _y_ coordinate is odd:
 
 ----
 K = 03F028892BAD...DC341A
 ----
 
-This compressed public key corresponds to the same private key, meaning that it is generated from the same private key. However, it looks different from the uncompressed public key. More importantly, if we convert this compressed public key to a bitcoin address using the double-hash function (+RIPEMD160(SHA256(K))+) it will produce a _different_ bitcoin address. This can be confusing, because it means that a single private key can produce a public key expressed in two different formats (compressed and uncompressed) that produce two different bitcoin addresses. However, the private key is identical for both bitcoin addresses.
+((("addresses, bitcoin","converting compressed keys to")))((("compressed keys","converting to bitcoin addresses")))This compressed public key corresponds to the same private key, meaning that it is generated from the same private key. However, it looks different from the uncompressed public key. More importantly, if we convert this compressed public key to a bitcoin address using the double-hash function (+RIPEMD160(SHA256(K))+) it will produce a _different_ bitcoin address. This can be confusing, because it means that a single private key can produce a public key expressed in two different formats (compressed and uncompressed) that produce two different bitcoin addresses. However, the private key is identical for both bitcoin addresses.
 
-Compressed public keys are gradually becoming the default across bitcoin clients, which is having a significant impact on reducing the size of transactions and therefore the blockchain. However, not all clients support compressed public keys yet. Newer clients that support compressed public keys have to account for transactions from older clients that do not support compressed public keys. This is especially important when a wallet application is importing private keys from another bitcoin wallet application, because the new wallet needs to scan the blockchain to find transactions corresponding to these imported keys. Which bitcoin addresses should the bitcoin wallet scan for? The bitcoin addresses produced by uncompressed public keys, or the bitcoin addresses produced by compressed public keys? Both are valid bitcoin addresses, and can be signed for by the private key, but they are different addresses!
+((("blockchains","size of, and compressed public keys")))Compressed public keys are gradually becoming the default across bitcoin clients, which is having a significant impact on reducing the size of transactions and therefore the blockchain. However, not all clients support compressed public keys yet. Newer clients that support compressed public keys have to account for transactions from older clients that do not support compressed public keys. This is especially important when a wallet application is importing private keys from another bitcoin wallet application, because the new wallet needs to scan the blockchain to find transactions corresponding to these imported keys. Which bitcoin addresses should the bitcoin wallet scan for? The bitcoin addresses produced by uncompressed public keys, or the bitcoin addresses produced by compressed public keys? Both are valid bitcoin addresses, and can be signed for by the private key, but they are different addresses!
 
-To resolve this issue, when private keys are exported from a wallet, the Wallet Import Format that is used to represent them is implemented differently in newer bitcoin wallets, to indicate that these private keys have been used to produce _compressed_ public keys and therefore _compressed_ bitcoin addresses. This allows the importing wallet to distinguish between private keys originating from older or newer wallets and search the blockchain for transactions with bitcoin addresses corresponding to the uncompressed, or the compressed, public keys, respectively. Let's look at how this works in more detail, in the next section. 
+((("Wallet Import Format (WIF)","newer bitcoin wallets and")))To resolve this issue, when private keys are exported from a wallet, the Wallet Import Format that is used to represent them is implemented differently in newer bitcoin wallets, to indicate that these private keys have been used to produce _compressed_ public keys and therefore _compressed_ bitcoin addresses. This allows the importing wallet to distinguish between private keys originating from older or newer wallets and search the blockchain for transactions with bitcoin addresses corresponding to the uncompressed, or the compressed, public keys, respectively. Let's look at how this works in more detail, in the next section.(((range="endofrange", startref="ix_ch04-asciidoc17")))(((range="endofrange", startref="ix_ch04-asciidoc16"))) 
 
 [[comp_priv]]
 ===== Compressed private keys
 
-Ironically, the name "compressed private key" is misleading, because when a private key is exported as WIF-compressed it is actually one byte _longer_ than an "uncompressed" private key. That is because it has the added 01 suffix, which signifies it comes from a newer wallet and should only be used to produce compressed public keys. Private keys are not compressed and cannot be compressed. The term "compressed private key" really means "private key from which compressed public keys should be derived," whereas "uncompressed private key" really means "private key from which uncompressed public keys should be derived." You should only refer to the export format as "WIF-compressed" or "WIF" and not refer to the private key as "compressed" to avoid further confusion.
+((("compressed private keys")))((("private keys","compressed")))Ironically, the name "compressed private key" is misleading, because when a private key is exported as WIF-compressed it is actually one byte _longer_ than an "uncompressed" private key. That is because it has the added 01 suffix, which signifies it comes from a newer wallet and should only be used to produce compressed public keys. Private keys are not compressed and cannot be compressed. The term "compressed private key" really means "private key from which compressed public keys should be derived," whereas "uncompressed private key" really means "private key from which uncompressed public keys should be derived." You should only refer to the export format as "WIF-compressed" or "WIF" and not refer to the private key as "compressed" to avoid further confusion.
 
 Remember, these formats are _not_ used interchangeably. In a newer wallet that implements compressed public keys, the private keys will only ever be exported as WIF-compressed (with a K or L prefix). If the wallet is an older implementation and does not use compressed public keys, the private keys will only ever be exported as WIF (with a 5 prefix). The goal here is to signal to the wallet importing these private keys whether it must search the blockchain for compressed or uncompressed public keys and addresses.
 
@@ -459,12 +458,12 @@ If a bitcoin wallet is able to implement compressed public keys, it will use tho
 
 [TIP]
 ====
-"Compressed private keys" is a misnomer! They are not compressed; rather, the WIF-compressed format signifies that they should only be used to derive compressed public keys and their corresponding bitcoin addresses. Ironically, a "WIF-compressed" encoded private key is one byte longer because it has the added 01 suffix to distinguish it from an "uncompressed" one.
+"Compressed private keys" is a misnomer! They are not compressed; rather, the WIF-compressed format signifies that they should only be used to derive compressed public keys and their corresponding bitcoin addresses. Ironically, a "WIF-compressed" encoded private key is one byte longer because it has the added 01 suffix to distinguish it from an "uncompressed" one.(((range="endofrange", startref="ix_ch04-asciidoc15")))(((range="endofrange", startref="ix_ch04-asciidoc14")))(((range="endofrange", startref="ix_ch04-asciidoc8")))
 ====
 
 === Implementing Keys and Addresses in Python  
 
-The most comprehensive bitcoin library in Python is https://github.com/vbuterin/pybitcointools[pybitcointools] by Vitalik Buterin. In <<key-to-address_script>>, we use the pybitcointools library (imported as "bitcoin") to generate and display keys and addresses in various formats.
+((("addresses, bitcoin","implementing in Python", id="ix_ch04-asciidoc18", range="startofrange")))((("keys","implementing in Python", id="ix_ch04-asciidoc19", range="startofrange")))((("pybitcointools", id="ix_ch04-asciidoc20", range="startofrange")))((("Python","implementing addresses in", id="ix_ch04-asciidoc21", range="startofrange")))((("Python","implementing keys in", id="ix_ch04-asciidoc22", range="startofrange")))The most comprehensive bitcoin library in Python is https://github.com/vbuterin/pybitcointools[pybitcointools] by((("Buterin, Vitalik"))) Vitalik Buterin. In <<key-to-address_script>>, we use the pybitcointools library (imported as "bitcoin") to generate and display keys and addresses in various formats.
 
 [[key-to-address_script]]
 .Key and address generation and formatting with the pybitcointools library
@@ -509,7 +508,7 @@ Compressed Bitcoin Address (b58check) is:
 ====
 
 
-<<ec_math>> is another example, using the Python ECDSA library for the elliptic curve math and without using any specialized bitcoin libraries.
+<<ec_math>> ((("elliptic curve cryptography","in Python")))((("Python ECDSA library")))is another example, using the Python ECDSA library for the elliptic curve math and without using any specialized bitcoin libraries.
 
 [[ec_math]]
 .A script demonstrating elliptic curve math used for bitcoin keys
@@ -520,7 +519,7 @@ include::code/ec-math.py[]
 ----
 ====
 
-<<ec_math_run>> shows the output produced by running this script.
+<<ec_math_run>> shows the output produced by running this script.(((range="endofrange", startref="ix_ch04-asciidoc22")))(((range="endofrange", startref="ix_ch04-asciidoc21")))(((range="endofrange", startref="ix_ch04-asciidoc20")))(((range="endofrange", startref="ix_ch04-asciidoc19")))(((range="endofrange", startref="ix_ch04-asciidoc18")))
 
 [[ec_math_run]]
 .Installing the Python ECDSA library and running the ec_math.py script
@@ -542,18 +541,18 @@ BTC public key: 029ade3effb0a67d5c8609850d797366af428f4a0d5194cb221d807770a15228
 
 === Wallets
 
-Wallets are containers for private keys, usually implemented as structured files or simple databases. 
-Another method for making keys is _deterministic key generation_. Here you derive each new private key, using a one-way hash function from a previous private key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key (known as a _seed_ or _master_ key) to generate them all. In this section we will examine the different methods of key generation and the wallet structures that are built around them. 
+((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))Wallets are containers for private keys, usually implemented as structured files or simple databases. 
+Another method for making keys is((("deterministic key generation"))) _deterministic key generation_. Here you derive each new private key, using a one-way hash function from a previous private key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key (known as a _seed_ or _master_ key) to generate them all. In this section we will examine the different methods of key generation and the wallet structures that are built around them. 
 
 [TIP]
 ====
-Wallets contain keys, not coins. The coins are stored on the blockchain in the form of transaction-outputs (often noted as _vout_ or _txout_). Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/public keys (see <<private_public_keys>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). 
+Wallets contain keys, not coins. The coins are stored on the blockchain in the form of transaction-outputs (often noted as((("txout notation")))((("vout notation"))) _vout_ or _txout_). Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/public keys (see <<private_public_keys>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). 
 ====
 
 [[random_wallet]]
 ==== Nondeterministic (Random) Wallets
 
-In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. This type of wallet is called a _Type-0 nondeterministic wallet_. For example, the Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys," or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a wallet that is implemented as a Type-0 wallet, the use of this wallet is actively discouraged by developers of the Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
+((("nondeterministic wallets")))((("random wallets")))((("Type-0 nondeterministic wallet")))((("wallets","nondeterministic")))((("wallets","random")))In the first implementations of bitcoin clients, wallets were simply collections of randomly generated private keys. This type of wallet is called a _Type-0 nondeterministic wallet_. For example, the((("Just a Bunch Of Keys (JBOK) wallets"))) Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys," or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a wallet that is implemented as a Type-0 wallet, the use of this wallet is actively discouraged by developers of the Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
 
 [[Type0_wallet]]
 .Type-0 nondeterministic (random) wallet: a collection of randomly generated keys
@@ -561,14 +560,14 @@ image::images/msbt_0408.png["non-deterministic wallet"]
 
 ==== Deterministic (Seeded) Wallets
 
-Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
+((("deterministic wallets")))((("seeded wallets")))((("wallets","deterministic")))((("wallets","seeded")))Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
 
 [[mnemonic_code_words]]
 ==== Mnemonic Code Words
 
-Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
+((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
-Mnemonic codes are defined in Bitcoin Improvement Proposal 39 (see <<bip0039>>), currently in Draft status. Note that BIP0039 is a draft proposal and not a standard. Specifically, there is a different standard, with a different set of words used by the Electrum wallet and _predating_ BIP0039. BIP0039 is used by the Trezor wallet and a few other wallets but is incompatible with Electrum's implementation. 
+Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>), currently in Draft status. Note that BIP0039 is a draft proposal and not a standard. Specifically, there is a different standard, with a different set of words used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and _predating_ BIP0039. BIP0039 is used by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) Trezor wallet and a few other wallets but is incompatible with Electrum's implementation. 
     
 BIP0039 defines the creation of a mnemonic code and seed as a follows:
 
@@ -620,7 +619,7 @@ fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343
 [[hd_wallets]]
 ==== Hierarchical Deterministic Wallets (BIP0032/BIP0044)
 
-Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP0032 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.
+((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP0032 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
 
 [[Type2_wallet]]
 .Type-2 hierarchical deterministic wallet: a tree of keys generated from a seed
@@ -637,7 +636,7 @@ The second advantage of HD wallets is that users can create a sequence of public
 
 ===== HD wallet creation from a seed
 
-HD wallets are created from a single _root seed_, which is a 128-, 256-, or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. The root seed is most often represented by a _mnemonic word sequence_, as described in the previous section <<mnemonic_code_words>>, to make it easier for people to transcribe and store it.
+((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. The root seed is most often represented by a _mnemonic word sequence_, as described in the previous section <<mnemonic_code_words>>, to make it easier for people to transcribe and store it.
 
 The process of creating the master keys and master chain code for an HD wallet is shown in <<HDWalletFromSeed>>.
 
@@ -649,7 +648,7 @@ The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is 
 
 ===== Private child key derivation
 
-Hierarchical Deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
+((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical Deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
 
 The child key derivation functions are based on a one-way hash function that combines: 
 
@@ -673,7 +672,7 @@ Repeating the process one level down the tree, each child can in turn become a p
 
 ===== Using derived child keys
 
-Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key can also not be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n–1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
+((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key can also not be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n–1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
 
 So what can the child private key be used for on its own? It can be used to make a public key and a bitcoin address. Then, it can be used to sign transactions to spend anything paid to that address.  
 
@@ -684,7 +683,7 @@ A child private key, the corresponding public key, and the bitcoin address are a
 
 ===== Extended keys
 
-As we saw earlier, the key derivation function can be used to create children at any level of the tree, based on the three inputs: a key, a chain code, and the index of the desired child. The two essential ingredients are the key and chain code, and combined these are called an _extended key_. The term "extended key" could also be thought of as "extensible key" because such a key can be used to derive children. 
+((("extended keys")))((("hierarchical deterministic wallets (HD wallets)","extended keys")))((("keys","extended")))As we saw earlier, the key derivation function can be used to create children at any level of the tree, based on the three inputs: a key, a chain code, and the index of the desired child. The two essential ingredients are the key and chain code, and combined these are called an _extended key_. The term "extended key" could also be thought of as "extensible key" because such a key can be used to derive children. 
 
 Extended keys are stored and represented simply as the concatenation of the 256-bit key and 256-bit chain code into a 512-bit sequence. There are two types of extended keys. An extended private key is the combination of a private key and chain code and can be used to derive child private keys (and from them, child public keys). An extended public key is a public key and chain code, which can be used to create child public keys, as described in <<public_key_derivation>>.
 
@@ -695,7 +694,7 @@ Think of an extended key as the root of a branch in the tree structure of the HD
 An extended key consists of a private or public key and chain code. An extended key can create children, generating its own branch in the tree structure. Sharing an extended key gives access to the entire branch. 
 ==== 
 
-Extended keys are encoded using Base58Check, to easily export and import between different BIP0032 compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
+((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP0032 compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
 
 Here's an example of an extended private key, encoded in Base58Check:
 ----
@@ -711,15 +710,15 @@ xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLr
 [[public__child_key_derivation]]
 ===== Public child key derivation
 
-As mentioned  previously, a very useful characteristic of hierarchical deterministic wallets is the ability to derive public child keys from public parent keys, _without_ having the private keys. This gives us two ways to derive a child public key: either from the child private key, or directly from the parent public key. 
+((("child key derivation (CKD) function","public")))((("hierarchical deterministic wallets (HD wallets)","public child key derivation")))((("public child key derivation")))As mentioned  previously, a very useful characteristic of hierarchical deterministic wallets is the ability to derive public child keys from public parent keys, _without_ having the private keys. This gives us two ways to derive a child public key: either from the child private key, or directly from the parent public key. 
 
 An extended public key can be used, therefore, to derive all of the _public_ keys (and only the public keys) in that branch of the HD wallet structure.
 
-This shortcut can be used to create very secure public-key-only deployments where a server or application has a copy of an extended public key and no private keys whatsoever. That kind of deployment can produce an infinite number of public keys and bitcoin addresses, but cannot spend any of the money sent to those addresses. Meanwhile, on another more secure server, the extended private key can derive all the corresponding private keys to sign transactions and spend the money. 
+((("private keys","deployments without")))This shortcut can be used to create very secure public-key-only deployments where a server or application has a copy of an extended public key and no private keys whatsoever. That kind of deployment can produce an infinite number of public keys and bitcoin addresses, but cannot spend any of the money sent to those addresses. Meanwhile, on another more secure server, the extended private key can derive all the corresponding private keys to sign transactions and spend the money. 
 
-One common application of this solution is to install an extended public key on a web server that serves an ecommerce application. The web server can use the public key derivation function to create a new bitcoin address for every transaction (e.g., for a customer shopping cart). The web server will not have any private keys that would be vulnerable to theft. Without HD wallets, the only way to do this is to generate thousands of bitcoin addresses on a separate secure server and then preload them on the ecommerce server. That approach is cumbersome and requires constant maintenance to ensure that the ecommerce server doesn't "run out" of keys.
+((("ecommerce servers, keys for")))((("shopping carts, public keys for")))One common application of this solution is to install an extended public key on a web server that serves an ecommerce application. The web server can use the public key derivation function to create a new bitcoin address for every transaction (e.g., for a customer shopping cart). The web server will not have any private keys that would be vulnerable to theft. Without HD wallets, the only way to do this is to generate thousands of bitcoin addresses on a separate secure server and then preload them on the ecommerce server. That approach is cumbersome and requires constant maintenance to ensure that the ecommerce server doesn't "run out" of keys.
 
-Another common application of this solution is for cold-storage or hardware wallets. In that scenario, the extended private key can be stored on a paper wallet or hardware device (such as a Trezor hardware wallet), while the extended public key can be kept online. The user can create "receive" addresses at will, while the private keys are safely stored offline. To spend the funds, the user can use the extended private key on an offline signing bitcoin client or sign transactions on the hardware wallet device (e.g., Trezor). <<CKDpub>> illustrates the mechanism for extending a parent public key to derive child public keys. 
+((("cold-storage wallets","public child key derivation and")))((("hardware wallets","public child key derivation and")))Another common application of this solution is for cold-storage or hardware wallets. In that scenario, the extended private key can be stored on a paper wallet or hardware device (such as a((("Trezor wallet","public key derivation and"))) Trezor hardware wallet), while the extended public key can be kept online. The user can create "receive" addresses at will, while the private keys are safely stored offline. To spend the funds, the user can use the extended private key on an offline signing bitcoin client or sign transactions on the hardware wallet device (e.g., Trezor). <<CKDpub>> illustrates the mechanism for extending a parent public key to derive child public keys. 
 
 [[CKDpub]]
 .Extending a parent public key to create a child public key
@@ -727,7 +726,7 @@ image::images/msbt_0412.png["ChildPublicDerivation"]
 
 ===== Hardened child key derivation
 
-The ability to derive a branch of public keys from an extended public key is very useful, but it comes with a potential risk. Access to an extended public key does not give access to child private keys. However, because the extended public key contains the chain code, if a child private key is known, or somehow leaked, it can be used with the chain code to derive all the other child private keys. A single leaked child private key, together with a parent chain code, reveals all the private keys of all the children. Worse, the child private key together with a parent chain code can be used to deduce the parent private key. 
+((("child key derivation (CKD) function","hardened")))((("hardened child key derivation")))((("hierarchical deterministic wallets (HD wallets)","hardened child key derivation")))((("security","extended public keys and")))((("security","hardened child key derivation")))The ability to derive a branch of public keys from an extended public key is very useful, but it comes with a potential risk. Access to an extended public key does not give access to child private keys. However, because the extended public key contains the chain code, if a child private key is known, or somehow leaked, it can be used with the chain code to derive all the other child private keys. A single leaked child private key, together with a parent chain code, reveals all the private keys of all the children. Worse, the child private key together with a parent chain code can be used to deduce the parent private key. 
 
 To counter this risk, HD wallets use an alternative derivation function called _hardened derivation_, which "breaks" the relationship between parent public key and child chain code. The hardened derivation function uses the parent private key to derive the child chain code, instead of the parent public key. This creates a "firewall" in the parent/child sequence, with a chain code that cannot be used to compromise a parent or sibling private key. The hardened derivation function looks almost identical to the normal child private key derivation, except that the parent private key is used as input to the hash function, instead of the parent public key, as shown in the diagram in <<CKDprime>>.
 
@@ -741,13 +740,13 @@ In simple terms, if you want to use the convenience of an extended public key to
 
 ===== Index numbers for normal and hardened derivation
 
-The index number used in the derivation function is a 32-bit integer. To easily distinguish between keys derived through the normal derivation function versus keys derived through hardened derivation, this index number is split into two ranges. Index numbers between 0 and 2^31^–1 (0x0 to 0x7FFFFFFF) are used _only_ for normal derivation. Index numbers between 2^31^ and 2^32^–1 (0x80000000 to 0xFFFFFFFF) are used _only_ for hardened derivation. Therefore, if the index number is less than 2^31^, that means the child is normal, whereas if the index number is equal or above 2^31^, the child is hardened. 
+((("hardened child key derivation","indexes for")))((("public child key derivation","indexes for")))The index number used in the derivation function is a 32-bit integer. To easily distinguish between keys derived through the normal derivation function versus keys derived through hardened derivation, this index number is split into two ranges. ((("child private keys","index numbers for")))Index numbers between 0 and 2^31^–1 (0x0 to 0x7FFFFFFF) are used _only_ for normal derivation. Index numbers between 2^31^ and 2^32^–1 (0x80000000 to 0xFFFFFFFF) are used _only_ for hardened derivation. Therefore, if the index number is less than 2^31^, that means the child is normal, whereas if the index number is equal or above 2^31^, the child is hardened. 
 
 To make the index number easier to read and display, the index number for hardened children is displayed starting from zero, but with a prime symbol. The first normal child key is therefore displayed as 0, whereas the first hardened child (index 0x80000000) is displayed as 0'. In sequence then, the second hardened key would have index 0x80000001 and would be displayed as 1', and so on. When you see an HD wallet index i', that means 2^31^+i.
 
 ===== HD wallet key identifier (path)
 
-Keys in an HD wallet are identified using a "path" naming convention, with each level of the tree separated by a slash (/) character (see <<table_4-8>>). Private keys derived from the master private key start with "m". Public keys derived from the master public key start with "M". Therefore, the first child private key of the master private key is m/0. The first child public key is M/0. The second grandchild of the first child is m/0/1, and so on. 
+((("hierarchical deterministic wallets (HD wallets)","identifier for")))((("hierarchical deterministic wallets (HD wallets)","paths for")))Keys in an HD wallet are identified using a "path" naming convention, with each level of the tree separated by a slash (/) character (see <<table_4-8>>). Private keys derived from the master private key start with "m". Public keys derived from the master public key start with "M". Therefore, the first child private key of the master private key is m/0. The first child public key is M/0. The second grandchild of the first child is m/0/1, and so on. 
  
 The "ancestry" of a key is read from right to left, until you reach the master key from which it was derived. For example, identifier m/x/y/z describes the key that is the z-th child of key m/x/y, which is the y-th child of key m/x, which is the x-th child of m.
 
@@ -765,21 +764,21 @@ The "ancestry" of a key is read from right to left, until you reach the master k
 
 ===== Navigating the HD wallet tree structure
 
-The HD wallet tree structure offers tremendous flexibility. Each parent extended key can have 4 billion children: 2 billion normal children and 2 billion hardened children. Each of those children can have another 4 billion children, and so on. The tree can be as deep as you want, with an infinite number of generations. With all that flexibility, however, it becomes quite difficult to navigate this infinite tree. It is especially difficult to transfer HD wallets between implementations, because the possibilities for internal organization into branches and subbranches are endless. 
+((("BIP0043")))((("hierarchical deterministic wallets (HD wallets)","navigating")))((("hierarchical deterministic wallets (HD wallets)","tree structure for")))The HD wallet tree structure offers tremendous flexibility. Each parent extended key can have 4 billion children: 2 billion normal children and 2 billion hardened children. Each of those children can have another 4 billion children, and so on. The tree can be as deep as you want, with an infinite number of generations. With all that flexibility, however, it becomes quite difficult to navigate this infinite tree. It is especially difficult to transfer HD wallets between implementations, because the possibilities for internal organization into branches and subbranches are endless. 
 
 Two Bitcoin Improvement Proposals (BIPs) offer a solution to this complexity, by creating some proposed standards for the structure of HD wallet trees. BIP0043 proposes the use of the first hardened child index as a special identifier that signifies the "purpose" of the tree structure. Based on BIP0043, an HD wallet should use only one level-1 branch of the tree, with the index number identifying the structure and namespace of the rest of the tree by defining its purpose. For example, an HD wallet using only branch m/i'/ is intended to signify a specific purpose and that purpose is identified by index number "i".
 
-Extending that specification, BIP0044 proposes a multiaccount structure as "purpose" number +44'+ under BIP0043. All HD wallets following the BIP0044 structure are identified by the fact that they only used one branch of the tree: m/44'/. 
+((("BIP0044")))((("multiaccount structure")))Extending that specification, BIP0044 proposes a multiaccount structure as "purpose" number +44'+ under BIP0043. All HD wallets following the BIP0044 structure are identified by the fact that they only used one branch of the tree: m/44'/. 
 
 BIP0044 specifies the structure as consisting of five predefined tree levels:
 
 +m / purpose' / coin_type' / account' / change / address_index+
 
-The first level "purpose" is always set to +44'+. The second level "coin_type" specifies the type of crypto-currency coin, allowing for multicurrency HD wallets where each currency has its own subtree under the second level. There are three currencies defined for now: Bitcoin is m/44'/0', Bitcoin Testnet is m/44'/1'; and Litecoin is m/44'/2'. 
+((("coin type level (multiaccount structure)")))((("purpose level (multiaccount structure)")))The first level "purpose" is always set to +44'+. The second level "coin_type" specifies the type of crypto-currency coin, allowing for multicurrency HD wallets where each currency has its own subtree under the second level. There are three currencies defined for now: Bitcoin is m/44'/0', Bitcoin Testnet is m/44'/1'; and Litecoin is m/44'/2'. 
 
-The third level of the tree is "account," which allows users to subdivide their wallets into separate logical subaccounts, for accounting or organizational purposes. For example, an HD wallet might contain two bitcoin "accounts": m/44'/0'/0' and m/44'/0'/1'. Each account is the root of its own subtree. 
+((("account level (multiaccount structure)")))The third level of the tree is "account," which allows users to subdivide their wallets into separate logical subaccounts, for accounting or organizational purposes. For example, an HD wallet might contain two bitcoin "accounts": m/44'/0'/0' and m/44'/0'/1'. Each account is the root of its own subtree. 
 
-On the fourth level, "change," an HD wallet has two subtrees, one for creating receiving addresses and one for creating change addresses. Note that whereas the previous levels used hardened derivation, this level uses normal derivation. This is to allow this level of the tree to export extended public keys for use in a nonsecured environment. Usable addresses are derived by the HD wallet as children of the fourth level, making the fifth level of the tree the "address_index." For example, the third receiving address for bitcoin payments in the primary account would be M/44'/0'/0'/0/2. <<table_4-9>> shows a few more examples.
+((("change level (multiaccount structure)")))On the fourth level, "change," an HD wallet has two subtrees, one for creating receiving addresses and one for creating change addresses. Note that whereas the previous levels used hardened derivation, this level uses normal derivation. This is to allow this level of the tree to export extended public keys for use in a nonsecured environment. Usable addresses are derived by the HD wallet as children of the fourth level, making the fifth level of the tree the "address_index." For example, the third receiving address for bitcoin payments in the primary account would be M/44'/0'/0'/0/2. <<table_4-9>> shows a few more examples.
 
 [[table_4-9]]
 .BIP0044 HD wallet structure examples
@@ -793,7 +792,7 @@ On the fourth level, "change," an HD wallet has two subtrees, one for creating r
 
 ===== Experimenting with HD wallets using sx tools
 
-Using the command-line tool +sx+, introduced in <<ch03_bitcoin_client>>, you can experiment with generating and extending BIP0032 deterministic keys, as well as displaying them in different formats:
+((("hierarchical deterministic wallets (HD wallets)","sx tools and")))((("sx tools","HD wallets and")))Using the command-line tool +sx+, introduced in <<ch03_bitcoin_client>>, you can experiment with generating and extending BIP0032 deterministic keys, as well as displaying them in different formats: (((range="endofrange", startref="ix_ch04-asciidoc25")))(((range="endofrange", startref="ix_ch04-asciidoc24")))(((range="endofrange", startref="ix_ch04-asciidoc23")))
 
 ====
 [source, bash]
@@ -824,15 +823,15 @@ In the following sections we will look at advanced forms of keys and addresses, 
 
 ==== Encrypted Private Keys (BIP0038)
 
-Private keys must remain secret. The need for _confidentiality_ of the private keys is a truism that is quite difficult to achieve in practice, because it conflicts with the equally important security objective of _availability_. Keeping the private key private is much harder when you need to store backups of the private key to avoid losing it. A private key stored in a wallet that is encrypted by a password may be secure, but that wallet needs to be backed up. At times, users need to move keys from one wallet to another—to upgrade or replace the wallet software, for example. Private key backups might also be stored on paper (see <<paper_wallets>>) or on external storage media, such as a USB flash drive. But what if the backup itself is stolen or lost? These conflicting security goals led to the introduction of a portable and convenient standard for encrypting private keys in a way that can be understood by many different wallets and bitcoin clients, standardized by Bitcoin Improvement Proposal 38  or BIP0038 (see <<bip0038>>). 
+((("BIP0038")))((("encrypted private keys")))((("private keys","encrypted")))((("security","encrypted private keys")))((("security","of private keys")))Private keys must remain secret. The need for _confidentiality_ of the private keys is a truism that is quite difficult to achieve in practice, because it conflicts with the equally important security objective of _availability_. ((("security","of wallet backups")))Keeping the private key private is much harder when you need to store backups of the private key to avoid losing it. A private key stored in a wallet that is encrypted by a password may be secure, but that wallet needs to be backed up. At times, users need to move keys from one wallet to another—to upgrade or replace the wallet software, for example. Private key backups might also be stored on paper (see <<paper_wallets>>) or on external storage media, such as a USB flash drive. But what if the backup itself is stolen or lost? These conflicting security goals led to the introduction of a portable and convenient standard for encrypting private keys in a way that can be understood by many different wallets and bitcoin clients, standardized by Bitcoin Improvement Proposal 38  or BIP0038 (see <<bip0038>>). 
     
-BIP0038 proposes a common standard for encrypting private keys with a passphrase and encoding them with Base58Check so that they can be stored securely on backup media, transported securely between wallets, or in any other conditions where the key might be exposed. The standard for encryption uses the Advanced Encryption Standard (AES), a standard established by the National Institute of Standards and Technology (NIST) and used broadly in data encryption implementations for commercial and military applications. 
+BIP0038 proposes a common standard for encrypting private keys with a passphrase and encoding them with Base58Check so that they can be stored securely on backup media, transported securely between wallets, or in any other conditions where the key might be exposed. The standard for encryption uses the((("Advanced Encryption Standard (AES)"))) Advanced Encryption Standard (AES), a standard established by the National Institute of Standards and Technology (NIST) and used broadly in data encryption implementations for commercial and military applications. 
 
-A BIP0038 encryption scheme takes as input a bitcoin private key, usually encoded in the Wallet Import Format (WIF), as a Base58Check string with a prefix of "5".  Additionally, the BIP0038 encryption scheme takes a passphrase—a long password—usually composed of several words or a complex string of alphanumeric characters. The result of the BIP0038 encryption scheme is a Base58Check-encoded encrypted private key that begins with the prefix +6P+. If you see a key that starts with +6P+, that means it is encrypted and requires a passphrase in order to convert (decrypt) it back into a WIF-formatted private key (prefix +5+) that can be used in any wallet. Many wallet applications now recognize BIP0038 encrypted private keys and will prompt the user for a passphrase to decrypt and import the key. Third-party applications, such as the incredibly useful browser-based http://bitaddress.org/[bitaddress.org] (Wallet Details tab), can be used to decrypt BIP0038 keys. 
+((("Wallet Import Format (WIF)","for BIP0038 encryption")))A BIP0038 encryption scheme takes as input a bitcoin private key, usually encoded in the Wallet Import Format (WIF), as a Base58Check string with a prefix of "5".  Additionally, the BIP0038 encryption scheme takes a passphrase—a long password—usually composed of several words or a complex string of alphanumeric characters. The result of the BIP0038 encryption scheme is a Base58Check-encoded encrypted private key that begins with the prefix +6P+. If you see a key that starts with +6P+, that means it is encrypted and requires a passphrase in order to convert (decrypt) it back into a WIF-formatted private key (prefix +5+) that can be used in any wallet. Many wallet applications now recognize BIP0038 encrypted private keys and will prompt the user for a passphrase to decrypt and import the key. Third-party applications, such as the incredibly useful browser-based http://bitaddress.org/[bitaddress.org] (Wallet Details tab), can be used to decrypt BIP0038 keys. 
 
-The most common use case for BIP0038 encrypted keys is for paper wallets that can be used to back up private keys on a piece of paper. As long as the user selects a strong passphrase, a paper wallet with BIP0038 encrypted private keys is incredibly secure and a great way to create offline bitcoin storage (also known as "cold storage").
+((("paper wallets","BIP0038 encryption and")))The most common use case for BIP0038 encrypted keys is for paper wallets that can be used to back up private keys on a piece of paper. As long as the user selects a strong passphrase, a paper wallet with BIP0038 encrypted private keys is incredibly secure and a great way to create offline bitcoin storage (also known as "cold storage").
 
-Test the encrypted keys in <<table_4-10>> using bitaddress.org to see how you can get the decrypted key by entering the passphrase.
+Test the encrypted keys in <<table_4-10>> using((("bitaddress.org"))) bitaddress.org to see how you can get the decrypted key by entering the passphrase.
 
 [[table_4-10]]
 .Example of BIP0038 encrypted private key 
@@ -846,9 +845,9 @@ Test the encrypted keys in <<table_4-10>> using bitaddress.org to see how you ca
 [[p2sh_addresses]]
 ==== Pay-to-Script-Hash (P2SH) and Multi-Sig Addresses 
 
-As we know, traditional bitcoin addresses begin with the number “1” and are derived from the public key, which is derived from the private key.  Although anyone can send bitcoin to a “1” address, that bitcoin can only be spent by presenting the corresponding private key signature and public key hash. 
+((("addresses, bitcoin","multi-sig addresses")))((("addresses, bitcoin","Pay-to-Script-Hash (P2SH)")))((("multi-sig addresses")))((("Pay-to-Script-Hash (P2SH)")))As we know, traditional bitcoin addresses begin with the number “1” and are derived from the public key, which is derived from the private key.  Although anyone can send bitcoin to a “1” address, that bitcoin can only be spent by presenting the corresponding private key signature and public key hash. 
 
-Bitcoin addresses that begin with the number “3” are pay-to-script-hash (P2SH) addresses, sometimes erroneously called multi-signature or multi-sig addresses. They designate the beneficiary of a bitcoin transaction as the hash of a script, instead of the owner of a public key. The feature was introduced in January 2012 with Bitcoin Improvement Proposal 16, or BIP0016 (see <<bip0016>>), and is being widely adopted because it provides the opportunity to add functionality to the address itself. Unlike transactions that "send" funds to traditional “1” bitcoin addresses, also known as pay-to-public-key-hash (P2PKH), funds sent to “3” addresses require something more than the presentation of one public key hash and one private key signature as proof of ownership. The requirements are designated at the time the address is created, within the script, and all inputs to this address will be encumbered with the same requirements.
+Bitcoin addresses that begin with the number “3” are pay-to-script-hash (P2SH) addresses, sometimes erroneously called multi-signature or multi-sig addresses. They designate the beneficiary of a bitcoin transaction as the hash of a script, instead of the owner of a public key. The feature was introduced in January 2012 with Bitcoin Improvement Proposal 16, or BIP0016 (see <<bip0016>>), and is being widely adopted because it provides the opportunity to add functionality to the address itself. Unlike transactions that "send" funds to traditional “1” bitcoin addresses, also known as((("BIP0016")))((("Pay-to-Public-Key-Hash (P2PKH)"))) pay-to-public-key-hash (P2PKH), funds sent to “3” addresses require something more than the presentation of one public key hash and one private key signature as proof of ownership. The requirements are designated at the time the address is created, within the script, and all inputs to this address will be encumbered with the same requirements.
     
 A pay-to-script-hash address is created from a transaction script, which defines who can spend a transaction output (for more detail, see <<p2sh>>). Encoding a pay-to-script hash address involves using the same double-hash function as used during creation of a bitcoin address, only applied on the script instead of the public key:
     
@@ -856,7 +855,7 @@ A pay-to-script-hash address is created from a transaction script, which defines
 script hash = RIPEMD160(SHA256(script))
 ----
     
-The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +32M8ednmuyZ2zVbes4puqe44NZumgG92sM+. 
+((("script hashes")))The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +32M8ednmuyZ2zVbes4puqe44NZumgG92sM+. 
 
 
 [TIP]
@@ -872,7 +871,7 @@ We will explore how to create transactions that spend funds from P2SH (and multi
 
 ==== Vanity Addresses
 
-Vanity addresses are valid bitcoin addresses that contain human-readable messages. For example, 1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33 is a valid address that contains the letters forming the word "Love" as the first four Base-58 letters. Vanity addresses require generating and testing billions of candidate private keys, until one derives a bitcoin address with the desired pattern. Although there are some optimizations in the vanity generation algorithm, the process essentially involves picking a private key at random, deriving the public key, deriving the bitcoin address, and checking to see if it matches the desired vanity pattern, repeating billions of times until a match is found. 
+((("addresses, bitcoin","vanity", id="ix_ch04-asciidoc26", range="startofrange")))((("vanity addresses", id="ix_ch04-asciidoc27", range="startofrange")))Vanity addresses are valid bitcoin addresses that contain human-readable messages. For example, 1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33 is a valid address that contains the letters forming the word "Love" as the first four Base-58 letters. Vanity addresses require generating and testing billions of candidate private keys, until one derives a bitcoin address with the desired pattern. Although there are some optimizations in the vanity generation algorithm, the process essentially involves picking a private key at random, deriving the public key, deriving the bitcoin address, and checking to see if it matches the desired vanity pattern, repeating billions of times until a match is found. 
 
 Once a vanity address matching the desired pattern is found, the private key from which it was derived can be used by the owner to spend bitcoins in exactly the same way as any other address. Vanity addresses are no less or more secure than any other address. They depend on the same Elliptic Curve Cryptography (ECC) and Secure Hash Algorithm (SHA) as any other address. You can no easier find the private key of an address starting with a vanity pattern than you can any other address.
 
@@ -880,7 +879,7 @@ In <<ch01_intro_what_is_bitcoin>>, we introduced Eugenia, a children's charity d
 
 ===== Generating vanity addresses
 
-It's important to realize that a bitcoin address is simply a number represented by symbols in the Base58 alphabet. The search for a pattern like "1Kids" can be seen as searching for an address in the range from "1Kids11111111111111111111111111111" to "1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz". There are approximately 58^29^ (approximately 1.4 * 10^51^) addresses in that range, all starting with "1Kids". <<table_4-11>> shows the range of addresses that have the prefix 1Kids.
+((("vanity addresses","generating", id="ix_ch04-asciidoc28", range="startofrange")))It's important to realize that a bitcoin address is simply a number represented by symbols in the Base58 alphabet. The search for a pattern like "1Kids" can be seen as searching for an address in the range from "1Kids11111111111111111111111111111" to "1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz". There are approximately 58^29^ (approximately 1.4 * 10^51^) addresses in that range, all starting with "1Kids". <<table_4-11>> shows the range of addresses that have the prefix 1Kids.
 
 [[table_4-11]]
 .The range of vanity addresses starting with "1Kids"
@@ -910,11 +909,11 @@ Let's look at the pattern "1Kids" as a number and see how frequently we might fi
 |=======
 
 
-As you can see, Eugenia won't be creating the vanity address "1KidsCharity" any time soon, even if she had access to several thousand computers. Each additional character increases the difficulty by a factor of 58. Patterns with more than seven characters are usually found by specialized hardware, such as custom-built desktops with multiple Graphical Processing Units (GPUs). These are often repurposed bitcoin mining "rigs" that are no longer profitable for bitcoin mining but can be used effectively to find vanity addresses. Vanity searches on GPU systems are many orders of magnitude faster than on a general-purpose CPU. 
+As you can see, Eugenia won't be creating the vanity address "1KidsCharity" any time soon, even if she had access to several thousand computers. Each additional character increases the difficulty by a factor of 58. Patterns with more than seven characters are usually found by specialized hardware, such as custom-built desktops with multiple((("Graphical Processing Units (GPUs)"))) Graphical Processing Units (GPUs). These are often repurposed bitcoin mining "rigs" that are no longer profitable for bitcoin mining but can be used effectively to find vanity addresses. Vanity searches on GPU systems are many orders of magnitude faster than on a general-purpose CPU. 
 
-Another way to find a vanity address is to outsource the work to a pool of vanity-miners, such as the pool at http://vanitypool.appspot.com/[vanitypool.appspot.com]. A pool is a service that allows those with GPU hardware to earn bitcoin searching for vanity addresses for others. For a small payment (0.01 bitcoin or approximately $5 when this was written), Eugenia can outsource the search for a seven-character pattern vanity address and get results in a few hours instead of having to run a CPU search for months. 
+((("vanity-miners")))Another way to find a vanity address is to outsource the work to a pool of vanity-miners, such as the pool at http://vanitypool.appspot.com/[vanitypool.appspot.com]. A pool is a service that allows those with GPU hardware to earn bitcoin searching for vanity addresses for others. For a small payment (0.01 bitcoin or approximately $5 when this was written), Eugenia can outsource the search for a seven-character pattern vanity address and get results in a few hours instead of having to run a CPU search for months. 
 
-Generating a vanity address is a brute-force exercise: try a random key, check the resulting address to see if it matches the desired pattern, repeat until successful. <<vanity_miner_code>> shows an example of a "vanity miner," a program designed to find vanity addresses, written in C++. The example uses the libbitcoin library, which we introduced in <<alt_libraries>>.
+Generating a vanity address is a brute-force exercise: try a random key, check the resulting address to see if it matches the desired pattern, repeat until successful. <<vanity_miner_code>> shows an example of a "vanity miner," a program designed to find vanity addresses, written in C++. The example uses the((("libbitcoin library","finding vanity addresses with"))) libbitcoin library, which we introduced in <<alt_libraries>>.
 
 [[vanity_miner_code]]
 .Vanity address miner
@@ -953,11 +952,11 @@ sys	0m0.035s
 ----
 ====
 
-The example code will take a few seconds to find a match for the three-character pattern "kid", as we can see when we use the +time+ Unix command to measure the execution time. Change the +search+ pattern in the source code and see how much longer it takes for four- or five-character patterns!
+The example code will take a few seconds to find a match for the three-character pattern "kid", as we can see when we use the +time+ Unix command to measure the execution time. Change the +search+ pattern in the source code and see how much longer it takes for four- or five-character patterns!(((range="endofrange", startref="ix_ch04-asciidoc28")))
 
 ===== Vanity address security
 
-Vanity addresses can be used to enhance _and_ to defeat security measures; they are truly a double-edged sword. Used to improve security, a distinctive address makes it harder for adversaries to substitute their own address and fool your customers into paying them instead of you. Unfortunately, vanity addresses also make it possible for anyone to create an address that _resembles_ any random address, or even another vanity address, thereby fooling your customers. 
+((("security","of vanity addresses")))((("security","vanity addresses and")))((("vanity addresses","security and")))Vanity addresses can be used to enhance _and_ to defeat security measures; they are truly a double-edged sword. Used to improve security, a distinctive address makes it harder for adversaries to substitute their own address and fool your customers into paying them instead of you. Unfortunately, vanity addresses also make it possible for anyone to create an address that _resembles_ any random address, or even another vanity address, thereby fooling your customers. 
 
 Eugenia could advertise a randomly generated address (e.g., 1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy) to which people can send their donations. Or, she could generate a vanity address that starts with 1Kids, to make it more distinctive. 
 
@@ -973,12 +972,12 @@ In both cases, one of the risks of using a single fixed address (rather than a s
 |=======
 
 So does a vanity address increase security? If Eugenia generates the vanity address 1Kids33q44erFfpeXrmDSz7zEqG2FesZEN, 
-users are likely to look at the vanity pattern word _and a few characters beyond_, for example noticing the "1Kids33" part of the address. That would force an attacker to generate a vanity address matching at least six characters (two more), expending an effort that is 3,364 times (58 x 58) higher than the effort Eugenia expended for her four-character vanity. Essentially, the effort Eugenia expends (or pays a vanity pool for) "pushes" the attacker into having to produce a longer pattern vanity. If Eugenia pays a pool to generate an 8-character vanity address, the attacker would be pushed into the realm of 10 characters, which is infeasible on a personal computer and expensive even with a custom vanity-mining rig or vanity pool. What is affordable for Eugenia becomes unaffordable for the attacker, especially if the potential reward of fraud is not high enough to cover the cost of the vanity address generation. 
+users are likely to look at the vanity pattern word _and a few characters beyond_, for example noticing the "1Kids33" part of the address. That would force an attacker to generate a vanity address matching at least six characters (two more), expending an effort that is 3,364 times (58 x 58) higher than the effort Eugenia expended for her four-character vanity. Essentially, the effort Eugenia expends (or pays a vanity pool for) "pushes" the attacker into having to produce a longer pattern vanity. If Eugenia pays a pool to generate an 8-character vanity address, the attacker would be pushed into the realm of 10 characters, which is infeasible on a personal computer and expensive even with a custom vanity-mining rig or vanity pool. What is affordable for Eugenia becomes unaffordable for the attacker, especially if the potential reward of fraud is not high enough to cover the cost of the vanity address generation.(((range="endofrange", startref="ix_ch04-asciidoc27")))(((range="endofrange", startref="ix_ch04-asciidoc26"))) 
 
 [[paper_wallets]]
 ==== Paper Wallets
 
-Paper wallets are bitcoin private keys printed on paper. Often the paper wallet also includes the corresponding bitcoin address for convenience, but this is not necessary because it can be derived from the private key. Paper wallets are a very effective way to create backups or offline bitcoin storage, also known as "cold storage." As a backup mechanism, a paper wallet can provide security against the loss of key due to a computer mishap such as a hard drive failure, theft, or accidental deletion. As a "cold storage" mechanism, if the paper wallet keys are generated offline and never stored on a computer system, they are much more secure against hackers, key-loggers, and other online computer threats. 
+((("backups","paper wallets", id="ix_ch04-asciidoc29", range="startofrange")))((("cold-storage wallets","paper wallets as", id="ix_ch04-asciidoc30", range="startofrange")))((("paper wallets", id="ix_ch04-asciidoc31", range="startofrange")))((("wallets","paper", id="ix_ch04-asciidoc32", range="startofrange")))Paper wallets are bitcoin private keys printed on paper. Often the paper wallet also includes the corresponding bitcoin address for convenience, but this is not necessary because it can be derived from the private key. Paper wallets are a very effective way to create backups or offline bitcoin storage, also known as "cold storage." As a backup mechanism, a paper wallet can provide security against the loss of key due to a computer mishap such as a hard drive failure, theft, or accidental deletion. As a "cold storage" mechanism, if the paper wallet keys are generated offline and never stored on a computer system, they are much more secure against hackers, key-loggers, and other online computer threats. 
 
 Paper wallets come in many shapes, sizes, and designs, but at a very basic level are just a key and an address printed on paper. <<table_4-14>> shows the simplest form of a paper wallet.
 
@@ -991,7 +990,7 @@ Paper wallets come in many shapes, sizes, and designs, but at a very basic level
 |=======================
 
 
-Paper wallets can be generated easily using a tool such as the client-side JavaScript generator at bitaddress.org. This page contains all the code necessary to generate keys and paper wallets, even while completely disconnected from the Internet. To use it, save the HTML page on your local drive or on an external USB flash drive. Disconnect from the Internet and open the file in a browser. Even better, boot your computer using a pristine operating system, such as a CD-ROM bootable Linux OS. Any keys generated with this tool while offline can be printed on a local printer over a USB cable (not wirelessly), thereby creating paper wallets whose keys exist only on the paper and have never been stored on any online system. Put these paper wallets in a fireproof safe and "send" bitcoin to their bitcoin address, to implement a simple yet highly effective "cold storage" solution. <<paper_wallet_simple>> shows a paper wallet generated from the _bitaddress.org_ site.
+((("bitaddress.org","paper wallets, generating")))Paper wallets can be generated easily using a tool such as the client-side JavaScript generator at bitaddress.org. This page contains all the code necessary to generate keys and paper wallets, even while completely disconnected from the Internet. To use it, save the HTML page on your local drive or on an external USB flash drive. Disconnect from the Internet and open the file in a browser. Even better, boot your computer using a pristine operating system, such as a CD-ROM bootable Linux OS. Any keys generated with this tool while offline can be printed on a local printer over a USB cable (not wirelessly), thereby creating paper wallets whose keys exist only on the paper and have never been stored on any online system. Put these paper wallets in a fireproof safe and "send" bitcoin to their bitcoin address, to implement a simple yet highly effective "cold storage" solution. <<paper_wallet_simple>> shows a paper wallet generated from the _bitaddress.org_ site.
 
 [[paper_wallet_simple]]
 .An example of a simple paper wallet from bitaddress.org
@@ -1005,7 +1004,7 @@ image::images/msbt_0415.png[]
 
 [WARNING]
 ====
-Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds you expose the private key, and because some wallets may generate a change address if you spend less than the whole amount. One way to do this is to withdraw the entire balance stored in the paper wallet and send any remaining funds to a new paper wallet. 
+((("paper wallets","spending")))((("private keys","exposing with paper wallets")))Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds you expose the private key, and because some wallets may generate a change address if you spend less than the whole amount. One way to do this is to withdraw the entire balance stored in the paper wallet and send any remaining funds to a new paper wallet. 
 ====
 
 Paper wallets come in many designs and sizes, with many different features. Some are intended to be given as gifts and have seasonal themes, such as Christmas and New Year's themes. Others are designed for storage in a bank vault or safe with the private key hidden in some way, either with opaque scratch-off stickers, or folded and sealed with tamper-proof adhesive foil. Figures pass:[<xref linkend="paper_wallet_bpw" xrefstyle="select: labelnumber"/>] through pass:[<xref linkend="paper_wallet_spw" xrefstyle="select: labelnumber"/>] show various examples of paper wallets with security and backup features.
@@ -1018,11 +1017,12 @@ image::images/msbt_0416.png[]
 .The bitcoinpaperwallet.com paper wallet with the private key concealed.
 image::images/msbt_0417.png[]
 
-Other designs feature additional copies of the key and address, in the form of detachable stubs similar to ticket stubs, allowing you to store multiple copies to protect against fire, flood, or other natural disasters. 
+Other designs feature additional copies of the key and address, in the form of detachable stubs similar to ticket stubs, allowing you to store multiple copies to protect against fire, flood, or other natural disasters.(((range="endofrange", startref="ix_ch04-asciidoc32")))(((range="endofrange", startref="ix_ch04-asciidoc31")))(((range="endofrange", startref="ix_ch04-asciidoc30")))(((range="endofrange", startref="ix_ch04-asciidoc29"))) 
 
 [[paper_wallet_spw]]
 .An example of a paper wallet with additional copies of the keys on a backup "stub."
 image::images/msbt_0418.png[]
+
 
 
 
