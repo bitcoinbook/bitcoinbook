@@ -155,15 +155,19 @@ Merkle trees are used in bitcoin to summarize all the transactions in a block, p
 
 When N data elements are hashed and summarized in a merkle tree, you can check to see if any one data element is included in the tree with at most +2*log~2~(N)+ calculations, making this a very efficient data structure.  
 
-The merkle tree is constructed bottom-up. In the following example, we start with four transactions, A, B, C and D, which form the _leaves_ of the Merkle Tree, as shown in <<simple_merkle>>. The transactions are not stored in the merkle tree; rather, their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~, and H~D~:
+The merkle tree is constructed bottom-up. In the following example, we start with four transactions, A, B, C and D, which form the _leaves_ of the Merkle tree, as shown in <<simple_merkle>>. The transactions are not stored in the merkle tree; rather, their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~, and H~D~:
 
-+H~A~ = SHA256(SHA256(Transaction A))+
+----
+H~A~ = SHA256(SHA256(Transaction A))
+----
 
 Consecutive pairs of leaf nodes are then summarized in a parent node, by concatenating the two hashes and hashing them together. For example, to construct the parent node H~AB~, the two 32-byte hashes of the children are concatenated to create a 64-byte string. That string is then double-hashed to produce the parent node's hash:
 
-+H~AB~ = SHA256(SHA256(H~A~ + H~B~))+
+----
+H~AB~ = SHA256(SHA256(H~A~ + H~B~))
+----
 
-The process continues until there is only one node at the top, the node known as the Merkle Root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
+The process continues until there is only one node at the top, the node known as the Merkle root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions.
 
 [[simple_merkle]]
 .Calculating the nodes in a merkle tree
@@ -172,7 +176,7 @@ image::images/msbt_0702.png["merkle_tree"]
 Because the merkle tree is a binary tree, it needs an even number of leaf nodes. If there is an odd number of transactions to summarize, the last transaction hash will be duplicated to create an even number of leaf nodes, also known as a((("balanced trees"))) _balanced tree_. This is shown in <<merkle_tree_odd>>, where transaction C is duplicated.
 
 [[merkle_tree_odd]]
-.An even number of data elements, by duplicating one data element
+.Duplicating one data element achieves an even number of data elements
 image::images/msbt_0703.png["merkle_tree_odd"]
 
 The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way, producing just 32 bytes of data as the single merkle root. <<merkle_tree_large>>, you will see a tree built from 16 transactions. Note that while the root looks bigger than the leaf nodes in the diagram, it is the exact same size, just 32 bytes. Whether there is one transaction or a hundred thousand transactions in the block, the merkle root always summarizes them into 32 bytes. 
