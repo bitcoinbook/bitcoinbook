@@ -135,16 +135,17 @@ Jing's node immediately constructs a new empty block, a candidate for block 277,
 
 ==== Transaction Age, Fees, and Priority
 
-((("candidate blocks","age of transactions", id="ix_ch08-asciidoc4", range="startofrange")))((("candidate blocks","priority of transactions", id="ix_ch08-asciidoc5", range="startofrange")))((("candidate blocks","transaction fees", id="ix_ch08-asciidoc6", range="startofrange")))((("fees, transaction", id="ix_ch08-asciidoc7", range="startofrange")))((("transactions","age of", id="ix_ch08-asciidoc8", range="startofrange")))((("transactions","priority of", id="ix_ch08-asciidoc9", range="startofrange")))To construct the candidate block, Jing's bitcoin node selects transactions from the memory pool, by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block. 
+((("candidate blocks","age of transactions", id="ix_ch08-asciidoc4", range="startofrange")))((("candidate blocks","priority of transactions", id="ix_ch08-asciidoc5", range="startofrange")))((("candidate blocks","transaction fees", id="ix_ch08-asciidoc6", range="startofrange")))((("fees, transaction", id="ix_ch08-asciidoc7", range="startofrange")))((("transactions","age of", id="ix_ch08-asciidoc8", range="startofrange")))((("transactions","priority of", id="ix_ch08-asciidoc9", range="startofrange")))To construct the candidate block, Jing's bitcoin node selects transactions from the memory pool by applying a priority metric to each transaction and adding the highest priority transactions first. Transactions are prioritized based on the "age" of the UTXO that is being spent in their inputs, allowing for old and high-value inputs to be prioritized over newer and smaller inputs. Prioritized transactions can be sent without any fees, if there is enough space in the block. 
 
 The priority of a transaction is calculated as the sum of the value and age of the inputs divided by the total size of the transaction:
+
 ----
 Priority = Sum (Value of input * Input Age) / Transaction Size
 ----
 
-In this equation, the value of an input is measured in the base unit, satoshis (1/100m of a bitcoin). The age of a UTXO is the number of blocks that have elapsed since the UTXO was recorded on the blockchain, measuring how many blocks "deep" into the blockchain it is. The size of the transaction is measured in bytes.
+In this equation, the value of an input is measured in the base unit, satoshis (1/100m of a bitcoin). The age of a UTXO is the number of blocks that have elapsed since the UTXO was recorded on the block chain, measuring how many blocks "deep" into the block chain it is. The size of the transaction is measured in bytes.
 
-For a transaction to be considered "high priority" its priority must be greater than 57,600,000, which corresponds to one bitcoin (100m satoshis), aged one day (144 blocks) in a transaction of 250 bytes total size:
+For a transaction to be considered "high priority," its priority must be greater than 57,600,000, which corresponds to one bitcoin (100m satoshis), aged one day (144 blocks), in a transaction of 250 bytes total size:
 
 ----
 High Priority > 100,000,000 satoshis * 144 blocks / 250 bytes = 57,600,000
@@ -154,18 +155,17 @@ The first 50 kilobytes of transaction space in a block are set aside for high-pr
 
 Jing's mining node then fills the rest of the block up to the maximum block size (+MAX_BLOCK_SIZE+ in the code), with transactions that carry at least the minimum fee, prioritizing those with the highest fee per kilobyte of transaction.
 
-If there is any space remaining in the block, Jing's mining node may choose to fill it with no-fee transactions. Some miners choose to mine transactions without fees on a best-effort basis. Other miners may choose to ignore transactions without fees. 
+If there is any space remaining in the block, Jing's mining node might choose to fill it with no-fee transactions. Some miners choose to mine transactions without fees on a best-effort basis. Other miners may choose to ignore transactions without fees. 
 
-Any transactions left in the memory pool, after the block is filled, will remain in the pool for inclusion in the next block. As transactions remain in the memory pool, their inputs "age," as the UTXO they spend get deeper into the blockchain with new blocks added on top. Because a transaction's priority depends on the age of its inputs, transactions remaining in the pool will age and therefore increase in priority. Eventually a transaction without fees may reach a high enough priority to be included in the block for free. 
+Any transactions left in the memory pool, after the block is filled, will remain in the pool for inclusion in the next block. As transactions remain in the memory pool, their inputs "age," as the UTXO they spend get deeper into the block chain with new blocks added on top. Because a transaction's priority depends on the age of its inputs, transactions remaining in the pool will age and therefore increase in priority. Eventually a transaction without fees might reach a high enough priority to be included in the block for free. 
 
-((("transactions","expiration, lack of")))Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, because it is a transient non-persistent form of storage. While a valid transaction may have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software are expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time.
+((("transactions","expiration, lack of")))Bitcoin transactions do not have an expiration time-out. A transaction that is valid now will be valid in perpetuity. However, if a transaction is only propagated across the network once, it will persist only as long as it is held in a mining node memory pool. When a mining node is restarted, its memory pool is wiped clear, because it is a transient non-persistent form of storage. Although a valid transaction might have been propagated across the network, if it is not executed it may eventually not reside in the memory pool of any miner. Wallet software is expected to retransmit such transactions or reconstruct them with higher fees if they are not successfully executed within a reasonable amount of time.
 
-When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the blockchain using the Bitcoin Core client command-line interfaceas shown in <<block277316>>.(((range="endofrange", startref="ix_ch08-asciidoc9")))(((range="endofrange", startref="ix_ch08-asciidoc8")))(((range="endofrange", startref="ix_ch08-asciidoc7")))(((range="endofrange", startref="ix_ch08-asciidoc6")))(((range="endofrange", startref="ix_ch08-asciidoc5")))(((range="endofrange", startref="ix_ch08-asciidoc4")))
+When Jing's node aggregates all the transactions from the memory pool, the new candidate block has 418 transactions with total transaction fees of 0.09094928 bitcoin. You can see this block in the block chain using the Bitcoin Core client command-line interface, as shown in <<block277316>>.(((range="endofrange", startref="ix_ch08-asciidoc9")))(((range="endofrange", startref="ix_ch08-asciidoc8")))(((range="endofrange", startref="ix_ch08-asciidoc7")))(((range="endofrange", startref="ix_ch08-asciidoc6")))(((range="endofrange", startref="ix_ch08-asciidoc5")))(((range="endofrange", startref="ix_ch08-asciidoc4")))
 ====
 [source,bash]
 ----
-$ bitcoin-cli getblockhash 277316
-0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
+$ bitcoin-cli getblockhash 2773160000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
 
 $ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
 ----
@@ -206,10 +206,8 @@ $ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2
 
 
 ====
-[source, bash]
 ----
-$ bitcoin-cli getrawtransaction
- d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f 1
+$ bitcoin-cli getrawtransaction d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f 1
 ----
 ====
 
