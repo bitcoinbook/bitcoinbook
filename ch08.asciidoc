@@ -107,11 +107,11 @@ However, before forwarding transactions to its neighbors, every bitcoin node tha
 * For each input, if the referenced output transaction is a coinbase output, it must have at least +COINBASE_MATURITY+ (100) confirmations. 
 * For each input, the referenced output must exist and cannot already be spent.
 * Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0).
-* Reject if the sum of input values < sum of output values.
+* Reject if the sum of input values is less than sum of output values.
 * Reject if transaction fee would be too low to get into an empty block.
 * The unlocking scripts for each input must validate against the corresponding output locking scripts.
 
-These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +CheckTransaction+, and +CheckInputs+ in the bitcoin reference client. Note that the conditions change over time, to address new types of Denial-of-Service attacks or sometimes to relax the rules so as to include more types of transactions. 
+These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +CheckTransaction+, and +CheckInputs+ in the bitcoin reference client. Note that the conditions change over time, to address new types of denial-of-service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
 By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid new transactions (the transaction pool), roughly in the same order. 
 
@@ -119,7 +119,7 @@ By independently verifying each transaction as it is received and before propaga
 
 ((("mining","nodes")))((("nodes","mining")))Some of the nodes on the bitcoin network are specialized nodes called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced Jing, a computer engineering student in Shanghai, China, who is a bitcoin miner. Jing earns bitcoin by running a((("mining rigs"))) "mining rig," which is a specialized computer-hardware system designed to mine bitcoins. Jing's specialized mining hardware is connected to a server running a full bitcoin node. Unlike Jing, some miners mine without a full node, as we will see in <<mining_pools>>. Like every other full node, Jing's node receives and propagates unconfirmed transactions on the bitcoin network. Jing's node, however, also aggregates these transactions into new blocks.
     
-Jing's node is listening for new blocks, propagated on the bitcoin network, as do all nodes. However, the arrival of a new block has special significance for a mining node. The competition among miners effectively ends with the propagation of a new block that acts as an announcement of a winner. To miners, receiving a new block means someone else won the competition and they lost. However, the end of one round of a competition is also the beginning of the next round. The new block is not just a checkered flag, marking the end of the race; it is also the starting pistol starting the race for the next block.
+Jing's node is listening for new blocks, propagated on the bitcoin network, as do all nodes. However, the arrival of a new block has special significance for a mining node. The competition among miners effectively ends with the propagation of a new block that acts as an announcement of a winner. To miners, receiving a new block means someone else won the competition and they lost. However, the end of one round of a competition is also the beginning of the next round. The new block is not just a checkered flag, marking the end of the race; it is also the starting pistol in the race for the next block.
 
 === Aggregating Transactions into Blocks
 
@@ -127,11 +127,11 @@ Jing's node is listening for new blocks, propagated on the bitcoin network, as d
 
 Let's follow the blocks that were created during the time Alice bought a cup of coffee from Bob's Cafe (see <<cup_of_coffee>>). Alice's transaction was included in block 277,316. For the purpose of demonstrating the concepts in this chapter, let's assume that block was mined by Jing's mining system and follow Alice's transaction as it becomes part of this new block.
 
-Jing's mining node maintains a local copy of the blockchain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain up to block 277,314. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. As Jing's node is mining, it receives block 277,315 through the bitcoin network. The arrival of this block signifies the end of the competition for block 277,315 and the beginning of the competition to create block 277,316.  
+Jing's mining node maintains a local copy of the block chain, the list of all blocks created since the beginning of the bitcoin system in 2009. By the time Alice buys the cup of coffee, Jing's node has assembled a chain up to block 277,314. Jing's node is listening for transactions, trying to mine a new block and also listening for blocks discovered by other nodes. As Jing's node is mining, it receives block 277,315 through the bitcoin network. The arrival of this block signifies the end of the competition for block 277,315 and the beginning of the competition to create block 277,316.  
 
 During the previous 10 minutes, while Jing's node was searching for a solution to block 277,315, it was also collecting transactions in preparation for the next block. By now it has collected a few hundred transactions in the memory pool. Upon receiving block 277,315 and validating it, Jing's node will also check all the transactions in the memory pool and remove any that were included in block 277,315. Whatever transactions remain in the memory pool are unconfirmed and are waiting to be recorded in a new block. 
 
-Jing's node immediately constructs a new empty block, a candidate for block 277,316. This block is called a candidate block because it is not yet a valid block, as it does not contain a valid Proof-Of-Work. The block becomes valid only if the miner succeeds in finding a solution to the Proof-Of-Work algorithm.
+Jing's node immediately constructs a new empty block, a candidate for block 277,316. This block is called a candidate block because it is not yet a valid block, as it does not contain a valid proof of work. The block becomes valid only if the miner succeeds in finding a solution to the proof-of-work algorithm.
 
 ==== Transaction Age, Fees, and Priority
 
