@@ -5,16 +5,16 @@
 [[ch5_intro]]
 === Introduction
 
-((("transactions", id="ix_ch05-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger. 
+((("transactions", id="ix_ch05-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the block chain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's block chain, the global double-entry bookkeeping ledger. 
 
 In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions. 
 
 [[tx_lifecycle]]
 === Transaction Lifecycle
 
-((("transactions","lifecycle of", id="ix_ch05-asciidoc1", range="startofrange")))A transaction's lifecycle starts with the transaction's creation, also known as((("origination of transactions"))) _origination_. The transaction is then signed with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. 
+((("transactions","lifecycle of", id="ix_ch05-asciidoc1", range="startofrange")))A transaction's lifecycle starts with the transaction's creation, also known as((("origination of transactions"))) _origination_. The transaction is then signed with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the block chain. 
 
-Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spent in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
+Once recorded on the block chain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spent in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
 
 [[tx_origination]]
 ==== Creating Transactions
@@ -23,12 +23,12 @@ Once recorded on the blockchain and confirmed by sufficient subsequent blocks (c
 
 Transactions can be created online or offline by anyone, even if the person creating the transaction is not an authorized signer on the account. For example, an accounts payable clerk might process payable checks for signature by the CEO. Similarly, an accounts payable clerk can create bitcoin transactions and then have the CEO apply digital signatures to make them valid. Whereas a check references a specific account as the source of the funds, a bitcoin transaction references a specific previous transaction as its source, rather than an account. 
 
-Once a transaction has been created, it is signed by the owner (or owners) of the source funds. If it is properly formed and signed, the signed transaction is now valid and contains all the information needed to execute the transfer of funds. Finally, the valid transaction has to reach the bitcoin network so that it can be propagated until it reaches a miner for inclusion in the pubic ledger (the blockchain).
+Once a transaction has been created, it is signed by the owner (or owners) of the source funds. If it is properly formed and signed, the signed transaction is now valid and contains all the information needed to execute the transfer of funds. Finally, the valid transaction has to reach the bitcoin network so that it can be propagated until it reaches a miner for inclusion in the pubic ledger (the block chain).
 
 [[tx_bcast]]
 ==== Broadcasting Transactions to the Bitcoin Network
 
-((("bitcoin network","broadcasting transactions to")))((("transactions","broadcasting to network")))First, a transaction needs to be delivered to the bitcoin network so that it can be propagated and be included in the blockchain. In essence, a bitcoin transaction is just 300 to 400 bytes of data and has to reach any one of tens of thousands of bitcoin nodes. The senders do not need to trust the nodes they use to broadcast the transaction, as long as they use more than one to ensure that it propagates. The nodes don't need to trust the sender or establish the sender's "identity." Because the transaction is signed and contains no confidential information, private keys, or credentials, it can be publicly broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network. As long as the transaction can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node. 
+((("bitcoin network","broadcasting transactions to")))((("transactions","broadcasting to network")))First, a transaction needs to be delivered to the bitcoin network so that it can be propagated and included in the block chain. In essence, a bitcoin transaction is just 300 to 400 bytes of data and has to reach any one of tens of thousands of bitcoin nodes. The senders do not need to trust the nodes they use to broadcast the transaction, as long as they use more than one to ensure that it propagates. The nodes don't need to trust the sender or establish the sender's "identity." Because the transaction is signed and contains no confidential information, private keys, or credentials, it can be publicly broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network. As long as the transaction can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node. 
 
 ((("insecure networks, transmitting bitcoin over")))Bitcoin transactions can therefore be transmitted to the bitcoin network over insecure networks such as WiFi, Bluetooth, NFC, Chirp, barcodes, or by copying and pasting into a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay, or shortwave using burst transmission, spread spectrum, or frequency hopping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a public forum or sent as a text message or Skype chat message. Bitcoin has turned money into a data structure, making it virtually impossible to stop anyone from creating and executing a bitcoin transaction. 
 
@@ -39,12 +39,12 @@ Once a transaction has been created, it is signed by the owner (or owners) of th
 
 The bitcoin network is a peer-to-peer network, meaning that each bitcoin node is connected to a few other bitcoin nodes that it discovers during startup through the peer-to-peer protocol. The entire network forms a loosely connected mesh without a fixed topology or any structure, making all nodes equal peers. Messages, including transactions and blocks, are propagated from each node to the peers to which it is connected. A new validated transaction injected into any node on the network will be sent to three  to four of the neighboring nodes, each of which will send it to three to four more nodes, and so on. In this way, within a few seconds a valid transaction will propagate in an exponentially expanding ripple across the network until all connected nodes have received it. 
 
-The bitcoin network is designed to propagate transactions and blocks to all nodes in an efficient and resilient manner that is resistant to attacks. To prevent spamming, denial of service attacks, or other nuisance attacks against the bitcoin system, every node will independently validate every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<tx_verification>>.(((range="endofrange", startref="ix_ch05-asciidoc1"))) 
+The bitcoin network is designed to propagate transactions and blocks to all nodes in an efficient and resilient manner that is resistant to attacks. To prevent spamming, denial-of-service attacks, or other nuisance attacks against the bitcoin system, every node independently validates every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<tx_verification>>.(((range="endofrange", startref="ix_ch05-asciidoc1"))) 
 
 [[tx_structure]]
 === Transaction Structure
 
-((("transactions","structure of")))A transaction is a((("data structure"))) _data structure_ that encodes a transfer of value from a source of funds, called an((("inputs, defined"))) _input_, to a destination, called an((("outputs, defined"))) _output_. Transaction inputs and outputs are not related to accounts or identities. Instead, you should think of them as bitcoin amounts, chunks of bitcoin, being locked with a specific secret that only the owner, or person who knows the secret, can unlock. 
+((("transactions","structure of")))A transaction is a((("data structure"))) _data structure_ that encodes a transfer of value from a source of funds, called an((("inputs, defined"))) _input_, to a destination, called an((("outputs, defined"))) _output_. Transaction inputs and outputs are not related to accounts or identities. Instead, you should think of them as bitcoin amounts—chunks of bitcoin—being locked with a specific secret that only the owner, or person who knows the secret, can unlock. 
 
 A transaction contains a number of fields, as shown in <<tx_data_structure>>.
 
@@ -55,15 +55,15 @@ A transaction contains a number of fields, as shown in <<tx_data_structure>>.
 |Size| Field | Description
 | 4 bytes | Version | Specifies which rules this transaction follows
 | 1–9 bytes (VarInt) | Input Counter | How many inputs are included
-| Variable | Inputs | One or more Transaction Inputs
+| Variable | Inputs | One or more transaction inputs
 | 1–9 bytes (VarInt) | Output Counter | How many outputs are included
-| Variable | Outputs | One or more Transaction Outputs
+| Variable | Outputs | One or more transaction outputs
 | 4 bytes | Locktime | A Unix timestamp or block number
 |=======
 
 .Transaction Locktime
 ****
-((("locktime")))((("transactions","locktime")))Locktime defines the earliest time that a transaction can be added to the blockchain. It is set to zero in most transactions to indicate immediate execution. If locktime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not included in the blockchain prior to the specified time. The use of locktime is equivalent to postdating a paper check.
+((("locktime")))((("transactions","locktime")))Locktime defines the earliest time that a transaction can be added to the block chain. It is set to zero in most transactions to indicate immediate execution. If locktime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not included in the blockchain prior to the specified time. The use of locktime is equivalent to postdating a paper check.
 ****
 
 [[tx_inputs_outputs]]
