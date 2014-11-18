@@ -23,11 +23,11 @@ Some nodes, called full nodes, also maintain a complete and up-to-date copy of t
 
 Mining nodes compete to create new blocks by running specialized hardware to solve the proof-of-work algorithm. Some mining nodes are also full nodes, maintaining a full copy of the block chain, while others are lightweight nodes participating in pool mining and depending on a pool server to maintain a full node. The mining function is shown in the full node as a black circle named "Miner."
 
-User wallets might be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly, many user wallets, especially those running on resource-constrained devices such as smartphones, are SPV nodes. The wallet function is shown in <<node_type_ledgend>> as a green circle named "Wallet" .
+User wallets might be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly, many user wallets, especially those running on resource-constrained devices such as smartphones, are SPV nodes. The wallet function is shown in <<node_type_ledgend>> as a green circle named "Wallet".
 
-In addition to the main node types on the bitcoin P2P protocol, there are servers and nodes running other protocols, such as specialized mining pool protocols and lightweight client access protocols. 
+In addition to the main node types on the bitcoin P2P protocol, there are servers and nodes running other protocols, such as specialized mining pool protocols and lightweight client-access protocols. 
 
-<<node_type_ledgend>> shows are the most common node types on the extended bitcoin network.
+<<node_type_ledgend>> shows the most common node types on the extended bitcoin network.
 
 [[node_type_ledgend]]
 .Different types of nodes on the extended bitcoin network
@@ -35,9 +35,9 @@ image::images/msbt_0602.png["BitcoinNodeTypes"]
 
 === The Extended Bitcoin Network
 
-((("bitcoin network","extended")))((("extended bitcoin network")))The main bitcoin network, running the bitcoin P2P protocol, consists of between 7,000 and 10,000 nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as((("BitcoinJ library")))((("btcd")))((("libbitcoin library"))) BitcoinJ, Libbitcoin, and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions, and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top. 
+((("bitcoin network","extended")))((("extended bitcoin network")))The main bitcoin network, running the bitcoin P2P protocol, consists of between 7,000 and 10,000 nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as((("BitcoinJ library")))((("btcd")))((("libbitcoin library"))) BitcoinJ, Libbitcoin, and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions, and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the block chain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top. 
 
-The extended bitcoin network includes the network running the bitcoin P2P protocol, described earlier, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of((("mining pools","on the bitcoin network"))) pool servers and protocol gateways that connect nodes running other protocols. These other protocol nodes are mostly pool mining nodes (see <<mining>>) and lightweight wallet clients, which do not carry a full copy of the blockchain. 
+The extended bitcoin network includes the network running the bitcoin P2P protocol, described earlier, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of((("mining pools","on the bitcoin network"))) pool servers and protocol gateways that connect nodes running other protocols. These other protocol nodes are mostly pool mining nodes (see <<ch8>>) and lightweight wallet clients, which do not carry a full copy of the block chain. 
 
 <<bitcoin_network>> shows the extended bitcoin network with the various types of nodes, gateway servers, edge routers, and wallet clients and the various protocols they use to connect to each other. 
 
@@ -47,19 +47,19 @@ image::images/msbt_0603.png["BitcoinNetwork"]
 
 === Network Discovery
 
-((("bitcoin network","discovery", id="ix_ch06-asciidoc1", range="startofrange")))((("network discovery", id="ix_ch06-asciidoc2", range="startofrange")))((("nodes","network discovery and", id="ix_ch06-asciidoc3", range="startofrange")))((("peer-to-peer networks","discovery by new nodes", id="ix_ch06-asciidoc4", range="startofrange")))When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. To start this process, a new node must discover at least one existing node on the network and connect to it. The geographic location of the other nodes is irrelevant; the bitcoin network topology is not geographically defined. Therefore, any existing bitcoin nodes can be selected at random. 
+((("bitcoin network","discovery", id="ix_ch06-asciidoc1", range="startofrange")))((("network discovery", id="ix_ch06-asciidoc2", range="startofrange")))((("nodes","network discovery and", id="ix_ch06-asciidoc3", range="startofrange")))((("peer-to-peer networks","discovery by new nodes", id="ix_ch06-asciidoc4", range="startofrange")))When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. To start this process, a new node must discover at least one existing node on the network and connect to it. The geographic location of other nodes is irrelevant; the bitcoin network topology is not geographically defined. Therefore, any existing bitcoin nodes can be selected at random. 
 
-((("peer-to-peer networks","connections")))To connect to a known peer, nodes establish a TCP connection, usually to port 8333 (the bitcoin "well known" port), or an alternative port if one is provided. Upon establishing a connection, the node will start a "handshake" (see <<network_handshake>>) by transmitting a((("version message")))  +version+ message, which contains basic identifying information, including:
+((("peer-to-peer networks","connections")))To connect to a known peer, nodes establish a TCP connection, usually to port 8333 (the port generally known as the one used by bitcoin), or an alternative port if one is provided. Upon establishing a connection, the node will start a "handshake" (see <<network_handshake>>) by transmitting a((("version message")))  +version+ message, which contains basic identifying information, including:
 
-* +PROTOCOL_VERSION+, a constant that defines the bitcoin P2P protocol version the client "speaks" (e.g., 70002)
-* +nLocalServices+, a list of local services supported by the node, currently just +NODE_NETWORK+
-* +nTime+, the current time
-* +addrYou+, the IP address of the remote node as seen from this node
-* +addrMe+, the IP address of the local node, as discovered by the local node
-* +subver+, a sub-version showing the type of software running on this node (e.g., "/Satoshi:0.9.2.1/")+
-*+ BestHeight, the block height of this node's blockchain
++PROTOCOL_VERSION+:: A constant that defines the bitcoin P2P protocol version the client "speaks" (e.g., 70002)
++nLocalServices+:: A list of local services supported by the node, currently just +NODE_NETWORK+
++nTime+:: The current time
++addrYou+:: The IP address of the remote node as seen from this node
++addrMe+:: The IP address of the local node, as discovered by the local node
++subver+:: A sub-version showing the type of software running on this node (e.g., "/Satoshi:0.9.2.1/")+
++BestHeight+:: The block height of this node's blockchain
 
-(See https://github.com/bitcoin/bitcoin/blob/d3cb2b8acfce36d359262b4afd7e7235eff106b0/src/net.cpp#L562 for an example of the +version+ network message.)
+(See http://bit.ly/1qlsC7w[GitHub] for an example of the +version+ network message.)
 
 The peer node responds with +verack+ to acknowledge and establish a connection, and optionally sends its own +version+ message if it wishes to reciprocate the connection and connect back as a peer. 
 
@@ -67,9 +67,9 @@ The peer node responds with +verack+ to acknowledge and establish a connection, 
 .The initial handshake between peers
 image::images/msbt_0604.png["NetworkHandshake"]
 
-How does a new node find peers? Though there are no special nodes in bitcoin, there are some long running stable nodes that are listed in the client as((("nodes","seed")))((("seed nodes"))) _seed nodes_. Although a new node does not have to connect with the seed nodes, it can use them to quickly discover other nodes in the network. In the Bitcoin Core client, the option to use the seed nodes is controlled by the option switch +-dnsseed+, which is set to 1, to use the seed nodes, by default. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node, after which it can establish connections through further introductions. The command-line argument +-seednode+ can be used to connect to one node just for introductions, using it as a DNS seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
+How does a new node find peers? Although there are no special nodes in bitcoin, there are some long running stable nodes that are listed in the client as((("nodes","seed")))((("seed nodes"))) _seed nodes_. Although a new node does not have to connect with the seed nodes, it can use them to quickly discover other nodes in the network. In the Bitcoin Core client, the option to use the seed nodes is controlled by the option switch +-dnsseed+, which is set to 1, to use the seed nodes, by default. Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node, after which it can establish connections through further introductions. The command-line argument +-seednode+ can be used to connect to one node just for introductions, using it as a DNS seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
 
-Once one or more connections are established, the new node will send an((("addr message"))) +addr+ message containing its own IP address, to its neighbors. The neighbors will, in turn, forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors, asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it.  <<address_propagation>> shows the address discovery protocol. 
+Once one or more connections are established, the new node will send an((("addr message"))) +addr+ message containing its own IP address, to its neighbors. The neighbors will, in turn, forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors, asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. <<address_propagation>> shows the address discovery protocol. 
 
 
 [[address_propagation]]
