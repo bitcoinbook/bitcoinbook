@@ -210,7 +210,7 @@ The bloom filter is initialized so that the array of bits is all zeros. To add a
 .Adding a pattern "A" to our simple bloom filter
 image::images/msbt_0609.png["Bloom2"]
 
-Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result may coincide with a bit that is already set to +1+, in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure—it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
+Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result might coincide with a bit that is already set to +1+, in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure—it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
 
 <<bloom3>> is an example of adding a second pattern "B" to the simple bloom filter.
 
@@ -226,12 +226,12 @@ To test if a pattern is part of a bloom filter, the pattern is hashed by each ha
 .Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe."
 image::images/msbt_0611.png["Bloom4"]
 
-On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely No." 
+On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely Not!" 
 
 <<bloom5>> is an example of testing the existence of pattern "Y" in the simple bloom filter. One of the corresponding bits is set to +0+, so the pattern is definitely not a match.
 
 [[bloom5]]
-.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely No."
+.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
 image::images/msbt_0612.png[]
 
 Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<appdxbitcoinimpproposals>> or visit http://bit.ly/1x6qCiO[GitHub].
@@ -240,14 +240,14 @@ Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Pr
 
 ((("inventory updates, bloom filters and")))Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a((("filterload message"))) +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions that match the filter are sent to the node. 
 
-In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (see <<merkle_trees>>) for each matching transaction. The peer will also then send +tx+ messages containing the transactions matched by the filter.
+In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (see <<merkle_trees>>) for each matching transaction. The peer will then also send +tx+ messages containing the transactions matched by the filter.
 
 The node setting the bloom filter can interactively add patterns to the filter by sending a((("filteradd message"))) +filteradd+ message. To clear the bloom filter, the node can send a((("filterclear message"))) +filterclear+ message. Because it is not possible to remove a pattern from a bloom filter, a node has to clear and resend a new bloom filter if a pattern is no longer desired.(((range="endofrange", startref="ix_ch06-asciidoc9")))(((range="endofrange", startref="ix_ch06-asciidoc8")))(((range="endofrange", startref="ix_ch06-asciidoc7"))) 
 
 [[transaction_pools]]
 === Transaction Pools
 
-((("bitcoin network","transaction pools")))((("transaction pools")))((("transactions","unconfirmed, pools of")))((("unconfirmed transactions")))Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the memory pool or transaction pool. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the blockchain. For example, a node that holds a user's wallet will use the transaction pool to track incoming payments to the user's wallet that have been received on the network but are not yet confirmed. 
+((("bitcoin network","transaction pools")))((("transaction pools")))((("transactions","unconfirmed, pools of")))((("unconfirmed transactions")))Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the _memory pool_, or _transaction pool_. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the block chain. For example, a node that holds a user's wallet will use the transaction pool to track incoming payments to the user's wallet that have been received on the network but are not yet confirmed. 
 
 As transactions are received and verified, they are added to the transaction pool and relayed to the neighboring nodes to propagate on the network.
 
@@ -257,13 +257,13 @@ When a transaction is added to the transaction pool, the orphan pool is checked 
 
 ((("orphan transaction pool","storage")))((("transaction pools","storage")))Both the transaction pool and orphan pool (where implemented) are stored in local memory and are not saved on persistent storage; rather, they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network.
 
-Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage. 
+Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the block chain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage. 
 
-Whereas the transaction and orphan pools represent a single node's local perspective and may vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
+Whereas the transaction and orphan pools represent a single node's local perspective and might vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
 
 === Alert Messages
 
-((("alert messages")))((("bitcoin network","alert messages")))Alert messages are a seldom used function, which is nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system," a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably early 2013 when a critical database bug caused a multiblock fork to occur in the bitcoin blockchain. 
+((("alert messages")))((("bitcoin network","alert messages")))Alert messages are a seldom used function, but are nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system," a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably in early 2013 when a critical database bug caused a multiblock fork to occur in the bitcoin block chain. 
 
 Alert messages are propagated by the +alert+ message. The alert message contains several fields, including:
 
