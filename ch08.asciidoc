@@ -571,41 +571,49 @@ Hashing Power: 127141 hashes per second
 
 As you can see, increasing the difficulty by 1 bit causes an exponential increase in the time it takes to find a solution. If you think of the entire 256-bit number space, each time you constrain one more bit to zero, you decrease the search space by half. In <<pow_example_outputs>>, it takes 84 million hash attempts to find a nonce that produces a hash with 26 leading bits as zero. Even at a speed of more than 120,000 hashes per second, it still requires 10 minutes on a consumer laptop to find this solution. 
 
-At the time of writing, the network is attempting to find a block whose header hash is less than +000000000000004c296e6376db3a241271f43fd3f5de7ba18986e517a243baa7+. As you can see, there are a lot of zeros at the beginning of that hash, meaning that the acceptable range of hashes is much smaller, hence more difficult to find a valid hash. It will take on average more than 150 quadrillion hash calculations per second for the network to discover the next block. That seems like an impossible task, but fortunately the network is bringing 100 petahashes per second (PH/sec) of processing power to bear, which will be able to find a block in about 10 minutes on average.(((range="endofrange", startref="ix_ch08-asciidoc16")))(((range="endofrange", startref="ix_ch08-asciidoc15"))) 
+At the time of writing, the network is attempting to find a block whose header hash is less than +000000000000004c296e6376db3a241271f43fd3f5de7ba18986e517a243baa7+. As you can see, there are a lot of zeros at the beginning of that hash, meaning that the acceptable range of hashes is much smaller, hence it's more difficult to find a valid hash. It will take on average more than 150 quadrillion hash calculations per second for the network to discover the next block. That seems like an impossible task, but fortunately the network is bringing 100 petahashes per second (PH/sec) of processing power to bear, which will be able to find a block in about 10 minutes on average.(((range="endofrange", startref="ix_ch08-asciidoc16")))(((range="endofrange", startref="ix_ch08-asciidoc15"))) 
 
 [[difficulty_bits]]
 ==== Difficulty Representation
 
-((("difficulty target")))((("mining","difficulty bits")))((("mining","difficulty targets")))In <<block277316>> we saw that the block contains the difficulty target, in a notation called "difficulty bits" or just "bits," which in block 277,316 has the value of +0x1903a30c+. This notation expresses the difficulty target as a coefficient/exponent format, with the first two hexadecimal digits for the exponent and the next six hex digits as the coefficient. In this block, therefore, the exponent is +0x19+ and the coefficient is +0x03a30c+.
+((("difficulty target")))((("mining","difficulty bits")))((("mining","difficulty targets")))In <<block277316>>, we saw that the block contains the difficulty target, in a notation called "difficulty bits" or just "bits," which in block 277,316 has the value of +0x1903a30c+. This notation expresses the difficulty target as a coefficient/exponent format, with the first two hexadecimal digits for the exponent and the next six hex digits as the coefficient. In this block, therefore, the exponent is +0x19+ and the coefficient is +0x03a30c+.
     
 The formula to calculate the difficulty target from this representation is:
 
+----
 target = coefficient * 2^(8 * (exponent – 3))
+----
 
 Using that formula, and the difficulty bits value 0x1903a30c, we get:
 
+----
 target = 0x03a30c * 2^(0x08 * (0x19 - 0x03))^ 
 
 => target = 0x03a30c * 2^(0x08 * 0x16)^
 
 => target = 0x03a30c * 2^0xB0^
+----
 
 which in decimal is:
 
+----
 => target = 238,348 * 2^176^
 
 => target = 22,829,202,948,393,929,850,749,706,076,701,368,331,072,452,018,388,575,715,328
+----
 
 switching back to hexadecimal:
 
+----
 => target = 0x0000000000000003A30C00000000000000000000000000000000000000000000
+----
 
 This means that a valid block for height 277,316 is one that has a block header hash that is less than the target. In binary that number would have more than the first 60 bits set to zero. With this level of difficulty, a single miner processing 1 trillion hashes per second (1 tera-hash per second or 1 TH/sec) would only find a solution once every 8,496 blocks or once every 59 days, on average. 
 
 [[difficulty_target]]
 ==== Difficulty Target and Retargeting
 
-((("difficulty target","retargeting", id="ix_ch08-asciidoc17", range="startofrange")))As we saw, the target determines the difficulty and therefore affects how long it takes to find a solution to the Proof-Of-Work algorithm. This leads to the obvious questions: Why is the difficulty adjustable, who adjusts it, and how?
+((("difficulty target","retargeting", id="ix_ch08-asciidoc17", range="startofrange")))As we saw, the target determines the difficulty and therefore affects how long it takes to find a solution to the proof-of-work algorithm. This leads to the obvious questions: Why is the difficulty adjustable, who adjusts it, and how?
 
 ((("difficulty retargeting")))((("difficulty target","block generation rate and")))Bitcoin's blocks are generated every 10 minutes, on average. This is bitcoin's heartbeat and underpins the frequency of currency issuance and the speed of transaction settlement. It has to remain constant not just over the short term, but over a period of many decades. Over this time, it is expected that computer power will continue to increase at a rapid pace. Furthermore, the number of participants in mining and the computers they use will also constantly change. To keep the block generation time at 10 minutes, the difficulty of mining must be adjusted to account for these changes. In fact, difficulty is a dynamic parameter that will be periodically adjusted to meet a 10-minute block target. In simple terms, the difficulty target is set to whatever mining power will result in a 10-minute block interval. 
 
