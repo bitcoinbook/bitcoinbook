@@ -647,7 +647,7 @@ The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is 
 
 ===== Private child key derivation
 
-((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical Deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
+((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
 
 The child key derivation functions are based on a one-way hash function that combines: 
 
@@ -671,7 +671,7 @@ Repeating the process one level down the tree, each child can in turn become a p
 
 ===== Using derived child keys
 
-((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key can also not be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n–1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
+((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key also cannot be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n–1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
 
 So what can the child private key be used for on its own? It can be used to make a public key and a bitcoin address. Then, it can be used to sign transactions to spend anything paid to that address.  
 
@@ -693,14 +693,16 @@ Think of an extended key as the root of a branch in the tree structure of the HD
 An extended key consists of a private or public key and chain code. An extended key can create children, generating its own branch in the tree structure. Sharing an extended key gives access to the entire branch. 
 ==== 
 
-((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP0032 compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
+((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP0032-compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
 
 Here's an example of an extended private key, encoded in Base58Check:
+
 ----
 xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
 ----
 
 Here's the corresponding extended public key, also encoded in Base58Check:
+
 ----
 xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
 ----
@@ -713,7 +715,7 @@ xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLr
 
 An extended public key can be used, therefore, to derive all of the _public_ keys (and only the public keys) in that branch of the HD wallet structure.
 
-((("private keys","deployments without")))This shortcut can be used to create very secure public-key-only deployments where a server or application has a copy of an extended public key and no private keys whatsoever. That kind of deployment can produce an infinite number of public keys and bitcoin addresses, but cannot spend any of the money sent to those addresses. Meanwhile, on another more secure server, the extended private key can derive all the corresponding private keys to sign transactions and spend the money. 
+((("private keys","deployments without")))This shortcut can be used to create very secure public-key-only deployments where a server or application has a copy of an extended public key and no private keys whatsoever. That kind of deployment can produce an infinite number of public keys and bitcoin addresses, but cannot spend any of the money sent to those addresses. Meanwhile, on another, more secure server, the extended private key can derive all the corresponding private keys to sign transactions and spend the money. 
 
 ((("ecommerce servers, keys for")))((("shopping carts, public keys for")))One common application of this solution is to install an extended public key on a web server that serves an ecommerce application. The web server can use the public key derivation function to create a new bitcoin address for every transaction (e.g., for a customer shopping cart). The web server will not have any private keys that would be vulnerable to theft. Without HD wallets, the only way to do this is to generate thousands of bitcoin addresses on a separate secure server and then preload them on the ecommerce server. That approach is cumbersome and requires constant maintenance to ensure that the ecommerce server doesn't "run out" of keys.
 
