@@ -685,11 +685,11 @@ $ bitcoin-cli decoderawtransaction 0100000001d717...388ac00000000
 
 The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 millibits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+). The two outputs correspond to the 50 millibit credit and an output with change back to the sender. 
 
-We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
+We can further explore the block chain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address. 
 
 Once the transaction we received has been confirmed by inclusion in a block, the +gettransaction+ command will return additional information, showing the _block hash (identifier)_ in which the transaction was included:
 
-[source,bash]
+
 ----
 $ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
 ----
@@ -730,7 +730,7 @@ Commands: +getblock+, +getblockhash+
 
 ((("bitcoin-cli command line helper","getblock command")))((("bitcoin-cli command line helper","getblockhash command")))((("blocks","exploring")))((("getblock command (bitcoin-cli)")))((("getblockhash command (bitcoin-cli)")))Now that we know which block our transaction was included in, we can query that block. We use the +getblock+ command with the block hash as the parameter:
 
-[source,bash]
+
 ----
 $ bitcoin-cli getblock 000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a717b true
 ----
@@ -778,11 +778,11 @@ $ bitcoin-cli getblock 000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31
 }
 ----
 
-The block contains 367 transactions and as you can see, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 millibits to our address. The +height+ entry tells us this is the 286384th block in the blockchain. 
+The block contains 367 transactions and as you can see, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 millibits to our address. The +height+ entry tells us this is the 286384th block in the block chain. 
 
 We can also retrieve a block by its block height using the +getblockhash+ command, which takes the block height as the parameter and returns the block hash for that block:
 
-[source,bash]
+
 ----
 $ bitcoin-cli getblockhash 0
 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
@@ -790,7 +790,7 @@ $ bitcoin-cli getblockhash 0
 
 Here, we retrieve the block hash of the "genesis block," the first block mined by Satoshi Nakamoto, at height zero. Retrieving this block shows:
 
-[source,bash]
+
 ----
 $ bitcoin-cli getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 ----
@@ -815,7 +815,7 @@ $ bitcoin-cli getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60
 }
 ----
 
-The +getblock+, +getblockhash+, and +gettransaction+ commands can be used to explore the blockchain database, programmatically. 
+The +getblock+, +getblockhash+, and +gettransaction+ commands can be used to explore the block chain database, programmatically. 
 
 
 ==== Creating, Signing, and Submitting Transactions Based on Unspent Outputs
@@ -826,7 +826,7 @@ Commands: +listunspent+, +gettxout+, +createrawtransaction+, +decoderawtransacti
 
 First, we use the +listunspent+ command to show all the unspent _confirmed_ outputs in our wallet:
 
-[source,bash]
+
 ----
 $ bitcoin-cli listunspent 
 ----
@@ -849,7 +849,7 @@ We see that the transaction +9ca8f9...+ created an output (with vout index 0) as
 
 First, let's look at the specific output in more detail. We use +gettxout+ to get the details of this unspent output. Transaction outputs are always referenced by txid and vout, and these are the parameters we pass to +gettxout+:
 
-[source,bash]
+
 ----
 $ bitcoin-cli gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3 0
 ----
@@ -876,36 +876,26 @@ $ bitcoin-cli gettxout 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae
 
 What we see here is the output that assigned 50 millibits to our address +1hvz...+. To spend this output we will create a new transaction. First, let's make an address to which we will send the money:
 
-[source,bash]
+
 ----
 $ bitcoin-cli getnewaddress 
 1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb
 ----
 
-We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the _whole_ output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25mBTC + 24.5mBTC = 49.5mBTC) and the input (50mBTC) will be collected as a transaction fee by the miners. 
+We will send 25 millibits to the new address +1LnfTn...+ we just created in our wallet. In our new transaction, we will spend the 50 millibit output and send 25 millibits to this new address. Because we have to spend the _whole_ output from the previous transaction, we must also generate some change. We will generate change back to the +1hvz...+ address, sending the change back to the address from which the value originated. Finally, we will also have to pay a fee for this transaction. To pay the fee, we will reduce the change output by 0.5 millibits, and return 24.5 millibits in change. The difference between the sum of the new outputs (25 mBTC + 24.5 mBTC = 49.5 mBTC) and the input (50 mBTC) will be collected as a transaction fee by the miners. 
 
 We use +createrawtransaction+ to create this transaction. As parameters to +createrawtransaction+ we provide the transaction input (the 50 millibit unspent output from our confirmed transaction) and the two transaction outputs (money sent to the new address and change sent back to the previous address):
 
 ----
-$ bitcoin-cli createrawtransaction 
-'[{"txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3", "vout" : 0}]' 
-'{"1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb": 0.025, 
-"1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL": 0.0245}'
+$ bitcoin-cli createrawtransaction '[{"txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3", "vout" : 0}]' '{"1LnfTndy3qzXGN19Jwscj1T8LR3MVe3JDb": 0.025, "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL": 0.0245}'
 
-0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c
-0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd6810756
-4a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d
-1fd288ac00000000
+0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
 ----
 
 The +createrawtransaction+ command produces a raw hex string that encodes the transaction details we supplied. Let's confirm everything is correct by decoding this raw string using the +decoderawtransaction+ command:
 
 ----
-$ bitcoin-cli decoderawtransaction 
-0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c
-0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd6810756
-4a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d
-1fd288ac00000000
+$ bitcoin-cli decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
 ----
 [source,json]
 ----
@@ -929,8 +919,7 @@ $ bitcoin-cli decoderawtransaction
             "value" : 0.02500000,
             "n" : 0,
             "scriptPubKey" : {
-                "asm" : "OP_DUP OP_HASH160 d90d36e98f62968d2bc9bbd68107564a156a9bcf
-                 OP_EQUALVERIFY OP_CHECKSIG",
+                "asm" : "OP_DUP OP_HASH160 d90d36e98f62968d2bc9bbd68107564a156a9bcf OP_EQUALVERIFY OP_CHECKSIG",
                 "hex" : "76a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac",
                 "reqSigs" : 1,
                 "type" : "pubkeyhash",
@@ -959,7 +948,7 @@ $ bitcoin-cli decoderawtransaction
 
 That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 millibits to our new address and one for 24.5 millibits as change back to the original address. The difference of 0.5 millibits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
 
-As you may notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless; we haven't yet proven that we _own_ the address from which the unspent output is sourced. By signing, we remove the encumbrance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter:
+As you might notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless; we haven't yet proven that we _own_ the address from which the unspent output is sourced. By signing, we remove the encumbrance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter:
 
 [TIP]
 ====
@@ -968,18 +957,12 @@ As you may notice, the transaction contains an empty +scriptSig+ because we have
 
 ----
 $ bitcoin-cli walletpassphrase foo 360
-$ bitcoin-cli signrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862a
-ecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564
-a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
+$ bitcoin-cli signrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000000000ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
 ----
 [source,json]
 ----
 {
-    "hex" : "0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c0000
-00006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f0
-0149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88
-ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9b
-bd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac
+    "hex" : "0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac
 00000000",
     "complete" : true
 }
@@ -987,16 +970,9 @@ bd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c
 
 The +signrawtransaction+ command returns another hex-encoded raw transaction. We decode it to see what changed, with +decoderawtransaction+:
 
-[source,bash]
+
 ----
-$ bitcoin-cli decoderawtransaction
-0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c
-000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76
-d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051
-a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ff
-ffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88a
-c50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac000000
-00
+$ bitcoin-cli decoderawtransaction0100000001e34ac1e2baac09c366fce1c2245536bda8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac00000000
 ----
 [source,json]
 ----
