@@ -217,9 +217,7 @@ $ bitcoin-cli getrawtransaction d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda1
 [source,json]
 ----
 {
-    "hex" : "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff
-    0f03443b0403858402062f503253482fffffffff0110c08d9500000000232102aa970c592640d19de03ff6f329d
-    6fd2eecb023263b9ba5d1b81c29b523da8b21ac00000000",
+    "hex" : "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0f03443b0403858402062f503253482fffffffff0110c08d9500000000232102aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21ac00000000",
     "txid" : "d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f",
     "version" : 1,
     "locktime" : 0,
@@ -234,8 +232,7 @@ $ bitcoin-cli getrawtransaction d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda1
             "value" : 25.09094928,
             "n" : 0,
             "scriptPubKey" : {
-                "asm" : "02aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21
-                 OP_CHECKSIG",
+                "asm" : "02aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21OP_CHECKSIG",
                 "hex" : "2102aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21ac",
                 "reqSigs" : 1,
                 "type" : "pubkey",
@@ -263,9 +260,9 @@ Unlike regular transactions, the generation transaction does not consume (spend)
 Total Fees = Sum(Inputs) - Sum(Outputs)
 ----
 
-In block 277,316 the total transaction fees are 0.09094928 bitcoin. 
+In block 277,316, the total transaction fees are 0.09094928 bitcoins. 
 
-Next, Jing's node calculates the correct reward for the new block. The reward is calculated based on the block height, starting at 50 bitcoin per block and reduced by half every 210,000 blocks. Because this block is at height 277,316, the correct reward is 25 bitcoin. 
+Next, Jing's node calculates the correct reward for the new block. The reward is calculated based on the block height, starting at 50 bitcoins per block and reduced by half every 210,000 blocks. Because this block is at height 277,316, the correct reward is 25 bitcoins. 
 
 The calculation can be seen in function +GetBlockValue+ in the Bitcoin Core client, as shown in <<getblockvalue_source>>.
 
@@ -297,7 +294,7 @@ The initial subsidy is calculated in satoshis by multiplying 50 with the +COIN+ 
 
 The maximum number of halvings allowed is 64, so the code imposes a zero reward (return only the fees) if the 64 halvings is exceeded.
 
-Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by 2 for each round of halving. In the case of block 277,316 this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoin. The binary-right-shift operator is used because it is more efficient for division by 2 than integer or floating-point division. 
+Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by two for each round of halving. In the case of block 277,316, this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoins. The binary-right-shift operator is used because it is more efficient for division by two than integer or floating-point division. 
 
 Finally, the coinbase reward (+nSubsidy+) is added to the transaction fees (+nFees+), and the sum is returned. 
 
@@ -344,11 +341,11 @@ The first few bytes of the coinbase used to be arbitrary, but that is no longer 
 
 In block 277,316 we see that the coinbase (see <<generation_tx_example>>), which is in the "Unlocking Script" or +scriptSig+ field of the transaction input, contains the hexadecimal value +03443b0403858402062f503253482f+. Let's decode this value. 
 
-The first byte, +03+, instructs the script execution engine to push the next three bytes onto the script stack (see <<tx_script_ops_table_pushdata>>). The next three bytes, +0x443b04+, are the block height encoded in little-endian format (backwards, least significant byte first). Reverse the order of the bytes and the result is +0x043b44+, which is 277,316 in decimal. 
+The first byte, +03+, instructs the script execution engine to push the next three bytes onto the script stack (see <<tx_script_ops_table_pushdata>>). The next three bytes, +0x443b04+, are the block height encoded in little-endian format (backward, least significant byte first). Reverse the order of the bytes and the result is +0x043b44+, which is 277,316 in decimal. 
 
-The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (see <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
+The next few hexadecimal digits (+03858402062+) are used to encode an extra _nonce_ (see <<extra_nonce>>), or random value, used to find a suitable proof of work solution.
 
-The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string +/P2SH/+, which indicates that the mining node that mined this block supports the((("Pay-to-Script-Hash (P2SH)","coinbase data and"))) Pay-to-Script-Hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
+The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string +/P2SH/+, which indicates that the mining node that mined this block supports the((("pay-to-script-hash (P2SH)","coinbase data and"))) pay-to-script-hash (P2SH) improvement defined in BIP0016. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP0016 or BIP0017. Those endorsing the BIP0016 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP0017 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. The BIP0016 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
 
 <<satoshi_words>> uses the libbitcoin library introduced in <<alt_libraries>> to extract the coinbase data from the genesis block, displaying Satoshi's message. Note that the libbitcoin library contains a static copy of the genesis block, so the example code can use retrieve the genesis block directly from the library. 
 
