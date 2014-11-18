@@ -617,16 +617,18 @@ This means that a valid block for height 277,316 is one that has a block header 
 
 ((("difficulty retargeting")))((("difficulty target","block generation rate and")))Bitcoin's blocks are generated every 10 minutes, on average. This is bitcoin's heartbeat and underpins the frequency of currency issuance and the speed of transaction settlement. It has to remain constant not just over the short term, but over a period of many decades. Over this time, it is expected that computer power will continue to increase at a rapid pace. Furthermore, the number of participants in mining and the computers they use will also constantly change. To keep the block generation time at 10 minutes, the difficulty of mining must be adjusted to account for these changes. In fact, difficulty is a dynamic parameter that will be periodically adjusted to meet a 10-minute block target. In simple terms, the difficulty target is set to whatever mining power will result in a 10-minute block interval. 
 
-How then is such an adjustment made in a completely decentralized network? Difficulty retargeting occurs automatically and on every full node independently. Every 2,016 blocks, all nodes retarget the Proof-Of-Work difficulty. The equation for retargeting difficulty measures the time it took to find the last 2,016 blocks and compares that to the expected time of 20,160 minutes (two weeks based upon a desired 10-minute block time). The ratio between the actual timespan and desired timespan is calculated and a corresponding adjustment (up or down) is made to the difficulty. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty decreases. 
+How, then, is such an adjustment made in a completely decentralized network? Difficulty retargeting occurs automatically and on every full node independently. Every 2,016 blocks, all nodes retarget the proof-of-work difficulty. The equation for retargeting difficulty measures the time it took to find the last 2,016 blocks and compares that to the expected time of 20,160 minutes (two weeks based upon a desired 10-minute block time). The ratio between the actual timespan and desired timespan is calculated and a corresponding adjustment (up or down) is made to the difficulty. In simple terms: If the network is finding blocks faster than every 10 minutes, the difficulty increases. If block discovery is slower than expected, the difficulty decreases. 
 
 The equation can be summarized as:
 
+----
 New Difficulty = Old Difficulty * (Actual Time of Last 2016 Blocks / 20160 minutes)
+----
 
 <<retarget_difficulty_code>> shows the code used in the Bitcoin Core client.
 
 [[retarget_difficulty_code]]
-.Retargeting the Proof-Of-Work difficulty—GetNextWorkRequired() in pow.cpp, line 43
+.Retargeting the proof-of-work difficulty—GetNextWorkRequired() in pow.cpp, line 43
 ====
 [source,cpp]
 ----
@@ -661,7 +663,7 @@ if (bnNew > Params().ProofOfWorkLimit())
 
 The parameters Interval (2,016 blocks) and TargetTimespan (two weeks as 1,209,600 seconds) are defined in _chainparams.cpp_.
 
-To avoid extreme volatility in the difficulty, the retargeting adjustment must be less than a factor of four (4) per cycle. If the required difficulty adjustment is greater than a factor of four, it will be adjusted by the maximum and not more. Any further adjustment will be accomplished in the next retargeting period because the imbalance will persist through the next 2,016 blocks. Therefore, large discrepancies between hashing power and difficulty may take several 2,016 block cycles to balance out. 
+To avoid extreme volatility in the difficulty, the retargeting adjustment must be less than a factor of four (4) per cycle. If the required difficulty adjustment is greater than a factor of four, it will be adjusted by the maximum and not more. Any further adjustment will be accomplished in the next retargeting period because the imbalance will persist through the next 2,016 blocks. Therefore, large discrepancies between hashing power and difficulty might take several 2,016 block cycles to balance out. 
 
 [TIP]
 ====
@@ -674,22 +676,22 @@ Note that the target difficulty is independent of the number of transactions or 
 
 === Successfully Mining the Block
 
-((("consensus","mining blocks successfully")))As we saw earlier, Jing's node has constructed a candidate block and prepared it for mining. Jing has several hardware mining rigs with((("Application Specific Integrated Circuits"))) Application Specific Integrated Circuits, where hundreds of thousands of integrated circuits run the SHA256 algorithm in parallel at incredible speeds. These specialized machines are connected to his mining node over USB. Next, the mining node running on Jing's desktop transmits the block header to his mining hardware, which start testing trillions of nonces per second. 
+((("consensus","mining blocks successfully")))As we saw earlier, Jing's node has constructed a candidate block and prepared it for mining. Jing has several hardware mining rigs with((("application-specific integrated circuits"))) application-specific integrated circuits, where hundreds of thousands of integrated circuits run the SHA256 algorithm in parallel at incredible speeds. These specialized machines are connected to his mining node over USB. Next, the mining node running on Jing's desktop transmits the block header to his mining hardware, which starts testing trillions of nonces per second. 
 
 Almost 11 minutes after starting to mine block 277,316, one of the hardware mining machines finds a solution and sends it back to the mining node. The nonce 4,215,469,401 when inserted into the block header produces a block hash of +0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569+, which is less than the target of +0000000000000003A30C00000000000000000000000000000000000000000000+.
 
-Immediately, Jing's mining node transmits the block to all its peers. They receive, validate, and then propagate the new block. As the block ripples out across the network, each node adds it to its own copy of the blockchain, extending it to a new height of 277,316 blocks. As mining nodes receive and validate the block, they abandon their efforts to find a block at the same height and immediately start computing the next block in the chain. 
+Immediately, Jing's mining node transmits the block to all its peers. They receive, validate, and then propagate the new block. As the block ripples out across the network, each node adds it to its own copy of the block chain, extending it to a new height of 277,316 blocks. As mining nodes receive and validate the block, they abandon their efforts to find a block at the same height and immediately start computing the next block in the chain. 
 
-In the next section we'll look at the process each node uses to validate a block and select the longest chain, creating the consensus that forms the decentralized blockchain.
+In the next section, we'll look at the process each node uses to validate a block and select the longest chain, creating the consensus that forms the decentralized block chain.
 
 === Validating a New Block
 
-((("blocks","validating new")))((("consensus","validating new blocks")))((("mining","validating new blocks")))The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the blockchain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward, but also waste the effort expended to find a Proof-Of-Work solution, thus incurring the cost of electricity without compensation. 
+((("blocks","validating new")))((("consensus","validating new blocks")))((("mining","validating new blocks")))The third step in bitcoin's consensus mechanism is independent validation of each new block by every node on the network. As the newly solved block moves across the network, each node performs a series of tests to validate it before propagating it to its peers. This ensures that only valid blocks are propagated on the network. The independent validation also ensures that miners who act honestly get their blocks incorporated in the block chain, thus earning the reward. Those miners who act dishonestly have their blocks rejected and not only lose the reward, but also waste the effort expended to find a proof-of-work solution, thus incurring the cost of electricity without compensation. 
 
 When a node receives a new block, it will validate the block by checking it against a long list of criteria that must all be met; otherwise, the block is rejected. These criteria can be seen in the Bitcoin Core client in the functions((("CheckBlock function (Bitcoin Core client)")))((("CheckBlockHeader function (Bitcoin Core client)"))) +CheckBlock+ and +CheckBlockHeader+ and include:
 
 * The block data structure is syntactically valid
-* The block header hash is less than the target difficulty (enforces the Proof-Of-Work)
+* The block header hash is less than the target difficulty (enforces the proof of work)
 * The block timestamp is less than two hours in the future (allowing for time errors)
 * The block size is within acceptable limits
 * The first transaction (and only the first) is a coinbase generation transaction
