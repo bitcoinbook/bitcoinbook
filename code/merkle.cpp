@@ -1,6 +1,6 @@
 #include <bitcoin/bitcoin.hpp>
 
-bc::hash_digest create_merkle(bc::hash_digest_list& merkle)
+bc::hash_digest create_merkle(bc::hash_list& merkle)
 {
     // Stop if hash list is empty.
     if (merkle.empty())
@@ -18,7 +18,7 @@ bc::hash_digest create_merkle(bc::hash_digest_list& merkle)
         assert(merkle.size() % 2 == 0);
 
         // New hash list.
-        bc::hash_digest_list new_merkle;
+        bc::hash_list new_merkle;
         // Loop through hashes 2 at a time.
         for (auto it = merkle.begin(); it != merkle.end(); it += 2)
         {
@@ -47,13 +47,21 @@ bc::hash_digest create_merkle(bc::hash_digest_list& merkle)
     return merkle[0];
 }
 
+// Convert hex string to hash bytes.
+bc::hash_digest get_hash(const std::string& value)
+{
+    bc::hash_digest result;
+    bool success = bc::decode_hash(result, value);
+    return result;
+}
+
 int main()
 {
     // Replace these hashes with ones from a block to reproduce the same merkle root.
-    bc::hash_digest_list tx_hashes{{
-        bc::decode_hash("0000000000000000000000000000000000000000000000000000000000000000"),
-        bc::decode_hash("0000000000000000000000000000000000000000000000000000000000000011"),
-        bc::decode_hash("0000000000000000000000000000000000000000000000000000000000000022"),
+    bc::hash_list tx_hashes{{
+        get_hash("0000000000000000000000000000000000000000000000000000000000000000"),
+        get_hash("0000000000000000000000000000000000000000000000000000000000000011"),
+        get_hash("0000000000000000000000000000000000000000000000000000000000000022"),
     }};
     const bc::hash_digest merkle_root = create_merkle(tx_hashes);
     std::cout << "Result: " << bc::encode_hex(merkle_root) << std::endl;
