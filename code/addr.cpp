@@ -4,7 +4,7 @@ int main()
 {
     // Private secret key.
     bc::ec_secret secret;
-    bool success = bc::decode_hash(secret,
+    bool success = bc::decode_base16(secret,
         "038109007313a5807b2eccc082c8c3fbb988a973cacf1a7df9ce725c31b14776");
     assert(success);
     // Get public key.
