@@ -1,5 +1,5 @@
 import ecdsa
-import random
+import os
 import time
 from ecdsa.util import string_to_number, number_to_string
 
@@ -20,9 +20,11 @@ curve = curve_secp256k1
 generator = generator_secp256k1
 
 def random_secret():
-    random_char = lambda: chr(random.randint(0, 255))
     convert_to_int = lambda array: int("".join(array).encode("hex"), 16)
-    byte_array = [random_char() for i in range(32)]
+    
+    # Collect 256 bits of random data from the OS's cryptographically secure random generator
+    byte_array = os.urandom(32)
+    
     return convert_to_int(byte_array)
 
 def get_point_pubkey(point):
@@ -38,8 +40,6 @@ def get_point_pubkey_uncompressed(point):
           '%064x' % point.y()
     return key.decode('hex')
 
-# Seed random number generator.
-random.seed(time.time())
 
 # Generate a new private key.
 secret = random_secret()
