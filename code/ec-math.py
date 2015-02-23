@@ -1,6 +1,5 @@
 import ecdsa
 import os
-import time
 from ecdsa.util import string_to_number, number_to_string
 
 # secp256k1, http://www.oid-info.com/get/1.3.132.0.10
