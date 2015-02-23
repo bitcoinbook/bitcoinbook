@@ -1,5 +1,6 @@
 import ecdsa
 import random
+import time
 from ecdsa.util import string_to_number, number_to_string
 
 # secp256k1, http://www.oid-info.com/get/1.3.132.0.10
@@ -36,6 +37,9 @@ def get_point_pubkey_uncompressed(point):
           '%064x' % point.x() + \
           '%064x' % point.y()
     return key.decode('hex')
+
+# Seed random number generator.
+random.seed(time.time())
 
 # Generate a new private key.
 secret = random_secret()
