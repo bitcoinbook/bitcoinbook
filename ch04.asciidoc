@@ -292,6 +292,10 @@ image::images/msbt_0406.png["Base58CheckEncoding"]
 
 In bitcoin, most of the data presented to the user is Base58Check-encoded to make it compact, easy to read, and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base58 contain specific characters at the beginning of the Base58Check-encoded payload. These characters make it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check-encoded bitcoin address that starts with a 1 from a Base58Check-encoded private key WIF format that starts with a 5. Some example version prefixes and the resulting Base58 characters are shown in <<base58check_versions>>.((("Base58Check encoding","prefixes, listed")))
 
+++++
+<?hard-pagebreak?>
+++++
+
 [[base58check_versions]]
 .Base58Check version prefix and encoded result examples
 [options="header"]
@@ -353,6 +357,10 @@ Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
 |=======
 
 <<table_4-3>> shows the private key generated in these three formats.
+
+++++
+<?hard-pagebreak?>
+++++
 
 [[table_4-3]]
 .Example: Same key, different formats
@@ -443,7 +451,7 @@ K = 04F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A<?pdf-cr?>
 [[comp_pub]]
 ===== Compressed public keys
 
-((("compressed public keys", id="ix_ch04-asciidoc16", range="startofrange")))((("public keys","compressed", id="ix_ch04-asciidoc17", range="startofrange")))Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
+pass:[<?dbhtml orphans="4"?>]Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain.((("compressed public keys", id="ix_ch04-asciidoc16", range="startofrange")))((("public keys","compressed", id="ix_ch04-asciidoc17", range="startofrange")))
 
 As we saw in the section <<pubkey>>, a public key is a point (x,y) on an elliptic curve. Because the curve expresses a mathematical function, a point on the curve represents a solution to the equation and, therefore, if we know the _x_ coordinate we can calculate the _y_ coordinate by solving the equation y^2^ mod p = (x^3^ + 7) mod p. That allows us to store only the _x_ coordinate of the public key point, omitting the _y_ coordinate and reducing the size of the key and the space required to store it by 256 bits. An almost 50% reduction in size in every transaction adds up to a lot of data saved over time!
 
@@ -555,7 +563,7 @@ include::code/ec-math.py[]
 
 [NOTE]
 ====
-The example above uses +os.urandom+ which reflects a cryptographically secure random number generator (CSRNG) provided by the underlying operating system. In the case of UNIX-like operating system such as Linux, it draws from +/dev/urandom+ and in the case of Windows calls +CryptGenRandom()+. If a suitable randomness source is not found, +NotImplementedError+ will be raised. While the random number generator used here is for demonstration purposes, it is _not_ appropriate for generating production-quality bitcoin keys as it is not implemented with sufficient security.
+The example above uses +os.urandom+, which reflects a cryptographically secure random number generator (CSRNG) provided by the underlying operating system. In the case of an UNIX-like operating system such as Linux, it draws from +/dev/urandom+; and in the case of Windows, calls +CryptGenRandom()+. If a suitable randomness source is not found, +NotImplementedError+ will be raised. While the random number generator used here is for demonstration purposes, it is _not_ appropriate for generating production-quality bitcoin keys as it is not implemented with sufficient security.
 ====
 
 [[ec_math_run]]
@@ -887,7 +895,7 @@ A pay-to-script hash address is created from a transaction script, which defines
 script hash = RIPEMD160(SHA256(script))
 ----
     
-((("script hashes")))The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the Bitcoin Explorer commands((("Bitcoin Explorer","script-encode command")))((("script-encode command (bx)"))) +script-encode+,((("Bitcoin Explorer","sha256 command")))((("sha256 command (bx)"))) +sha256+,((("Bitcoin Explorer","ripemd160 command")))((("ripemd160 command (bx)"))) +ripemd160+ and((("Bitcoin Explorer","base58check-encode command")))((("base58check-encode command (bx)"))) +base58check-encode+ (see <<libbitcoin>>) as follows:
+((("script hashes")))The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the Bitcoin Explorer commands((("Bitcoin Explorer","script-encode command")))((("script-encode command (bx)"))) +script-encode+,((("Bitcoin Explorer","sha256 command")))((("sha256 command (bx)"))) +sha256+,((("Bitcoin Explorer","ripemd160 command")))((("ripemd160 command (bx)"))) +ripemd160+, and((("Bitcoin Explorer","base58check-encode command")))((("base58check-encode command (bx)"))) +base58check-encode+ (see <<libbitcoin>>) as follows:
 
 ----
 $ echo dup hash160 [ 89abcdefabbaabbaabbaabbaabbaabbaabbaabba ] equalverify checksig > script
