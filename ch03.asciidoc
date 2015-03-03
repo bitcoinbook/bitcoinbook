@@ -597,7 +597,8 @@ Commands: +gettransaction+, +getrawtransaction+, +decoderawtransaction+
 
 
 ----
-$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3
+$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66<?pdf-cr?>c309acbae2c14ae3
+
 ----
 [source,json]
 ----
@@ -627,17 +628,33 @@ The transaction form shown with the command +gettransaction+ is the simplified f
 
 ++++
 <programlisting>
-$ bitcoin-cli getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3<?pdf-cr?> 0100000001d717279515f88e2f56ce4e8a31e2ae3e9f00ba1d0add648e80c4<?pdf-cr?>80ea22e0c7d3000000008b483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a<?pdf-cr?>2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd<?pdf-cr?>193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac<?pdf-cr?>5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5ceaffffffff02404b4c<?pdf-cr?>00000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac1f312906000000001<?pdf-cr?>976a914107b7086b31518935c8d28703d66d09b3623134388ac00000000
+$ bitcoin-cli getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66<?pdf-cr?>
+c309acbae2c14ae3
+
+0100000001d717279515f88e2f56ce4e8a31e2ae3e9f00ba1d0add648e80c480ea22e0c7d3000000<?pdf-cr?>
+008b483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a2df0dd0758e227383b3<?pdf-cr?>
+02203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd193dfba2014104793ac8<?pdf-cr?>
+a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac5b5b6dede05ba84727e34<?pdf-cr?>
+c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5ceaffffffff02404b4c00000000001976a91407bd<?pdf-cr?>
+b518fa2e6089fd810235cf1100c9c13d1fd288ac1f312906000000001976a914107b7086b3151893<?pdf-cr?>
+5c8d28703d66d09b3623134388ac00000000
 </programlisting>
 ++++
 
 To decode this hex string, use the +decoderawtransaction+ command. Copy and paste the hex as the first parameter of +decoderawtransaction+ to get the full contents interpreted as a JSON data structure (for formatting reasons the hex string is shortened in the following example):
 
 
-----
-$ bitcoin-cli decoderawtransaction 0100000001d717...388ac00000000
-----
-
+++++
+<programlisting>
+$ bitcoin-cli decoderawtransaction 0100000001d717279515f88e2f56ce4e8a31e2ae3e9f00<?pdf-cr?>
+ba1d0add648e80c480ea22e0c7d3000000008b483045022100a4ebbeec83225dedead659bbde7da3d<?pdf-cr?>
+026c8b8e12e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d3<?pdf-cr?>
+4c5b9b2ac1bd193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65<?pdf-cr?>
+e4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5ceaffffffff<?pdf-cr?>
+02404b4c00000000001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac1f312906000<?pdf-cr?>
+000001976a914107b7086b31518935c8d28703d66d09b3623134388ac00000000
+</programlisting>
+++++
 
 ++++
 <screen>
@@ -798,7 +815,9 @@ We can also retrieve a block by its block height using the +getblockhash+ comman
 
 ++++
 <screen>
-$ bitcoin-cli getblockhash 0000000000019d6689c085ae165831e934ff763ae46a2a6c17<?pdf-cr?>2b3f1b60a8ce26f
+$ bitcoin-cli getblockhash 0
+
+000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 </screen>
 ++++
 
@@ -981,7 +1000,7 @@ $ bitcoin-cli decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bd<?p
 
 That looks correct! Our new transaction "consumes" the unspent output from our confirmed transaction and then spends it in two outputs, one for 25 millibits to our new address and one for 24.5 millibits as change back to the original address. The difference of 0.5 millibits represents the transaction fee and will be credited to the miner who finds the block that includes our transaction. 
 
-As you might notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless; we haven't yet proven that we _own_ the address from which the unspent output is sourced. By signing, we remove the encumbrance on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter:
+As you might notice, the transaction contains an empty +scriptSig+ because we haven't signed it yet. Without a signature, this transaction is meaningless; we haven't yet proven that we _own_ the address from which the unspent output is sourced. By signing, we remove the lock on the output and prove that we own this output and can spend it. We use the +signrawtransaction+ command to sign the transaction. It takes the raw transaction hex string as the parameter:
 
 [TIP]
 ====
@@ -1010,7 +1029,7 @@ The +signrawtransaction+ command returns another hex-encoded raw transaction. We
 
 ++++
 <screen>
-$ bitcoin-cli decoderawtransaction0100000001e34ac1e2baac09c366fce1c2245536bda<?pdf-cr?>8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c<?pdf-cr?>800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87<?pdf-cr?>e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac<?pdf-cr?>1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9b<?pdf-cr?>bd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100<?pdf-cr?>c9c13d1fd288ac00000000
+$ bitcoin-cli decoderawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda<?pdf-cr?>8f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c<?pdf-cr?>800c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87<?pdf-cr?>e3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac<?pdf-cr?>1d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9b<?pdf-cr?>bd68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100<?pdf-cr?>c9c13d1fd288ac00000000
 </screen>
 ++++
 
@@ -1064,14 +1083,20 @@ $ bitcoin-cli decoderawtransaction0100000001e34ac1e2baac09c366fce1c2245536bda<?p
 </screen>
 ++++
 
-Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the encumbrance on the output so that it can be spent. The signature makes this transaction verifiable by any node in the bitcoin network. 
+Now, the inputs used in the transaction contain a +scriptSig+, which is a digital signature proving ownership of address +1hvz...+ and removing the lock on the output so that it can be spent. The signature makes this transaction verifiable by any node in the bitcoin network. 
 
 Now it's time to submit the newly created transaction to the network. We do that with the command +sendrawtransaction+, which takes the raw hex string produced by +signrawtransaction+. This is the same string we just decoded:
 
 ++++
 <screen>
-$ bitcoin-cli sendrawtransaction
-0100000001e34ac1e2baac09c366fce1c2245536bda8f<?pdf-cr?>7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c80<?pdf-cr?>0c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e3<?pdf-cr?>897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1d<?pdf-cr?>3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bbd<?pdf-cr?>68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c9<?pdf-cr?>c13d1fd288ac00000000ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584a<?pdf-cr?>c17b346
+$ bitcoin-cli sendrawtransaction 0100000001e34ac1e2baac09c366fce1c2245536bda8<?pdf-cr?>
+f7db0f6685862aecf53ebd69f9a89c000000006a47304402203e8a16522da80cef66bacfbc0c8<?pdf-cr?>
+00c6d52c4a26d1d86a54e0a1b76d661f020c9022010397f00149f2a8fb2bc5bca52f2d7a7f87e<?pdf-cr?>
+3897a273ef54b277e4af52051a06012103c9700559f690c4a9182faa8bed88ad8a0c563777ac1<?pdf-cr?>
+d3f00fd44ea6c71dc5127ffffffff02a0252600000000001976a914d90d36e98f62968d2bc9bb<?pdf-cr?>
+d68107564a156a9bcf88ac50622500000000001976a91407bdb518fa2e6089fd810235cf1100c<?pdf-cr?>
+9c13d1fd288ac00000000ae74538baa914f3799081ba78429d5d84f36a0127438e9f721dff584<?pdf-cr?>
+ac17b346
 </screen>
 ++++
 
@@ -1153,15 +1178,11 @@ The bx commands offer many of the same capabilities as the bitcoind client comma
 
 ===== Installing Bitcoin Explorer
 
-((("Bitcoin Explorer","installing")))To use Bitcoin Explorer, simply download the signed executable for your operating system. Builds are available for mainnet and testnet for Linux, OS X, and Windows.
-
-https://github.com/libbitcoin/libbitcoin-explorer/wiki/Download
+((("Bitcoin Explorer","installing")))To use Bitcoin Explorer, simply https://github.com/libbitcoin/libbitcoin-explorer/wiki/Download[download] the signed executable for your operating system. Builds are available for mainnet and testnet for Linux, OS X, and Windows.
 
 Type +bx+ with no parameters to display the list of all available commands (see <<appdx_bx>>).
 
-Bitcoin Explorer also provides an installer for building from sources on Linux and OS X, as well as Visual Studio projects for Windows. Sources can also be built manually using Autotools. These also install the ((("libbitcoin library","installing")))libbitcoin library dependency.
-
-https://github.com/libbitcoin/libbitcoin-explorer/wiki/Build
+Bitcoin Explorer also provides an installer for https://github.com/libbitcoin/libbitcoin-explorer/wiki/Build[building] from sources on Linux and OS X, as well as Visual Studio projects for Windows. Sources can also be built manually using Autotools. These also install the ((("libbitcoin library","installing")))libbitcoin library dependency.
 
 [TIP]
 ====
@@ -1170,9 +1191,7 @@ Bitcoin Explorer offers many useful commands for encoding and decoding addresses
 
 ===== Installing Libbitcoin
 
-((("libbitcoin library","installing")))The libbitcoin library provides an installer for building from sources on Linux and OS X, as well as Visual Studio projects for Windows. Sources can also be built manually using Autotools.
-
-https://github.com/libbitcoin/libbitcoin/wiki/Build
+((("libbitcoin library","installing")))The libbitcoin library provides an installer for https://github.com/libbitcoin/libbitcoin/wiki/Build[building] from sources on Linux and OS X, as well as Visual Studio projects for Windows. Sources can also be built manually using Autotools.
 
 [TIP]
 ====
