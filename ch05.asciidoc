@@ -459,7 +459,7 @@ When executed, this combined script will evaluate to TRUE if, and only if, the u
 
 ((("blockchains","storing unrelated information in")))The use of bitcoin's blockchain to store data unrelated to bitcoin payments is a controversial subject. Many developers consider such use abusive and want to discourage it. Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of non-payment data argue that it causes "blockchain bloat," burdening those running full bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry. Moreover, such transactions create UTXO that cannot be spent, using the destination bitcoin address as a free-form 20-byte field. Because the address is used for data, it doesn't correspond to a private key and the resulting UTXO can _never_ be spent; it's a fake payment. These transactions that can never be spent are therefore never removed from the UTXO set and cause the size of the UTXO database to forever increase, or "bloat."
 
-In version 0.9 of the Bitcoin Core client, a compromise was reached with the introduction of the +OP_RETURN+ operator. +OP_RETURN+ allows developers to add 40 bytes of nonpayment data to a transaction output. However, unlike the use of "fake" UTXO, the +OP_RETURN+ operator creates an explicitly _provably unspendable_ output, which does not need to be stored in the UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they consume disk space and contribute to the increase in the blockchain's size, but they are not stored in the UTXO set and therefore do not bloat the UTXO memory pool and burden full nodes with the cost of more expensive RAM. 
+In version 0.9 of the Bitcoin Core client, a compromise was reached with the introduction of the +OP_RETURN+ operator. +OP_RETURN+ allows developers to add 80 bytes of nonpayment data to a transaction output. However, unlike the use of "fake" UTXO, the +OP_RETURN+ operator creates an explicitly _provably unspendable_ output, which does not need to be stored in the UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they consume disk space and contribute to the increase in the blockchain's size, but they are not stored in the UTXO set and therefore do not bloat the UTXO memory pool and burden full nodes with the cost of more expensive RAM. 
 
 +OP_RETURN+ scripts look like this:
 
@@ -467,11 +467,18 @@ In version 0.9 of the Bitcoin Core client, a compromise was reached with the int
 OP_RETURN <data>
 ----
 
-The data portion is limited to 40 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix "DOCPROOF," which is ASCII encoded as +44f4350524f4f46+ in hexadecimal.
+The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix "DOCPROOF," which is ASCII encoded as +44f4350524f4f46+ in hexadecimal.
 
 Keep in mind that there is no "unlocking script" that corresponds to +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The whole point of +OP_RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+OP_RETURN+ is _provably un-spendable_. +OP_RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +OP_RETURN+ is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an +OP_RETURN+ output as an input in a transaction, that transaction is invalid. 
 
 A standard transaction (one that conforms to the +isStandard()+ checks) can have only one +OP_RETURN+ output. However, a single +OP_RETURN+ output can be combined in a transaction with outputs of any other type. 
+
+Two new command-line options have been added in Bitcoin Core as of version 0.10. The option +datacarrier+ controls relay and mining of OP_RETURN transactions, with the default set to "1" to allow them. The option +datacarriersize+ takes a numeric argument specifying the maximum size in bytes of the OP_RETURN data, 40 bytes by default.
+
+[NOTE]
+====
+OP_RETURN was initially proposed with a limit of 80 bytes, but the limit was reduced to 40 bytes when the feature was released. In February 2015, in version 0.10 of Bitcoin Core, the limit was raised back to 80 bytes. Nodes may choose not to relay or mine OP_RETURN, or only relay and mine OP_RETURN containing less than 80 bytes of data.
+====
 
 [[p2sh]]
 ==== Pay-to-Script-Hash (P2SH)

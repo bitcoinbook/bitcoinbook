@@ -24,7 +24,7 @@ wif_compressed_private_key = bitcoin.encode_privkey(
 print "Private Key (WIF-Compressed) is: ", wif_compressed_private_key
 
 # Multiply the EC generator point G with the private key to get a public key point
-public_key = bitcoin.base10_multiply(bitcoin.G, decoded_private_key)
+public_key = bitcoin.fast_multiply(bitcoin.G, decoded_private_key)
 print "Public Key (x,y) coordinates is:", public_key
 
 # Encode as hex, prefix 04
