@@ -6,7 +6,7 @@
 
 ((("consensus", id="ix_ch08-asciidoc0", range="startofrange")))((("mining", id="ix_ch08-asciidoc1", range="startofrange")))((("miners")))Mining is the process by which new bitcoin is added to the money supply. Mining also serves to secure the bitcoin system against fraudulent transactions or transactions spending the same amount of bitcoin more than once, known as a double-spend. Miners provide processing power to the bitcoin network in exchange for the opportunity to be rewarded bitcoin. 
 
-Miners validate new transactions and record them on the global ledger. A new block, containing transactions that occurred since the last block, is "mined" every 10 minutes, thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed," which allows the new owners of bitcoin to spend the bitcoin they received in those transactions. 
+Miners validate new transactions and record them on the global ledger. A new block, containing transactions that occurred since the last block, is "mined" every 10 minutes on average, thereby adding those transactions to the blockchain. Transactions that become part of a block and added to the blockchain are considered "confirmed," which allows the new owners of bitcoin to spend the bitcoin they received in those transactions. 
 
 Miners receive two types of rewards for mining: new coins created with each new block, and transaction fees from all the transactions included in the block. To earn this reward, the miners compete to solve a difficult mathematical problem based on a cryptographic hash algorithm. The solution to the problem, called the proof of work, is included in the new block and acts as proof that the miner expended significant computing effort. The competition to solve the proof-of-work algorithm to earn reward and the right to record transactions on the blockchain is the basis for bitcoin's security model. 
 
@@ -24,7 +24,16 @@ In this chapter, we will first examine mining as a monetary supply mechanism and
 
 ((("currency creation", id="ix_ch08-asciidoc2", range="startofrange")))((("mining","currency creation", id="ix_ch08-asciidoc3", range="startofrange")))Bitcoins are "minted" during the creation of each block at a fixed and diminishing rate. Each block, generated on average every 10 minutes, contains entirely new bitcoins, created from nothing. Every 210,000 blocks, or approximately every four years, the currency issuance rate is decreased by 50%. For the first four years of operation of the network, each block contained 50 new bitcoins. 
 
-In November 2012, the new bitcoin issuance rate was decreased to 25 bitcoins per block and it will decrease again to 12.5 bitcoins at block 420,000, which will be mined sometime in 2016. The rate of new coins decreases like this exponentially over 64 "halvings" until block 13,230,000 (mined approximately in year 2137), when it reaches the minimum currency unit of 1 satoshi. Finally, after 13.44 million blocks, in approximately 2140, all 2,099,999,997,690,000 satoshis, or almost 21 million bitcoins, will be issued. Thereafter, blocks will contain no new bitcoins, and miners will be rewarded solely through the transaction fees. <<bitcoin_money_supply>> shows the total bitcoin in circulation over time, as the issuance of currency decreases.
+In November 2012, the new bitcoin issuance rate was decreased to 25 bitcoins per block and it will decrease again to 12.5 bitcoins at block 420,000, which will be mined sometime in 2016. The rate of new coins decreases like this exponentially over 64 "halvings" until block 13,230,000 (mined approximately in year 2137), when it reaches the minimum currency unit of 1 satoshi. Finally, after 13.44 million blocks, in approximately 2140, almost 2,099,999,997,690,000 satoshis, or almost 21 million bitcoins, will be issued. Thereafter, blocks will contain no new bitcoins, and miners will be rewarded solely through the transaction fees. <<bitcoin_money_supply>> shows the total bitcoin in circulation over time, as the issuance of currency decreases.
+
+[[bitcoin_money_supply]]
+.Supply of bitcoin currency over time based on a geometrically decreasing issuance rate
+image::images/msbt_0801.png["BitcoinMoneySupply"]
+
+[NOTE]
+====
+The maximum number of coins mined is the _upper limit_ of possible mining rewards for bitcoin. In practice, a miner may intentionally mine a block taking less than the full reward. Such blocks have already been mined and more may be mined in the future, resulting in a lower total issuance of the currency.
+====
 
 In the example code in <<max_money>>, we calculate the total amount of bitcoin that will be issued.
 
@@ -48,10 +57,6 @@ $ python max_money.py
 Total BTC to ever be created: 2099999997690000 Satoshis
 ----
 ====
-
-[[bitcoin_money_supply]]
-.Supply of bitcoin currency over time based on a geometrically decreasing issuance rate
-image::images/msbt_0801.png["BitcoinMoneySupply"]
 
 ((("inflation, resisting")))The finite and diminishing issuance creates a fixed monetary supply that resists inflation. Unlike a fiat currency, which can be printed in infinite numbers by a central bank, bitcoin can never be inflated by printing.
 
@@ -113,7 +118,7 @@ However, before forwarding transactions to its neighbors, every bitcoin node tha
 
 These conditions can be seen in detail in the functions +AcceptToMemoryPool+, +CheckTransaction+, and +CheckInputs+ in the bitcoin reference client. Note that the conditions change over time, to address new types of denial-of-service attacks or sometimes to relax the rules so as to include more types of transactions. 
 
-By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid new transactions (the transaction pool), roughly in the same order. 
+By independently verifying each transaction as it is received and before propagating it, every node builds a pool of valid (but unconfirmed) transactions known as the _transaction pool_, _memory pool_ or _mempool_.
 
 === Mining Nodes
 
@@ -513,10 +518,6 @@ include::code/proof-of-work-example.py[]
 
 Running this code, you can set the desired difficulty (in bits, how many of the leading bits must be zero) and see how long it takes for your computer to find a solution. In <<pow_example_outputs>>, you can see how it works on an average laptop.
 
-++++
-<?hard-pagebreak?>
-++++
-
 [[pow_example_outputs]]
 .Running the proof of work example for various difficulties
 ====
@@ -673,6 +674,12 @@ if (bnNew > Params().ProofOfWorkLimit())
 ----
 ====
 
+[NOTE]
+====
+While the difficulty calibration happens every 2,016 blocks, because of an off-by-one error in the original Bitcoin Core client it is based on the total time of the previous 2,015 blocks (not 2,016 as it should be), resulting in a retargeting bias towards higher difficulty by 0.05%.
+====
+
+
 The parameters Interval (2,016 blocks) and TargetTimespan (two weeks as 1,209,600 seconds) are defined in _chainparams.cpp_.
 
 To avoid extreme volatility in the difficulty, the retargeting adjustment must be less than a factor of four (4) per cycle. If the required difficulty adjustment is greater than a factor of four, it will be adjusted by the maximum and not more. Any further adjustment will be accomplished in the next retargeting period because the imbalance will persist through the next 2,016 blocks. Therefore, large discrepancies between hashing power and difficulty might take several 2,016 block cycles to balance out. 
@@ -756,11 +763,11 @@ A "fork" occurs whenever there are two candidate blocks competing to form the lo
 
 In <<fork2>>, we see two miners who mine two different blocks almost simultaneously. Both of these blocks are children of the blue block, meant to extend the chain by building on top of the blue block. To help us track it, one is visualized as a red block originating from Canada, and the other is marked as a green block originating from Australia. 
 
+Let's assume, for example, that a miner in Canada finds a proof-of-work solution for a block "red" that extends the blockchain, building on top of the parent block "blue." Almost simultaneously, an Australian miner who was also extending block "blue" finds a solution for block "green," his candidate block. Now, there are two possible blocks, one we call "red," originating in Canada, and one we call "green," originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, and both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
+
 [[fork2]]
 .Visualization of a blockchain fork event: two blocks found simultaneously 
 image::images/msbt_0803.png["globalfork2"]
-
-Let's assume, for example, that a miner in Canada finds a proof-of-work solution for a block "red" that extends the blockchain, building on top of the parent block "blue." Almost simultaneously, an Australian miner who was also extending block "blue" finds a solution for block "green," his candidate block. Now, there are two possible blocks, one we call "red," originating in Canada, and one we call "green," originating in Australia. Both blocks are valid, both blocks contain a valid solution to the proof of work, and both blocks extend the same parent. Both blocks likely contain most of the same transactions, with only perhaps a few differences in the order of transactions. 
 
 As the two blocks propagate, some nodes receive block "red" first and some receive block "green" first. As shown in <<fork3>>, the network splits into two different perspectives of the blockchain, one side topped with a red block, the other with a green block. 
 
@@ -855,6 +862,8 @@ P2Pool mining is more complex than pool mining because it requires that the pool
 
 Recently, participation in P2Pool has increased significantly as mining concentration in mining pools has approached levels that create concerns of a((("51% attacks"))) 51% attack (see <<consensus_attacks>>). Further development of the P2Pool protocol continues with the expectation of removing the need for running a full node and therefore making decentralized mining even easier to use.(((range="endofrange", startref="ix_ch08-asciidoc25")))(((range="endofrange", startref="ix_ch08-asciidoc24")))(((range="endofrange", startref="ix_ch08-asciidoc23"))) 
 
+Even though P2Pool reduces the concentration of power by mining pool operators, it is conceivably vulnerable to 51% attacks against the share chain itself. A much broader adoption of P2Pool does not solve the 51% attack problem for bitcoin itself. Rather, P2Pool makes bitcoin more robust overall, as part of a diversified mining ecosystem. 
+
 [[consensus_attacks]]
 === Consensus Attacks
 
@@ -874,9 +883,9 @@ To protect against this kind of attack, a merchant selling large-value items mus
 
 Despite its name, the 51% attack scenario doesn't actually require 51% of the hashing power. In fact, such an attack can be attempted with a smaller percentage of the hashing power. The 51% threshold is simply the level at which such an attack is almost guaranteed to succeed. A consensus attack is essentially a tug-of-war for the next block and the "stronger" group is more likely to win. With less hashing power, the probability of success is reduced, because other miners control the generation of some blocks with their "honest" mining power. One way to look at it is that the more hashing power an attacker has, the longer the fork he can deliberately create, the more blocks in the recent past he can invalidate, or the more blocks in the future he can control. Security research groups have used statistical modeling to claim that various types of consensus attacks are possible with as little as 30% of the hashing power. 
 
-The massive increase of total hashing power has arguably made bitcoin impervious to attacks by a single miner. There is no possible way for a solo miner to control even 1% of the total mining power. However, the centralization of control caused by mining pools has introduced the risk of for-profit attacks by a mining pool operator. The pool operator in a managed pool controls the construction of candidate blocks and also controls which transactions are included. This gives the pool operator the power to exclude transactions or introduce double-spend transactions. If such abuse of power is done in a limited and subtle way, a pool operator could conceivably profit from a consensus attack without being noticed.
+The massive increase of total hashing power has arguably made bitcoin impervious to attacks by a single miner. There is no possible way for a solo miner to control more than a small percentage of the total mining power. However, the centralization of control caused by mining pools has introduced the risk of for-profit attacks by a mining pool operator. The pool operator in a managed pool controls the construction of candidate blocks and also controls which transactions are included. This gives the pool operator the power to exclude transactions or introduce double-spend transactions. If such abuse of power is done in a limited and subtle way, a pool operator could conceivably profit from a consensus attack without being noticed.
 
-Not all attackers will be motivated by profit, however. One potential attack scenario is where an attacker intends to disrupt the bitcoin network without the possibility of profiting from such disruption. A malicious attack aimed at crippling bitcoin would require enormous investment and covert planning, but could conceivably be launched by a well-funded, most likely state-sponsored, attacker. Alternatively, a well-funded attacker could attack bitcoin's consensus by simultaneously amassing mining hardware, compromising pool operators and attacking other pools with denial-of-service. All of these scenarios are theoretically possible, but increasingly impractical as the bitcoin network's overall hashing power continues to grow exponentially. Recent advancements in bitcoin, such as P2Pool mining, aim to further decentralize mining control, making bitcoin consensus even harder to attack.  
+Not all attackers will be motivated by profit, however. One potential attack scenario is where an attacker intends to disrupt the bitcoin network without the possibility of profiting from such disruption. A malicious attack aimed at crippling bitcoin would require enormous investment and covert planning, but could conceivably be launched by a well-funded, most likely state-sponsored, attacker. Alternatively, a well-funded attacker could attack bitcoin's consensus by simultaneously amassing mining hardware, compromising pool operators and attacking other pools with denial-of-service. All of these scenarios are theoretically possible, but increasingly impractical as the bitcoin network's overall hashing power continues to grow exponentially. 
 
 Undoubtedly, a serious consensus attack would erode confidence in bitcoin in the short term, possibly causing a significant price decline. However, the bitcoin network and software are constantly evolving, so consensus attacks would be met with immediate countermeasures by the bitcoin community, making bitcoin hardier, stealthier, and more robust than ever.(((range="endofrange", startref="ix_ch08-asciidoc29")))(((range="endofrange", startref="ix_ch08-asciidoc28")))(((range="endofrange", startref="ix_ch08-asciidoc1")))(((range="endofrange", startref="ix_ch08-asciidoc0")))
 

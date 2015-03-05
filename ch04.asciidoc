@@ -170,7 +170,7 @@ In some cases (i.e., if P~1~ and P~2~ have the same x values but different y val
 
 If P~1~ is the "point at infinity," then the sum P~1~ + P~2~ = P~2~. Similary, if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows how the point at infinity plays the role of 0.
 
-It turns out that pass:[+] is associative, which means that (A+B)+C = A+(B+C). That means we can write A+B+C without parentheses without any ambiguity. 
+It turns out that pass:[+] is associative, which means that (A pass:[+] B) pass:[+] C = A pass:[+] (B pass:[+] C). That means we can write A pass:[+] B pass:[+] C without parentheses without any ambiguity. 
 
 Now that we have defined addition, we can define multiplication in the standard way that extends addition. For a point P on the elliptic curve, if k is a whole number, then kP = P + P + P + ... + P (k times). Note that k is sometimes confusingly called an "exponent" in this case.(((range="endofrange", startref="ix_ch04-asciidoc5")))(((range="endofrange", startref="ix_ch04-asciidoc4"))) 
 
@@ -292,6 +292,10 @@ image::images/msbt_0406.png["Base58CheckEncoding"]
 
 In bitcoin, most of the data presented to the user is Base58Check-encoded to make it compact, easy to read, and easy to detect errors. The version prefix in Base58Check encoding is used to create easily distinguishable formats, which when encoded in Base58 contain specific characters at the beginning of the Base58Check-encoded payload. These characters make it easy for humans to identify the type of data that is encoded and how to use it. This is what differentiates, for example, a Base58Check-encoded bitcoin address that starts with a 1 from a Base58Check-encoded private key WIF format that starts with a 5. Some example version prefixes and the resulting Base58 characters are shown in <<base58check_versions>>.((("Base58Check encoding","prefixes, listed")))
 
+++++
+<?hard-pagebreak?>
+++++
+
 [[base58check_versions]]
 .Base58Check version prefix and encoded result examples
 [options="header"]
@@ -353,6 +357,10 @@ Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
 |=======
 
 <<table_4-3>> shows the private key generated in these three formats.
+
+++++
+<?hard-pagebreak?>
+++++
 
 [[table_4-3]]
 .Example: Same key, different formats
@@ -443,7 +451,7 @@ K = 04F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A<?pdf-cr?>
 [[comp_pub]]
 ===== Compressed public keys
 
-((("compressed public keys", id="ix_ch04-asciidoc16", range="startofrange")))((("public keys","compressed", id="ix_ch04-asciidoc17", range="startofrange")))Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain. 
+pass:[<?dbhtml orphans="4"?>]Compressed public keys were introduced to bitcoin to reduce the size of transactions and conserve disk space on nodes that store the bitcoin blockchain database. Most transactions include the public key, required to validate the owner's credentials and spend the bitcoin. Each public key requires 520 bits (prefix \+ x \+ y), which when multiplied by several hundred transactions per block, or tens of thousands of transactions per day, adds a significant amount of data to the blockchain.((("compressed public keys", id="ix_ch04-asciidoc16", range="startofrange")))((("public keys","compressed", id="ix_ch04-asciidoc17", range="startofrange")))
 
 As we saw in the section <<pubkey>>, a public key is a point (x,y) on an elliptic curve. Because the curve expresses a mathematical function, a point on the curve represents a solution to the equation and, therefore, if we know the _x_ coordinate we can calculate the _y_ coordinate by solving the equation y^2^ mod p = (x^3^ + 7) mod p. That allows us to store only the _x_ coordinate of the public key point, omitting the _y_ coordinate and reducing the size of the key and the space required to store it by 256 bits. An almost 50% reduction in size in every transaction adds up to a lot of data saved over time!
 
@@ -552,6 +560,11 @@ include::code/ec-math.py[]
 ====
 
 <<ec_math_run>> shows the output produced by running this script.(((range="endofrange", startref="ix_ch04-asciidoc22")))(((range="endofrange", startref="ix_ch04-asciidoc21")))(((range="endofrange", startref="ix_ch04-asciidoc20")))(((range="endofrange", startref="ix_ch04-asciidoc19")))(((range="endofrange", startref="ix_ch04-asciidoc18")))
+
+[NOTE]
+====
+The example above uses +os.urandom+, which reflects a cryptographically secure random number generator (CSRNG) provided by the underlying operating system. In the case of an UNIX-like operating system such as Linux, it draws from +/dev/urandom+; and in the case of Windows, calls +CryptGenRandom()+. If a suitable randomness source is not found, +NotImplementedError+ will be raised. While the random number generator used here is for demonstration purposes, it is _not_ appropriate for generating production-quality bitcoin keys as it is not implemented with sufficient security.
+====
 
 [[ec_math_run]]
 .Installing the Python ECDSA library and running the ec_math.py script
@@ -882,7 +895,7 @@ A pay-to-script hash address is created from a transaction script, which defines
 script hash = RIPEMD160(SHA256(script))
 ----
     
-((("script hashes")))The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the Bitcoin Explorer commands((("Bitcoin Explorer","script-encode command")))((("script-encode command (bx)"))) +script-encode+,((("Bitcoin Explorer","sha256 command")))((("sha256 command (bx)"))) +sha256+,((("Bitcoin Explorer","ripemd160 command")))((("ripemd160 command (bx)"))) +ripemd160+ and((("Bitcoin Explorer","base58check-encode command")))((("base58check-encode command (bx)"))) +base58check-encode+ (see <<libbitcoin>>) as follows:
+((("script hashes")))The resulting "script hash" is encoded with Base58Check with a version prefix of 5, which results in an encoded address starting with a +3+. An example of a P2SH address is +3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the Bitcoin Explorer commands((("Bitcoin Explorer","script-encode command")))((("script-encode command (bx)"))) +script-encode+,((("Bitcoin Explorer","sha256 command")))((("sha256 command (bx)"))) +sha256+,((("Bitcoin Explorer","ripemd160 command")))((("ripemd160 command (bx)"))) +ripemd160+, and((("Bitcoin Explorer","base58check-encode command")))((("base58check-encode command (bx)"))) +base58check-encode+ (see <<libbitcoin>>) as follows:
 
 ----
 $ echo dup hash160 [ 89abcdefabbaabbaabbaabbaabbaabbaabbaabba ] equalverify checksig > script
@@ -954,6 +967,11 @@ Generating a vanity address is a brute-force exercise: try a random key, check t
 ----
 include::code/vanity-miner.cpp[]
 ----
+====
+
+[NOTE]
+====
+The example above uses +std::random_device+. Depending on the implementation it may reflect a cryptographically secure random number generator (CSRNG) provided by the underlying operating system. In the case of UNIX-like operating system such as Linux, it draws from +/dev/urandom+. While the random number generator used here is for demonstration purposes, it is _not_ appropriate for generating production-quality bitcoin keys as it is not implemented with sufficient security.
 ====
 
 The example code must be compiled using a C++ compiler and linked against the libbitcoin library (which must be first installed on that system). To run the example, run the ++vanity-miner++ executable with no parameters (see <<vanity_miner_run>>) and it will attempt to find a vanity address starting with "1kid".
@@ -1035,7 +1053,7 @@ image::images/msbt_0415.png[]
 
 [WARNING]
 ====
-((("paper wallets","spending")))((("private keys","exposing with paper wallets")))Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds, you expose the private key, and because some wallets might generate a change address if you spend less than the whole amount. One way to do this is to withdraw the entire balance stored in the paper wallet and send any remaining funds to a new paper wallet. 
+((("paper wallets","spending")))((("private keys","exposing with paper wallets")))Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds some wallets might generate a change address if you spend less than the whole amount. Additionally, if the computer you use to sign the transaction is compromised, you risk exposing the private key. By spending the entire balance of a paper wallet only once, you reduce the risk of key compromise. If you need only a small amount, send any remaining funds to a new paper wallet in the same transaction.
 ====
 
 Paper wallets come in many designs and sizes, with many different features. Some are intended to be given as gifts and have seasonal themes, such as Christmas and New Year's themes. Others are designed for storage in a bank vault or safe with the private key hidden in some way, either with opaque scratch-off stickers, or folded and sealed with tamper-proof adhesive foil. Figures pass:[<xref linkend="paper_wallet_bpw" xrefstyle="select: labelnumber"/>] through pass:[<xref linkend="paper_wallet_spw" xrefstyle="select: labelnumber"/>] show various examples of paper wallets with security and backup features.
