@@ -1,7 +1,7 @@
 
-The Python library _pycoin_ (http://github.com/richardkiss/pycoin), originally written and maintained by Richard Kiss, is a Python-based library that supports manipulation of bitcoin keys and transactions, even supporting the _script_ language enough to properly deal with non-standard transactions. 
+The Python library [_pycoin_](http://github.com/richardkiss/pycoin), originally written and maintained by Richard Kiss, is a Python-based library that supports manipulation of Bitcoin keys and transactions, even supporting the _Script_ language enough to properly deal with non-standard transactions. 
 
-*NB* As at June 2014, the latest released version of _pycoin_ is 0.42, and *all examples below are based on _pycoin_ version 0.42*; be aware that _pycoin_ is still being actively developed, so later versions may have changed the API or behavior of command-line tools.
+As at June 2014, the latest released version of _pycoin_ is 0.42, and *all examples below are based on _pycoin_ version 0.42*; be aware that _pycoin_ is still being actively developed, so later versions may have changed the API or behavior of command-line tools.
 
 The _pycoin_ library supports both Python 2 (2.7.x) and Python 3 (after 3.3), and comes with some handy command-line utilities, `ku` and `tx`.
 
@@ -33,8 +33,8 @@ Cleaning up...
 KU and TX
 =========
 
-KU
---
+Key Utility (KU)
+----------------
 
 The command-line utility `ku` ("key utility") is Swiss Army knife for manipulating keys. It supports **BIP32 keys**, **WIF**, and **address** (Bitcoin and altcoins). Here are some examples.
 
@@ -287,8 +287,8 @@ hash160          : 751e76e8199196d454941c45d1b3a323f1433bd6
 Dogecoin address : DFpN6QqFfUm3gKNaxN6tNcab1FArL9cZLE
 ```
 
-tx
---
+Transaction Utility (TX)
+------------------------
 
 The command-line utility `tx` will display transactions in human-readable form, fetch base transactions from pycoin's transaction cache or from web services (blockchain.info, blockr.io, biteasy.com are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
 
@@ -459,7 +459,7 @@ OK, let's try actually signing a transaction. Let's use the WIF for secret expon
     $ ku -a -u 1
     1EHNa6Q4Jz2uvNExL497mE43ikXhwF6kZm
 
-Investigation on blockchain.info show a transaction payable to this bitcoin address with txid _d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a_.
+Investigation on blockchain.info show a transaction payable to this Bitcoin address with txid _d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a_.
 ```
 $ tx -u d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a
 d61aa2a5f5bce59d2a57447134f7ce9ce9d29b5c471f4bf747c43bf82aa26c2a/0/76a9149b92770a85b1252448ec69900e77f1371d6a620188ac/70594320
@@ -602,39 +602,40 @@ Different networks have different representations of the same WIF.
     T33ydQRKp4FCW5LCLLUB7deioUMoveiwekdwUwyfRDeGZm76aUjV
 
 
-Fetch, parse a tx, stream a tx
+Fetch, parse and stream a transaction.
 
 	$ tx 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098 -o tx.out
 	all incoming transaction values validated
-```
->>> from pycoin.tx import Tx
->>> tx = Tx.parse(open("tx.out", "rb"))
->>> print(tx)
-Tx [0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098]
->>> print(tx.txs_in[0])
-TxIn<COINBASE: 04ffff001d0104>
->>> print(tx.txs_out[0])
-TxOut<5E+4 mbtc "0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee OP_CHECKSIG">
->>> f1 = open("tx1.out", "wb")
->>> tx.stream(f1)
-$ ls -l tx1.out 
--rw-r--r--  1 kiss  staff  134 Jun 11 17:02 tx1.out
-$ tx tx1.out 
-warning: transaction fees recommendations casually calculated and estimates may be incorrect
-warning: transaction fee lower than (casually calculated) expected value of 0.1 mBTC, transaction might not propogate
-Version:  1  tx hash 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098  134 bytes   
-TxIn count: 1; TxOut count: 1
-Lock time: 0 (valid anytime)
-Input:
-  0: COINBASE   50000.00000 mBTC
-Output:
-  0: 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX receives  50000.00000 mBTC
-Total input   50000.00000 mBTC
-Total output  50000.00000 mBTC
-Total fees        0.00000 mBTC
-01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000
-all incoming transaction values validated
-```
+
+	>>> from pycoin.tx import Tx
+	>>> tx = Tx.parse(open("tx.out", "rb"))
+	>>> print(tx)
+	Tx [0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098]
+	>>> print(tx.txs_in[0])
+	TxIn<COINBASE: 04ffff001d0104>
+	>>> print(tx.txs_out[0])
+	TxOut<5E+4 mbtc "0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee OP_CHECKSIG">
+
+	>>> f1 = open("tx1.out", "wb")
+	>>> tx.stream(f1)
+	$ ls -l tx1.out 
+	-rw-r--r--  1 kiss  staff  134 Jun 11 17:02 tx1.out
+	$ tx tx1.out 
+	warning: transaction fees recommendations casually calculated and estimates may be incorrect
+	warning: transaction fee lower than (casually calculated) expected value of 0.1 mBTC, transaction might not propogate
+	Version:  1  tx hash 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098  134 bytes   
+	TxIn count: 1; TxOut count: 1
+	Lock time: 0 (valid anytime)
+	Input:
+	  0: COINBASE   50000.00000 mBTC
+	Output:
+	  0: 12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX receives  50000.00000 mBTC
+	Total input   50000.00000 mBTC
+	Total output  50000.00000 mBTC
+	Total fees        0.00000 mBTC
+	01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000
+	all incoming transaction values validated
+
 
 A simple script to grab and spend coins.
 ```
