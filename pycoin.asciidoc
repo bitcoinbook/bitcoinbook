@@ -295,8 +295,7 @@ The command-line utility `tx` will display transactions in human-readable form, 
 Examples:
 
 
-View the famous ["pizza" transaction]:
-["pizza" transaction](https://bitcointalk.org/index.php?topic=137.0)
+View the famous ["pizza" transaction](https://bitcointalk.org/index.php?topic=137.0):
 
     $ tx 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
     warning: consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to cache transactions fetched via web services
@@ -515,24 +514,23 @@ Wow! It worked! (It wrote the output as hex because of the _.hex_ suffix.)
 
 So why not just broadcast this transaction and collect our winnings? Well, the coins have already been spent. Oh, well.
 
-Note that pycoin uses a deterministic algorithm to create the signatures, so if you try this at home, you will get the exact same transaction with the exact same _0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b4a2c4_ hash.
+Note that _pycoin_ uses a deterministic algorithm to create the signatures, so if you try this at home, you will get the exact same transaction with the exact same _0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b4a2c4_ hash.
 
 
 --------------
 
 You can also use _pycoin_ to create and validate keys programmatically via the Python interpreter.
-
-
-    >>> from pycoin.key import Key
-    >>> k = Key.from_text("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
-    >>> print(k.address())
-    1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
-    >>> print(k.hash160())
-    b'u\x1ev\xe8\x19\x91\x96\xd4T\x94\x1cE\xd1\xb3\xa3#\xf1C;\xd6'
-    >>> from pycoin.serialize import b2h
-    >>> print(b2h(k.hash160()))
-    751e76e8199196d454941c45d1b3a323f1433bd6
-
+```
+>>> from pycoin.key import Key
+>>> k = Key.from_text("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+>>> print(k.address())
+1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+>>> print(k.hash160())
+b'u\x1ev\xe8\x19\x91\x96\xd4T\x94\x1cE\xd1\xb3\xa3#\xf1C;\xd6'
+>>> from pycoin.serialize import b2h
+>>> print(b2h(k.hash160()))
+751e76e8199196d454941c45d1b3a323f1433bd6
+```
 Compare to using `ku`:
 ```
 $ ku 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
@@ -543,31 +541,34 @@ netcode                 : BTC
 hash160                 : 751e76e8199196d454941c45d1b3a323f1433bd6
 Bitcoin mainnet address : 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
 ```
-    >>> from pycoin.key.validate import is_address_valid
-    >>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
-    >>> print(v)
-    'BTC'
-    # you can also specify certain networks, like Litecoin
-    >>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_netcodes=["LTC"])
-    >>> print(v)
-    None
-    # not a valid LTC address
-    >>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_types=["pay_to_script"])
-    >>> print(v)
-    None
-    # not a valid pay-to-script address (they start with a "3")
-    >>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_types=["address"])
-    >>> print(v)
-    BTC
-
-    >>> from pycoin.key import Key
-    >>> k = Key(secret_exponent=1)
-    >>> print(k.address())
-    1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
-    >>> print(k.wif())
-    KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
-    >>> print(k.as_text())
-    KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+```
+>>> from pycoin.key.validate import is_address_valid
+>>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
+>>> print(v)
+'BTC'
+# you can also specify certain networks, like Litecoin
+>>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_netcodes=["LTC"])
+>>> print(v)
+None
+# not a valid LTC address
+>>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_types=["pay_to_script"])
+>>> print(v)
+None
+# not a valid pay-to-script address (they start with a "3")
+>>> v = is_address_valid("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH", allowable_types=["address"])
+>>> print(v)
+BTC
+```
+```
+>>> from pycoin.key import Key
+>>> k = Key(secret_exponent=1)
+>>> print(k.address())
+1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+>>> print(k.wif())
+KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+>>> print(k.as_text())
+KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+```
 ```
 $ ku KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
 
