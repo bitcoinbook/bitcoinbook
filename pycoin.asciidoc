@@ -1,13 +1,13 @@
 
-The Python library [_pycoin_](http://github.com/richardkiss/pycoin), originally written and maintained by Richard Kiss, is a Python-based library that supports manipulation of Bitcoin keys and transactions, even supporting the _Script_ language enough to properly deal with non-standard transactions. 
+The Python library http://github.com/richardkiss/pycoin[+pycoin+], originally written and maintained by Richard Kiss, is a Python-based library that supports manipulation of Bitcoin keys and transactions, even supporting the _Script_ language enough to properly deal with non-standard transactions. 
 
-As at June 2014, the latest released version of _pycoin_ is 0.42, and *all examples below are based on _pycoin_ version 0.42*; be aware that _pycoin_ is still being actively developed, so later versions may have changed the API or behavior of command-line tools.
+WARNING: As at June 2014, the latest released version of +pycoin+ is 0.42, and *all examples below are based on +pycoin+ version 0.42*; be aware that +pycoin+ is still being actively developed, so later versions may have changed the API or behavior of command-line tools.
 
-The _pycoin_ library supports both Python 2 (2.7.x) and Python 3 (after 3.3), and comes with some handy command-line utilities, `ku` and `tx`.
+The +pycoin+ library supports both Python 2 (2.7.x) and Python 3 (after 3.3), and comes with some handy command-line utilities, `ku` and `tx`.
 
 
 To install:
-```
+----
 $ python3 -m venv /tmp/pycoin
 $ . /tmp/pycoin/bin/activate
 $ pip install pycoin==0.42
@@ -28,17 +28,16 @@ Installing collected packages: pycoin
     Installing genwallet script to /tmp/pycoin/bin
 Successfully installed pycoin
 Cleaning up...
-```
+----
 
-KU and TX
-=========
+== KU and TX
 
-Key Utility (KU)
-----------------
 
-The command-line utility `ku` ("key utility") is Swiss Army knife for manipulating keys. It supports **BIP32 keys**, **WIF**, and **address** (Bitcoin and altcoins). Here are some examples.
+=== Key Utility (KU)
 
-Create a BIP32 Key using the default entropy sources of _GnuPG_ and _/dev/random_:
+The command-line utility `ku` ("key utility") is Swiss Army knife for manipulating keys. It supports *BIP32 keys*, *WIF*, and *address* (Bitcoin and altcoins). Here are some examples.
+
+Create a BIP32 Key using the default entropy sources of +GnuPG+ and +/dev/random+:
 ```
 $ ku create
 
@@ -74,8 +73,8 @@ Bitcoin address : 1FNNRQ5fSv1wBi5gyfVBs2rkNheMGt86sp
 
 Create a BIP32 key from a passphrase:
 
-*THE PASSPHRASE IN THIS EXAMPLE IS WAY TOO EASY TO GUESS.*
-```
+WARNING: THE PASSPHRASE IN THIS EXAMPLE IS WAY TOO EASY TO GUESS.
+----
   $ ku P:foo
 
   input           : P:foo
@@ -106,7 +105,7 @@ Create a BIP32 key from a passphrase:
    uncompressed   : e5bd3a7e6cb62b4c820e51200fb1c148d79e67da
   Bitcoin address : 19Vqc8uLTfUonmxUEZac7fz1M5c5ZZbAii
    uncompressed   : 1MwkRkogzBRMehBntgcq2aJhXCXStJTXHT
-```
+----
 Get info as JSON:
 
     $ ku P:foo -P -j
@@ -287,15 +286,15 @@ hash160          : 751e76e8199196d454941c45d1b3a323f1433bd6
 Dogecoin address : DFpN6QqFfUm3gKNaxN6tNcab1FArL9cZLE
 ```
 
-Transaction Utility (TX)
-------------------------
-
-The command-line utility `tx` will display transactions in human-readable form, fetch base transactions from _pycoin_'s transaction cache or from web services (blockchain.info, blockr.io, biteasy.com are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
-
-Examples:
+=== Transaction Utility (TX)
 
 
-View the famous ["pizza" transaction](https://bitcointalk.org/index.php?topic=137.0):
+The command-line utility `tx` will display transactions in human-readable form, fetch base transactions from +pycoin+'s transaction cache or from web services (blockchain.info, blockr.io, biteasy.com are currently supported), merge transactions, add or delete inputs or outputs, and sign transactions.
+
+*Examples:*
+
+
+View the famous https://bitcointalk.org/index.php?topic=137.0["pizza" transaction]:
 
     $ tx 49d2adb6e476fa46d8357babf78b1b501fd39e177ac7833124b3f67b17c40c2a
     warning: consider setting environment variable PYCOIN_CACHE_DIR=~/.pycoin_cache to cache transactions fetched via web services
@@ -412,7 +411,7 @@ We see a transaction that sends most of the 50 BTC to a new address. The signatu
     warning: 1 TxIn items still unsigned
     all incoming transaction values validated
 
-Yep, if the file passed to `-f` ends with _.gpg_, then `gpg -d` is automatically invoked, and you can type your GnuPG passphrase. So, `tx` plus `gpg` is actually a pretty secure solution! If you keep your _WIF.gpg_ file on an airgapped machine this, additionally, solves the problem of cold storage!
+TIP: Yep, if the file passed to `-f` ends with _.gpg_, then `gpg -d` is automatically invoked, and you can type your +GnuPG+ passphrase. So, `tx` plus `gpg` is actually a pretty secure solution! If you keep your _WIF.gpg_ file on an airgapped machine this, additionally, solves the problem of cold storage!
 
     $ shasum tx.bin signed_tx.bin
     3ba7db8417e0fe1aeb7b4a1cbf13880bf84f38bc  tx.bin
@@ -514,10 +513,10 @@ Wow! It worked! (It wrote the output as hex because of the _.hex_ suffix.)
 
 So why not just broadcast this transaction and collect our winnings? Well, the coins have already been spent. Oh, well.
 
-Note that _pycoin_ uses a deterministic algorithm to create the signatures, so if you try this at home, you will get the exact same transaction with the exact same _0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b4a2c4_ hash.
+Note that +pycoin+ uses a deterministic algorithm to create the signatures, so if you try this at home, you will get the exact same transaction with the exact same _0995cf6f55e1cf22f7c31f5ad52d111e897b0b9b7e37a1bb755a470324b4a2c4_ hash.
 
 
-You can also use _pycoin_ to create and validate keys programmatically via the Python interpreter.
+You can also use +pycoin+ to create and validate keys programmatically via the Python interpreter.
 ```
 >>> from pycoin.key import Key
 >>> k = Key.from_text("1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH")
@@ -638,7 +637,8 @@ Fetch, parse and stream a transaction.
 
 
 A simple script to grab and spend coins.
-```python
+[source,python]
+----
 #!/usr/bin/env python
 
 from pycoin.key import Key
@@ -679,4 +679,4 @@ tx = create_signed_tx(spendables, payables=[dst_address], wifs=[wif])
 
 print("here is the signed output transaction")
 print(tx.as_hex())
-```
+----
