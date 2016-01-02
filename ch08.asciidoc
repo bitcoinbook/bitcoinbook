@@ -642,35 +642,30 @@ New Difficulty = Old Difficulty * (Actual Time of Last 2016 Blocks / 20160 minut
 <<retarget_difficulty_code>> shows the code used in the Bitcoin Core client.
 
 [[retarget_difficulty_code]]
-.Retargeting the proof-of-work difficulty—GetNextWorkRequired() in pow.cpp, line 43
+.Retargeting the proof-of-work difficulty — CalculateNextWorkRequired() in pow.cpp
 ====
 [source,cpp]
 ----
 
-// Go back by what we want to be 14 days worth of blocks
-const CBlockIndex* pindexFirst = pindexLast;
-for (int i = 0; pindexFirst && i < Params().Interval()-1; i++)
-    pindexFirst = pindexFirst->pprev;
-assert(pindexFirst);
+   // Limit adjustment step
+    int64_t nActualTimespan = pindexLast->GetBlockTime() - nFirstBlockTime;
+    LogPrintf("  nActualTimespan = %d  before bounds\n", nActualTimespan);
+    if (nActualTimespan < params.nPowTargetTimespan/4)
+        nActualTimespan = params.nPowTargetTimespan/4;
+    if (nActualTimespan > params.nPowTargetTimespan*4)
+        nActualTimespan = params.nPowTargetTimespan*4;
 
-// Limit adjustment step
-int64_t nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-LogPrintf("  nActualTimespan = %d  before bounds\n", nActualTimespan);
-if (nActualTimespan < Params().TargetTimespan()/4)
-    nActualTimespan = Params().TargetTimespan()/4;
-if (nActualTimespan > Params().TargetTimespan()*4)
-    nActualTimespan = Params().TargetTimespan()*4;
+    // Retarget
+    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
+    arith_uint256 bnNew;
+    arith_uint256 bnOld;
+    bnNew.SetCompact(pindexLast->nBits);
+    bnOld = bnNew;
+    bnNew *= nActualTimespan;
+    bnNew /= params.nPowTargetTimespan;
 
-// Retarget
-uint256 bnNew;
-uint256 bnOld;
-bnNew.SetCompact(pindexLast->nBits);
-bnOld = bnNew;
-bnNew *= nActualTimespan;
-bnNew /= Params().TargetTimespan();
-
-if (bnNew > Params().ProofOfWorkLimit())
-    bnNew = Params().ProofOfWorkLimit();
+    if (bnNew > bnPowLimit)
+        bnNew = bnPowLimit;
 
 ----
 ====
