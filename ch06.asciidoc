@@ -51,7 +51,7 @@ image::images/msbt_0603.png["BitcoinNetwork"]
 
 ((("peer-to-peer networks","connections")))To connect to a known peer, nodes establish a TCP connection, usually to port 8333 (the port generally known as the one used by bitcoin), or an alternative port if one is provided. Upon establishing a connection, the node will start a "handshake" (see <<network_handshake>>) by transmitting a((("version message")))  +version+ message, which contains basic identifying information, including:
 
-+PROTOCOL_VERSION+:: A constant that defines the bitcoin P2P protocol version the client "speaks" (e.g., 70002)
++nVersion+:: The bitcoin P2P protocol version the client "speaks" (e.g., 70002)
 +nLocalServices+:: A list of local services supported by the node, currently just +NODE_NETWORK+
 +nTime+:: The current time
 +addrYou+:: The IP address of the remote node as seen from this node
@@ -61,7 +61,7 @@ image::images/msbt_0603.png["BitcoinNetwork"]
 
 (See http://bit.ly/1qlsC7w[GitHub] for an example of the +version+ network message.)
 
-The peer node responds with +verack+ to acknowledge and establish a connection, and optionally sends its own +version+ message if it wishes to reciprocate the connection and connect back as a peer. 
+The +version+ message is always the first message sent by any peer to another peer. The local peer receiving a +version+ message will examine the remote peer's reported +nVersion+ and decide if the remote peer is compatible. If the remote peer is compatible, the local peer will acknowledge the +version+ message and establish a connection, by sending a +verack+.
 
 How does a new node find peers? The first method is to query DNS using a number of ((("nodes","seed")))((("DNS seed")))"DNS seeds," which are DNS servers that provide a list of IP addresses of bitcoin nodes. Some of those DNS seeds provide a static list of IP addresses of stable bitcoin listening nodes. Some of the DNS seeds are custom implementations of BIND (Berkeley Internet Name Daemon) that return a random subset from a list of bitcoin node addresses collected by a crawler or a long-running bitcoin node.  The Bitcoin Core client contains the names of five different DNS seeds. The diversity of ownership and diversity of implementation of the different DNS seeds offers a high level or reliability for the initial bootstrapping process. In the Bitcoin Core client, the option to use the DNS seeds is controlled by the option switch +-dnsseed+ (set to 1 by default, to use the DNS seed).
 
@@ -69,7 +69,7 @@ Alternatively, a bootstrapping node that knows nothing of the network must be gi
 
 [[network_handshake]]
 .The initial handshake between peers
-image::images/msbt_0604.png["NetworkHandshake"]
+image::images/NetworkHandshake-corrected_msbt_0604.png["NetworkHandshake"]
 
 Once one or more connections are established, the new node will send an((("addr message"))) +addr+ message containing its own IP address to its neighbors. The neighbors will, in turn, forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors, asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. <<address_propagation>> shows the address discovery protocol. 
 
