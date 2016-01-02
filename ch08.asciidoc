@@ -270,26 +270,24 @@ In block 277,316, the total transaction fees are 0.09094928 bitcoins.
 
 Next, Jing's node calculates the correct reward for the new block. The reward is calculated based on the block height, starting at 50 bitcoins per block and reduced by half every 210,000 blocks. Because this block is at height 277,316, the correct reward is 25 bitcoins. 
 
-The calculation can be seen in function +GetBlockValue+ in the Bitcoin Core client, as shown in <<getblockvalue_source>>.
+The calculation can be seen in function +GetBlockSubsidy+ in the Bitcoin Core client, as shown in <<getblocksubsidy_source>>.
 
-[[getblockvalue_source]]
-.Calculating the block reward—Function GetBlockValue, Bitcoin Core Client, main.cpp, line 1305
+[[getblocksubsidy_source]]
+.Calculating the block reward — Function GetBlockSubsidy, Bitcoin Core Client, main.cpp
 ====
 [source, cpp]
 ----
-int64_t GetBlockValue(int nHeight, int64_t nFees)
+CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    int64_t nSubsidy = 50 * COIN;
-    int halvings = nHeight / Params().SubsidyHalvingInterval();
-
+    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     // Force block reward to zero when right shift is undefined.
     if (halvings >= 64)
-        return nFees;
+        return 0;
 
+    CAmount nSubsidy = 50 * COIN;
     // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
     nSubsidy >>= halvings;
-
-    return nSubsidy + nFees;
+    return nSubsidy;
 }
 ----
 ====
