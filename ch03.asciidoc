@@ -10,52 +10,36 @@ Bitcoin is an _open source_ project and the source code is available under an op
 ((("bitcoin client", id="ix_ch03-asciidoc0", range="startofrange")))((("bitcoin client","Bitcoin Core", id="ix_ch03-asciidoc1", range="startofrange")))((("Bitcoin Core client", id="ix_ch03-asciidoc2", range="startofrange")))((("Satoshi client", see="Bitcoin Core client")))
 When bitcoin was created by Satoshi Nakamoto, the software was actually completed before the white paper <<satoshi_whitepaper>>. Satoshi wanted to make sure it worked before writing about it. That first implementation, then simply known as "Bitcoin" or "Satoshi client" has been heavily modified and improved. It has evolved into what is known as _Bitcoin Core_, to differentiate it from other compatible implementations. Bitcoin Core is the _reference implementation_ of the bitcoin system, meaning that it is the authoritative reference on how each part of the technology should be implemented. Bitcoin Core implements all aspects of bitcoin, including wallets, a transaction and block validation engine, and a full network node in the peer-to-peer bitcoin network.
 
-You can download an executable release of Bitcoin Core for your operating system, or you can build your own executable directly from the source code (see <<compiling_core>>). If you're a developer you should probably try and build your own copy of Bitcoin Core, to see how the build process works. Perhaps one day you too might contribute source code to bitcoin and learning how to build it is the first step towards that goal.
-
-==== Download Bitcoin Core Executable
-On((("bitcoin.org","Bitcoin Core, downloading"))) http://bitcoin.org/en/choose-your-wallet[Bitcoin's Choose Your Wallet page], select Bitcoin Core to download the reference client. Depending on your operating system, you will download an executable installer or package. For Windows, this is either a ZIP archive or an .exe executable. For Mac OS it is a .dmg disk image. Linux versions include a PPA package for Ubuntu or a tar.gz archive.
-
-==== Running Bitcoin Core for the First Time
-
-((("Bitcoin Core client","running")))If you download an installable package, such as an .exe, .dmg, or PPA, you can install it the same way as any application on your operating system. For Windows, run the .exe and follow the step-by-step instructions. For Mac OS, launch the .dmg and drag the Bitcoin-QT icon into your _Applications_ folder. For Ubuntu, double-click the PPA in your File Explorer and it will open the package manager to install the package. Once you have completed installation you should have a new application  called Bitcoin-Qt in your application list. Double-click the icon to start the bitcoin client. 
-
-The first time you run Bitcoin Core it will start downloading the blockchain, a process that might take several days (see <<bitcoin-qt-firstload>>). Leave it running in the background until it displays "Synchronized" and no longer shows "out of sync" next to the balance.
-
-[[bitcoin-qt-firstload]]
-.Bitcoin Core screen during the blockchain initialization
-image::images/msbt_0302.png["bitcoin-qt first run"]
-
-[TIP]
-====
-((("Bitcoin Core client","disk space requirement for")))((("blockchains","synchronizing for Bitcoin Core")))((("disk space requirement for Bitcoin Core")))Bitcoin Core keeps a full copy of the transaction ledger (blockchain), with every transaction that has ever occurred on the bitcoin network since its inception in 2009. This dataset is several gigabytes in size (approximately 66 GB in early 2016) and is downloaded incrementally over several days. The client will not be able to process transactions or update account balances until the full blockchain dataset is downloaded. During that time, the client will display "out of sync" next to the account balances and show "Synchronizing" in the footer. Make sure you have enough disk space, bandwidth, and time to complete the initial synchronization. 
-====
- 
-
-
-
 [[compiling_core]]
 ==== Compiling Bitcoin Core from the Source Code
 
-((("Bitcoin Core client","compiling from source code", id="ix_ch03-asciidoc3", range="startofrange")))((("bitcoind client", see="Bitcoin Core client")))For developers, there is also the option to download the full source code as a ZIP archive or by cloning the authoritative source repository from GitHub. ((("Bitcoin Core client","source code, downloading")))((("GitHub, downloading Bitcoin Core from"))) On the https://github.com/bitcoin/bitcoin[GitHub bitcoin page], select Download ZIP from the sidebar. Alternatively, use the git command line to create a local copy of the source code on your system. In the following example, we are cloning the source code from a Unix-like command line, in Linux or Mac OS:
+((("Bitcoin Core client","compiling from source code", id="ix_ch03-asciidoc3", range="startofrange")))((("bitcoind client", see="Bitcoin Core client")))Bitcoin Core's source code can be downloaded as a ZIP archive or by cloning the authoritative source repository from GitHub. ((("Bitcoin Core client","source code, downloading")))((("GitHub, downloading Bitcoin Core from"))) On the https://github.com/bitcoin/bitcoin[GitHub bitcoin page], select Download ZIP from the sidebar. Alternatively, use the git command line to create a local copy of the source code on your system.
+
+[TIP]
+====
+In many of the examples in this chapter we will be using the operating system's command-line interface (also known as a "shell"), accessed via a "terminal" application. Your interaction consists of typing commands and the operating system's responses. The shell will display a prompt; you type a command; and the shell responds with some text and a new prompt for your next command. The prompt may look different on your system, but in the examples below it is denoted by a +$+ symbol (you do not type this). When you see text after a +$+ symbol, that is the command you must type. The lines following it are what you expect to see in response to your command. The next command is again prefixed by a +$+ symbol.
+====
+
+In this example, we are using the +git+ command to create a local copy ("clone") of the source code.
 
 ----
 $ git clone https://github.com/bitcoin/bitcoin.git
 Cloning into 'bitcoin'...
-remote: Counting objects: 31864, done.
-remote: Compressing objects: 100% (12007/12007), done.
-remote: Total 31864 (delta 24480), reused 26530 (delta 19621)
-Receiving objects: 100% (31864/31864), 18.47 MiB | 119 KiB/s, done.
-Resolving deltas: 100% (24480/24480), done.
+remote: Counting objects: 66193, done.
+remote: Total 66193 (delta 0), reused 0 (delta 0), pack-reused 66193
+Receiving objects: 100% (66193/66193), 63.39 MiB | 574.00 KiB/s, done.
+Resolving deltas: 100% (48395/48395), done.
+Checking connectivity... done.
 $
 ----
 
+
 [TIP]
 ====
-The instructions and resulting output might vary from version to version. Follow the documentation that comes with the code even if it differs from the instructions you see here, and don't be surprised if the output displayed on your screen is slightly different from the examples here. 
+Git is the most widely used distributed version control system, an essential part of any software developer's toolkit. You may need to install the +git+ command, or a graphical user interface for git, on your operating system if you do not have it already.
 ====
 
 When the git cloning operation has completed, you will have a complete local copy of the source code repository in the directory _bitcoin_. Change to this directory by typing +cd bitcoin+ at the prompt:
-
 
 ----
 $ cd bitcoin
@@ -67,30 +51,29 @@ By default, the local copy will be synchronized with the most recent code, which
 $ git tag
 v0.1.5
 v0.1.6test1
-v0.2.0
-v0.2.10
-v0.2.11
-v0.2.12
-
-[... many more tags ...]
-
-v0.8.4rc2
-v0.8.5
-v0.8.6
-v0.8.6rc1
-v0.9.0rc1
+v0.10.0
+...
+v0.11.2
+v0.11.2rc1
+v0.12.0rc1
+v0.12.0rc2
+...
 ----
 
-The list of tags shows all the released versions of bitcoin. By convention,((("release candidates"))) _release candidates_, which are intended for testing, have the suffix "rc". Stable releases that can be run on production systems have no suffix. From the preceding list, select the highest version release, which at this writing was v0.9.0rc1. To synchronize the local code with this version, use the +git checkout+ command:
+The list of tags shows all the released versions of bitcoin. By convention,((("release candidates"))) _release candidates_, which are intended for testing, have the suffix "rc". Stable releases that can be run on production systems have no suffix. From the preceding list, select the highest version release, which at this writing was v0.11.2. To synchronize the local code with this version, use the +git checkout+ command:
 
 ----
-$ git checkout v0.9.0rc1
-Note: checking out 'v0.9.0rc1'.
-
-HEAD is now at 15ec451... Merge pull request #3605
-$
+$ git checkout v0.11.2
+HEAD is now at 7e27892... Merge pull request #6975
 ----
 
+You can confirm you have the desired version "checked out" by issuing the +git status+ command:
+
+----
+$ git status
+HEAD detached at v0.11.2
+nothing to commit, working directory clean
+----
 
 ((("Bitcoin Core client","documentation")))The source code includes documentation, which can be found in a number of files. Review the main documentation located in _README.md_ in the bitcoin directory by typing +more README.md+ at the prompt and using the space bar to progress to the next page. In this chapter, we will build the command-line bitcoin client, also known as +bitcoind+ on Linux. Review the instructions for compiling the bitcoind command-line client on your platform by typing +more doc/build-unix.md+. Alternative instructions for Mac OS X and Windows can be found in the _doc_ directory, as _build-osx.md_ or _build-msw.md_, respectively. 
 
@@ -103,109 +86,76 @@ The Bitcoin Core build process was changed to use the autogen/configure/make sys
 
 ----
 $ ./autogen.sh 
-configure.ac:12: installing `src/build-aux/config.guess'
-configure.ac:12: installing `src/build-aux/config.sub'
-configure.ac:37: installing `src/build-aux/install-sh'
-configure.ac:37: installing `src/build-aux/missing'
-src/Makefile.am: installing `src/build-aux/depcomp'
-$ 
+...
+glibtoolize: copying file 'build-aux/m4/libtool.m4'
+glibtoolize: copying file 'build-aux/m4/ltoptions.m4'
+glibtoolize: copying file 'build-aux/m4/ltsugar.m4'
+glibtoolize: copying file 'build-aux/m4/ltversion.m4'
+...
+configure.ac:10: installing 'build-aux/compile'
+configure.ac:5: installing 'build-aux/config.guess'
+configure.ac:5: installing 'build-aux/config.sub'
+configure.ac:9: installing 'build-aux/install-sh'
+configure.ac:9: installing 'build-aux/missing'
+Makefile.am: installing 'build-aux/depcomp'
+...
 ----
 
 ((("autogen.sh script")))The _autogen.sh_ script creates a set of automatic configuration scripts that will interrogate your system to discover the correct settings and ensure you have all the necessary libraries to compile the code. The most important of these is the((("configure script"))) +configure+ script that offers a number of different options to customize the build process. Type +./configure --help+ to see the various options:
 
 ----
 $ ./configure --help
-
-`configure' configures Bitcoin Core 0.9.0 to adapt to many kinds of systems.
+`configure' configures Bitcoin Core 0.11.2 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
-To assign environment variables (e.g., CC, CFLAGS...), specify them as
-VAR=VALUE.  See below for descriptions of some of the useful variables.
-
-Defaults for the options are specified in brackets.
-
-Configuration:
-  -h, --help              display this help and exit
-      --help=short        display options specific to this package
-      --help=recursive    display the short help of all the included packages
-  -V, --version           display version information and exit
-
-[... many more options and variables are displayed below ...]
-
+...
 Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 
-[... more options ...]
+  --enable-wallet         enable wallet (default is yes)
 
-Use these variables to override the choices made by `configure' or to help
-it to find libraries and programs with nonstandard names/locations.
-
-Report bugs to <info@bitcoin.org>.
-
-$
+  --with-gui[=no|qt4|qt5|auto]
+...
 ----
 
 The +configure+ script allows you to enable or disable certain features of bitcoind through the use of the +--enable-FEATURE+ and +--disable-FEATURE+ flags, where +FEATURE+ is replaced by the feature name, as listed in the help output. In this chapter, we will build the bitcoind client with all the default features. We won't be using the configuration flags, but you should review them to understand what optional features are part of the client. Next, run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for your system:
 
 ----
-$ ./configure 
+$ ./configure
 checking build system type... x86_64-unknown-linux-gnu
 checking host system type... x86_64-unknown-linux-gnu
 checking for a BSD-compatible install... /usr/bin/install -c
 checking whether build environment is sane... yes
 checking for a thread-safe mkdir -p... /bin/mkdir -p
-checking for gawk... no
-checking for mawk... mawk
+checking for gawk... gawk
 checking whether make sets $(MAKE)... yes
-
-[... many more system features are tested ...]
-
-configure: creating ./config.status
-config.status: creating Makefile
-config.status: creating src/Makefile
-config.status: creating src/test/Makefile
-config.status: creating src/qt/Makefile
-config.status: creating src/qt/test/Makefile
-config.status: creating share/setup.nsi
-config.status: creating share/qt/Info.plist
-config.status: creating qa/pull-tester/run-bitcoind-for-test.sh
-config.status: creating qa/pull-tester/build-tests.sh
-config.status: creating src/bitcoin-config.h
-config.status: executing depfiles commands
+...
+[many pages of configuration tests follow]
+...
 $
 ----
 
-If all goes well, the +configure+ command will end by creating the customized build scripts that will allow us to compile bitcoind. If there are any missing libraries or errors, the +configure+ command will terminate with an error instead of creating the build scripts. If an error occurs, it is most likely because of a missing or incompatible library. Review the build documentation again and make sure you install the missing prerequisites. Then run +configure+ again and see if that fixes the error. Next, you will compile the source code, a process that can take up to an hour to complete. During the compilation process you should see output every few seconds or every few minutes, or an error if something goes wrong. The compilation process can be resumed at any time if interrupted. Type +make+ to start compiling:
+If all goes well, the +configure+ command will end by creating the customized build scripts that will allow us to compile bitcoind. If there are any missing libraries or errors, the +configure+ command will terminate with an error instead of creating the build scripts. If an error occurs, it is most likely because of a missing or incompatible library. Review the build documentation again and make sure you install the missing prerequisites. Then run +configure+ again and see if that fixes the error. Next, you will compile the source code, a process that can take up to an hour to complete. During the compilation process you should see output every few seconds or every few minutes, or an error if something goes wrong. The compilation process can be resumed at any time if interrupted. Type +make+ to start compiling the executable application:
 
 ----
 $ make
 Making all in src
-make[1]: Entering directory `/home/ubuntu/bitcoin/src'
-make  all-recursive
-make[2]: Entering directory `/home/ubuntu/bitcoin/src'
-Making all in .
-make[3]: Entering directory `/home/ubuntu/bitcoin/src'
-  CXX    addrman.o
-  CXX    alert.o
-  CXX    rpcserver.o
-  CXX    bloom.o
-  CXX    chainparams.o
+  CXX      crypto/libbitcoinconsensus_la-hmac_sha512.lo
+  CXX      crypto/libbitcoinconsensus_la-ripemd160.lo
+  CXX      crypto/libbitcoinconsensus_la-sha1.lo
+  CXX      crypto/libbitcoinconsensus_la-sha256.lo
+  CXX      crypto/libbitcoinconsensus_la-sha512.lo
+  CXX      libbitcoinconsensus_la-hash.lo
+  CXX      primitives/libbitcoinconsensus_la-transaction.lo
+  CXX      libbitcoinconsensus_la-pubkey.lo
+  CXX      script/libbitcoinconsensus_la-bitcoinconsensus.lo
+  CXX      script/libbitcoinconsensus_la-interpreter.lo
 
 [... many more compilation messages follow ...]
 
-  CXX    test_bitcoin-wallet_tests.o
-  CXX    test_bitcoin-rpc_wallet_tests.o
-  CXXLD  test_bitcoin
-make[4]: Leaving directory `/home/ubuntu/bitcoin/src/test'
-make[3]: Leaving directory `/home/ubuntu/bitcoin/src/test'
-make[2]: Leaving directory `/home/ubuntu/bitcoin/src'
-make[1]: Leaving directory `/home/ubuntu/bitcoin/src'
-make[1]: Entering directory `/home/ubuntu/bitcoin'
-make[1]: Nothing to be done for `all-am'.
-make[1]: Leaving directory `/home/ubuntu/bitcoin'
 $ 
 ----
 
@@ -213,20 +163,18 @@ If all goes well, bitcoind is now compiled. The final step is to install the bit
 
 ----
 $ sudo make install
+Password:
 Making install in src
-Making install in .
- /bin/mkdir -p '/usr/local/bin'
-  /usr/bin/install -c bitcoind bitcoin-cli '/usr/local/bin'
-Making install in test
-make  install-am
- /bin/mkdir -p '/usr/local/bin'
-  /usr/bin/install -c test_bitcoin '/usr/local/bin'
+ ../build-aux/install-sh -c -d '/usr/local/lib'
+libtool: install: /usr/bin/install -c bitcoind /usr/local/bin/bitcoind
+libtool: install: /usr/bin/install -c bitcoin-cli /usr/local/bin/bitcoin-cli
+libtool: install: /usr/bin/install -c bitcoin-tx /usr/local/bin/bitcoin-tx
+...
 $
 ----
 
 You can confirm that bitcoin is correctly installed by asking the system for the path of the two executables, as follows:
 
-[source,bash]
 ----
 $ which bitcoind
 /usr/local/bin/bitcoind
@@ -261,7 +209,13 @@ rpcpassword=2XA4DuKNCbtZXsBQRRNDEwEY2nM6M4H9Tx5dFjoAVVbK
 
 While you're editing this configuration file, you might want to set a few other options, such as +txindex+ (see <<txindex>>). For a full listing of the available options, type +bitcoind --help+.
 
-Now, run the Bitcoin Core client. The first time you run it, it will rebuild the bitcoin blockchain by downloading all the blocks. This is a multigigabyte file and will take an average of two days to download in full. You can shorten the((("blockchains","downloading with bittorrent clients"))) blockchain initialization time by downloading a partial copy of the blockchain using a BitTorrent client from http://bit.ly/1qkLNyh[SourceForge]. 
+Now, run the Bitcoin Core client. The first time you run it, it will rebuild the bitcoin blockchain by downloading all the blocks. This is a multi-gigabyte file and will take an average of two days to download in full. You can shorten the((("blockchains","downloading with bittorrent clients"))) blockchain initialization time by downloading a partial copy of the blockchain using a BitTorrent client from http://bit.ly/1qkLNyh[SourceForge]. 
+
+
+[TIP]
+====
+((("Bitcoin Core","runtime requirement for")))((("runtime requirements for Bitcoin Core")))Bitcoin Core keeps a full copy of the blockchain, with every transaction that has ever occurred on the bitcoin network since its inception in 2009. This dataset is several gigabytes in size (approximately 66 GB in early 2016) and is downloaded incrementally over several hours or days. The client will not be able to process transactions or update account balances until the full blockchain dataset is downloaded. During that time, the client will display "out of sync" next to the account balances and show "Synchronizing" in the footer. Make sure you have enough disk space, bandwidth, and time to complete the initial synchronization. 
+====
 
 Run bitcoind in the background with the option +-daemon+:(((range="endofrange", startref="ix_ch03-asciidoc3")))
 
@@ -370,7 +324,6 @@ walletlock
 walletpassphrase "passphrase" timeout
 walletpassphrasechange "oldpassphrase" "newpassphrase"
 ----
-
 
 ==== Getting Information on the Bitcoin Core Client Status
 
