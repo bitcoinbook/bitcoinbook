@@ -134,13 +134,13 @@ The +configure+ script allows you to enable or disable certain features of bitco
 ====
 Here are some useful options that override the default behavior of the configure script:
 
-+--prefix=$HOME+: This overrides the default installation location (which is +/usr/local/+) for the resulting executable. Use $HOME to put everything in your home directory, or a different path.
+--prefix=$HOME:: This overrides the default installation location (which is +/usr/local/+) for the resulting executable. Use $HOME to put everything in your home directory, or a different path.
 
-+--disable-wallet+: This is used to disable the reference wallet implementation.
+--disable-wallet:: This is used to disable the reference wallet implementation.
 
-+--with-incompatible-bdb+: If you are building a wallet, allow the use of an incompatible version of the Berkeley DB library.
+--with-incompatible-bdb:: If you are building a wallet, allow the use of an incompatible version of the Berkeley DB library.
 
-+--with-gui=no+: Don't build the graphical user interface, which requires the Qt library. This builds server and command-line bitcoin only.
+--with-gui=no:: Don't build the graphical user interface, which requires the Qt library. This builds server and command-line bitcoin only.
 ====
 
 Next, run the +configure+ script to automatically discover all the necessary libraries and create a customized build script for your system:
@@ -298,19 +298,19 @@ Options:
  
 Here are some of the most important options that can set in the configuration file, or as command-line parameters to bitcoind:
 
-alertnotify::Run a specified command or script to send emergency alerts to the owner of this node, usually by sending email.
+alertnotify:: Run a specified command or script to send emergency alerts to the owner of this node, usually by sending email.
 
-conf::An alternative location for the configuration file. This only makes sense as a command-line parameter to bitcoind, as it can't be inside the configuration file it refers to.
+conf:: An alternative location for the configuration file. This only makes sense as a command-line parameter to bitcoind, as it can't be inside the configuration file it refers to.
 
-datadir::Select the directory and filesystem to put all the blockchain data. By default this is the +.bitcoin+ subdirectory of your home directory. Make sure this filesystem has several gigabytes free space.
+datadir:: Select the directory and filesystem to put all the blockchain data. By default this is the +.bitcoin+ subdirectory of your home directory. Make sure this filesystem has several gigabytes free space.
 
-prune::Reduce the disk space requirements to this many megabytes, by deleting old blocks. Use this on a resource-constrained node that can't fit the full blockchain. 
+prune:: Reduce the disk space requirements to this many megabytes, by deleting old blocks. Use this on a resource-constrained node that can't fit the full blockchain. 
 
-txindex::Maintain an index of all transactions. This means a complete copy of the blockchain and allows you to programmatically retrieve any transaction by ID.
+txindex:: Maintain an index of all transactions. This means a complete copy of the blockchain and allows you to programmatically retrieve any transaction by ID.
 
-maxconnections::Set the maximum number of nodes from which to accept connections. Reducing this from the default will reduce your bandwidth consumption. Use if you have a data cap or pay by the gigabyte.
+maxconnections:: Set the maximum number of nodes from which to accept connections. Reducing this from the default will reduce your bandwidth consumption. Use if you have a data cap or pay by the gigabyte.
 
-minrelaytxfee::Increase the minimum acceptable transaction fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
+minrelaytxfee:: Increase the minimum acceptable transaction fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
 
 Here's how you might combine the above options:
 
@@ -403,9 +403,7 @@ This shows a node running Bitcoin Core version 0.11.2, with a blockchain height 
 
 Once you are happy with the configuration options you have selected, you should add bitcoin to the startup scripts in your operating system, so that it runs continuously and restarts when the operating system restarts. You will find a number of example startup scripts for various operating systems in bitcoin's source directory under +contrib/init+ and a +README.md+ file showing which system uses which script.
 
-
-
-=== Using Bitcoin Core's JSON-RPC API from the Command Line
+=== Bitcoin Core Application Programming Interface (API)
 
 ((("Bitcoin Core client","JSON-RPC API for", id="ix_ch03-asciidoc5", range="startofrange")))((("Bitcoin Core client","using from command line", id="ix_ch03-asciidoc6", range="startofrange")))((("bitcoin-cli command line helper", id="ix_ch03-asciidoc7", range="startofrange")))The Bitcoin Core client implements a JSON-RPC interface that can also be accessed using the command-line helper +bitcoin-cli+. The command line allows us to experiment interactively with the capabilities that are also available programmatically via the API. To start, invoke the +help+ command to see a list of the available bitcoin RPC commands:
 
@@ -419,79 +417,48 @@ backupwallet "destination"
 createmultisig nrequired ["key",...]
 createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
 decoderawtransaction "hexstring"
-decodescript "hex"
-dumpprivkey "bitcoinaddress"
-dumpwallet "filename"
-getaccount "bitcoinaddress"
-getaccountaddress "account"
-getaddednodeinfo dns ( "node" )
-getaddressesbyaccount "account"
-getbalance ( "account" minconf )
-getbestblockhash
-getblock "hash" ( verbose )
-getblockchaininfo
-getblockcount
-getblockhash index
-getblocktemplate ( "jsonrequestobject" )
-getconnectioncount
-getdifficulty
-getgenerate
-gethashespersec
-getinfo
-getmininginfo
-getnettotals
-getnetworkhashps ( blocks height )
-getnetworkinfo
-getnewaddress ( "account" )
-getpeerinfo
-getrawchangeaddress
-getrawmempool ( verbose )
-getrawtransaction "txid" ( verbose )
-getreceivedbyaccount "account" ( minconf )
-getreceivedbyaddress "bitcoinaddress" ( minconf )
-gettransaction "txid"
-gettxout "txid" n ( includemempool )
-gettxoutsetinfo
-getunconfirmedbalance
-getwalletinfo
-getwork ( "data" )
-help ( "command" )
-importprivkey "bitcoinprivkey" ( "label" rescan )
-importwallet "filename"
-keypoolrefill ( newsize )
-listaccounts ( minconf )
-listaddressgroupings
-listlockunspent
-listreceivedbyaccount ( minconf includeempty )
-listreceivedbyaddress ( minconf includeempty )
-listsinceblock ( "blockhash" target-confirmations )
-listtransactions ( "account" count from )
-listunspent ( minconf maxconf  ["address",...] )
-lockunspent unlock [{"txid":"txid","vout":n},...]
-move "fromaccount" "toaccount" amount ( minconf "comment" )
-ping
-sendfrom "fromaccount" "tobitcoinaddress" amount ( minconf "comment" "comment-to" )
-sendmany "fromaccount" {"address":amount,...} ( minconf "comment" )
-sendrawtransaction "hexstring" ( allowhighfees )
-sendtoaddress "bitcoinaddress" amount ( "comment" "comment-to" )
-setaccount "bitcoinaddress" "account"
-setgenerate generate ( genproclimit )
-settxfee amount
-signmessage "bitcoinaddress" "message"
-signrawtransaction "hexstring" ( [{"txid":"id","vout":n,"scriptPubKey":"hex","redeemScript":"hex"},...] ["privatekey1",...] sighashtype )
-stop
-submitblock "hexdata" ( "jsonparametersobject" )
-validateaddress "bitcoinaddress"
-verifychain ( checklevel numblocks )
+
+...
+
 verifymessage "bitcoinaddress" "signature" "message"
 walletlock
 walletpassphrase "passphrase" timeout
 walletpassphrasechange "oldpassphrase" "newpassphrase"
 ----
 
+Each of these commands may take a number of parameters. To get additional help, a detailed description and information on the parameters, add the command name after help. For example, to see help on the +getblockhash+ RPC command:
+
+----
+$ bitcoin-cli help getblockhash
+getblockhash index
+
+Returns hash of block in best-block-chain at index provided.
+
+Arguments:
+1. index         (numeric, required) The block index
+
+Result:
+"hash"         (string) The block hash
+
+Examples:
+> bitcoin-cli getblockhash 1000
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+----
+
+At the end of the help information you will see two examples of the RPC command, using the +bitcoin-cli+ helper or the HTTP client +curl+. These examples demonstrate how you might call the command. Copy the first example and see the result:
+
+----
+$ bitcoin-cli getblockhash 1000
+00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09
+----
+
+The result is a block hash, which is described in more detail in the following chapters. But for now, this command should return the same result on your system, demonstrating that your Bitcoin Core node is running, is accepting commands and has information about block 1000 to return to you.
+
+In the next sections we will demonstrate some very useful RPC commands and their expected output.
+
 ==== Getting Information on the Bitcoin Core Client Status
 
-Commands: +getinfo+
+Command: +getinfo+
 
 ((("Bitcoin Core client","client status, getting")))((("bitcoin-cli command line helper","getinfo command")))((("client status, getting")))((("getinfo command (bitcoin-cli)")))Bitcoin's +getinfo+ RPC command displays basic information about the status of the bitcoin network node, the wallet, and the blockchain database. Use +bitcoin-cli+ to run it:
 
@@ -501,24 +468,21 @@ $ bitcoin-cli getinfo
 [source,json]
 ----
 {
-    "version" : 90000,
+    "version" : 110200,
     "protocolversion" : 70002,
-    "walletversion" : 60000,
-    "balance" : 0.00000000,
-    "blocks" : 286216,
-    "timeoffset" : -72,
-    "connections" : 4,
+    "blocks" : 396367,
+    "timeoffset" : 0,
+    "connections" : 15,
     "proxy" : "",
-    "difficulty" : 2621404453.06461525,
+    "difficulty" : 120033340651.23696899,
     "testnet" : false,
-    "keypoololdest" : 1374553827,
-    "keypoolsize" : 101,
-    "paytxfee" : 0.00000000,
+    "relayfee" : 0.00010000,
     "errors" : ""
 }
+
 ----
 
-The data is returned in((("JavaScript Object Notation (JSON)"))) JavaScript Object Notation (JSON), a format that can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version numbers for the bitcoin software client (90000), protocol (70002), and wallet (60000). We see the current balance contained in the wallet, which is zero. We see the current block height, showing us how many blocks are known to this client (286216). We also see various statistics about the bitcoin network and the settings related to this client. We will explore these settings in more detail in the rest of this chapter.
+The data is returned in((("JavaScript Object Notation (JSON)"))) JavaScript Object Notation (JSON), a format that can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version numbers for the bitcoin software client (110200 and bitcoin protocol (70002).  We see the current block height, showing us how many blocks are known to this client (396367). We also see various statistics about the bitcoin network and the settings related to this client. 
 
 [TIP]
 ====
@@ -529,16 +493,11 @@ It will take some time, perhaps more than a day, for the bitcoind client to "cat
 
 Commands: +gettransaction+, +getrawtransaction+, +decoderawtransaction+
 
-((("bitcoin-cli command line helper","decoderawtransaction command", id="ix_ch03-asciidoc23", range="startofrange")))((("bitcoin-cli command line helper","getrawtransaction command", id="ix_ch03-asciidoc24", range="startofrange")))((("bitcoin-cli command line helper","gettransaction command", id="ix_ch03-asciidoc25", range="startofrange")))((("decoderawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc26", range="startofrange")))((("getrawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc27", range="startofrange")))((("gettransaction command (bitcoin-cli)", id="ix_ch03-asciidoc28", range="startofrange")))((("transactions","decoding", id="ix_ch03-asciidoc29", range="startofrange")))((("transactions","exploring", id="ix_ch03-asciidoc30", range="startofrange")))We'll now explore the incoming transaction that was listed previously using the +gettransaction+ command. We can retrieve a transaction by its transaction hash, shown at +txid+ earlier, with the +gettransaction+ command:
+((("bitcoin-cli command line helper","decoderawtransaction command", id="ix_ch03-asciidoc23", range="startofrange")))((("bitcoin-cli command line helper","getrawtransaction command", id="ix_ch03-asciidoc24", range="startofrange")))((("bitcoin-cli command line helper","gettransaction command", id="ix_ch03-asciidoc25", range="startofrange")))((("decoderawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc26", range="startofrange")))((("getrawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc27", range="startofrange")))((("gettransaction command (bitcoin-cli)", id="ix_ch03-asciidoc28", range="startofrange")))((("transactions","decoding", id="ix_ch03-asciidoc29", range="startofrange")))((("transactions","exploring", id="ix_ch03-asciidoc30", range="startofrange")))
 
-
-++++
-<pre data-type="programlisting">
-$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66&#x21b5;
-c309acbae2c14ae3
-
-</pre>
-++++
+----
+$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66&#x21b5c309acbae2c14ae3
+----
 [source,json]
 ----
 {
