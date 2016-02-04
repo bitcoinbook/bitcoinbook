@@ -310,7 +310,11 @@ txindex:: Maintain an index of all transactions. This means a complete copy of t
 
 maxconnections:: Set the maximum number of nodes from which to accept connections. Reducing this from the default will reduce your bandwidth consumption. Use if you have a data cap or pay by the gigabyte.
 
-minrelaytxfee:: Increase the minimum acceptable transaction fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
+maxmempool:: Limit the transaction memorypool to this many megabytes. Use it to reduce memory use of the node.
+
+maxreceivebuffer/maxsendbuffer:: Limit per-connection memory buffer to this many * 1000 bytes. Use on memory-constrained nodes.
+
+minrelaytxfee:: Set the minimum fee transaction you will relay. Below this value, the transaction is treated as zero fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
 
 Here's how you might combine the above options:
 
@@ -338,6 +342,9 @@ alertnotify=myemailscript.sh "Alert: %s"
 maxconnections=15
 prune=5000
 minrelaytxfee=0.0001
+maxmempool=200
+maxreceivebuffer=2500
+maxsendbuffer=500
 rpcuser=bitcoinrpc
 rpcpassword=CHANGE_THIS
 ----
@@ -417,9 +424,8 @@ backupwallet "destination"
 createmultisig nrequired ["key",...]
 createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
 decoderawtransaction "hexstring"
-
 ...
-
+...
 verifymessage "bitcoinaddress" "signature" "message"
 walletlock
 walletpassphrase "passphrase" timeout
@@ -491,290 +497,172 @@ It will take some time, perhaps more than a day, for the bitcoind client to "cat
 
 ==== Exploring and Decoding Transactions
 
-Commands: +gettransaction+, +getrawtransaction+, +decoderawtransaction+
+Commands: +getrawtransaction+, +decoderawtransaction+
 
-((("bitcoin-cli command line helper","decoderawtransaction command", id="ix_ch03-asciidoc23", range="startofrange")))((("bitcoin-cli command line helper","getrawtransaction command", id="ix_ch03-asciidoc24", range="startofrange")))((("bitcoin-cli command line helper","gettransaction command", id="ix_ch03-asciidoc25", range="startofrange")))((("decoderawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc26", range="startofrange")))((("getrawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc27", range="startofrange")))((("gettransaction command (bitcoin-cli)", id="ix_ch03-asciidoc28", range="startofrange")))((("transactions","decoding", id="ix_ch03-asciidoc29", range="startofrange")))((("transactions","exploring", id="ix_ch03-asciidoc30", range="startofrange")))
+((("bitcoin-cli command line helper","decoderawtransaction command", id="ix_ch03-asciidoc23", range="startofrange")))((("bitcoin-cli command line helper","getrawtransaction command", id="ix_ch03-asciidoc24", range="startofrange")))((("decoderawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc26", range="startofrange")))((("getrawtransaction command (bitcoin-cli)", id="ix_ch03-asciidoc27", range="startofrange")))((("transactions","decoding", id="ix_ch03-asciidoc29", range="startofrange")))((("transactions","exploring", id="ix_ch03-asciidoc30", range="startofrange")))
 
-----
-$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66&#x21b5c309acbae2c14ae3
-----
-[source,json]
-----
-{
-    "amount" : 0.05000000,
-    "confirmations" : 0,
-    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
-    "time" : 1392660908,
-    "timereceived" : 1392660908,
-    "details" : [
-        {
-            "account" : "",
-            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
-            "category" : "receive",
-            "amount" : 0.05000000
-        }
-    ]
-}
-----
+In <<cup_of_coffee>>, Alice bought a cup of coffee from Bob's Cafe. Her transaction was recorded on the blockchain with transaction ID +0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2+. Let's use the API to retrieve and examine that transaction, by passing the transaction ID as a parameter:
+
+++++
+<pre data-type="programlisting">
+$ bitcoin-cli getrawtransaction 0627052b6f28912f2703066a912ea577f2ce4da4caa5a&#x21b5;
+5fbd8a57286c345c2f2
+
+0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779000&#x21b5;
+000008b483045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4&#x21b5;
+ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813014&#x21b5;
+10484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc54123363767&#x21b5;
+89d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adfffffffff0260e3160000000&#x21b5;
+0001976a914ab68025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef8000000000001976a9&#x21b5;
+147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000000
+</pre>
+++++
+
 
 [TIP]
 ====
 Transaction IDs are not authoritative until a transaction has been confirmed. Absence of a transaction hash in the blockchain does not mean the transaction was not processed. This is known as((("transaction malleability"))) "transaction malleability," because transaction hashes can be modified prior to confirmation in a block. After confirmation, the txid is immutable and authoritative.
 ====
 
-The transaction form shown with the command +gettransaction+ is the simplified form. To retrieve the full transaction code and decode it, we will use two commands: +getrawtransaction+ and +decoderawtransaction+. First, +getrawtransaction+ takes the _transaction hash (txid)_ as a parameter and returns the full transaction as a "raw" hex string, exactly as it exists on the bitcoin network:
+The command +getrawtransaction+ returns a serialized transaction in hexadecimal notation. To decode that, we use the +decoderawtransaction+ command, passing the hex data as a parameter. You can copy the hex returned by +getrawtransaction+ and paste it as a parameter to +decoderawtransaction+:
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli getrawtransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1f&#x21b5;
-c66c309acbae2c14ae3
-
-0100000001d717279515f88e2f56ce4e8a31e2ae3e9f00ba1d0add648e80c480ea22e0c7d3000&#x21b5;
-000008b483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e61a2df0dd0758e22&#x21b5;
-7383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2ac1bd193dfba2014&#x21b5;
-104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b884ac5b5b6dede&#x21b5;
-05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5ceaffffffff02404b4c0000000&#x21b5;
-0001976a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac1f312906000000001976a9&#x21b5;
-14107b7086b31518935c8d28703d66d09b3623134388ac00000000
-</pre>
-++++
-
-To decode this hex string, use the +decoderawtransaction+ command. Copy and paste the hex as the first parameter of +decoderawtransaction+ to get the full contents interpreted as a JSON data structure (for formatting reasons the hex string is shortened in the following example):
-
-
-++++
-<pre data-type="programlisting">
-$ bitcoin-cli decoderawtransaction 0100000001d717279515f88e2f56ce4e8a31e2ae3e&#x21b5;
-9f00ba1d0add648e80c480ea22e0c7d3000000008b483045022100a4ebbeec83225dedead659b&#x21b5;
-bde7da3d026c8b8e12e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1&#x21b5;
-f2c975b192d34c5b9b2ac1bd193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44&#x21b5;
-fa59248be58ede65e4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc7&#x21b5;
-9e05dbfe5ceaffffffff02404b4c00000000001976a91407bdb518fa2e6089fd810235cf1100c&#x21b5;
-9c13d1fd288ac1f312906000000001976a914107b7086b31518935c8d28703d66d09b36231343&#x21b5;
+$ bitcoin-cli decoderawtransaction 0100000001186f9f998a5aa6f048e51dd8419a14d8&#x21b5;
+a0f1a8a2836dd734d2804fe65fa35779000000008b483045022100884d142d86652a3f47ba474&#x21b5;
+6ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298&#x21b5;
+cad530a863ea8f53982c09db8f6e381301410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fd&#x21b5;
+e0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa&#x21b5;
+336a8d752adfffffffff0260e31600000000001976a914ab68025513c3dbd2f7b92a94e0581f5&#x21b5;
+d50f654e788acd0ef8000000000001976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8&#x21b5;
 88ac00000000
+
 </pre>
 ++++
 
 ++++
 <pre data-type="programlisting">
 {
-    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
-    "version" : 1,
-    "locktime" : 0,
-    "vin" : [
-        {
-            "txid" : "d3c7e022ea80c4808e64dd0a1dba009f3eaee2318a4ece562f8ef815&#x21b5;
-952717d7",
-            "vout" : 0,
-            "scriptSig" : {
-                "asm" : "3045022100a4ebbeec83225dedead659bbde7da3d026c8b8e12e&#x21b5;
-61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9b2&#x21b5;
-ac1bd193dfba20104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e4c4b&#x21b5;
-884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5cea",
-                "hex": "483045022100a4ebbeec83225dedead659bbde7da3d026c8b8e1&#x21b5;
-2e61a2df0dd0758e227383b302203301768ef878007e9ef7c304f70ffaf1f2c975b192d34c5b9&#x21b5;
-b2ac1bd193dfba2014104793ac8a58ea751f9710e39aad2e296cc14daa44fa59248be58ede65e&#x21b5;
-4c4b884ac5b5b6dede05ba84727e34c8fd3ee1d6929d7a44b6e111d41cc79e05dbfe5cea"
-            },
-            "sequence" : 4294967295
-        }
-    ],
-    "vout" : [
-        {
-            "value" : 0.05000000,
-            "n" : 0,
-            "scriptPubKey" : {
-                "asm" : "OP_DUP OP_HASH160 07bdb518fa2e6089fd810235cf1100c9c&#x21b5;
-13d1fd2 OP_EQUALVERIFY OP_CHECKSIG",
-                "hex" : "76a91407bdb518fa2e6089fd810235cf1100c9c13d1fd288ac",
-                "reqSigs" : 1,
-                "type" : "pubkeyhash",
-                "addresses" : [
-                    "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL"
-                ]
-            }
-        },
-        {
-            "value" : 1.03362847,
-            "n" : 1,
-            "scriptPubKey" : {
-                "asm" : "OP_DUP OP_HASH160 107b7086b31518935c8d28703d66d09b36&#x21b5;
-231343 OP_EQUALVERIFY OP_CHECKSIG",
-                "hex" : "76a914107b7086b31518935c8d28703d66d09b3623134388ac",
-                "reqSigs" : 1,
-                "type" : "pubkeyhash",
-                "addresses" : [
-                    "12W9goQ3P7Waw5JH8fRVs1e2rVAKoGnvoy"
-                ]
-            }
-        }
-    ]
+  "txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
+  "size": 258,
+  "version": 1,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "7957a35fe64f80d234d76d83a2...8149a41d81de548f0a65a8a999f6f18",
+      "vout": 0,
+      "scriptSig": {
+        "asm":"3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1decc...",
+        "hex":"483045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1de..."
+      },
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.01500000,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 ab68...5f654e7 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a914ab68025513c3dbd2f7b92a94e0581f5d50f654e788ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA"
+        ]
+      }
+    }, 
+    {
+      "value": 0.08450000,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 7f9b1a...025a8 OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK"
+        ]
+      }
+    }
+  ]
 }
+
 </pre>
 ++++
 
-The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 millibits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +d3c7+). The two outputs correspond to the 50 millibit credit and an output with change back to the sender.
+The transaction decode shows all the components of this transaction, including the transaction inputs and outputs. In this case we see that the transaction that credited our new address with 50 millibits used one input and generated two outputs. The input to this transaction was the output from a previously confirmed transaction (shown as the vin txid starting with +7957a35fe+). The two outputs correspond to the 50 millibit credit and an output with change back to the sender.
 
-We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +gettransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address.
-
-Once the transaction we received has been confirmed by inclusion in a block, the +gettransaction+ command will return additional information, showing the _block hash (identifier)_ in which the transaction was included:
-
-
-++++
-<pre data-type="programlisting">
-$ bitcoin-cli gettransaction 9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66&#x21b5;
-c309acbae2c14ae3
-</pre>
-++++
-
-
-++++
-<pre data-type="programlisting">
-{
-    "amount" : 0.05000000,
-    "confirmations" : 1,
-    "blockhash" : "000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c&#x21b5;
-2a717b",
-    "blockindex" : 18,
-    "blocktime" : 1392660808,
-    "txid" : "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
-    "time" : 1392660908,
-    "timereceived" : 1392660908,
-    "details" : [
-        {
-            "account" : "",
-            "address" : "1hvzSofGwT8cjb8JU7nBsCSfEVQX5u9CL",
-            "category" : "receive",
-            "amount" : 0.05000000
-        }
-    ]
-}
-</pre>
-++++
-
-Here, we see the new information in the entries +blockhash+ (the hash of the block in which the transaction was included), and +blockindex+ with value 18 (indicating that our transaction was the 18th transaction in that block).
+We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +getrawtransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address.
 
 [[txindex]]
 .Transaction Database Index and txindex Option
 ****
-((("transaction database index")))By default, Bitcoin Core builds a database containing _only_ the transactions related to the user's wallet. If you want to be able to access _any_ transaction with commands like +gettransaction+, you need to configure Bitcoin Core to build a complete transaction index, which can be achieved with the((("txindex option (Bitcoin Core)"))) +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration file (usually found in your home directory under _.bitcoin/bitcoin.conf_). Once you change this parameter, you need to restart bitcoind and wait for it to rebuild the index.(((range="endofrange", startref="ix_ch03-asciidoc30")))(((range="endofrange", startref="ix_ch03-asciidoc29")))(((range="endofrange", startref="ix_ch03-asciidoc28")))(((range="endofrange", startref="ix_ch03-asciidoc27")))(((range="endofrange", startref="ix_ch03-asciidoc26")))(((range="endofrange", startref="ix_ch03-asciidoc25")))(((range="endofrange", startref="ix_ch03-asciidoc24")))(((range="endofrange", startref="ix_ch03-asciidoc23")))
+((("transaction database index")))By default, Bitcoin Core builds a database containing _only_ the transactions related to the user's wallet. If you want to be able to access _any_ transaction with commands like +getrawtransaction+, you need to configure Bitcoin Core to build a complete transaction index, which can be achieved with the((("txindex option (Bitcoin Core)"))) +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration file (usually found in your home directory under _.bitcoin/bitcoin.conf_). Once you change this parameter, you need to restart bitcoind and wait for it to rebuild the index.(((range="endofrange", startref="ix_ch03-asciidoc30")))(((range="endofrange", startref="ix_ch03-asciidoc29")))(((range="endofrange", startref="ix_ch03-asciidoc28")))(((range="endofrange", startref="ix_ch03-asciidoc27")))(((range="endofrange", startref="ix_ch03-asciidoc26")))(((range="endofrange", startref="ix_ch03-asciidoc25")))(((range="endofrange", startref="ix_ch03-asciidoc24")))(((range="endofrange", startref="ix_ch03-asciidoc23")))
 ****
 
 ==== Exploring Blocks
 
 Commands: +getblock+, +getblockhash+
 
-((("bitcoin-cli command line helper","getblock command")))((("bitcoin-cli command line helper","getblockhash command")))((("blocks","exploring")))((("getblock command (bitcoin-cli)")))((("getblockhash command (bitcoin-cli)")))Now that we know which block our transaction was included in, we can query that block. We use the +getblock+ command with the block hash as the parameter:
+((("bitcoin-cli command line helper","getblock command")))((("bitcoin-cli command line helper","getblockhash command")))((("blocks","exploring")))((("getblock command (bitcoin-cli)")))((("getblockhash command (bitcoin-cli)")))
 
+Exploring blocks is similar to exploring transactions. However, blocks can be referenced either by the block _height_ or by the block _hash_. First, let's find a block by its height. In <<cup_of_coffee>>, we saw that Alice's transaction was included in block 277316. 
+
+We use the +getblockhash+ command, which takes the block height as the parameter and returns the block hash for that block:
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli getblock 000000000000000051d2e759c63a26e247f185ecb7926ed7a6624b&#x21b5;
-c31c2a717b true
+$ bitcoin-cli getblockhash 277316
+0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
 </pre>
 ++++
 
+Now that we know which block Alice's transaction was included in, we can query that block. We use the +getblock+ command with the block hash as the parameter:
 
 ++++
 <pre data-type="programlisting">
+$ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b3&#x21b5;
+1b2cc7bdc4
+
 {
-    "hash" : "000000000000000051d2e759c63a26e247f185ecb7926ed7a6624bc31c2a717&#x21b5;
-b",
-    "confirmations" : 2,
-    "size" : 248758,
-    "height" : 286384,
-    "version" : 2,
-    "merkleroot" : "9891747e37903016c3b77c7a0ef10acf467c530de52d84735bd555387&#x21b5;
-19f9916",
-    "tx" : [
-        "46e130ab3c67d31d2b2c7f8fbc1ca71604a72e6bc504c8a35f777286c6d89bf0",
-        "2d5625725b66d6c1da88b80b41e8c07dc5179ae2553361c96b14bcf1ce2c3868",
-        "923392fc41904894f32d7c127059bed27dbb3cfd550d87b9a2dc03824f249c80",
-        "f983739510a0f75837a82bfd9c96cd72090b15fa3928efb9cce95f6884203214",
-        "190e1b010d5a53161aa0733b953eb29ef1074070658aaa656f933ded1a177952",
-        "ee791ec8161440262f6e9144d5702f0057cef7e5767bc043879b7c2ff3ff5277",
-        "4c45449ff56582664abfadeb1907756d9bc90601d32387d9cfd4f1ef813b46be",
-        "3b031ed886c6d5220b3e3a28e3261727f3b4f0b29de5f93bc2de3e97938a8a53",
-        "14b533283751e34a8065952fd1cd2c954e3d37aaa69d4b183ac6483481e5497d",
-        "57b28365adaff61aaf60462e917a7cc9931904258127685c18f136eeaebd5d35",
-        "8c0cc19fff6b66980f90af39bee20294bc745baf32cd83199aa83a1f0cd6ca51",
-        "1b408640d54a1409d66ddaf3915a9dc2e8a6227439e8d91d2f74e704ba1cdae2",
-        "0568f4fad1fdeff4dc70b106b0f0ec7827642c05fe5d2295b9deba4f5c5f5168",
-        "9194bfe5756c7ec04743341a3605da285752685b9c7eebb594c6ed9ec9145f86",
-        "765038fc1d444c5d5db9163ba1cc74bba2b4f87dd87985342813bd24021b6faf",
-        "bff1caa9c20fa4eef33877765ee0a7d599fd1962417871ca63a2486476637136",
-        "d76aa89083f56fcce4d5bf7fcf20c0406abdac0375a2d3c62007f64aa80bed74",
-        "e57a4c70f91c8d9ba0ff0a55987ea578affb92daaa59c76820125f31a9584dfc",
-        "9ca8f969bd3ef5ec2a8685660fdbf7a8bd365524c2e1fc66c309acbae2c14ae3",
-
-#[... many more transactions ...]
-
-    ],
-    "time" : 1392660808,
-    "nonce" : 3888130470,
-    "bits" : "19015f53",
-    "difficulty" : 3129573174.52228737,
-    "chainwork" : "000000000000000000000000000000000000000000001931d1658fc048&#x21b5;
-79e466",
-    "previousblockhash" : "0000000000000000177e61d5f6ba6b9450e0dade9f39c257b4&#x21b5;
-d48b4941ac77e7",
-    "nextblockhash" : "0000000000000001239d2c3bf7f4c68a4ca673e434702a57da8fe0&#x21b5;
-d829a92eb6"
-
-</pre>
-++++
-
-The block contains 367 transactions and as you can see, the 18th transaction listed (+9ca8f9...+) is the txid of the one crediting 50 millibits to our address. The +height+ entry tells us this is the 286384th block in the blockchain.
-
-We can also retrieve a block by its block height using the +getblockhash+ command, which takes the block height as the parameter and returns the block hash for that block:
-
-
-++++
-<pre data-type="programlisting">
-$ bitcoin-cli getblockhash 0
-
-000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-</pre>
-++++
-
-Here, we retrieve the block hash of the "genesis block," the first block mined by Satoshi Nakamoto, at height zero. Retrieving this block shows:
-
-
-++++
-<pre data-type="programlisting">
-$ bitcoin-cli getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1&#x21b5;b60a8ce26f
-</pre>
-++++
-
-
-++++
-<pre data-type="programlisting">
-{
-    "hash" : "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26&#x21b5;
-f",
-    "confirmations" : 286388,
-    "size" : 285,
-    "height" : 0,
-    "version" : 1,
-    "merkleroot" : "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7af&#x21b5;
-deda33b",
-    "tx" : [
-        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
-    ],
-    "time" : 1231006505,
-    "nonce" : 2083236893,
-    "bits" : "1d00ffff",
-    "difficulty" : 1.00000000,
-    "chainwork" : "0000000000000000000000000000000000000000000000000000000100&#x21b5;
-010001",
-    "nextblockhash" : "00000000839a8e6886ab5951d76f411475428afc90947ee320161b&#x21b5;
-bf18eb6048"
+  "hash": "0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4",
+  "confirmations": 37371,
+  "size": 218629,
+  "height": 277316,
+  "version": 2,
+  "merkleroot": "c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e",
+  "tx": [
+    "d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f", 
+    "b268b45c59b39d759614757718b9918caf0ba9d97c56f3b91956ff877c503fbe", 
+    "04905ff987ddd4cfe603b03cfb7ca50ee81d89d1f8f5f265c38f763eea4a21fd", 
+    "32467aab5d04f51940075055c2f20bbd1195727c961431bf0aff8443f9710f81", 
+    "561c5216944e21fa29dd12aaa1a45e3397f9c0d888359cb05e1f79fe73da37bd", 
+[... hundreds of transactions ...] 
+    "78b300b2a1d2d9449b58db7bc71c3884d6e0579617e0da4991b9734cef7ab23a", 
+    "6c87130ec283ab4c2c493b190c20de4b28ff3caf72d16ffa1ce3e96f2069aca9", 
+    "6f423dbc3636ef193fd8898dfdf7621dcade1bbe509e963ffbff91f696d81a62", 
+    "802ba8b2adabc5796a9471f25b02ae6aeee2439c679a5c33c4bbcee97e081196", 
+    "eaaf6a048588d9ad4d1c092539bd571dd8af30635c152a3b0e8b611e67d1a1af", 
+    "e67abc6bd5e2cac169821afc51b207127f42b92a841e976f9b752157879ba8bd", 
+    "d38985a6a1bfd35037cb7776b2dc86797abbb7a06630f5d03df2785d50d5a2ac", 
+    "45ea0a3f6016d2bb90ab92c34a7aac9767671a8a84b9bcce6c019e60197c134b", 
+    "c098445d748ced5f178ef2ff96f2758cbec9eb32cb0fc65db313bcac1d3bc98f"
+  ],
+  "time": 1388185914,
+  "mediantime": 1388183675,
+  "nonce": 924591752,
+  "bits": "1903a30c",
+  "difficulty": 1180923195.258026,
+  "chainwork": "000000000000000000000000000000000000000000000934695e92aaf53afa1a",
+  "previousblockhash": "0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569",
+  "nextblockhash": "000000000000000010236c269dd6ed714dd5db39d36b33959079d78dfd431ba7"
 }
+
 </pre>
 ++++
 
-The +getblock+, +getblockhash+, and +gettransaction+ commands can be used to explore the blockchain database, programmatically.
-
+The block contains 419 transactions the 64th transaction listed (+0627052b...+) is Alice's coffee payment. The +height+ entry tells us this is the 277316th block in the blockchain.
 
 [[alt_libraries]]
 === Alternative Clients, Libraries, and Toolkits
@@ -794,137 +682,3 @@ https://github.com/vbuterin/pybitcointools[pybitcointools]:: ((("pybitcointools 
 https://github.com/richardkiss/pycoin[pycoin]:: ((("pycoin library")))Another Python bitcoin library
 
 Many more libraries exist in a variety of other programming languages and more are created all the time.
-
-[[libbitcoin]]
-==== Libbitcoin and Bitcoin Explorer
-
-The ((("libbitcoin library")))((("libraries, alternative","libbitcoin library")))libbitcoin library is a cross-platform C++ development toolkit that supports the ((("Bitcoin Server")))((("libraries, alternative","Bitcoin Server")))libbitcoin-server full node and the ((("Bitcoin Explorer")))((("libraries, alternative","Bitcoin Explorer")))Bitcoin Explorer (bx) command line tool.
-
-The bx commands offer many of the same capabilities as the bitcoind client commands we illustrated in this chapter. The bx commands also offer some key management and manipulation tools that are not offered by bitcoind, including type-2 deterministic keys and mnemonic key encoding, as well as stealth address, payment, and query support.
-
-===== Installing Bitcoin Explorer
-
-((("Bitcoin Explorer","installing")))To use Bitcoin Explorer, simply https://github.com/libbitcoin/libbitcoin-explorer/wiki/Download[download the signed executable for your operating system]. Builds are available for mainnet and testnet for Linux, OS X, and Windows.
-
-Type +bx+ with no parameters to display the list of all available commands (see <<appdx_bx>>).
-
-Bitcoin Explorer also provides an installer for https://github.com/libbitcoin/libbitcoin-explorer/wiki/Build[building from sources on Linux and OS X, as well as Visual Studio projects for Windows]. Sources can also be built manually using Autotools. These also install the ((("libbitcoin library","installing")))libbitcoin library dependency.
-
-[TIP]
-====
-Bitcoin Explorer offers many useful commands for encoding and decoding addresses, and converting to and from different formats and representations. Use them to explore the various formats such as Base16 (hex), Base58, Base58Check, Base64, etc.
-====
-
-===== Installing Libbitcoin
-
-((("libbitcoin library","installing")))The libbitcoin library provides an installer for https://github.com/libbitcoin/libbitcoin/wiki/Build[building from sources on Linux and OS X, as well as Visual Studio projects for Windows]. Sources can also be built manually using Autotools.
-
-[TIP]
-====
-The Bitcoin Explorer installer installs both bx and the libbitcoin library, so if you have built bx from sources, you can skip this step.
-====
-
-==== pycoin
-
-((("libraries, alternative","pycoin library")))((("pycoin library")))((("Python","pycoin library")))The Python library http://github.com/richardkiss/pycoin[_pycoin_], originally written and maintained by((("Kiss, Richard"))) Richard Kiss, is a Python-based library that supports manipulation of bitcoin keys and transactions, even supporting the scripting language enough to properly deal with nonstandard transactions.
-
-The pycoin library supports both Python 2 (2.7.x) and Python 3 (after 3.3), and comes with some handy command-line utilities, ku and tx. To install pycoin 0.42 under Python 3 in a virtual environment (venv), use the following:
-
-====
-----
-$ python3 -m venv /tmp/pycoin
-$ . /tmp/pycoin/bin/activate
-$ pip install pycoin==0.42
-Downloading/unpacking pycoin==0.42
-  Downloading pycoin-0.42.tar.gz (66kB): 66kB downloaded
-  Running setup.py (path:/tmp/pycoin/build/pycoin/setup.py) egg_info for package pycoin
-
-Installing collected packages: pycoin
-  Running setup.py install for pycoin
-
-    Installing tx script to /tmp/pycoin/bin
-    Installing cache_tx script to /tmp/pycoin/bin
-    Installing bu script to /tmp/pycoin/bin
-    Installing fetch_unspent script to /tmp/pycoin/bin
-    Installing block script to /tmp/pycoin/bin
-    Installing spend script to /tmp/pycoin/bin
-    Installing ku script to /tmp/pycoin/bin
-    Installing genwallet script to /tmp/pycoin/bin
-Successfully installed pycoin
-Cleaning up...
-$
-----
-====
-
-Here's a sample Python script to fetch and spend some bitcoin using the pycoin library:
-
-====
-[source,python]
-----
-include::code/pycoin_example.py[]
-----
-====
-
-For examples using the command-line utilities ku and tx, see <<appdx-pycoin>>.
-
-==== btcd
-((("btcd")))((("clients, alternative","btcd")))btcd is a full-node bitcoin implementation written in((("Go programming language"))) Go. It currently downloads, validates, and serves the blockchain using the exact rules (including bugs) for block acceptance as the reference implementation, bitcoind. It also properly relays newly mined blocks, maintains a transaction pool, and relays individual transactions that have not yet made it into a block. It ensures that all individual transactions admitted to the pool follow the rules required and also includes the vast majority of the more strict checks that filter transactions based on miner requirements ("standard" transactions).
-
-One key difference between btcd and bitcoind is that btcd does not include wallet functionality, and this was a very intentional design decision. This means you can't actually make or receive payments directly with btcd. That functionality is provided by the btcwallet and btcgui projects, which are both under active development. Other notable differences between btcd and bitcoind include btcd support for both HTTP POST requests (such as bitcoind) and the preferred Websockets, and the fact that btcd's RPC connections are TLS-enabled by default.
-
-===== Installing btcd
-
-((("btcd","installing")))To install btcd for Windows, download and run the msi available at https://github.com/conformal/btcd/releases[GitHub], or run the following command on Linux, assuming you already have installed the Go language:
-
-
-----
-$ go get github.com/conformal/btcd/...
-----
-
-To update btcd to the latest version, just run:
-
-
-----
-$ go get -u -v github.com/conformal/btcd/...
-----
-
-===== Controlling btcd
-
-((("btcd","controlling")))btcd has a number of configuration options, which you can view by running:
-
-[source,bash]
-----
-$ btcd --help
-----
-
-btcd comes prepackaged with some goodies such as btcctl, which is a command-line utility that can be used to both control and query btcd via RPC. btcd does not enable its RPC server by default; you must configure at minimum both an RPC username and password in the following configuration files:
-
-* _btcd.conf_:
-[source,ini]
-----
-[Application Options]
-rpcuser=myuser
-rpcpass=SomeDecentp4ssw0rd
-----
-* _btcctl.conf_:
-[source,ini]
-----
-[Application Options]
-rpcuser=myuser
-rpcpass=SomeDecentp4ssw0rd
-----
-
-Or if you want to override the configuration files from the command line:
-
-[source,bash]
-----
-$ btcd -u myuser -P SomeDecentp4ssw0rd
-$ btcctl -u myuser -P SomeDecentp4ssw0rd
-----
-
-For a list of available options, run the following: (((range="endofrange", startref="ix_ch03-asciidoc49")))(((range="endofrange", startref="ix_ch03-asciidoc48")))(((range="endofrange", startref="ix_ch03-asciidoc47")))(((range="endofrange", startref="ix_ch03-asciidoc0")))
-
-
-----
-$ btcctl --help
-----
