@@ -664,21 +664,120 @@ $ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b3&#x
 
 The block contains 419 transactions the 64th transaction listed (+0627052b...+) is Alice's coffee payment. The +height+ entry tells us this is the 277316th block in the blockchain.
 
+==== Using Bitcoin Core's Programmatic Interface
+
+The +bitcoin-cli+ helper is very useful for exploring the Bitcoin Core API and testing functions. But the whole point of an Application Programming Interface is to access functions programmatically. In this section we will demonstrate accessing Bitcoin Core from another program.
+
+Bitcoin Core's API is a JSON-RPC interface. JSON stands for JavaScript Object Notation and it is a very convenient way to present data that both humans and programs can easily read. RPC stands for Remote Procedure Call, which means that we are calling procedures (functions) that are remote (on the Bitcoin Core node) via a network protocol. In this case, the network protocol is HTTP, or HTTPS (for encrypted connections). 
+
+When we used the +bitcoin-cli+ command to get help on a command, it showed us an example of using +curl+, the versatile command-line HTTP client to construct one of these JSON-RPC calls:
+
+----
+$ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+----
+
+This command shows that +curl+ submits an HTTP request to the local host (127.0.0.1), connecting to the default bitcoin port (8332), and submitting a  +jsonrpc+ request for the +getinfo+ method, using a +text/plain+ encoding. 
+
+If you're implementing a JSON-RPC call in your own program, you can use a generic HTTP library to construct the call, similar to what is shown in the +curl+ example above. 
+
+However, there are libraries in most every programming language that "wrap" the Bitcoin Core API in a way that makes this a lot simpler. We will use the +python-bitcoinlib+ library to simplify API access. Remember, this requires you to have a running Bitcoin Core instance which will be used to make JSON-RPC calls.
+
+The Python script below makes a simple +getinfo+ call and prints the +block+ parameter from the data returned by Bitcoin Core: 
+
+[[rpc_example]]
+.Running +getinfo+ via Bitcoin Core's JSON-RPC API
+====
+[source,python]
+----
+include::code/rpc_example.py[]
+----
+====
+
+Running it, gives us the following result:
+----
+$ python rpc_example.py 
+394075
+----
+
+It tells us that our local Bitcoin Core node has 394075 blocks in its blockchain. Not a spectacular result, but it demonstrates the basic use of the library as a simplified interface to Bitcoin Core's JSON-RPC API. 
+
+Next, let's use the +getrawtransaction+ and +decodetransaction+ calls to retrieve the details of Alice's coffee payment. In the following example, we retrieve Alice's transaction and list the transaction's outputs. For each output, we show the recipient address and value. As a reminder, Alice's transaction had one output paying Bob's Cafe and one output for change back to Alice. 
+
+[[rpc_transaction]]
+.Retrieving a transaction and iterating its outputs
+====
+[source,python]
+----
+include::code/rpc_transaction.py[]
+----
+====
+
+Running this code, we get:
+----
+$ python rpc_transaction.py 
+([u'1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA'], Decimal('0.01500000'))
+([u'1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK'], Decimal('0.08450000'))
+----
+
+Both of the examples above are rather simple. You don't really need a program to run them, you could just as easily use the +bitcoin-cli+ helper. The next example, however, requires several hundred RPC calls and more clearly demonstrates the use of a programmatic interface.
+
+In <<rpc_block>>, we first retrieve block 277316, then retrieve each of the 419 transactions within by reference to each transaction ID. Next, iterate through each of the transaction's outputs and add up the value. 
+
+[[rpc_block]]
+.Retrieving a block and adding all the transaction outputs
+====
+[source,python]
+----
+include::code/rpc_block.py[]
+----
+====
+
+Running this code, we get:
+----
+$ python rpc_block.py 
+
+('Total value in block: ', Decimal('10322.07722534'))
+----
+
 [[alt_libraries]]
 === Alternative Clients, Libraries, and Toolkits
 
-((("clients, alternative", id="ix_ch03-asciidoc47", range="startofrange")))((("libraries, alternative", id="ix_ch03-asciidoc48", range="startofrange")))((("toolkits, alternative", id="ix_ch03-asciidoc49", range="startofrange")))Beyond the reference client (bitcoind), other clients and libraries can be used to interact with the bitcoin network and data structures. These are implemented in a variety of programming languages, offering programmers native interfaces in their own language.
+((("clients, alternative", id="ix_ch03-asciidoc47", range="startofrange")))((("libraries, alternative", id="ix_ch03-asciidoc48", range="startofrange")))((("toolkits, alternative", id="ix_ch03-asciidoc49", range="startofrange"))) There are many alternative clients, libraries, toolkits and even full-node implementations in the bitcoin ecosystem. These are implemented in a variety of programming languages, offering programmers native interfaces in their preferred language.
 
-Alternative implementations include:
+Below we list some of the best libraries, clients and toolkits, organized by programming languages:
 
-https://github.com/libbitcoin/libbitcoin[libbitcoin]:: ((("libbitcoin library")))Bitcoin Cross-Platform C++ Development Toolkit
-https://github.com/libbitcoin/libbitcoin-explorer[bitcoin explorer]:: ((("Bitcoin Explorer")))Bitcoin Command Line Tool
-https://github.com/libbitcoin/libbitcoin-server[bitcoin server]:: ((("Bitcoin Server")))Bitcoin Full Node and Query Server
+==== C/C++
+https://github.com/bitcoin/bitcoin[Bitcoin Core] :: The reference implementation of bitcoin
+https://github.com/libbitcoin/libbitcoin[libbitcoin]:: ((("libbitcoin library")))Cross-Platform C++ development toolkit, node and consensus library
+https://github.com/libbitcoin/libbitcoin-explorer[bitcoin explorer]:: ((("Bitcoin Explorer")))Libbitcoin's command-line tool
+https://github.com/jgarzik/picocoin[picocoin]:: ((("picocoin")))A C language lightweight client library for bitcoin by Jeff Garzik
+
+==== JavaScript
+https://bitcore.io/[Bitcore] :: Full node, API and library by Bitpay
+https://github.com/bitcoinjs/bitcoinjs-lib[BitcoinJS] :: A pure JavaScript Bitcoin library for node.js and browsers
+
+==== Java
 https://code.google.com/p/bitcoinj/[bitcoinj]:: ((("BitcoinJ library")))A Java full-node client library
-https://opensource.conformal.com/wiki/btcd[btcd]:: ((("btcd","client")))A Go language full-node bitcoin client
 https://bitsofproof.com[Bits of Proof (BOP)]:: ((("Bits of Proof (BOP)")))A Java enterprise-class implementation of bitcoin
-https://github.com/jgarzik/picocoin[picocoin]:: ((("picocoin")))A C implementation of a lightweight client library for bitcoin
-https://github.com/vbuterin/pybitcointools[pybitcointools]:: ((("pybitcointools library")))A Python bitcoin library
-https://github.com/richardkiss/pycoin[pycoin]:: ((("pycoin library")))Another Python bitcoin library
+
+==== Python
+https://github.com/petertodd/python-bitcoinlib[python-bitcoinlib]:: ((("python-bitcoinlib library"))) A Python bitcoin library, consensus library and node by Peter Todd
+https://github.com/richardkiss/pycoin[pycoin]:: ((("pycoin library")))A Python bitcoin library by Richard Kiss
+https://github.com/vbuterin/pybitcointools[pybitcointools]:: ((("pybitcointools library")))A Python bitcoin library by Vitalik Buterin
+
+==== Ruby
+https://github.com/sinisterchipmunk/bitcoin-client[bitcoin-client]:: A Ruby library wrapper for the JSON-RPC API
+
+==== Go
+https://opensource.conformal.com/wiki/btcd[btcd]:: ((("btcd","client")))A Go language full-node bitcoin client
+
+==== Rust
+https://github.com/apoelstra/rust-bitcoin[rust-bitcoin]:: Rust Bitcoin Library for serialization, parsing and API calls
+
+==== C#
+https://github.com/MetacoSA/NBitcoin[NBitcoin]:: Comprehensive Bitcoin library for the .NET framework.
+
+==== Objective-C
+https://github.com/oleganza/CoreBitcoin[CoreBitcoin]:: Bitcoin toolkit for ObjC and Swift
 
 Many more libraries exist in a variety of other programming languages and more are created all the time.
