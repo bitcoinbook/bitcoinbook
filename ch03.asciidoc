@@ -22,7 +22,7 @@ If you're a developer, you will want to setup a development environment with all
 
 [TIP]
 ====
-In many of the examples in this chapter we will be using the operating system's command-line interface (also known as a "shell"), accessed via a "terminal" application. The shell will display a prompt; you type a command; and the shell responds with some text and a new prompt for your next command. The prompt may look different on your system, but in the examples below it is denoted by a +$+ symbol. In the examples when you see text after a +$+ symbol, don't type the +$+ symbol but type the command immediately following it, then press enter to execute the command. In the examples, the lines below each command are the operating system's responses to that command. When you see the next +$+ prefix, you'll know it's a new command and you should repeat the process.
+In many of the examples in this chapter we will be using the operating system's command-line interface (also known as a "shell"), accessed via a "terminal" application. The shell will display a prompt; you type a command; and the shell responds with some text and a new prompt for your next command. The prompt may look different on your system, but in the examples below it is denoted by a +$+ symbol. In the examples, when you see text after a +$+ symbol, don't type the +$+ symbol but type the command immediately following it, then press enter to execute the command. In the examples, the lines below each command are the operating system's responses to that command. When you see the next +$+ prefix, you'll know it's a new command and you should repeat the process.
 ====
 
 In this example, we are using the +git+ command to create a local copy ("clone") of the source code.
@@ -255,6 +255,8 @@ It is also recommended to set alertnotify so you are notified of problems;
 for example: alertnotify=echo %s | mail -s "Bitcoin Alert" admin@foo.com
 ----
 
+As you can see, the first time you run +bitcoind+ it tells you that you need to build a configuration file, with at least an rpcuser and rpcpassword entry. Additionally, it is recommended you set up the alerting mechanism. In the next section we will examine the various configuration options and set up a configuration file. 
+
 ==== Configuring the Bitcoin Core Node
 
 Edit the configuration file in your preferred editor and set the parameters, replacing the password with a strong password as recommended by bitcoind. Do _not_ use the password shown in the book. Create a file inside the +.bitcoin+ directory (under your user's home directory) so that it is named +.bitcoin/bitcoin.conf+ and provide a username and password:
@@ -265,9 +267,7 @@ rpcuser=bitcoinrpc
 rpcpassword=CHANGE_THIS
 ----
 
-While you're editing this configuration file, you might want to set a few other options. In addition to the +rpcuser+ and +rpcpassword+ options, Bitcoin Core offers dozens of configuration options that modify the behavior of the network node, the storage of the blockchain and many other aspects of its operation.
-
-To see a listing of these options, run +bitcoind  --help+:
+In addition to the +rpcuser+ and +rpcpassword+ options, Bitcoin Core offers more than one hundred configuration options that modify the behavior of the network node, the storage of the blockchain and many other aspects of its operation. To see a listing of these options, run +bitcoind  --help+:
 
 ----
  bitcoind --help
@@ -316,6 +316,13 @@ maxreceivebuffer/maxsendbuffer:: Limit per-connection memory buffer to this many
 
 minrelaytxfee:: Set the minimum fee transaction you will relay. Below this value, the transaction is treated as zero fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
 
+
+[[txindex]]
+.Transaction Database Index and txindex Option
+****
+((("transaction database index")))By default, Bitcoin Core builds a database containing _only_ the transactions related to the user's wallet. If you want to be able to access _any_ transaction with commands like +getrawtransaction+ (see ), you need to configure Bitcoin Core to build a complete transaction index, which can be achieved with the((("txindex option (Bitcoin Core)"))) +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration file. If you don't set this option at first and later set it to full indexing, you need to restart bitcoind with the +-reindex+ option and wait for it to rebuild the index.
+****
+
 Here's how you might combine the above options:
 
 A fully-indexed node, running as an API back-end for a bitcoin application:
@@ -350,9 +357,7 @@ rpcpassword=CHANGE_THIS
 ----
 ====
 
-Now, run the Bitcoin Core client. The first time you run it, it will reconstruct a complete local copy of the bitcoin blockchain by downloading all the blocks.
-
-To test your configuration, run Bitcoin Core with the option +printtoconsole+ to run in the foreground with output to the console:(((range="endofrange", startref="ix_ch03-asciidoc3")))
+Once you've edited the configuration file and set the options that best represent your needs, we can test +bitcoind+ with this configuration. Run Bitcoin Core with the option +printtoconsole+ to run in the foreground with output to the console:(((range="endofrange", startref="ix_ch03-asciidoc3")))
 
 ----
 $ bitcoind -printtoconsole
@@ -595,11 +600,7 @@ The transaction decode shows all the components of this transaction, including t
 
 We can further explore the blockchain by examining the previous transaction referenced by its txid in this transaction using the same commands (e.g., +getrawtransaction+). Jumping from transaction to transaction we can follow a chain of transactions back as the coins are transmitted from owner address to owner address.
 
-[[txindex]]
-.Transaction Database Index and txindex Option
-****
-((("transaction database index")))By default, Bitcoin Core builds a database containing _only_ the transactions related to the user's wallet. If you want to be able to access _any_ transaction with commands like +getrawtransaction+, you need to configure Bitcoin Core to build a complete transaction index, which can be achieved with the((("txindex option (Bitcoin Core)"))) +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration file (usually found in your home directory under _.bitcoin/bitcoin.conf_). Once you change this parameter, you need to restart bitcoind and wait for it to rebuild the index.(((range="endofrange", startref="ix_ch03-asciidoc30")))(((range="endofrange", startref="ix_ch03-asciidoc29")))(((range="endofrange", startref="ix_ch03-asciidoc28")))(((range="endofrange", startref="ix_ch03-asciidoc27")))(((range="endofrange", startref="ix_ch03-asciidoc26")))(((range="endofrange", startref="ix_ch03-asciidoc25")))(((range="endofrange", startref="ix_ch03-asciidoc24")))(((range="endofrange", startref="ix_ch03-asciidoc23")))
-****
+(((range="endofrange", startref="ix_ch03-asciidoc30")))(((range="endofrange", startref="ix_ch03-asciidoc29")))(((range="endofrange", startref="ix_ch03-asciidoc28")))(((range="endofrange", startref="ix_ch03-asciidoc27")))(((range="endofrange", startref="ix_ch03-asciidoc26")))(((range="endofrange", startref="ix_ch03-asciidoc25")))(((range="endofrange", startref="ix_ch03-asciidoc24")))(((range="endofrange", startref="ix_ch03-asciidoc23")))
 
 ==== Exploring Blocks
 
@@ -738,6 +739,8 @@ $ python rpc_block.py
 
 ('Total value in block: ', Decimal('10322.07722534'))
 ----
+
+Our example code calculates the total value transacted in this block is 10,322.07722534 BTC (inclusive of the 25 BTC reward and 0.0909 BTC in fees). Compare that to the amount reported by a block explorer site, by searching for the block hash or height. Some block explorers report the total value excluding the reward and excluding the fees. See if you can spot the difference.
 
 [[alt_libraries]]
 === Alternative Clients, Libraries, and Toolkits
