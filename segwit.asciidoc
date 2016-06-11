@@ -1,0 +1,33 @@
+////
+
+
+Will be merged later into chapter 6 or 7, as the book is reorganized
+
+
+////
+
+[[segwit]]
+=== Segregated Witness
+
+Segregated Witness is an upgrade to the bitcoin consensus rules and network protocol, scheduled for implementation in the second half of 2016. 
+
+In cryptography, the term "witness" is used to describe an input that satisfies a cryptographic condition. If the condition is a signature corresponding to public key, the witness is the signature.
+
+The unlocking script presented in each input in a bitcoin transaction is the witness that satisfies the condition imposed by the locking script on the UTXO. The term _segregated witness_ or _segwit_ for short, simply means separating the signature or unlocking script from the rest of the transaction. Think "separated signatures" in the simplest form. 
+
+Segregated Witness therefore is a change to bitcoin that aims to move the signatures outside of the transaction data structure and into a _witness_ data structure that accompanies a transaction. Clients may request transaction data with or without the accompanying witness data. 
+
+In this section we will look at some of the benefits of segregated witness, describe the mechanism used to deploy and implement this architecture change and demonstrate the use of segregated witness in transactions and addresses. 
+
+==== Why Segregated Witness?
+
+Segregated witness is not really a feature. It is an architectural change that has several effects on the scalability, security, economic incentives and performance of bitcoin. 
+
+Transaction malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<transaction malleability>>), removing it also removes the opportunity for transaction malleability attacks. With segregated witness,  transaction hashes become immutable, which greatly simplifies many applications using advanced bitcoin transaction construction, such as payment channels, chained transactions and lightning networks. 
+
+Transaction size :: The witness data is often a big contributor to the total size of a transaction. In the case of multi-signature or other complex scripts, the majority of the data in the transaction is witness data. By moving the witness data outside the transaction, segregated witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification.
+
+Economic Incentives :: Transaction fees are calculated based on the size of the transaction. But not all parts of the transaction are equally “expensive” to carry by the bitcoin network. UTXO data which must be kept until the UTXO are spent and are usually stored in memory for rapid validation of transactions are the minority of a transaction’s data. Witness data on the other hand, can be discarded entirely after a single validation, yet they make up the majority of a transaction’s data, especially for complex witness scripts. With segregated witness, the transaction fees are discounted on witness data and the influence of the size of UTXO in a transaction becomes greater, properly aligning incentives through fees with the actual economic costs to the network. 
+
+Fraud Proofs :: Segregated witness will allow the construction of _fraud proofs_. When lightweight clients use simplified payment verification (SPV) to validate that a transaction has happened, they have to implicitly trust the miners, to a certain extent. They can validate the existence of a transaction but do not validate the full consensus rules. With the introduction of segregated witness, it becomes possible for nodes to construct and exchange cryptographic proofs that demonstrate the validity of transaction inputs. 
+
