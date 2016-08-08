@@ -42,11 +42,100 @@ A transaction can spend segregated witness outputs or traditional inline-witness
 
 When a transaction spends a UTXO, it must provide a witness. In a traditional UTXO, the locking script requires that witness data be provided _inline_ in the input part of the transaction that spends the UTXO. A segregated witness UTXO, however, specifies a locking script that can be satisfied with witness data outside of the input (segregated). 
 
-Segregated witness outputs are constructed in a backwards compatible way so that older systems that are not segregated-witness-aware can still validate them. To an old wallet or node, a segregated witness output looks like a ANYONE_CAN_SPEND output. Such outputs can be spent with an empty signature, therefore the fact that there is no signature inside the transaction (it is segregated), does not invalidate the transaction. Newer wallets & nodes however see the same output as a segwit output and expect to find a valid witness for it in the transaction’s witness data. 
+==== Soft-fork (backwards compatibility)
+
+Segregated witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet, to change the consensus rules with what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change that is backwards compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption, without changes to the consensus rules. 
+
+Segregated witness outputs are constructed so that older systems that are not segregated-witness-aware can still validate them. To an old wallet or node, a segregated witness output looks like an output that _anyone can spend_ . Such outputs can be spent with an empty signature, therefore the fact that there is no signature inside the transaction (it is segregated), does not invalidate the transaction. Newer wallets & mining nodes however see the segregated witness output and expect to find a valid witness for it in the transaction’s witness data.
+
+==== Segregated Witness Output and Transaction Examples
+
+Let’s look at some of our example transactions and see how they would change with segregated witness. We’ll first look at how a Pay-to-Public-Key-Hash (P2PKH) payment is transformed with segregated witness program. Then, we’ll look at the segregated witness equivalent for Pay-to-Script-Hash (P2SH) scripts. Finally, we’ll look at how both of the above segregated witness programs can be embedded inside a P2SH script. 
+
+===== Pay-to-Witness-Public-Key-Hash (P2WPKH)
+
+In <<cup_of_coffee>>, Alice created a transaction to pay Bob for a cup of coffee. That transaction created a Pay-to-Public-Key-Hash (P2PKH) output with a value of 0.015 BTC that was spendable by Bob. The output’s script looks like this: 
+
+.Example P2PKH output script
+----
+OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHECKSIG
+----
+
+With segregated witness, a Pay-to-Public-Key-Hash output, is created instead a Pay-to-Witness-Public-Key-Hash (P2WPKH), which looks like this:
+
+.Example P2WPKH output script 
+----
+0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
+----
+
+As you can see, a segregated witness output’s locking script is much simpler than a traditional output. It consists of two values that are pushed on to the script evaluation stack. To an old (non-segwit-aware) bitcoin client, the two pushes would look like an output that anyone can spend and does not require a signature (or rather, can be spent with an empty signature). To a newer, segwit-aware client, the first number (0) is interpreted as a version number (the _witness version_) and the second part is the equivalent of a locking script known as a _witness program_. 
+
+Now, let’s look at the corresponding transaction that Bob uses to spend this output. For the original script (non-segwit), Bob’s transaction would have to include a signature within the transaction input:
+
+.Decoded transaction showing a P2PKH output being spent with a signature
+----
+[...]
+“Vin” : [
+"txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
+"vout": 0,
+     	 "scriptSig": “<Bob’s scriptSig>”,
+]
+[...]
+----
+
+However, to spend the segregated witness output, Bob’s transaction has an empty scriptSig and includes a segregated (separate) witness:
+
+.Decoded transaction showing a P2WPKH output being spent with separate witness data
+----
+[...]
+“Vin” : [
+"txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
+"vout": 0,
+     	 "scriptSig": “<Bob’s scriptSig>”,
+]
+[....]
+“witness”: “<Bob’s scriptSig>”
+[...]
+----
+
+===== Pay-to-Witness-Script-Hash (P2WSH)
+
+In <<p2sh>> we saw our first example of a Pay-to-Script-Hash (P2SH) address used by Mohammed's company to express a multi-signature control script. Payments to Mohammed's company were encoded with a locking script like this:
+
+.Example P2SH output script
+----
+OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
+----
+
+The P2SH script above references the hash of a _redeem script_ that defines a 2-of-3 multi-signature requirement to spend funds. If Mohammed's customers were using a Segregated Witness compatible wallet, the equivalent payment would be to a Pay-to-Witness-Script-Hash (P2WSH) output script that would look like this:
+
+.Example P2WSH output script
+----
+0 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
+----
+
+Again, as with the example of P2WPKH, you can see that the segregated witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the segregated witness program consists only of a witness version (0) and the script hash. 
+
+Mohammed can spend the Pay-to-Witness-Script-Hash output by presenting the correct redeem script (whose hash matches the script hash in the witness program) and sufficient signatures to satisfy the redeem script. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the spending transaction, Mohammed's wallet would put an empty scriptSig:
+
+.Decoded transaction showing a P2WSH output being spent with separate witness data
+----
+[...]
+“Vin” : [
+"txid": "abcdef12345...",
+"vout": 0,
+     	 "scriptSig": “”,
+]
+[....]
+“witness”: “SigA SigB 2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG”
+[...]
+----
+
+
 
 ==== Economic Incentives for Segregated Witness
 
-Bitcoin mining nodes and full nodes incur costs for the resources used to support the bitcoin network and the blockchain. As the scale of bitcoin increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Non-mining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully-validating full-index node, perhaps because they use the node to operate a bitcoin business. 
+Bitcoin mining nodes and full nodes incur costs for the resources used to support the bitcoin network and the blockchain. As the volume of bitcoin transactions increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Non-mining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully-validating full-index node, perhaps because they use the node to operate a bitcoin business. 
 
 Without transaction fees, the growth in bitcoin data would arguably increase dramatically. Fees are intended to align the needs of bitcoin users with the burden their transactions impose on the network, through a market-based price discovery mechanism. 
 
@@ -56,13 +145,13 @@ Disk Space :: Every transaction is stored in the blockchain, adding to the total
 
 CPU :: Every transaction must be validated, which requires CPU time.
 
-Bandwidth :: Every transaction is transmitted (through flood propagation) across the network at least once. Without optimization, transactions are transmitted again as part of a block, doubling the impact on network capacity
+Bandwidth :: Every transaction is transmitted (through flood propagation) across the network at least once. Without any optimization in the block propagation protocol, transactions are transmitted again as part of a block, doubling the impact on network capacity
 
 Memory :: Nodes that validate transactions keep the “UTXO set”, the list of all unspent transaction outputs, in memory. Because memory is at least one order of magnitude more expensive than disk, growth of the UTXO set contributes disproportionately to the cost of running a node. 
 
-As you can see from the list above, not every part of a transaction has an equal impact on the cost of running a node or on the ability of bitcoin to scale to support more transactions. The most expensive part of a transaction are the newly created outputs, as they are added to the in-memory UTXO set. By comparison, signatures (aka witness data) add the least burden to the network and the cost of running a node, because witness data are only validated once and then never used again. Furthermore, immediately after receiving a new transaction and validating witness data, nodes can discard that witness data. If fees are calculated on transaction size, without discriminating between these two types of data, this does not align the market incentives of fees with the actual costs imposed by a transaction. In fact, the current fee structure actually encourages the opposite behavior, because witness data is the largest part of a transaction. 
+As you can see from the list above, not every part of a transaction has an equal impact on the cost of running a node or on the ability of bitcoin to scale to support more transactions. The most expensive part of a transaction are the newly created outputs, as they are added to the in-memory UTXO set. By comparison, signatures (aka witness data) add the least burden to the network and the cost of running a node, because witness data are only validated once and then never used again. Furthermore, immediately after receiving a new transaction and validating witness data, nodes can discard that witness data. If fees are calculated on transaction size, without discriminating between these two types of data, then the market incentives of fees are not aligned with the actual costs imposed by a transaction. In fact, the current fee structure actually encourages the opposite behavior, because witness data is the largest part of a transaction. 
 
-The incentives created by fees matter because they affect the behavior of wallets. All wallets must implement some strategy for assembling transactions that takes into considerations a number of factors, such as privacy (reducing address re-use), fragmentation (making lots of lose change) and fees. If the fees are overwhelmingly motivating wallets to use as few inputs as possible in transactions, this can lead to UTXO picking and change address strategies that inadvertently bloat the UTXO set. 
+The incentives created by fees matter because they affect the behavior of wallets. All wallets must implement some strategy for assembling transactions that takes into considerations a number of factors, such as privacy (reducing address re-use), fragmentation (making lots of loose change) and fees. If the fees are overwhelmingly motivating wallets to use as few inputs as possible in transactions, this can lead to UTXO picking and change address strategies that inadvertently bloat the UTXO set. 
 
 Transactions consume UTXO in their inputs and create new UTXO with their outputs. A transaction, therefore, that has more inputs than outputs will result in a decrease in the UTXO set, whereas a transaction that has more outputs than inputs will result in an increase in the UTXO set. Let’s consider the _difference_ between inputs and output and call that the “Net new UTXO”. That’s an important metric, as it tells us what impact a transaction will have on the most expensive network-wide resource, the in-memory UTXO set. A transaction with positive Net-new-UTXO, adds to that burden. A transaction with a negative Net-new-UTXO reduces the burden. We would therefore want to encourage transactions that are either negative Net-new-UTXO or neutral with zero Net-new-UTXO. 
 
@@ -81,6 +170,4 @@ Transaction B fee: 12,045 satoshi
 
 Both transactions are less expensive when segregated witness is implemented. But comparing the costs between the two transactions, we see that before segregated witness, the fee is higher for the transaction that has a negative Net-new-UTXO. After segregated witness, the transaction fees align with the incentive to minimize new UTXO creation, by not inadvertently penalizing transactions with many inputs. 
 
-
-
-
+Segregated witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data correcting a misalignment of incentives that may have inadvertently created more bloat in the UTXO set. 
