@@ -25,7 +25,7 @@ In this section we will look at some of the benefits of segregated witness, desc
 
 Segregated witness is an architectural change that has several effects on the scalability, security, economic incentives and performance of bitcoin. 
 
-Transaction malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<transaction malleability>>), removing it also removes the opportunity for transaction malleability attacks. With segregated witness,  transaction hashes become immutable, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions and lightning networks.
+Transaction malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<transaction malleability>> and <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With segregated witness,  transaction hashes become immutable, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions and lightning networks.
 
 Script Versioning :: With the introduction of segregated witness scripts, every locking script is preceded by a _script version_ number, similar to how transactions and blocks have version numbers. The addition of a script version number allows the scripting language to be upgraded in a backwards compatible way (ie. using soft-fork upgrades), to introduce new script operands, syntax or semantics. The ability to upgrade the scripting language in a non-disruptive way will greatly accelerate the rate of innovation in bitcoin. 
 
@@ -49,6 +49,7 @@ Segregated witness outputs are constructed so that older systems that are not se
 
 Let’s look at some of our example transactions and see how they would change with segregated witness. We’ll first look at how a Pay-to-Public-Key-Hash (P2PKH) payment is transformed with segregated witness program. Then, we’ll look at the segregated witness equivalent for Pay-to-Script-Hash (P2SH) scripts. Finally, we’ll look at how both of the above segregated witness programs can be embedded inside a P2SH script. 
 
+[[p2wpkh]]
 ===== Pay-to-Witness-Public-Key-Hash (P2WPKH)
 
 In <<cup_of_coffee>>, Alice created a transaction to pay Bob for a cup of coffee. That transaction created a Pay-to-Public-Key-Hash (P2PKH) output with a value of 0.015 BTC that was spendable by Bob. The output’s script looks like this: 
@@ -121,10 +122,15 @@ Now, let's look at how this entire example would be upgraded to segwit. If Moham
 
 .Example P2WSH output script
 ----
-0 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
+0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Again, as with the example of P2WPKH, you can see that the segregated witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the segregated witness program consists of two values pushed to the stack: a witness version (0) and the 32-byte script hash.
+Again, as with the example of P2WPKH, you can see that the segregated witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the segregated witness program consists of two values pushed to the stack: a witness version (0) and the 32-byte SHA256 hash of the redeem script. 
+
+[TIP]
+====
+While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness program uses a 32-byte +SHA256(script)+ hash. This difference in the selection of the hashing algorithm is deliberate and used to differentiate between the two types of witness programs (P2WPKH and P2WSH) by the length of the hash.
+====
 
 Mohammed's company can spend outputs the Pay-to-Witness-Script-Hash output by presenting the correct redeem script and sufficient signatures to satisfy the redeem script. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's wallet would put an empty scriptSig:
 
@@ -140,6 +146,15 @@ Mohammed's company can spend outputs the Pay-to-Witness-Script-Hash output by pr
 “witness”: “SigA SigB 2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG”
 [...]
 ----
+
+===== Differentiating between P2WPKH and P2WSH
+
+In the previous two sections, we demonstrated two types of witness programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs consist of single byte version number followed by a longer hash. They look very similar, but are interpreted very differently: one is interpreted as a public key hash, which is satisfied by a signature and the other as a script hash, which is satisfied by a redeem script. The critical difference between them is the length of the hash: 
+
+* The public key hash in P2WPKH is 20 bytes
+* The script hash in P2WSH is 32 bytes
+
+This is the one difference that allows a wallet to differentiate between the two types of witness programs. By looking at the length of the hash, a wallet can determine what type of witness program this is, P2WPKH or P2WSH.
 
 ==== Upgrading to Segregated Witness
 
@@ -181,22 +196,22 @@ The P2WPKH witness program consists of the witness version and Bob's 20-byte pub
 
 Bob's wallet then hashes the above witness program, first with SHA256, then with RIPEMD160, producing another 20-byte hash:
 
-.Hash of the P2WPKH witness program
+.HASH160 of the P2WPKH witness program
 ----
-deadbeef
+660a5ab01c8468ac2e3cd58e9b17f8ba637867a4
 ----
 
 The hash of the witness program is then embedded in a P2SH script:
 .P2SH script containing the hash of a P2WPKH witness program
 ----
-OP_HASH160 deadbeef OP_EQUAL
+OP_HASH160 660a5ab01c8468ac2e3cd58e9b17f8ba637867a4 OP_EQUAL
 ----
 
 Finally, the P2SH script is converted to a P2SH bitcoin address:
 
 .P2SH address
 ----
-3deadbeef
+3AzZFY4WJJZbVr2A6qBTbdkYRpMLbdg6gD
 ----
 
 Now, Bob can display this address for customers to pay for their coffee. Alice's wallet can make a payment to +3deadbeef+, just as it would to any other bitcoin address. Even though Alice's wallet has no support for segwit, the payment it creates can be spent by Bob with a segwit transaction. 
@@ -207,40 +222,62 @@ Similarly, a P2WSH witness program for a multisig script or other complicated sc
 
 As we saw in <<p2wsh>>, Mohammed's company is using segregated witness payments to multi-signature scripts. To make it possible for any client to pay his company, regardless of whether their wallets are upgraded for segwit, Mohammed's wallet can embed the P2WSH witness program inside a P2SH script.
 
-First, Mohammed's wallet creates the P2WSH witness program that corresponds to the multi-signature script:
+First, Mohammed's wallet creates the P2WSH witness program that corresponds to the multi-signature script, hashed with SHA256:
 
 .Mohammed's wallet creates a P2WSH witness program
 ----
-0 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
+0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Then, the witness program is hashed with SHA256 and RIPEMD160, producing a new 20-byte hash:
+Then, the witness program itself is hashed with SHA256 and RIPEMD160, producing a new 20-byte hash, as used in traditional P2SH:
 
-.The hash of the P2WSH witness program
+.The HASH160 of the P2WSH witness program
 ----
-deadbeef
+e3cca368764d7b32ed27a15b2e8d7d45d4edd2c6
 ----
 
 Next, Mohammed's wallet puts the hash into a P2SH script
 .P2SH script containing the hash of a P2WSH witness program
 ----
-OP_HASH160 deadbeef OP_EQUAL
+OP_HASH160 e3cca368764d7b32ed27a15b2e8d7d45d4edd2c6 OP_EQUAL
 ----
 
 Finally, the wallet constructs a bitcoin address from this script:
 
 .P2SH bitcoin address
 ----
-3deadbeef
+3NTWTcFE88p26GTPoxcWef9Q5ncKt6CY2E
 ----
 
 Now, Mohammed's clients can make payments to this address without any need to support segwit. Mohammed's company can then construct segwit transactions to spend these payments, taking advantage of segwit features including lower transaction fees.
 
-===== Segregated Witness addresses
+===== Segregated Witness Addresses
 
 After segwit is deployed on the bitcoin network, it will take some time until wallets are upgraded. It is quite likely therefore that segwit will mostly be used embedded in P2SH, as we saw in the previous section, at least for several months. 
 
 Eventually however, almost all wallets will be able to support segwit payments. At that time it will no longer be necessary to embed segwit in P2SH. It is therefore likely that a new form of bitcoin address will be created, one that indicates the recipient is segwit-aware and which directly encodes a witness program. There have been a number of proposals for a segregated witness address scheme, but none have been actively pursued at this time. 
+
+[[segwit_txid]]
+===== Transaction Identifiers
+
+One of the greatest benefits of Segregated Witness is that it eliminates third-party transaction malleability. 
+
+Before segwit, transactions could have their signatures subtly modified by third parties, changing their transaction ID (hash) without changing any fundamental properties (inputs, outputs, amounts). This created opportunities for Denial-of-Service attacks as well as attacks against poorly written wallet software that assumed unconfirmed transaction-hashes were immutable.
+
+With the introduction of Segregated Witness, transactions have two identifiers, +txid+ and +wtxid+. The traditional transaction ID +txid+ is the double-SHA256 hash of the serialized transaction, without the witness data. A transaction +wtxid+ is the double-SHA256 hash of the new serialization format of the transaction with witness data. 
+
+The traditional +txid+ is calculated in exactly the same way as with a non-segwit transaction. However, since the segwit transaction has empty scriptSig's in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a segwit transaction, the +txid+ is immutable even when the transaction is unconfirmed. 
+
+The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable and only if _all_ the inputs of the transaction are segwit inputs with empty scriptSig. 
+
+[TIP]
+====
+Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The +txid+ is the hash of the transaction without the witness data and the +wtxid+ is the hash inclusive of witness data. The +txid+ of a transaction where all inputs are segwit inputs, is not susceptible to third-party transaction malleability
+====
+
+==== Segregated Witness' New Signing Algorithm 
+
+
 
 ==== Economic Incentives for Segregated Witness
 
