@@ -1,22 +1,36 @@
 [[ch05_wallets]]
 == Introduction
 
-We will see how bitcoin wallets store collections of keys controlling many bitcoin addresses. 
+The word "wallet" is used to describe a few different things in bitcoin. At a high-level, a wallet is an application that severs as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
+
+More narrowly, from a programmer's perspective, the word "wallet" refers to the data structure used to store and manage a user's keys. 
+
+In this chapter we will look at the second meaning, where ((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))wallets are containers for private keys, usually implemented as structured files or simple databases.
 
 === Wallets
 
-((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))Wallets are containers for private keys, usually implemented as structured files or simple databases. 
-Another method for making keys is((("deterministic key generation"))) _deterministic key generation_. Here you derive each new private key, using a one-way hash function from a previous private key, linking them in a sequence. As long as you can re-create that sequence, you only need the first key (known as a _seed_ or _master_ key) to generate them all. In this section we will examine the different methods of key generation and the wallet structures that are built around them. 
+A common misconception about bitcoin is that bitcoin wallets contain bitcoin. In fact, the wallet contains only keys. The "coins" are recorded in the blockchain on the bitcoin network. Users control the coins on the network by signing transactions with the keys in their wallets. In a sense, a bitcoin wallet is a _keychain_.
 
 [TIP]
 ====
-Bitcoin wallets contain keys, not coins. Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/public keys (see <<private_public_keys>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). The coins are stored on the blockchain in the form of transaction-ouputs (often noted as vout or txout).((("txout notation")))((("vout notation")))
+Bitcoin wallets contain keys, not coins. Wallets are really keychains containing pairs of private/public keys (see <<private_public_keys>>). 
 ====
+
+There are two primary types of wallets, distinguished by whether the keys they contain are related to each other or not. 
+
+The first type is _non-deterministic wallets_, where each key is independently generated from a random number. The keys are not related to each other. ((("Just a Bunch Of Keys (JBOK) wallets")))This type of wallet is also known as a JBOK wallet from the phrase "Just a Bunch Of Keys." 
+
+((("deterministic key generation")))The second type of wallet is a _deterministic wallet_, where all the keys are derived from a single master key, known as the _seed_. All the keys in this type of wallet are related to each other and can be generated again if one has the original seed. There are a number of different _key derivation_ methods used in deterministic wallets. The most commonly used derivation method uses a tree-like structure and is known as a _hierarchical deterministic_ or _HD_ wallet. 
 
 [[random_wallet]]
 ==== Nondeterministic (Random) Wallets
 
-((("nondeterministic wallets")))((("random wallets")))((("Type-0 nondeterministic wallet")))((("wallets","nondeterministic")))((("wallets","random")))In the first bitcoin clients, wallets were simply collections of randomly generated private keys. This type of wallet is called a _Type-0 nondeterministic wallet_. For example, the((("Just a Bunch Of Keys (JBOK) wallets"))) Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once. This type of wallet is nicknamed "Just a Bunch Of Keys," or JBOK, and such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a Type-0 wallet, using this wallet is discouraged by developers of Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
+In the first bitcoin clients, wallets were collections of randomly generated private keys. For example, the original Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once.  Such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a Type-0 wallet, using this wallet is discouraged by developers of Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
+
+[TIP]
+====
+The use of non-deterministic wallets is discouraged for anything other than simple tests. They are simply to cumbersome to backup and use. Instead, use an industry standard based _hierarchical deterministic wallet_ with a _mnemonic_ backup. 
+====
 
 [[Type0_wallet]]
 .Type-0 nondeterministic (random) wallet: a collection of randomly generated keys
@@ -25,58 +39,6 @@ image::images/msbt_0408.png["non-deterministic wallet"]
 ==== Deterministic (Seeded) Wallets
 
 ((("deterministic wallets")))((("seeded wallets")))((("wallets","deterministic")))((("wallets","seeded")))Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
-
-[[mnemonic_code_words]]
-==== Mnemonic Code Words
-
-((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic codes are English word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic code will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic code words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
-
-Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>), currently in Draft status. Note that BIP0039 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP0039. BIP0039 was introduced by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) Trezor wallet and is incompatible with Electrum's implementation. However, BIP0039 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
-    
-BIP0039 defines the creation of a mnemonic code and seed as a follows:
-
-1. Create a random sequence (entropy) of 128 to 256 bits.
-2. Create a checksum of the random sequence by taking the first few bits of its SHA256 hash.
-3. Add the checksum to the end of the random sequence.
-4. Divide the sequence into sections of 11 bits, using those to index a dictionary of 2048 predefined words.
-5. Produce 12 to 24 words representing the mnemonic code.
-
-<<table_4-5>> shows the relationship between the size of entropy data and the length of mnemonic codes in words.
-
-[[table_4-5]]
-.Mnemonic codes: entropy and word length
-[options="header"]
-|=======
-|Entropy (bits) | Checksum (bits) | Entropy+checksum | Word length
-| 128 | 4 | 132 | 12
-| 160 | 5 | 165 | 15
-| 192 | 6 | 198 | 18
-| 224 | 7 | 231 | 21
-| 256 | 8 | 264 | 24
-|=======
-
-The mnemonic code represents 128 to 256 bits, which are used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The resulting seed is used to create a deterministic wallet and all of its derived keys. 
-
-Tables pass:[<a data-type="xref" href="#table_4-6" data-xrefstyle="select: labelnumber">#table_4-6</a>] and pass:[<a data-type="xref" href="#table_4-7" data-xrefstyle="select: labelnumber">#table_4-7</a>] show some examples of mnemonic codes and the seeds they produce.
-
-[[table_4-6]]
-.128-bit entropy mnemonic code and resulting seed
-|=======
-| *Entropy input (128 bits)*| 0c1e24e5917779d297e14d45f14e1a1a
-| *Mnemonic (12 words)* | army van defense carry jealous true garbage claim echo media make crunch
-| *Seed  (512 bits)* | 3338a6d2ee71c7f28eb5b882159634cd46a898463e9d2d0980f8e80dfbba5b0fa0291e5fb88
-8a599b44b93187be6ee3ab5fd3ead7dd646341b2cdb8d08d13bf7
-|=======
-
-[[table_4-7]]
-.256-bit entropy mnemonic code and resulting seed
-|=======
-| *Entropy input (256 bits)* | 2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c
-| *Mnemonic (24 words)* | cake apple borrow silk endorse fitness top denial coil riot stay wolf 
-luggage oxygen faint major edit measure invite love trap field dilemma oblige
-| *Seed (512 bits)* | 3972e432e99040f75ebe13a660110c3e29d131a2c808c7ee5f1631d0a977fcf473bee22
-fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343 
-|=======
 
 [[hd_wallets]]
 ==== Hierarchical Deterministic Wallets (BIP0032/BIP0044)
@@ -98,7 +60,7 @@ The second advantage of HD wallets is that users can create a sequence of public
 
 ===== HD wallet creation from a seed
 
-((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. The root seed is most often represented by a _mnemonic word sequence_, as described in the previous section <<mnemonic_code_words>>, to make it easier for people to transcribe and store it.
+((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. 
 
 The process of creating the master keys and master chain code for an HD wallet is shown in <<HDWalletFromSeed>>.
 
@@ -128,28 +90,28 @@ The parent public key, chain code, and the index number are combined and hashed 
 .Extending a parent private key to create a child private key
 image::images/msbt_0411.png["ChildPrivateDerivation"]
 
-Changing the index allows us to extend the parent and create the other children in the sequence, e.g., Child 0, Child 1, Child 2, etc. Each parent key can have 2 billion children keys. 
+Changing the index allows us to extend the parent and create the other children in the sequence, e.g., Child 0, Child 1, Child 2, etc. Each parent key can have 2,147,483,647 (2^31^) children (2^31^ is half of the entire 2^32^ range available because the other half is reserved for a special type of derivation we will talk about later in this chapter)
 
 Repeating the process one level down the tree, each child can in turn become a parent and create its own children, in an infinite number of generations. 
 
 ===== Using derived child keys
 
-((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key also cannot be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n–1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
+((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key also cannot be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n-1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
 
 So what can the child private key be used for on its own? It can be used to make a public key and a bitcoin address. Then, it can be used to sign transactions to spend anything paid to that address.  
 
 [TIP]
 ====
-A child private key, the corresponding public key, and the bitcoin address are all indistinguishable from keys and addresses created randomly. The fact that they are part of a sequence is not visible, outside of the HD wallet function that created them. Once created, they operate exactly as "normal" keys. 
+A child private key, the corresponding public key, and the bitcoin address are all indistinguishable from keys and addresses created randomly. The fact that they are part of a sequence is not visible outside of the HD wallet function that created them. Once created, they operate exactly as "normal" keys. 
 ====
 
 ===== Extended keys
 
 ((("extended keys")))((("hierarchical deterministic wallets (HD wallets)","extended keys")))((("keys","extended")))As we saw earlier, the key derivation function can be used to create children at any level of the tree, based on the three inputs: a key, a chain code, and the index of the desired child. The two essential ingredients are the key and chain code, and combined these are called an _extended key_. The term "extended key" could also be thought of as "extensible key" because such a key can be used to derive children. 
 
-Extended keys are stored and represented simply as the concatenation of the 256-bit key and 256-bit chain code into a 512-bit sequence. There are two types of extended keys. An extended private key is the combination of a private key and chain code and can be used to derive child private keys (and from them, child public keys). An extended public key is a public key and chain code, which can be used to create child public keys, as described in <<public_key_derivation>>.
+Extended keys are stored and represented simply as the concatenation of the 256-bit key and 256-bit chain code into a 512-bit sequence. There are two types of extended keys. An extended private key is the combination of a private key and chain code and can be used to derive child private keys (and from them, child public keys). An extended public key is a public key and chain code, which can be used to create child public keys (*public only*), as described in <<public_key_derivation>>.
 
-Think of an extended key as the root of a branch in the tree structure of the HD wallet. With the root of the branch, you can derive the rest of the branch. The extended private key can create a complete branch, whereas the extended public key can only create a branch of public keys.
+Think of an extended key as the root of a branch in the tree structure of the HD wallet. With the root of the branch, you can derive the rest of the branch. The extended private key can create a complete branch, whereas the extended public key can *only* create a branch of public keys.
 
 [TIP]
 ====
@@ -204,7 +166,7 @@ In simple terms, if you want to use the convenience of an extended public key to
 
 ===== Index numbers for normal and hardened derivation
 
-((("hardened child key derivation","indexes for")))((("public child key derivation","indexes for")))The index number used in the derivation function is a 32-bit integer. To easily distinguish between keys derived through the normal derivation function versus keys derived through hardened derivation, this index number is split into two ranges. ((("child private keys","index numbers for")))Index numbers between 0 and 2^31^–1 (0x0 to 0x7FFFFFFF) are used _only_ for normal derivation. Index numbers between 2^31^ and 2^32^–1 (0x80000000 to 0xFFFFFFFF) are used _only_ for hardened derivation. Therefore, if the index number is less than 2^31^, that means the child is normal, whereas if the index number is equal or above 2^31^, the child is hardened. 
+((("hardened child key derivation","indexes for")))((("public child key derivation","indexes for")))The index number used in the derivation function is a 32-bit integer. To easily distinguish between keys derived through the normal derivation function versus keys derived through hardened derivation, this index number is split into two ranges. ((("child private keys","index numbers for")))Index numbers between 0 and 2^31^-1 (0x0 to 0x7FFFFFFF) are used _only_ for normal derivation. Index numbers between 2^31^ and 2^32^-1 (0x80000000 to 0xFFFFFFFF) are used _only_ for hardened derivation. Therefore, if the index number is less than 2^31^, that means the child is normal, whereas if the index number is equal or above 2^31^, the child is hardened. 
 
 To make the index number easier to read and display, the index number for hardened children is displayed starting from zero, but with a prime symbol. The first normal child key is therefore displayed as 0, whereas the first hardened child (index 0x80000000) is displayed as pass:[<span class="markup">0'</span>]. In sequence then, the second hardened key would have index 0x80000001 and would be displayed as 1', and so on. When you see an HD wallet index i', that means 2^31^+i.
 
@@ -252,6 +214,75 @@ BIP0044 specifies the structure as consisting of five predefined tree levels:
 | M/44'/0'/0'/0/2 | The third receiving public key for the primary bitcoin account
 | M/44'/0'/3'/1/14 | The fifteenth change-address public key for the fourth bitcoin account
 | m/44'/2'/0'/0/1 | The second private key in the Litecoin main account, for signing transactions
+|=======
+
+
+[[mnemonic_code_words]]
+==== HD Seeds and Mnemonic Code Words
+
+Hierarchical deterministic wallets are a very powerful model for managing many keys and addresses. They also offer a single standard that is flexible enough to support many different applications such as:
+
+* Multi-currency wallets
+* Multi-signature wallets
+* Identity management systems
+* Password management systems
+
+All these different applications can be build on different branches of a tree, while still being recoverable from a single common seed. 
+
+The _HD wallet_ invention and standard was later augmented by another very important invention: a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP0039. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
+
+((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonics are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
+
+[TIP]
+====
+Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas menmonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
+====
+
+Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>). Note that BIP0039 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP0039. BIP0039 was introduced by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) Trezor wallet and is incompatible with Electrum's implementation. However, BIP0039 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
+    
+BIP0039 defines the creation of a mnemonic code and seed as a follows:
+
+1. Create a random sequence (entropy) of 128 to 256 bits.
+2. Create a checksum of the random sequence by taking the first few bits of its SHA256 hash.
+3. Add the checksum to the end of the random sequence.
+4. Divide the sequence into sections of 11 bits, using those to index a dictionary of 2048 predefined words.
+5. Produce 12 to 24 words representing the mnemonic code.
+
+<<table_4-5>> shows the relationship between the size of entropy data and the length of mnemonic codes in words.
+
+[[table_4-5]]
+.Mnemonic codes: entropy and word length
+[options="header"]
+|=======
+|Entropy (bits) | Checksum (bits) | Entropy+checksum | Word length
+| 128 | 4 | 132 | 12
+| 160 | 5 | 165 | 15
+| 192 | 6 | 198 | 18
+| 224 | 7 | 231 | 21
+| 256 | 8 | 264 | 24
+|=======
+
+The mnemonic words represent 128 to 256 bits, which are used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The resulting seed is used to create a deterministic wallet and all of its derived keys. 
+
+Tables pass:[<a data-type="xref" href="#table_4-6" data-xrefstyle="select: labelnumber">#table_4-6</a>] and pass:[<a data-type="xref" href="#table_4-7" data-xrefstyle="select: labelnumber">#table_4-7</a>] show some examples of mnemonic codes and the seeds they produce.
+
+[[table_4-6]]
+.128-bit entropy mnemonic code and resulting seed
+|=======
+| *Entropy input (128 bits)*| 0c1e24e5917779d297e14d45f14e1a1a
+| *Mnemonic (12 words)* | army van defense carry jealous true garbage claim echo media make crunch
+| *Seed  (512 bits)* | 3338a6d2ee71c7f28eb5b882159634cd46a898463e9d2d0980f8e80dfbba5b0fa0291e5fb88
+8a599b44b93187be6ee3ab5fd3ead7dd646341b2cdb8d08d13bf7
+|=======
+
+[[table_4-7]]
+.256-bit entropy mnemonic code and resulting seed
+|=======
+| *Entropy input (256 bits)* | 2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c
+| *Mnemonic (24 words)* | cake apple borrow silk endorse fitness top denial coil riot stay wolf 
+luggage oxygen faint major edit measure invite love trap field dilemma oblige
+| *Seed (512 bits)* | 3972e432e99040f75ebe13a660110c3e29d131a2c808c7ee5f1631d0a977fcf473bee22
+fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343 
 |=======
 
 ===== Experimenting with HD wallets using Bitcoin Explorer
