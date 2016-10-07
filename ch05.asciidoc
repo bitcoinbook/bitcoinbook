@@ -46,7 +46,7 @@ image::images/deterministic_wallet.png["Deterministic Wallet"]
 
 ==== Seeds and Mnemonic Code Words
 
-Deterministic wallets are a very powerful model for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP0039. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
+Deterministic wallets are a very powerful model for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP-39. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
 
 Let's look at this from a practical perspective. Which of the following seeds is easier to transcribe, record on paper, read without error, export and import into another wallet?
 
@@ -72,7 +72,7 @@ garbage claim echo media make crunch
 |===
 
 [[mnemonic_code_words]]
-===== Mnemonic Code Words (BIP0039)
+===== Mnemonic Code Words (BIP-39)
 
 ((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic code words are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
@@ -81,14 +81,14 @@ garbage claim echo media make crunch
 Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas menmonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
 ====
 
-Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>). Note that BIP0039 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP0039. BIP0039 was proposed by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) company behind the Trezor hardware wallet and is incompatible with Electrum's implementation. However, BIP0039 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
+Mnemonic codes are defined in((("BIP-39"))) Bitcoin Improvement Proposal 39 (see <<bip-39>>). Note that BIP-39 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP-39. BIP-39 was proposed by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) company behind the Trezor hardware wallet and is incompatible with Electrum's implementation. However, BIP-39 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
     
-BIP0039 defines the creation of a mnemonic code and seed, which we describe here in 9 steps. For clarity, the process is split in two parts: Steps 1 through 6 are shown in <<generating_mnemonic_words>> and steps 7 through 9 are shown in <<mnemonic_to_seed>>.
+BIP-39 defines the creation of a mnemonic code and seed, which we describe here in 9 steps. For clarity, the process is split in two parts: Steps 1 through 6 are shown in <<generating_mnemonic_words>> and steps 7 through 9 are shown in <<mnemonic_to_seed>>.
 
 [[generating_mnemonic_words]]
 ===== Generating Mnemonic Words
 
-Mnemonic words are generated automatically by the wallet, using a standardized process defined in BIP0039. The wallet starts from a source of entropy, adds a checksum and then maps the entropy to a word list:
+Mnemonic words are generated automatically by the wallet, using a standardized process defined in BIP-39. The wallet starts from a source of entropy, adds a checksum and then maps the entropy to a word list:
 
 1. Create a random sequence (entropy) of 128 to 256 bits.
 2. Create a checksum of the random sequence by taking the first four bits of its SHA256 hash.
@@ -119,7 +119,7 @@ The table <<table_4-5>>, shows the relationship between the size of entropy data
 
 The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys. 
 
-The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP0039 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
+The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP-39 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
 
 The process described in steps 7 through 9 below continues from the process described previously in <<generating_mnemonic_words>>.
 
@@ -172,13 +172,13 @@ luggage oxygen faint major edit measure invite love trap field dilemma oblige+
 |=======
 
 [[mnemonic_passphrase]]
-===== Optional Passphrase in BIP0039
+===== Optional Passphrase in BIP-39
 
-The BIP0039 standard allows the use of an optional passphrase in the derivation of the seed. If no passphrase is used, the mnemonic is stretched with a salt consisting of the constant string "+mnemonic+", producing a specific 512-bit seed from any given mnemonic. If a passphrase is used, the stretching function produces a _different_ seed from that same mnemonic. In fact, given a single mnemonic, every possible passphrase leads to a different seed. Essentially, there is no "wrong" passphrase. All passphrases are valid and they all lead to different seeds, forming a vast set of possible uninitialized wallets. The set of possible wallets is so large (2^512^) that there is no practical possibility of brute-forcing or accidentally guessing one that is in use. 
+The BIP-39 standard allows the use of an optional passphrase in the derivation of the seed. If no passphrase is used, the mnemonic is stretched with a salt consisting of the constant string "+mnemonic+", producing a specific 512-bit seed from any given mnemonic. If a passphrase is used, the stretching function produces a _different_ seed from that same mnemonic. In fact, given a single mnemonic, every possible passphrase leads to a different seed. Essentially, there is no "wrong" passphrase. All passphrases are valid and they all lead to different seeds, forming a vast set of possible uninitialized wallets. The set of possible wallets is so large (2^512^) that there is no practical possibility of brute-forcing or accidentally guessing one that is in use. 
 
 [TIP]
 ====
-There are no "wrong" passphrases in BIP0039. Every passphrase leads to some wallet, which unless previously used will be empty.
+There are no "wrong" passphrases in BIP-39. Every passphrase leads to some wallet, which unless previously used will be empty.
 ====
 
 The optional passphrase creates two important features:
@@ -196,9 +196,9 @@ However, it is important to note that the use of a passphrase also introduces th
 While passphrases are very useful, they should only be used in combination with a carefully planned process for backup and recovery, considering the possibility of surviving the owner and allowing their family to recover their crypto-currency estate. 
 
 [[hd_wallets]]
-==== Hierarchical Deterministic Wallets (BIP0032/BIP0044)
+==== Hierarchical Deterministic Wallets (BIP-32/BIP-44)
 
-((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))((("BIP0032", id="ix_ch04-asciidoc25a", range="startofrange")))((("BIP0044", id="ix_ch04-asciidoc25b", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP0032 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
+((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))((("BIP-32", id="ix_ch04-asciidoc25a", range="startofrange")))((("BIP-44", id="ix_ch04-asciidoc25b", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP-32 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
 
 [[Type2_wallet]]
 .Type-2 hierarchical deterministic wallet: a tree of keys generated from a single seed
@@ -206,7 +206,7 @@ image::images/msbt_0409.png["HD wallet"]
 
 [TIP]
 ====
-If you are implementing a bitcoin wallet, it should be built as an HD wallet following the BIP0032 and BIP0044 standards. 
+If you are implementing a bitcoin wallet, it should be built as an HD wallet following the BIP-32 and BIP-44 standards. 
 ====
 
 HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions, or accounting categories. 
@@ -273,7 +273,7 @@ Think of an extended key as the root of a branch in the tree structure of the HD
 An extended key consists of a private or public key and chain code. An extended key can create children, generating its own branch in the tree structure. Sharing an extended key gives access to the entire branch. 
 ==== 
 
-((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP0032-compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
+((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP-32-compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
 
 Here's an example of an extended private key, encoded in Base58Check:
 
@@ -345,13 +345,13 @@ The "ancestry" of a key is read from right to left, until you reach the master k
 
 ===== Navigating the HD wallet tree structure
 
-((("BIP0043")))((("hierarchical deterministic wallets (HD wallets)","navigating")))((("hierarchical deterministic wallets (HD wallets)","tree structure for")))The HD wallet tree structure offers tremendous flexibility. Each parent extended key can have 4 billion children: 2 billion normal children and 2 billion hardened children. Each of those children can have another 4 billion children, and so on. The tree can be as deep as you want, with an infinite number of generations. With all that flexibility, however, it becomes quite difficult to navigate this infinite tree. It is especially difficult to transfer HD wallets between implementations, because the possibilities for internal organization into branches and subbranches are endless. 
+((("BIP-43")))((("hierarchical deterministic wallets (HD wallets)","navigating")))((("hierarchical deterministic wallets (HD wallets)","tree structure for")))The HD wallet tree structure offers tremendous flexibility. Each parent extended key can have 4 billion children: 2 billion normal children and 2 billion hardened children. Each of those children can have another 4 billion children, and so on. The tree can be as deep as you want, with an infinite number of generations. With all that flexibility, however, it becomes quite difficult to navigate this infinite tree. It is especially difficult to transfer HD wallets between implementations, because the possibilities for internal organization into branches and subbranches are endless. 
 
-Two Bitcoin Improvement Proposals (BIPs) offer a solution to this complexity, by creating some proposed standards for the structure of HD wallet trees. BIP0043 proposes the use of the first hardened child index as a special identifier that signifies the "purpose" of the tree structure. Based on BIP0043, an HD wallet should use only one level-1 branch of the tree, with the index number identifying the structure and namespace of the rest of the tree by defining its purpose. For example, an HD wallet using only branch m/i'/ is intended to signify a specific purpose and that purpose is identified by index number "i".
+Two Bitcoin Improvement Proposals (BIPs) offer a solution to this complexity, by creating some proposed standards for the structure of HD wallet trees. BIP-43 proposes the use of the first hardened child index as a special identifier that signifies the "purpose" of the tree structure. Based on BIP-43, an HD wallet should use only one level-1 branch of the tree, with the index number identifying the structure and namespace of the rest of the tree by defining its purpose. For example, an HD wallet using only branch m/i'/ is intended to signify a specific purpose and that purpose is identified by index number "i".
 
-((("multiaccount structure")))Extending that specification, BIP0044 proposes a multiaccount structure as "purpose" number +44'+ under BIP0043. All HD wallets following the BIP0044 structure are identified by the fact that they only used one branch of the tree: m/44'/. 
+((("multiaccount structure")))Extending that specification, BIP-44 proposes a multiaccount structure as "purpose" number +44'+ under BIP-43. All HD wallets following the BIP-44 structure are identified by the fact that they only used one branch of the tree: m/44'/. 
 
-BIP0044 specifies the structure as consisting of five predefined tree levels:
+BIP-44 specifies the structure as consisting of five predefined tree levels:
 
 +m / purpose' / coin_type' / account' / change / address_index+
 
@@ -362,7 +362,7 @@ BIP0044 specifies the structure as consisting of five predefined tree levels:
 ((("change level (multiaccount structure)")))On the fourth level, "change," an HD wallet has two subtrees, one for creating receiving addresses and one for creating change addresses. Note that whereas the previous levels used hardened derivation, this level uses normal derivation. This is to allow this level of the tree to export extended public keys for use in a nonsecured environment. Usable addresses are derived by the HD wallet as children of the fourth level, making the fifth level of the tree the "address_index." For example, the third receiving address for bitcoin payments in the primary account would be M/44'/0'/0'/0/2. <<table_4-9>> shows a few more examples.
 
 [[table_4-9]]
-.BIP0044 HD wallet structure examples
+.BIP-44 HD wallet structure examples
 [options="header"]
 |=======
 |HD path | Key described
@@ -375,7 +375,7 @@ BIP0044 specifies the structure as consisting of five predefined tree levels:
 
 ===== Experimenting with HD wallets using Bitcoin Explorer
 
-((("hierarchical deterministic wallets (HD wallets)","Bitcoin Explorer and")))((("Bitcoin Explorer","HD wallets and")))Using the Bitcoin Explorer command-line tool introduced in <<ch03_bitcoin_client>>, you can experiment with generating and extending BIP0032 deterministic keys, as well as displaying them in different formats((("Bitcoin Explorer","seed command")))((("seed command (bx)")))((("Bitcoin Explorer","hd-seed command")))((("hd-seed command (bx)")))((("Bitcoin Explorer","hd-public command")))((("hd-public command (bx)")))((("Bitcoin Explorer","hd-private command")))((("hd-private command (bx)")))((("Bitcoin Explorer","hd-to-address command")))((("hd-to-address command (bx)")))((("Bitcoin Explorer","hd-to-wif command")))((("hd-to-wif command (bx)"))): (((range="endofrange", startref="ix_ch04-asciidoc25b")))(((range="endofrange", startref="ix_ch04-asciidoc25a")))(((range="endofrange", startref="ix_ch04-asciidoc25")))(((range="endofrange", startref="ix_ch04-asciidoc24")))(((range="endofrange", startref="ix_ch04-asciidoc23")))
+((("hierarchical deterministic wallets (HD wallets)","Bitcoin Explorer and")))((("Bitcoin Explorer","HD wallets and")))Using the Bitcoin Explorer command-line tool introduced in <<ch03_bitcoin_client>>, you can experiment with generating and extending BIP-32 deterministic keys, as well as displaying them in different formats((("Bitcoin Explorer","seed command")))((("seed command (bx)")))((("Bitcoin Explorer","hd-seed command")))((("hd-seed command (bx)")))((("Bitcoin Explorer","hd-public command")))((("hd-public command (bx)")))((("Bitcoin Explorer","hd-private command")))((("hd-private command (bx)")))((("Bitcoin Explorer","hd-to-address command")))((("hd-to-address command (bx)")))((("Bitcoin Explorer","hd-to-wif command")))((("hd-to-wif command (bx)"))): (((range="endofrange", startref="ix_ch04-asciidoc25b")))(((range="endofrange", startref="ix_ch04-asciidoc25a")))(((range="endofrange", startref="ix_ch04-asciidoc25")))(((range="endofrange", startref="ix_ch04-asciidoc24")))(((range="endofrange", startref="ix_ch04-asciidoc23")))
 
 ====
 [source, bash]
