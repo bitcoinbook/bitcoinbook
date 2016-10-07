@@ -1,7 +1,7 @@
 [[ch05_wallets]]
 == Introduction
 
-The word "wallet" is used to describe a few different things in bitcoin. At a high-level, a wallet is an application that severs as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
+The word "wallet" is used to describe a few different things in bitcoin. At a high-level, a wallet is an application that serves as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
 
 More narrowly, from a programmer's perspective, the word "wallet" refers to the data structure used to store and manage a user's keys. 
 
@@ -25,20 +25,175 @@ The first type is _non-deterministic wallets_, where each key is independently g
 [[random_wallet]]
 ==== Nondeterministic (Random) Wallets
 
-In the first bitcoin clients, wallets were collections of randomly generated private keys. For example, the original Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once.  Such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a Type-0 wallet, using this wallet is discouraged by developers of Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
+In the first bitcoin wallet (now called Bitcoin Core), wallets were collections of randomly generated private keys. For example, the original Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once.  Such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a Type-0 wallet, using this wallet is discouraged by developers of Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
 
 [TIP]
 ====
-The use of non-deterministic wallets is discouraged for anything other than simple tests. They are simply to cumbersome to backup and use. Instead, use an industry standard based _hierarchical deterministic wallet_ with a _mnemonic_ backup. 
+The use of non-deterministic wallets is discouraged for anything other than simple tests. They are simply too cumbersome to backup and use. Instead, use an industry standard based _hierarchical deterministic wallet_ with a _mnemonic_ seed for backup. 
 ====
 
 [[Type0_wallet]]
 .Type-0 nondeterministic (random) wallet: a collection of randomly generated keys
-image::images/msbt_0408.png["non-deterministic wallet"]
+image::images/msbt_new0501.png["Non-Deterministic Wallet"]
 
 ==== Deterministic (Seeded) Wallets
 
 ((("deterministic wallets")))((("seeded wallets")))((("wallets","deterministic")))((("wallets","seeded")))Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
+
+[[Type1_wallet]]
+.Type-1 Deterministic (seeded) wallet: a deterministic sequence of keys derived from a seed
+image::images/deterministic_wallet.png["Deterministic Wallet"]
+
+==== Seeds and Mnemonic Code Words
+
+Deterministic wallets are a very powerful model for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP0039. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
+
+Let's look at this from a practical perspective. Which of the following seeds is easier to transcribe, record on paper, read without error, export and import into another wallet?
+
+.A seed for an deterministic wallet, in hex
+----
+0C1E24E5917779D297E14D45F14E1A1A
+----
+
+.A seed for an deterministic wallet, from a 12-word mnemonic
+----
+army van defense carry jealous true 
+garbage claim echo media make crunch
+----
+
+.The mnemonic seed above, recorded as a numbered paper backup
+|===
+|1. army |7. garbage
+|2. van |8. claim
+|3. defense |9. echo
+|4. carry |10. media
+|5. jealous |11. make
+|6. true |12. crunch
+|===
+
+[[mnemonic_code_words]]
+===== Mnemonic Code Words (BIP0039)
+
+((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic code words are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
+
+[TIP]
+====
+Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas menmonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
+====
+
+Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>). Note that BIP0039 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP0039. BIP0039 was proposed by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) company behind the Trezor hardware wallet and is incompatible with Electrum's implementation. However, BIP0039 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
+    
+BIP0039 defines the creation of a mnemonic code and seed, which we describe here in 9 steps. For clarity, the process is split in two parts: Steps 1 through 6 are shown in <<generating_mnemonic_words>> and steps 7 through 9 are shown in <<mnemonic_to_seed>>.
+
+[[generating_mnemonic_words]]
+===== Generating Mnemonic Words
+
+Mnemonic words are generated automatically by the wallet, using a standardized process defined in BIP0039. The wallet starts from a source of entropy, adds a checksum and then maps the entropy to a word list:
+
+1. Create a random sequence (entropy) of 128 to 256 bits.
+2. Create a checksum of the random sequence by taking the first four bits of its SHA256 hash.
+3. Add the checksum to the end of the random sequence.
+4. Divide the sequence into sections of 11 bits.
+5. Map each 11-bit value to a word from the predefined dictionary of 2048 words.
+6. The mnemonic code is the sequence of words.
+
+.Generating entropy and encoding as mnemonic words
+image::images/Mnemonic_Words.png["Generating entropy and encoding as mnemonic words"]
+
+The table <<table_4-5>>, shows the relationship between the size of entropy data and the length of mnemonic codes in words.
+
+[[table_4-5]]
+.Mnemonic codes: entropy and word length
+[options="header"]
+|=======
+|Entropy (bits) | Checksum (bits) | Entropy *+* checksum (bits) | Mnemonic length (words)
+| 128 | 4 | 132 | 12
+| 160 | 5 | 165 | 15
+| 192 | 6 | 198 | 18
+| 224 | 7 | 231 | 21
+| 256 | 8 | 264 | 24
+|=======
+
+[[mnemonic_to_seed]]
+===== From Mnemonic to Seed
+
+The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys. 
+
+The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP0039 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
+
+The process described in steps 7 through 9 below continues from the process described previously in <<generating_mnemonic_words>>.
+
+[start=7]
+7. The first parameter to the PBKDF2 key-stretching function is the _mnemonic_ produced from step 6 in <<generating_mnemonic_words>>.
+8. The second parameter to the PBKDF2 key-stretching function is a _salt_. The salt is composed of the string constant "+mnemonic+" concatenated with an optional user-supplied passphrase string.
+9. PBKDF2 stretches the menmonic and salt parameters using 2048 rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit value as its final output. That 512-bit value is the seed.
+
+.From mnemonic to seed
+image::images/Mnemonic_to_seed.png["From mnemonic to seed"]
+
+
+[TIP]
+====
+The key-stretching function, with its 2048 rounds of hashing, is a very effective protection against brute-force attacks against the mnemonic or the passphrase. It makes it extremely costly (in computation) to try more than a few thousand passphrase and mnemonic combinations, while the number of possible derived seeds is vast (2^512^).
+====
+
+Tables pass:[<a data-type="xref" href="#table_4-6" data-xrefstyle="select: labelnumber">#table_4-6</a>] and pass:[<a data-type="xref" href="#table_4-7" data-xrefstyle="select: labelnumber">#table_4-7</a>] show some examples of mnemonic codes and the seeds they produce (without any passphrase).
+
+[[mnemonic_128_no_pass]]
+.128-bit entropy mnemonic code, no passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
+| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Passphrase*| (none)
+| *Seed  (512 bits)* | +5b56c417303faa3fcba7e57400e120a0ca83ec5a4fc9ffba757fbe63fbd77a89a1a3be4c67196f57c39a88b76373733891bfaba16ed27a813ceed498804c0570+
+|=======
+
+[[mnemonic_128_w_pass]]
+.128-bit entropy mnemonic code, with passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
+| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Passphrase*| SuperDuperSecret
+| *Seed  (512 bits)* | +3b5df16df2157104cfdd22830162a5e170c0161653e3afe6c88defeefb0818c793dbb28ab3ab091897d0715861dc8a18358f80b79d49acf64142ae57037d1d54+
+|=======
+
+
+[[mnemonic_256_no_pass]]
+.256-bit entropy mnemonic code, no passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (256 bits)* | +2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c+
+| *Mnemonic (24 words)* | +cake apple borrow silk endorse fitness top denial coil riot stay wolf 
+luggage oxygen faint major edit measure invite love trap field dilemma oblige+
+| *Passphrase*| (none)
+| *Seed (512 bits)* | +3269bce2674acbd188d4f120072b13b088a0ecf87c6e4cae41657a0bb78f5315b33b3a04356e53d062e55f1e0deaa082df8d487381379df848a6ad7e98798404+
+|=======
+
+[[mnemonic_passphrase]]
+===== Optional Passphrase in BIP0039
+
+The BIP0039 standard allows the use of an optional passphrase in the derivation of the seed. If no passphrase is used, the mnemonic is stretched with a salt consisting of the constant string "+mnemonic+", producing a specific 512-bit seed from any given mnemonic. If a passphrase is used, the stretching function produces a _different_ seed from that same mnemonic. In fact, given a single mnemonic, every possible passphrase leads to a different seed. Essentially, there is no "wrong" passphrase. All passphrases are valid and they all lead to different seeds, forming a vast set of possible uninitialized wallets. The set of possible wallets is so large (2^512^) that there is no practical possibility of brute-forcing or accidentally guessing one that is in use. 
+
+[TIP]
+====
+There are no "wrong" passphrases in BIP0039. Every passphrase leads to some wallet, which unless previously used will be empty.
+====
+
+The optional passphrase creates two important features:
+
+* A second factor (something memorized) that makes a mnemonic useless on its own, protecting mnemonic backups from compromise by a thief.
+
+* A form of plausible deniability or "duress wallet", where a chosen passphrase leads to a wallet with a small amount of funds used to distract an attacker from the "real" wallet that contains the majority of funds.
+
+However, it is important to note that the use of a passphrase also introduces the risk of loss:
+
+* If the wallet owner is incapacitated or dead and no one else knows the passphrase, the seed is useless and all the funds stored in the wallet are lost forever.
+
+* Conversely, if the owner backs up the passphrase in the same place as the seed, it defeats the purpose of a second factor. 
+
+While passphrases are very useful, they should only be used in combination with a carefully planned process for backup and recovery, considering the possibility of surviving the owner and allowing their family to recover their crypto-currency estate. 
 
 [[hd_wallets]]
 ==== Hierarchical Deterministic Wallets (BIP0032/BIP0044)
@@ -217,97 +372,6 @@ BIP0044 specifies the structure as consisting of five predefined tree levels:
 |=======
 
 
-[[mnemonic_code_words]]
-==== HD Seeds and Mnemonic Code Words
-
-Hierarchical deterministic wallets are a very powerful model for managing many keys and addresses. They also offer a single standard that is flexible enough to support many different applications such as:
-
-* Multi-currency wallets
-* Multi-signature wallets
-* Identity management systems
-* Password management systems
-
-All these different applications can be build on different branches of a tree, while still being recoverable from a single common seed. 
-
-The _HD wallet_ invention and standard was later augmented by another very important invention: a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP0039. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
-
-Let's look at this from a practical perspective. Which of the following seeds is easier to transcribe, record on paper, read without error, export and import into another wallet?
-
-.A seed for an HD wallet, in hex
-----
-0C1E24E5917779D297E14D45F14E1A1A
-----
-
-.A seed for an HD wallet, from a 12-word mnemonic
-----
-army van defense carry jealous true 
-garbage claim echo media make crunch
-----
-
-.The mnemonic seed above, recorded in a numbered table, as a  backup
-|===
-|1. army |7. van 
-|2. defense |8. carry 
-|3. jealous |9. true 
-|4. garbage |10. claim 
-|5. echo |11. media 
-|6. make |12. crunch
-|===
-
-
-((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic code words are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
-
-[TIP]
-====
-Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas menmonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
-====
-
-Mnemonic codes are defined in((("BIP0039"))) Bitcoin Improvement Proposal 39 (see <<bip0039>>). Note that BIP0039 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP0039. BIP0039 was introduced by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) Trezor wallet and is incompatible with Electrum's implementation. However, BIP0039 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
-    
-BIP0039 defines the creation of a mnemonic code and seed as a follows:
-
-1. Create a random sequence (entropy) of 128 to 256 bits.
-2. Create a checksum of the random sequence by taking the first few bits of its SHA256 hash.
-3. Add the checksum to the end of the random sequence.
-4. Divide the sequence into sections of 11 bits, using those to index a dictionary of 2048 predefined words.
-5. Produce 12 to 24 words representing the mnemonic code.
-
-<<table_4-5>> shows the relationship between the size of entropy data and the length of mnemonic codes in words.
-
-[[table_4-5]]
-.Mnemonic codes: entropy and word length
-[options="header"]
-|=======
-|Entropy (bits) | Checksum (bits) | Entropy+checksum | Word length
-| 128 | 4 | 132 | 12
-| 160 | 5 | 165 | 15
-| 192 | 6 | 198 | 18
-| 224 | 7 | 231 | 21
-| 256 | 8 | 264 | 24
-|=======
-
-The mnemonic words represent 128 to 256 bits, which are used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The resulting seed is used to create a deterministic wallet and all of its derived keys. 
-
-Tables pass:[<a data-type="xref" href="#table_4-6" data-xrefstyle="select: labelnumber">#table_4-6</a>] and pass:[<a data-type="xref" href="#table_4-7" data-xrefstyle="select: labelnumber">#table_4-7</a>] show some examples of mnemonic codes and the seeds they produce.
-
-[[table_4-6]]
-.128-bit entropy mnemonic code and resulting seed
-|=======
-| *Entropy input (128 bits)*| 0c1e24e5917779d297e14d45f14e1a1a
-| *Mnemonic (12 words)* | army van defense carry jealous true garbage claim echo media make crunch
-| *Seed  (512 bits)* | 3338a6d2ee71c7f28eb5b882159634cd46a898463e9d2d0980f8e80dfbba5b0fa0291e5fb88
-8a599b44b93187be6ee3ab5fd3ead7dd646341b2cdb8d08d13bf7
-|=======
-
-[[table_4-7]]
-.256-bit entropy mnemonic code and resulting seed
-|=======
-| *Entropy input (256 bits)* | 2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c
-| *Mnemonic (24 words)* | cake apple borrow silk endorse fitness top denial coil riot stay wolf 
-luggage oxygen faint major edit measure invite love trap field dilemma oblige
-| *Seed (512 bits)* | 3972e432e99040f75ebe13a660110c3e29d131a2c808c7ee5f1631d0a977fcf473bee22
-fce540af281bf7cdeade0dd2c1c795bd02f1e4049e205a0158906c343 
-|=======
 
 ===== Experimenting with HD wallets using Bitcoin Explorer
 
