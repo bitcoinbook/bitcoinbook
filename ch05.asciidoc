@@ -1,13 +1,17 @@
 [[ch05_wallets]]
 == Introduction
 
-The word "wallet" is used to describe a few different things in bitcoin. At a high-level, a wallet is an application that serves as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
+The word "wallet" is used to describe a few different things in bitcoin. 
+
+At a high-level, a wallet is an application that serves as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
 
 More narrowly, from a programmer's perspective, the word "wallet" refers to the data structure used to store and manage a user's keys. 
 
 In this chapter we will look at the second meaning, where ((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))wallets are containers for private keys, usually implemented as structured files or simple databases.
 
-=== Wallets
+=== Wallet Technology Overview
+
+In this section we summarize the various technologies used to construct user-friendly, secure and flexible bitcoin wallets. These technologies, defined by bitcoin standards (BIPs)
 
 A common misconception about bitcoin is that bitcoin wallets contain bitcoin. In fact, the wallet contains only keys. The "coins" are recorded in the blockchain on the bitcoin network. Users control the coins on the network by signing transactions with the keys in their wallets. In a sense, a bitcoin wallet is a _keychain_.
 
@@ -21,6 +25,10 @@ There are two primary types of wallets, distinguished by whether the keys they c
 The first type is _non-deterministic wallets_, where each key is independently generated from a random number. The keys are not related to each other. ((("Just a Bunch Of Keys (JBOK) wallets")))This type of wallet is also known as a JBOK wallet from the phrase "Just a Bunch Of Keys." 
 
 ((("deterministic key generation")))The second type of wallet is a _deterministic wallet_, where all the keys are derived from a single master key, known as the _seed_. All the keys in this type of wallet are related to each other and can be generated again if one has the original seed. There are a number of different _key derivation_ methods used in deterministic wallets. The most commonly used derivation method uses a tree-like structure and is known as a _hierarchical deterministic_ or _HD_ wallet. 
+
+Deterministic wallets are initialized from a seed. To make these easier to use, seeds are encoded as english words, also known as _mnemonic code words_.
+
+The next few sections introduce each of these technologies at a high level. 
 
 [[random_wallet]]
 ==== Nondeterministic (Random) Wallets
@@ -44,9 +52,22 @@ image::images/msbt_new0501.png["Non-Deterministic Wallet"]
 .Type-1 Deterministic (seeded) wallet: a deterministic sequence of keys derived from a seed
 image::images/deterministic_wallet.png["Deterministic Wallet"]
 
-==== Seeds and Mnemonic Code Words
+[[hd_wallets]]
+==== Hierarchical Deterministic Wallets (BIP-32/BIP-44)
 
-Deterministic wallets are a very powerful model for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP-39. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
+((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))((("BIP-32", id="ix_ch04-asciidoc25a", range="startofrange")))((("BIP-44", id="ix_ch04-asciidoc25b", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP-32 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
+
+[[Type2_wallet]]
+.Type-2 hierarchical deterministic wallet: a tree of keys generated from a single seed
+image::images/msbt_0409.png["HD wallet"]
+
+HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions, or accounting categories. 
+
+The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be preloaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
+
+==== Seeds and Mnemonic Codes (BIP-39)
+
+Hierarchical Deterministic Wallets are a very powerful mechanism for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP-39. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
 
 Let's look at this from a practical perspective. Which of the following seeds is easier to transcribe, record on paper, read without error, export and import into another wallet?
 
@@ -61,18 +82,69 @@ army van defense carry jealous true
 garbage claim echo media make crunch
 ----
 
-.The mnemonic seed above, recorded as a numbered paper backup
+==== Wallet Best Practices
+
+As bitcoin wallet technology has matured, certain common industry standards have emerged that make bitcoin wallets broadly interoperable, easy to use, secure and flexible. These common standards are:
+
+* Mnemonic Code Words, based on BIP-39
+* Hierarchical Deterministic Wallets, based on BIP-32
+* Multi-purpose HD wallet structure, based on BIP-43
+* Multi-currency and multi-account wallets, based on BIP-44
+
+These standards may change or may become obsolete by future developments, but for now they form a set of interlocking technologies that have become the de-facto wallet standard for bitcoin.
+
+The standards have been adopted by a broad range of software and hardware bitcoin wallets, making all these wallets interoperable. A user can export a mnemonic generated on one of these wallets and import it in another wallet, recovering all transactions, keys and addresses. 
+
+Some example of software wallets supporting these standards include (listed alphabetically) Copay, Breadwallet, Multibit HD and Mycelium. Examples of hardware wallets supporting these standards include (listed alphabetically) Keepkey, Ledger and Trezor. 
+
+The following sections examine each of these technologies in detail. 
+
+[TIP]
+====
+If you are implementing a bitcoin wallet, it should be built as a Hierarchical Deterministic Wallet, with a seed encoded as Mnemonic Code for backup, following the BIP-32, BIP-39, BIP-43 and BIP-44 standards, as described in the following sections. 
+====
+
+==== Using a bitcoin wallet
+
+In <<user-stories>> we introduced Gabriel, an enterprising young teenager in Rio de Janeiro, who is running a simple web store that sells bitcoin-branded t-shirts, coffee mugs, and stickers. 
+
+Gabriel uses a Trezor bitcoin hardware wallet, to securely manage his bitcoins. The Trezor is a simple USB device with two buttons that stores keys (in the form of an HD wallet) and signs transactions. Trezor wallets implement all the industry standards discussed in this chapter, so Gabriel is not reliant on any proprietary technology or single vendor solution. 
+
+.A Trezor device: a bitcoin HD-wallet in hardware
+image::images/trezor-grey-medium.png[alt]
+
+
+When Gabriel used the Trezor for the first time, the device generated a mnemonic and seed from a built-in hardware random number generator. During this initialization phase, the wallet displayed a numbered sequence of words, one by one, on the screen (see <<trezor_mnemonic_display>>).
+
+[[trezor_mnemonic_display]]
+.Trezor displaying one of the mnemonic words
+image::images/trezor-seed-display.png["Trezor wallet display of mnemonic word"]
+
+By writing down this mnemonic, Gabriel created a backup (see <<mnemonic_paper_backup>>) that can be used for recovery in the case of loss or damage to the Trezor device. This mnemonic can be used for recovery in a new Trezor or in any one of the many compatible software or hardware wallets. Note that the sequence of words is important, so mnemonic paper backups have numbered spaces for each word. Gabriel had to carefully record each word in the numbered space to preserve the correct sequence. 
+
+[[mnemonic_paper_backup]]
+.Gabriel's paper backup of the mnemonic
+[cols="<1,^50,<1,^50", width="80%"]
 |===
-|1. army |7. garbage
-|2. van |8. claim
-|3. defense |9. echo
-|4. carry |10. media
-|5. jealous |11. make
-|6. true |12. crunch
+|*1.*| _army_ |*7.*| _garbage_
+|*2.*| _van_ |*8.*| _claim_
+|*3.*| _defense_ |*9.*| _echo_
+|*4.*| _carry_ |*10.*| _media_
+|*5.*| _jealous_ |*11.*| _make_
+|*6.*| _true_ |*12.*| _crunch_
 |===
 
+[NOTE]
+====
+A 12-word mnemonic is shown above, for simplicity. In fact, most hardware wallets generate a more secure 24-word mnemonic. The mnemonic is used in exactly the same way, regardless of length.
+====
+
+=== Wallet Technology Details
+
+Let's now examine each of the important industry standards that are used by many bitcoin wallets, in detail.
+
 [[mnemonic_code_words]]
-===== Mnemonic Code Words (BIP-39)
+==== Mnemonic Code Words (BIP-39)
 
 ((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic code words are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
@@ -130,7 +202,6 @@ The process described in steps 7 through 9 below continues from the process desc
 
 .From mnemonic to seed
 image::images/Mnemonic_to_seed.png["From mnemonic to seed"]
-
 
 [TIP]
 ====
@@ -195,27 +266,31 @@ However, it is important to note that the use of a passphrase also introduces th
 
 While passphrases are very useful, they should only be used in combination with a carefully planned process for backup and recovery, considering the possibility of surviving the owner and allowing their family to recover their crypto-currency estate. 
 
-[[hd_wallets]]
-==== Hierarchical Deterministic Wallets (BIP-32/BIP-44)
+===== Working with mnemonic codes
 
-((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))((("BIP-32", id="ix_ch04-asciidoc25a", range="startofrange")))((("BIP-44", id="ix_ch04-asciidoc25b", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP-32 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
+BIP-39 is implemented as a library in many different programming languages:
 
-[[Type2_wallet]]
-.Type-2 hierarchical deterministic wallet: a tree of keys generated from a single seed
-image::images/msbt_0409.png["HD wallet"]
+python-mnemonic:: The reference implementation of the standard by the Satoshilabs team that proposed BIP-39, in Python (https://github.com/trezor/python-mnemonic)
 
-[TIP]
-====
-If you are implementing a bitcoin wallet, it should be built as an HD wallet following the BIP-32 and BIP-44 standards. 
-====
+bitcoinjs/bip39:: An implementation of BIP-39, as part of the popular bitcoinJS framework, in JavaScript
+(https://github.com/bitcoinjs/bip39)
 
-HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions, or accounting categories. 
+libbitcoin/mnemonic:: An implementation of BIP-39, as part of the popular Libbitcoin framework, in C++
+(https://github.com/libbitcoin/libbitcoin/blob/master/src/wallet/mnemonic.cpp)
 
-The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be preloaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
+There is also a BIP-39 generator implemented in a standalone web-page, which is extremely useful for testing and experimentation. 
 
-===== HD wallet creation from a seed
+.A BIP-39 generator as a standalone web page
+image::images/bip39-web-generator.png["BIP-39 generator web-page"]
 
-((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Everything else in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the root seed. 
+The page can be used offline in a browser, or accessed online at:
+https://dcpos.github.io/bip39/
+
+==== Creating an HD wallet from the seed
+
+((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Most commonly, these seed is generated from a _mnemonic_ as detailed in the previous section. 
+
+Every key in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the mnemonic that the root seed is derived from.
 
 The process of creating the master keys and master chain code for an HD wallet is shown in <<HDWalletFromSeed>>.
 
@@ -223,11 +298,15 @@ The process of creating the master keys and master chain code for an HD wallet i
 .Creating master keys and chain code from a root seed
 image::images/msbt_0410.png["HDWalletFromRootSeed"]
 
-The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is used to create a _master private key_ (m) and a _master chain code_. The master private key (m) then generates a corresponding master public key (M), using the normal elliptic curve multiplication process +m * G+ that we saw earlier in this chapter. The chain code is used to introduce entropy in the function that creates child keys from parent keys, as we will see in the next section.
+The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is used to create a _master private key_ (m) and a _master chain code_ (c). 
+
+The master private key (m) then generates a corresponding master public key (M), using the normal elliptic curve multiplication process +m * G+ that we saw in <<pubkey>>.
+
+The chain code (c) is used to introduce entropy in the function that creates child keys from parent keys, as we will see in the next section.
 
 ===== Private child key derivation
 
-((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical deterministic wallets use a _child key derivation_ (CKD) function to derive children keys from parent keys. 
+((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical deterministic wallets use a _child key derivation_ (CKD) function to derive child keys from parent keys. 
 
 The child key derivation functions are based on a one-way hash function that combines: 
 
@@ -235,11 +314,11 @@ The child key derivation functions are based on a one-way hash function that com
 * A seed called a chain code (256 bits)
 * An index number (32 bits)
 
-The chain code is used to introduce seemingly random data to the process, so that the index is not sufficient to derive other child keys. Thus, having a child key does not make it possible to find its siblings, unless you also have the chain code. The initial chain code seed (at the root of the tree) is made from random data, while subsequent chain codes are derived from each parent chain code. 
+The chain code is used to introduce deterministic random data to the process, so that knowing the index and a child key is not sufficient to derive other child keys. Knowing a child key does not make it possible to find its siblings, unless you also have the chain code. The initial chain code seed (at the root of the tree) is made from the seed, while subsequent child chain codes are derived from each parent chain code. 
 
-These three items are combined and hashed to generate children keys, as follows.
+These three items (parent key, chain code and index) are combined and hashed to generate children keys, as follows.
 
-The parent public key, chain code, and the index number are combined and hashed with the HMAC-SHA512 algorithm to produce a 512-bit hash. The resulting hash is split into two halves. The right-half 256 bits of the hash output become the chain code for the child. The left-half 256 bits of the hash and the index number are added to the parent private key to produce the child private key. In <<CKDpriv>>, we see this illustrated with the index set to 0 to produce the 0'th (first by index) child of the parent.
+The parent public key, chain code, and the index number are combined and hashed with the HMAC-SHA512 algorithm to produce a 512-bit hash. This 512-bit hash is split into two 256-bit halves. The right-half 256 bits of the hash output become the chain code for the child. The left-half 256 bits of the hash and the index number are added to the parent private key to produce the child private key. In <<CKDpriv>>, we see this illustrated with the index set to 0 to produce the "zero" (first by index) child of the parent.
 
 [[CKDpriv]]
 .Extending a parent private key to create a child private key
@@ -275,18 +354,17 @@ An extended key consists of a private or public key and chain code. An extended 
 
 ((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP-32-compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
 
-Here's an example of an extended private key, encoded in Base58Check:
+Here's an example of an extended _private_ key, encoded in Base58Check:
 
 ----
 xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
 ----
 
-Here's the corresponding extended public key, also encoded in Base58Check:
+Here's the corresponding extended _public_ key, encoded in Base58Check:
 
 ----
 xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
 ----
-
 
 [[public__child_key_derivation]]
 ===== Public child key derivation
@@ -304,6 +382,20 @@ An extended public key can be used, therefore, to derive all of the _public_ key
 [[CKDpub]]
 .Extending a parent public key to create a child public key
 image::images/msbt_0412.png["ChildPublicDerivation"]
+
+==== Using HD wallet for a web store
+
+Let's see how HD wallets are used with an example.
+
+Gabriel first set up his web store as a hobby, based on a simple hosted Wordpress page. His store was quite basic with only a few pages and an order form with a single bitcoin address. 
+
+Gabriel used the first bitcoin address generated by his Trezor device as the main bitcoin address for his store. This way, all incoming payments would be paid to an address controlled by his Trezor hardware wallet.
+
+Customers would submit an order using the form and send payment to Gabriel's published bitcoin address, triggering an email with the order details for Gabriel to process. With just a few orders each week, this system worked well enough.
+
+However, the little web store became quite successful and attracted many orders from the local community. Soon, Gabriel was overwhelmed. With all the orders paying the same address, it became difficult to correctly match orders and transactions, especially when multiple orders for the same amount came in close together.
+
+image::images/trezor_xpub_export.png["Exporting the xpub from the Trezor"]
 
 ===== Hardened child key derivation
 
@@ -371,29 +463,9 @@ BIP-44 specifies the structure as consisting of five predefined tree levels:
 | m/44'/2'/0'/0/1 | The second private key in the Litecoin main account, for signing transactions
 |=======
 
+=== Hardware Wallets
 
+==== Overview
 
-===== Experimenting with HD wallets using Bitcoin Explorer
-
-((("hierarchical deterministic wallets (HD wallets)","Bitcoin Explorer and")))((("Bitcoin Explorer","HD wallets and")))Using the Bitcoin Explorer command-line tool introduced in <<ch03_bitcoin_client>>, you can experiment with generating and extending BIP-32 deterministic keys, as well as displaying them in different formats((("Bitcoin Explorer","seed command")))((("seed command (bx)")))((("Bitcoin Explorer","hd-seed command")))((("hd-seed command (bx)")))((("Bitcoin Explorer","hd-public command")))((("hd-public command (bx)")))((("Bitcoin Explorer","hd-private command")))((("hd-private command (bx)")))((("Bitcoin Explorer","hd-to-address command")))((("hd-to-address command (bx)")))((("Bitcoin Explorer","hd-to-wif command")))((("hd-to-wif command (bx)"))): (((range="endofrange", startref="ix_ch04-asciidoc25b")))(((range="endofrange", startref="ix_ch04-asciidoc25a")))(((range="endofrange", startref="ix_ch04-asciidoc25")))(((range="endofrange", startref="ix_ch04-asciidoc24")))(((range="endofrange", startref="ix_ch04-asciidoc23")))
-
-====
-[source, bash]
-----
-$ bx seed | bx hd-new > m # create a new master private key from a seed and store in file "m"
-$ cat m # show the master extended private key
-xprv9s21ZrQH143K38iQ9Y5p6qoB8C75TE71NfpyQPdfGvzghDt39DHPFpovvtWZaRgY5uPwV7RpEgHs7cvdgfiSjLjjbuGKGcjRyU7RGGSS8Xa
-$ cat m | bx hd-public # generate the M/0 extended public key
-xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
-$ cat m | bx hd-private # generate the m/0 extended private key
-xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
-$ cat m | bx hd-private | bx hd-to-wif # show the private key of m/0 as a WIF
-L1pbvV86crAGoDzqmgY85xURkz3c435Z9nirMt52UbnGjYMzKBUN
-$ cat m | bx hd-public | bx hd-to-address # show the bitcoin address of M/0
-1CHCnCjgMNb6digimckNQ6TBVcTWBAmPHK
-$ cat m | bx hd-private | bx hd-private --index 12 --hard | bx hd-private --index 4 # generate m/0/12'/4
-xprv9yL8ndfdPVeDWJenF18oiHguRUj8jHmVrqqD97YQHeTcR3LCeh53q5PXPkLsy2kRaqgwoS6YZBLatRZRyUeAkRPe1kLR1P6Mn7jUrXFquUt
-----
-====
-
+==== Security Model
 
