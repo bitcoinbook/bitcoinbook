@@ -7,11 +7,11 @@ At a high-level, a wallet is an application that serves as the primary user inte
 
 More narrowly, from a programmer's perspective, the word "wallet" refers to the data structure used to store and manage a user's keys. 
 
-In this chapter we will look at the second meaning, where ((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))wallets are containers for private keys, usually implemented as structured files or simple databases.
+In this chapter we will look at the second meaning, where ((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))wallets are containers for private keys, usually implemented as structured files or simple databases. 
 
 === Wallet Technology Overview
 
-In this section we summarize the various technologies used to construct user-friendly, secure and flexible bitcoin wallets. These technologies, defined by bitcoin standards (BIPs)
+In this section we summarize the various technologies used to construct user-friendly, secure and flexible bitcoin wallets. 
 
 A common misconception about bitcoin is that bitcoin wallets contain bitcoin. In fact, the wallet contains only keys. The "coins" are recorded in the blockchain on the bitcoin network. Users control the coins on the network by signing transactions with the keys in their wallets. In a sense, a bitcoin wallet is a _keychain_.
 
@@ -113,7 +113,6 @@ Gabriel uses a Trezor bitcoin hardware wallet, to securely manage his bitcoins. 
 .A Trezor device: a bitcoin HD-wallet in hardware
 image::images/trezor-grey-medium.png[alt]
 
-
 When Gabriel used the Trezor for the first time, the device generated a mnemonic and seed from a built-in hardware random number generator. During this initialization phase, the wallet displayed a numbered sequence of words, one by one, on the screen (see <<trezor_mnemonic_display>>).
 
 [[trezor_mnemonic_display]]
@@ -138,6 +137,8 @@ By writing down this mnemonic, Gabriel created a backup (see <<mnemonic_paper_ba
 ====
 A 12-word mnemonic is shown above, for simplicity. In fact, most hardware wallets generate a more secure 24-word mnemonic. The mnemonic is used in exactly the same way, regardless of length.
 ====
+
+For the first implementation of his web store, Gabriel uses a single bitcoin address, generated on his Trezor device. This single address is used by all customers for all orders. As we will see, this approach has some drawbacks and can be improved upon with HD wallets. 
 
 === Wallet Technology Details
 
@@ -383,9 +384,9 @@ An extended public key can be used, therefore, to derive all of the _public_ key
 .Extending a parent public key to create a child public key
 image::images/msbt_0412.png["ChildPublicDerivation"]
 
-==== Using HD wallet for a web store
+==== Using an extended public key on a web store
 
-Let's see how HD wallets are used with an example.
+Let's see how HD wallets are used by continuing our story with Gabriel's web store. 
 
 Gabriel first set up his web store as a hobby, based on a simple hosted Wordpress page. His store was quite basic with only a few pages and an order form with a single bitcoin address. 
 
@@ -395,7 +396,15 @@ Customers would submit an order using the form and send payment to Gabriel's pub
 
 However, the little web store became quite successful and attracted many orders from the local community. Soon, Gabriel was overwhelmed. With all the orders paying the same address, it became difficult to correctly match orders and transactions, especially when multiple orders for the same amount came in close together.
 
+Gabriel's HD wallet offers a much better solution through the ability to derive public child keys without knowing the private keys. Gabriel can load an extended public key on his website, which can be used to derive a unique address for every customer order. Gabriel can spend the funds from his Trezor, but the extended public key loaded on the website can only generate addresses and receive funds. This feature of hierarchical deterministic wallets is a great security feature. Gabriel's website does not contain any private keys and therefore does not need high levels of security.
+
+To export the extended public key, Gabriel uses the web-based software in conjunction with the Trezor hardware wallet. The Trezor device must be plugged in, for the public keys to be exported. Note that hardware wallets will never export private keys - those always remain on the device. <<export_xpub>> shows the web interface Gabriel uses to export the xpub.
+
+[[export_xpub]]
+.Exporting an extended public key (xpub) from a Trezor hardware wallet. 
 image::images/trezor_xpub_export.png["Exporting the xpub from the Trezor"]
+
+Gabriel copies the xpub to his web store's bitcoin shop software. He uses _Mycelium Gear_, which is an open source web-store plugin for a variety of web hosting and content platforms. Mycelium gear uses the xpub to generate a unique address for every purchase. 
 
 ===== Hardened child key derivation
 
