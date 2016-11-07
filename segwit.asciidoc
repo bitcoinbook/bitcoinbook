@@ -8,21 +8,21 @@ Will be merged later into chapter 6 or 7, as the book is reorganized
 [[segwit]]
 === Segregated Witness
 
-Segregated Witness (segwit) is an upgrade to the bitcoin consensus rules and network protocol, scheduled for implementation in the second half of 2016. 
+Segregated Witness (segwit) is an upgrade to the bitcoin consensus rules and network protocol, scheduled for implementation in the second half of 2016.
 
-In cryptography, the term "witness" is used to describe a solution to a cryptographic puzzle. In bitcoin terms, the witness is the unlocking script that satisfies a cryptographic condition placed on a UTXO via the locking script. 
+In cryptography, the term "witness" is used to describe a solution to a cryptographic puzzle. In bitcoin terms, the witness satisfies a cryptographic condition placed on a Unspent Transaction Output (UTXO).
 
-In the context of bitcoin, a digital signature is _one type of witness_, but a witness is more broadly any script that can satisfy the conditions of a locking script and unlock a UTXO for spending. The terms “witness”, “unlocking script” and “scriptSig” all mean the same thing.
+In the context of bitcoin, a digital signature is _one type of witness_, but a witness is more broadly any solution that can satisfy the conditions imposed on a UTXO and unlock that UTXO for spending. The term “witness” is a more general term for an “unlocking script” or “scriptSig”.
 
-Before segwit’s introduction, every input in a transaction was followed by the witness data that unlocked it. The witness data was embedded in the transaction as part of each input, The term _segregated witness_ or _segwit_ for short, simply means separating the signature or unlocking script of a specific output. Think "separate scriptSig", or “separate signature” in the simplest form. 
+Before segwit’s introduction, every input in a transaction was followed by the witness data that unlocked it. The witness data was embedded in the transaction as part of each input, The term _segregated witness_ or _segwit_ for short, simply means separating the signature or unlocking script of a specific output. Think "separate scriptSig", or “separate signature” in the simplest form.
 
-Segregated Witness therefore is an architectural change to bitcoin that aims to move the scriptSig (unlocking script) outside of the transaction data structure and into separate a _witness_ data structure that accompanies a transaction. Clients may request transaction data with or without the accompanying witness data.
+Segregated Witness therefore is an architectural change to bitcoin that aims to move the witness data from the scriptSig (unlocking script) field of a transaction into separate a _witness_ data structure that accompanies a transaction. Clients may request transaction data with or without the accompanying witness data.
 
 In this section we will look at some of the benefits of segregated witness, describe the mechanism used to deploy and implement this architecture change and demonstrate the use of segregated witness in transactions and addresses.
 
 Segregated Witness is defined by the following Bitcoin Improvement Proposals (BIPs):
 
-BIP141 :: The mail definition of Segregated Witness. https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
+BIP141 :: The main definition of Segregated Witness. https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
 
 BIP143 :: Transaction Signature Verification for Version 0 Witness Program
 https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
@@ -34,18 +34,15 @@ BIP145 :: getblocktemplate Updates for Segregated Witness (for mining)
 https://github.com/bitcoin/bips/blob/master/bip-0145.mediawiki
 
 
-
-
-
 ==== Why Segregated Witness?
 
-Segregated witness is an architectural change that has several effects on the scalability, security, economic incentives and performance of bitcoin. 
+Segregated witness is an architectural change that has several effects on the scalability, security, economic incentives and performance of bitcoin.
 
-Transaction malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<transaction malleability>> and <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With segregated witness,  transaction hashes become immutable, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions and lightning networks.
+Transaction malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<transaction malleability>> and <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With segregated witness, transaction hashes become immutable by anyone other than the creator of the transaction, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions and lightning networks.
 
-Script Versioning :: With the introduction of segregated witness scripts, every locking script is preceded by a _script version_ number, similar to how transactions and blocks have version numbers. The addition of a script version number allows the scripting language to be upgraded in a backwards compatible way (ie. using soft-fork upgrades), to introduce new script operands, syntax or semantics. The ability to upgrade the scripting language in a non-disruptive way will greatly accelerate the rate of innovation in bitcoin. 
+Script Versioning :: With the introduction of segregated witness scripts, every locking script is preceded by a _script version_ number, similar to how transactions and blocks have version numbers. The addition of a script version number allows the scripting language to be upgraded in a backwards compatible way (ie. using soft-fork upgrades), to introduce new script operands, syntax or semantics. The ability to upgrade the scripting language in a non-disruptive way will greatly accelerate the rate of innovation in bitcoin.
 
-Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex witness scripts such as multi-sig or payment channels scripts are very large and represent the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction, segregated witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
+Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multi-sig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction, segregated witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
 
 Signature Verification Optimization :: Segregated Witness upgrades the signature functions (OP_CHECKSIG, OP_CHECKMULTISIG etc), to reduce the algorithm's computational complexity. Before segwit, the algorithm used to produce a signature required a number of hash operations that was proportional to the size of the transaction. Data-hasing computations increased in O(n^2^) with respect to the number of signature operations, introducing a substantial computational burden on all nodes verifying the signature. With segwit, the algorithm is changed to reduce the complexity to O(n).
 
@@ -53,26 +50,26 @@ Offline Signing Improvement :: Segregated Witness signatures incorporate the val
 
 ==== How Segregated Witness Works
 
-At first glance, segregated witness appears to be a change to how transactions are constructed and therefore a transaction-level feature, but it is not. In fact, segregated witness is also a change to how UTXO are constructed and therefore is a per-output feature.
+At first glance, segregated witness appears to be a change to how transactions are constructed and therefore a transaction-level feature, but it is not. In fact, segregated witness is also a change to how individual UTXO are spent and therefore is a per-output feature.
 
-A transaction can spend segregated witness outputs or traditional (inline-witness) outputs or both. Therefore, it does not make much sense to refer to a transaction as a “segregated witness transaction”. Rather we should refer to specific transaction inputs as “segregated witness inputs.
+A transaction can spend segregated witness outputs or traditional (inline-witness) outputs or both. Therefore, it does not make much sense to refer to a transaction as a “segregated witness transaction”. Rather we should refer to specific transaction inputs as “segregated witness inputs".
 
 When a transaction spends a UTXO, it must provide a witness. In a traditional UTXO, the locking script requires that witness data be provided _inline_ in the input part of the transaction that spends the UTXO. A segregated witness UTXO, however, specifies a locking script that can be satisfied with witness data outside of the input (segregated).
 
 ==== Soft-fork (backwards compatibility)
 
-Segregated witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet, to change the consensus rules -- what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backwards compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption. 
+Segregated witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet, to change the consensus rules -- what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backwards compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption.
 
 Segregated witness outputs are constructed so that older systems that are not segwit-aware can still validate them. To an old wallet or node, a segregated witness output looks like an output that _anyone can spend_. Such outputs can be spent with an empty signature, therefore the fact that there is no signature inside the transaction (it is segregated), does not invalidate the transaction. Newer wallets & mining nodes however see the segregated witness output and expect to find a valid witness for it in the transaction’s witness data.
 
 ==== Segregated Witness Output and Transaction Examples
 
-Let’s look at some of our example transactions and see how they would change with segregated witness. We’ll first look at how a Pay-to-Public-Key-Hash (P2PKH) payment is transformed with segregated witness program. Then, we’ll look at the segregated witness equivalent for Pay-to-Script-Hash (P2SH) scripts. Finally, we’ll look at how both of the above segregated witness programs can be embedded inside a P2SH script. 
+Let’s look at some of our example transactions and see how they would change with segregated witness. We’ll first look at how a Pay-to-Public-Key-Hash (P2PKH) payment is transformed with segregated witness program. Then, we’ll look at the segregated witness equivalent for Pay-to-Script-Hash (P2SH) scripts. Finally, we’ll look at how both of the above segregated witness programs can be embedded inside a P2SH script.
 
 [[p2wpkh]]
 ===== Pay-to-Witness-Public-Key-Hash (P2WPKH)
 
-In <<cup_of_coffee>>, Alice created a transaction to pay Bob for a cup of coffee. That transaction created a Pay-to-Public-Key-Hash (P2PKH) output with a value of 0.015 BTC that was spendable by Bob. The output’s script looks like this: 
+In <<cup_of_coffee>>, Alice created a transaction to pay Bob for a cup of coffee. That transaction created a Pay-to-Public-Key-Hash (P2PKH) output with a value of 0.015 BTC that was spendable by Bob. The output’s script looks like this:
 
 .Example P2PKH output script
 ----
@@ -81,7 +78,7 @@ OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHE
 
 With segregated witness, a Pay-to-Public-Key-Hash output, is created instead a Pay-to-Witness-Public-Key-Hash (P2WPKH), which looks like this:
 
-.Example P2WPKH output script 
+.Example P2WPKH output script
 ----
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
@@ -112,9 +109,20 @@ However, to spend the segregated witness output, the transaction has no signatur
      	 "scriptSig": “”,
 ]
 [...]
-“witness”: “<Bob’s scriptSig>”
+“witness”: “<Bob’s witness data>”
 [...]
 ----
+
+===== Wallet Construction of P2WPKH
+
+It is extremely important to note that P2WPKH should only be created by the payee (recipient) and not converted by the sender from a known public key, P2PKH script or address. The sender has no way of knowing if the recipient's wallet has the ability to construct segwit transactions and spend P2WPKH outputs.
+
+Additionally, P2WPKH outputs must be constructed from the hash of a _compressed_ public key. Uncompressed public keys are non-standard in segwit and may be explicitly disabled by a future soft fork. If the hash used in the P2WPKH came from an uncompressed public key, it may be unspendable and you may lose funds. P2WPKH outputs should be created by the payee's wallet by deriving a compressed public key from their private key.
+
+[WARNING]
+====
+P2WPKH should be constructed by the payee (recipient), by converting a compressed public key to a P2WPKH hash. You should never transform a P2PKH script, bitcoin address or uncompressed public key to a P2WPKH witness script.
+====
 
 [[p2wsh]]
 ===== Pay-to-Witness-Script-Hash (P2WSH)
@@ -134,7 +142,7 @@ The P2SH script above references the hash of a _redeem script_ that defines a 2-
 “Vin” : [
 "txid": "abcdef12345...",
 "vout": 0,
-     	 "scriptSig": “SigA SigB 2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG”,
+     	 "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”,
 ]
 ----
 
@@ -145,11 +153,12 @@ Now, let's look at how this entire example would be upgraded to segwit. If Moham
 0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Again, as with the example of P2WPKH, you can see that the segregated witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the segregated witness program consists of two values pushed to the stack: a witness version (0) and the 32-byte SHA256 hash of the redeem script. 
+Again, as with the example of P2WPKH, you can see that the segregated witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the segregated witness program consists of two values pushed to the stack: a witness version (0) and the 32-byte SHA256 hash of the redeem script.
 
 [TIP]
 ====
-While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness program uses a 32-byte +SHA256(script)+ hash. This difference in the selection of the hashing algorithm is deliberate and used to differentiate between the two types of witness programs (P2WPKH and P2WSH) by the length of the hash.
+While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness program uses a 32-byte +SHA256(script)+ hash. This difference in the selection of the hashing algorithm is deliberate and used to differentiate between the two types of witness programs (P2WPKH and P2WSH) by the length of the hash, and to provide stronger security to P2WSH (128bits vs. 80bits of P2SH).
+
 ====
 
 Mohammed's company can spend outputs the Pay-to-Witness-Script-Hash output by presenting the correct redeem script and sufficient signatures to satisfy the redeem script. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's wallet would put an empty scriptSig:
@@ -163,13 +172,13 @@ Mohammed's company can spend outputs the Pay-to-Witness-Script-Hash output by pr
      	 "scriptSig": “”,
 ]
 [...]
-“witness”: “SigA SigB 2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG”
+“witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”
 [...]
 ----
 
 ===== Differentiating between P2WPKH and P2WSH
 
-In the previous two sections, we demonstrated two types of witness programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs consist of single byte version number followed by a longer hash. They look very similar, but are interpreted very differently: one is interpreted as a public key hash, which is satisfied by a signature and the other as a script hash, which is satisfied by a redeem script. The critical difference between them is the length of the hash: 
+In the previous two sections, we demonstrated two types of witness programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs consist of single byte version number followed by a longer hash. They look very similar, but are interpreted very differently: one is interpreted as a public key hash, which is satisfied by a signature and the other as a script hash, which is satisfied by a redeem script. The critical difference between them is the length of the hash:
 
 * The public key hash in P2WPKH is 20 bytes
 * The script hash in P2WSH is 32 bytes
@@ -178,7 +187,7 @@ This is the one difference that allows a wallet to differentiate between the two
 
 ==== Upgrading to Segregated Witness
 
-As we can see from the examples above, upgrading to segregated witness is a two-step process. First, wallets must create special segwit type outputs. Then, these outputs can be spent by wallets that know how to construct segregated witness transactions. In the examples above, Alice's wallet was segwit-aware and able to create special outputs with segregated witness scripts. Bob's wallet is also segwit-aware and able to spend those outputs. What may not be obvious from the example is that in practice, Alice's wallet needs to _know_ that Bob uses a segwit-aware wallet and can spend these outputs. Otherwise, if Bob's wallet is not upgraded and Alice tries to make segwit payments to Bob, Bob's wallet will not be able to detect these payments. 
+As we can see from the examples above, upgrading to segregated witness is a two-step process. First, wallets must create special segwit type outputs. Then, these outputs can be spent by wallets that know how to construct segregated witness transactions. In the examples above, Alice's wallet was segwit-aware and able to create special outputs with segregated witness scripts. Bob's wallet is also segwit-aware and able to spend those outputs. What may not be obvious from the example is that in practice, Alice's wallet needs to _know_ that Bob uses a segwit-aware wallet and can spend these outputs. Otherwise, if Bob's wallet is not upgraded and Alice tries to make segwit payments to Bob, Bob's wallet will not be able to detect these payments.
 
 [TIP]
 ====
@@ -191,19 +200,19 @@ Segregated witness will not be implemented simultaneously across the entire netw
 
 * Ability of a sender's wallet that is segwit-aware to recognize and distinguish between recipients that are segwit-aware and ones that are not, by their _addresses_.
 
-===== Embedding Segregated Witness Inside P2SH 
+===== Embedding Segregated Witness Inside P2SH
 
 Let's assume, for example, that Alice's wallet is not upgraded to segwit, but Bob's wallet is upgraded and can handle segwit transactions. Alice and Bob can use "old" non-segwit transactions. But Bob would likely want to use segwit to reduce transaction fees, taking advantage of the discount that applies to witness data.
 
- In this case Bob's wallet can construct a P2SH address that contains a segwit script inside it. Alice's wallet sees this as a "normal" P2SH address and can make payments to it without any knowledge of segwit. Bob's wallet can then spend this payment with a segwit transaction, taking full advantage of segwit and reducing transaction fees. 
+ In this case Bob's wallet can construct a P2SH address that contains a segwit script inside it. Alice's wallet sees this as a "normal" P2SH address and can make payments to it without any knowledge of segwit. Bob's wallet can then spend this payment with a segwit transaction, taking full advantage of segwit and reducing transaction fees.
 
 Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a P2SH address. The first is noted as P2SH(P2WPKH) and the second is noted as P2SH(P2WSH).
 
-===== Pay-to-Witness-Public-Key-Hash inside Pay-to-Script-Hash 
+===== Pay-to-Witness-Public-Key-Hash inside Pay-to-Script-Hash
 
-The first form of witness script we will examine is P2SH(P2WPKH). This is a Pay-to-Witness-Public-Key-Hash witness program, embedded inside a Pay-to-Script-Hash script, so that it can be used by a wallet that is not aware of segwit. 
+The first form of witness script we will examine is P2SH(P2WPKH). This is a Pay-to-Witness-Public-Key-Hash witness program, embedded inside a Pay-to-Script-Hash script, so that it can be used by a wallet that is not aware of segwit.
 
-Bob's wallet constructs a Pay-to-Witness-Public-Key-Hash (P2WPKH) witness program with Bob's public key. This witness program is then hashed and the resulting hash is encoded as a Pay-to-Script-Hash (P2SH) script. The P2SH script is converted to a bitcoin address, one which starts with a "3", as we saw in the <<p2sh>> section. 
+Bob's wallet constructs a Pay-to-Witness-Public-Key-Hash (P2WPKH) witness program with Bob's public key. This witness program is then hashed and the resulting hash is encoded as a Pay-to-Script-Hash (P2SH) script. The P2SH script is converted to a bitcoin address, one which starts with a "3", as we saw in the <<p2sh>> section.
 
 Bob's wallet starts with the P2WPKH witness program we saw earlier:
 
@@ -212,7 +221,7 @@ Bob's wallet starts with the P2WPKH witness program we saw earlier:
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-The P2WPKH witness program consists of the witness version and Bob's 20-byte public key hash. 
+The P2WPKH witness program consists of the witness version and Bob's 20-byte public key hash.
 
 Bob's wallet then hashes the above witness program, first with SHA256, then with RIPEMD160, producing another 20-byte hash:
 
@@ -234,9 +243,9 @@ Finally, the P2SH script is converted to a P2SH bitcoin address:
 3AzZFY4WJJZbVr2A6qBTbdkYRpMLbdg6gD
 ----
 
-Now, Bob can display this address for customers to pay for their coffee. Alice's wallet can make a payment to +3deadbeef+, just as it would to any other bitcoin address. Even though Alice's wallet has no support for segwit, the payment it creates can be spent by Bob with a segwit transaction. 
+Now, Bob can display this address for customers to pay for their coffee. Alice's wallet can make a payment to +3deadbeef+, just as it would to any other bitcoin address. Even though Alice's wallet has no support for segwit, the payment it creates can be spent by Bob with a segwit transaction.
 
-===== Pay-to-Witness-Script-Hash inside Pay-to-Script-Hash 
+===== Pay-to-Witness-Script-Hash inside Pay-to-Script-Hash
 
 Similarly, a P2WSH witness program for a multisig script or other complicated script can be embedded inside a Pay-to-Script-Hash script and address, making it possible for any wallet to make payments that are segwit compatible.
 
@@ -273,35 +282,35 @@ Now, Mohammed's clients can make payments to this address without any need to su
 
 ===== Segregated Witness Addresses
 
-After segwit is deployed on the bitcoin network, it will take some time until wallets are upgraded. It is quite likely therefore that segwit will mostly be used embedded in P2SH, as we saw in the previous section, at least for several months. 
+After segwit is deployed on the bitcoin network, it will take some time until wallets are upgraded. It is quite likely therefore that segwit will mostly be used embedded in P2SH, as we saw in the previous section, at least for several months.
 
-Eventually however, almost all wallets will be able to support segwit payments. At that time it will no longer be necessary to embed segwit in P2SH. It is therefore likely that a new form of bitcoin address will be created, one that indicates the recipient is segwit-aware and which directly encodes a witness program. There have been a number of proposals for a segregated witness address scheme, but none have been actively pursued at this time. 
+Eventually however, almost all wallets will be able to support segwit payments. At that time it will no longer be necessary to embed segwit in P2SH. It is therefore likely that a new form of bitcoin address will be created, one that indicates the recipient is segwit-aware and which directly encodes a witness program. There have been a number of proposals for a segregated witness address scheme, but none have been actively pursued at this time.
 
 [[segwit_txid]]
 ===== Transaction Identifiers
 
-One of the greatest benefits of Segregated Witness is that it eliminates third-party transaction malleability. 
+One of the greatest benefits of Segregated Witness is that it eliminates third-party transaction malleability.
 
 Before segwit, transactions could have their signatures subtly modified by third parties, changing their transaction ID (hash) without changing any fundamental properties (inputs, outputs, amounts). This created opportunities for Denial-of-Service attacks as well as attacks against poorly written wallet software that assumed unconfirmed transaction-hashes were immutable.
 
-With the introduction of Segregated Witness, transactions have two identifiers, +txid+ and +wtxid+. The traditional transaction ID +txid+ is the double-SHA256 hash of the serialized transaction, without the witness data. A transaction +wtxid+ is the double-SHA256 hash of the new serialization format of the transaction with witness data. 
+With the introduction of Segregated Witness, transactions have two identifiers, +txid+ and +wtxid+. The traditional transaction ID +txid+ is the double-SHA256 hash of the serialized transaction, without the witness data. A transaction +wtxid+ is the double-SHA256 hash of the new serialization format of the transaction with witness data.
 
-The traditional +txid+ is calculated in exactly the same way as with a non-segwit transaction. However, since the segwit transaction has empty scriptSig's in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a segwit transaction, the +txid+ is immutable even when the transaction is unconfirmed. 
+The traditional +txid+ is calculated in exactly the same way as with a non-segwit transaction. However, since the segwit transaction has empty scriptSig's in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a segwit transaction, the +txid+ is immutable by a third party, even when the transaction is unconfirmed.
 
-The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable and only if _all_ the inputs of the transaction are segwit inputs with empty scriptSig. 
+The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable by third parties and only if _all_ the inputs of the transaction are segwit inputs.
 
 [TIP]
 ====
 Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The +txid+ is the hash of the transaction without the witness data and the +wtxid+ is the hash inclusive of witness data. The +txid+ of a transaction where all inputs are segwit inputs, is not susceptible to third-party transaction malleability
 ====
 
-==== Segregated Witness' New Signing Algorithm 
+==== Segregated Witness' New Signing Algorithm
 
 Segregated Witness modifies the semantics of the four signature verification functions (OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY), changing the way a transaction commitment hash is calculated.
 
-Signatures in bitcoin transactions are applied on a _commitment hash_ which is calculated from the transaction data, locking specific parts of the data indicating the signer's commitment to those values. For example, in a simple SIGHASH_ALL type signature, the commitment hash includes all inputs and outputs. 
+Signatures in bitcoin transactions are applied on a _commitment hash_ which is calculated from the transaction data, locking specific parts of the data indicating the signer's commitment to those values. For example, in a simple SIGHASH_ALL type signature, the commitment hash includes all inputs and outputs.
 
-Unfortunately, the way the commitment hash was calculated introduced the possibility that a node verifying the signature can be forced to perform a significant number of hash computations. Specifically, the hash operations increase in O(n^2^) with respect to the number of signature operations in the transaction. An attacker could therefore create a transaction with a very large number of signature operations, causing the entire bitcoin network to have to perform hundreds or thousands of hash operations to verify the transaction. 
+Unfortunately, the way the commitment hash was calculated introduced the possibility that a node verifying the signature can be forced to perform a significant number of hash computations. Specifically, the hash operations increase in O(n^2^) with respect to the number of signature operations in the transaction. An attacker could therefore create a transaction with a very large number of signature operations, causing the entire bitcoin network to have to perform hundreds or thousands of hash operations to verify the transaction.
 
 Segwit represented an opportunity to address this problem by changing the way the commitment hash is calculated. For segwit version 0 witness programs, signature verification occurs using an improved commitment hash algorithm as specified in Bitcoin Improvement Proposal 143 (BIP143).
 
@@ -309,25 +318,25 @@ The new algorithm achieves two important goals. Firstly, the number of hash oper
 
 ==== Economic Incentives for Segregated Witness
 
-Bitcoin mining nodes and full nodes incur costs for the resources used to support the bitcoin network and the blockchain. As the volume of bitcoin transactions increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Non-mining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully-validating full-index node, perhaps because they use the node to operate a bitcoin business. 
+Bitcoin mining nodes and full nodes incur costs for the resources used to support the bitcoin network and the blockchain. As the volume of bitcoin transactions increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Non-mining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully-validating full-index node, perhaps because they use the node to operate a bitcoin business.
 
-Without transaction fees, the growth in bitcoin data would arguably increase dramatically. Fees are intended to align the needs of bitcoin users with the burden their transactions impose on the network, through a market-based price discovery mechanism. 
+Without transaction fees, the growth in bitcoin data would arguably increase dramatically. Fees are intended to align the needs of bitcoin users with the burden their transactions impose on the network, through a market-based price discovery mechanism.
 
-The calculation of fees based on transaction size treats all the data in the transaction as equal in cost. But from the perspective of full nodes and miners, some parts of a transaction carry much higher costs. Every transaction added to the bitcoin network affects the consumption of of four resources on nodes:
+The calculation of fees based on transaction size treats all the data in the transaction as equal in cost. But from the perspective of full nodes and miners, some parts of a transaction carry much higher costs. Every transaction added to the bitcoin network affects the consumption of four resources on nodes:
 
-Disk Space :: Every transaction is stored in the blockchain, adding to the total size of the blockchain. The blockchain is stored on disk, but the storage can be optimized by “pruning” older transactions. 
+Disk Space :: Every transaction is stored in the blockchain, adding to the total size of the blockchain. The blockchain is stored on disk, but the storage can be optimized by “pruning” older transactions.
 
 CPU :: Every transaction must be validated, which requires CPU time.
 
 Bandwidth :: Every transaction is transmitted (through flood propagation) across the network at least once. Without any optimization in the block propagation protocol, transactions are transmitted again as part of a block, doubling the impact on network capacity
 
-Memory :: Nodes that validate transactions keep the “UTXO set”, the list of all unspent transaction outputs, in memory. Because memory is at least one order of magnitude more expensive than disk, growth of the UTXO set contributes disproportionately to the cost of running a node. 
+Memory :: Nodes that validate transactions keep the UTXO index or the entire UTXO set in memory to speed up validation. Because memory is at least one order of magnitude more expensive than disk, growth of the UTXO set contributes disproportionately to the cost of running a node.
 
-As you can see from the list above, not every part of a transaction has an equal impact on the cost of running a node or on the ability of bitcoin to scale to support more transactions. The most expensive part of a transaction are the newly created outputs, as they are added to the in-memory UTXO set. By comparison, signatures (aka witness data) add the least burden to the network and the cost of running a node, because witness data are only validated once and then never used again. Furthermore, immediately after receiving a new transaction and validating witness data, nodes can discard that witness data. If fees are calculated on transaction size, without discriminating between these two types of data, then the market incentives of fees are not aligned with the actual costs imposed by a transaction. In fact, the current fee structure actually encourages the opposite behavior, because witness data is the largest part of a transaction. 
+As you can see from the list above, not every part of a transaction has an equal impact on the cost of running a node or on the ability of bitcoin to scale to support more transactions. The most expensive part of a transaction are the newly created outputs, as they are added to the in-memory UTXO set. By comparison, signatures (aka witness data) add the least burden to the network and the cost of running a node, because witness data are only validated once and then never used again. Furthermore, immediately after receiving a new transaction and validating witness data, nodes can discard that witness data. If fees are calculated on transaction size, without discriminating between these two types of data, then the market incentives of fees are not aligned with the actual costs imposed by a transaction. In fact, the current fee structure actually encourages the opposite behavior, because witness data is the largest part of a transaction.
 
-The incentives created by fees matter because they affect the behavior of wallets. All wallets must implement some strategy for assembling transactions that takes into considerations a number of factors, such as privacy (reducing address re-use), fragmentation (making lots of loose change) and fees. If the fees are overwhelmingly motivating wallets to use as few inputs as possible in transactions, this can lead to UTXO picking and change address strategies that inadvertently bloat the UTXO set. 
+The incentives created by fees matter because they affect the behavior of wallets. All wallets must implement some strategy for assembling transactions that takes into considerations a number of factors, such as privacy (reducing address re-use), fragmentation (making lots of loose change) and fees. If the fees are overwhelmingly motivating wallets to use as few inputs as possible in transactions, this can lead to UTXO picking and change address strategies that inadvertently bloat the UTXO set.
 
-Transactions consume UTXO in their inputs and create new UTXO with their outputs. A transaction, therefore, that has more inputs than outputs will result in a decrease in the UTXO set, whereas a transaction that has more outputs than inputs will result in an increase in the UTXO set. Let’s consider the _difference_ between inputs and output and call that the “Net new UTXO”. That’s an important metric, as it tells us what impact a transaction will have on the most expensive network-wide resource, the in-memory UTXO set. A transaction with positive Net-new-UTXO, adds to that burden. A transaction with a negative Net-new-UTXO reduces the burden. We would therefore want to encourage transactions that are either negative Net-new-UTXO or neutral with zero Net-new-UTXO. 
+Transactions consume UTXO in their inputs and create new UTXO with their outputs. A transaction, therefore, that has more inputs than outputs will result in a decrease in the UTXO set, whereas a transaction that has more outputs than inputs will result in an increase in the UTXO set. Let’s consider the _difference_ between inputs and output and call that the “Net new UTXO”. That’s an important metric, as it tells us what impact a transaction will have on the most expensive network-wide resource, the in-memory UTXO set. A transaction with positive Net-new-UTXO, adds to that burden. A transaction with a negative Net-new-UTXO reduces the burden. We would therefore want to encourage transactions that are either negative Net-new-UTXO or neutral with zero Net-new-UTXO.
 
 Let’s look at an example of what incentives are created by the transaction fee calculation, with and without segregated witness. We will look at two different transactions. Transaction A is a 3-input, 2-output transaction, which has a Net-new-UTXO metric of -1, meaning it consumes one more UTXO than it creates, reducing the UTXO set by one. Transaction B is a 2-input, 3-output transaction, which has a Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set, imposing additional cost on the entire bitcoin network. Both transactions use multi-signature (2-of-3) scripts, to demonstrate how complex scripts increase the impact of segregated witness on fees. Let’s assume a transaction fee of 30 satoshi per byte and a 75% fee discount on witness data:
 
@@ -342,6 +351,6 @@ Transaction B fee: 12,045 satoshi
 
 
 
-Both transactions are less expensive when segregated witness is implemented. But comparing the costs between the two transactions, we see that before segregated witness, the fee is higher for the transaction that has a negative Net-new-UTXO. After segregated witness, the transaction fees align with the incentive to minimize new UTXO creation, by not inadvertently penalizing transactions with many inputs. 
+Both transactions are less expensive when segregated witness is implemented. But comparing the costs between the two transactions, we see that before segregated witness, the fee is higher for the transaction that has a negative Net-new-UTXO. After segregated witness, the transaction fees align with the incentive to minimize new UTXO creation, by not inadvertently penalizing transactions with many inputs.
 
-Segregated witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data correcting a misalignment of incentives that may have inadvertently created more bloat in the UTXO set. 
+Segregated witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data correcting a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.
