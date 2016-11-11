@@ -28,7 +28,15 @@ The tags [Edition1Print1](https://github.com/bitcoinbook/bitcoinbook/releases/ta
 
 This "Free Culture" compliant license was approved by my publisher O'Reilly Media (http://oreilly.com), who understand the value of open source. O'Reilly Media is not just the world's best publisher of technical books but also a strong supporter of an open culture and the sharing of knowledge. 
 
-Thank you O'Reilly!
+Thank you O'Reilly Media!
+
+## Mastering Bitcoin - Second Edition
+
+The [develop branch](https://github.com/bitcoinbook/bitcoinbook/tree/develop), containing the most recent changes you see here is the in-progress drafting of Mastering Bitcoin (Second Edition).
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Mastering Bitcoin - Second Edition</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://antonopoulos.com/" property="cc:attributionName" rel="cc:attributionURL">Andreas M. Antonopoulos LLC</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.
+
+It is expected that the second edition will be released under a CC-BY-SA license within a year of publication.
 
 ## Mastering Bitcoin - Second Edition
 
@@ -40,4 +48,5 @@ It is expected that the second edition will be released under a CC-BY-SA license
 
 # Translations
 
-If you are interested in translating this book, please contact the author at info@bitcoinbook.info, for coordination. In some countries, I can help you coordinate with the local offices of O'Reilly Media for local print editions.
+If you are interested in translating this book, please join a team of volunteers at https://www.transifex.com/bitcoinbook/mastering-bitcoin/
+Free copies of "Mastering Bitcoin Open Edition", translated in many languages, can be downloaded from https://bitcoinbook.info
