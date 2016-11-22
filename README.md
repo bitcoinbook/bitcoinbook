@@ -41,3 +41,7 @@ It is expected that the second edition will be released under a CC-BY-SA license
 # Translations
 
 If you are interested in translating this book, please contact the author at info@bitcoinbook.info, for coordination. In some countries, I can help you coordinate with the local offices of O'Reilly Media for local print editions.
+
+# Read the Book
+
+*Mastering Bitcoin* can be [read online for free](http://chimera.labs.oreilly.com/books/1234000001802/index.html) at [O'Reilly.com](http://chimera.labs.oreilly.com/books/1234000001802). A [purchasable Ebook](http://shop.oreilly.com/product/0636920032281.do?intcmp=il-npa-books-video-product_chimera) is also available.
