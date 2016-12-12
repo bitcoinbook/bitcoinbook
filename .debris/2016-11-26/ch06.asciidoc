@@ -7,7 +7,7 @@
 
 ((("transactions", id="ix_ch06-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger.
 
-In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions. When we use the term "wallet" in this chapter, we are referring to the software that constructs transactions, not just the database of keys.
+In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions.
 
 [[tx_structure]]
 === Transactions in Detail
@@ -21,7 +21,7 @@ The block explorer application shows a transaction from Alice's "address" to Bob
 
 ==== Transactions - Behind the Scenes
 
-Behind the scenes, an actual transaction looks very different from a transaction provided by a typical block explorer. In fact, most of the high-level constructs we see in the various bitcoin application user interfaces _do not actually exist_ in the bitcoin system.
+Behind the scenes, an actual transaction looks very different from a transaction provided by a typical block explorer. In fact, most of the high-level constructs we see in the various bitcoin application user interfaces _do not actually exist_ in the bitcoin system. In bitcoin, there are no coins, no senders, no recipients, no balances, no accounts and no addresses. All those things are constructed at a higher level for the benefit of the user, to make things easier to understand.
 
 We can use Bitcoin Core's command-line interface (+getrawtransaction+ and +decoderawtransaction+) to retrieve Alice's "raw" transaction, decode it and see what it contains. The result looks like this:
 
@@ -53,7 +53,7 @@ We can use Bitcoin Core's command-line interface (+getrawtransaction+ and +decod
 }
 ----
 
-You may notice a few things about this transaction, mostly the things that are missing! Where is Alice's address? Where is Bob's address? Where is the 0.1 input "sent" by Alice? In bitcoin, there are no coins, no senders, no recipients, no balances, no accounts and no addresses. All those things are constructed at a higher level for the benefit of the user, to make things easier to understand.
+You may notice a few things about this transaction, mostly the things that are missing! Where is Alice's address? Where is Bob's address? Where is the 0.1 input "sent" by Alice?
 
 You may also notice a lot of strange and indecipherable fields and hexadecimal strings. Don't worry, we will explain each field shown here in detail in this chapter.
 
@@ -62,7 +62,7 @@ You may also notice a lot of strange and indecipherable fields and hexadecimal s
 
 ((("transactions","unspent transaction output (UTXO)")))((("unspent transaction output (UTXO)")))The fundamental building block of a bitcoin transaction is a  _transaction output_. Transaction outputs are indivisible chunks of bitcoin currency, recorded on the blockchain, and recognized as valid by the entire network. Bitcoin full nodes track all available and spendable outputs, known as _Unspent Transaction Outputs_ or _UTXO_. The collection of all UTXO is known as the _UTXO set_ and currently numbers in the millions of UTXO. The UTXO set grows as new UTXO is created and shrinks when UTXO is consumed. Every transaction represents a change (state transition) in the UTXO set.
 
-When we say that a user's wallet has "received" bitcoin, what we mean is that the wallet has detected an unspent transaction output (UTXO) which can be spent with one of the keys controlled by that wallet. Thus, a user's bitcoin "balance" is the sum of all UTXO that user's wallet can spend and which may be scattered amongst hundreds of transactions and hundreds of blocks. The concept of a balance is created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating the value of any UTXO that the wallet can spend with the keys it controls. Today, all wallets maintain a database or use a database service to store a quick reference set of all the UTXO they can spend with the keys they control.
+When we say that a user's wallet has "received" bitcoin, what we mean is that the wallet has detected an unspent transaction output (UTXO) which can be spent with one of the keys controlled by that wallet. Thus, a user's bitcoin "balance" is the sum of all UTXO that user's wallet can spend and which may be scattered amongst hundreds of transactions and hundreds of blocks. The concept of a balance is a derived construct created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating the value of any UTXO that the wallet can spend with the keys it controls.
 
 A transaction output can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoins can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are *discreet* and *indivisible* units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
 
@@ -118,9 +118,7 @@ Now, let's look at Alice's transaction (shown previously in <<alice_tx>>) and se
 
 As you can see, the transaction contains two outputs. Each output is defined by a value and a cryptographic puzzle. In the encoding shown by Bitcoin Core above, the value is shown in bitcoin. The second part of each output is the cryptographic puzzle that sets the conditions for spending. Bitcoin Core shows this as +scriptPubKey+ and shows us a human-readable representation of the script.
 
-The topic of locking and unlocking UTXO will be discussed later, in <<tx_lock_unlock>>. The scripting language that is used for the script in +scriptPubKey+ is discussed in <<tx_script>>. But before we delve into those topics, we need to understand the overall structure of transaction inputs and outputs.
-
-===== Transaction Serialization - Outputs
+The topic of locking and unlocking UTXO will be discussed later, in <<tx_lock_unlock>>. The scripting language that is used for the script in +scriptPubKey+ is discussed in <<tx_script>>. Before we delve into those topics, we need to understand the overall structure of transaction inputs and outputs.
 
 When transactions are transmitted over the network or exchanged between applications, they are _serialized_. (((serialization)))Serialization is the process of converting the internal representation of a data structure into a format that can be transmitted one byte at a time, also known as a byte-stream. Serialization is most commonly used for encoding data structures for transmission over a network or for storage in a file. The serialization format of a transaction output is shown in <<tx_out_structure>>:
 
@@ -133,11 +131,6 @@ When transactions are transmitted over the network or exchanged between applicat
 | 1-9 bytes (VarInt) | Locking-Script Size | Locking-Script length in bytes, to follow
 | Variable | Locking-Script | A script defining the conditions needed to spend the output
 |=======
-
-////
-You need a transition sentence explaining that people don't use serialized data internally in their programs -
-However, most programs do not store data in the serialized format and need to....
-////
 
 The process of converting from the byte-stream representation of a transaction to whatever data structure (e.g. a transaction object) is used to store transactions internally in your program, is called _de-serialization_ or _transaction parsing_. (((de-serialization)))Most bitcoin libraries have functions for transaction serialization and de-serialization.
 
@@ -166,13 +159,9 @@ Here are some hints:
 [[tx_inputs]]
 ==== Transaction Inputs
 
-((("transactions","inputs", id="ix_ch06-asciidoc5", range="startofrange")))Transaction inputs identify (by reference) which UTXO will be consumed and provide proof of ownership through an unlocking script.
+((("transactions","inputs", id="ix_ch06-asciidoc5", range="startofrange")))In simple terms, transaction inputs are pointers to UTXO. They point to a specific UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. To spend UTXO, a transaction input also includes an unlocking script, also known as a _witness_, that satisfies the spending conditions set by the UTXO locking script. Most often, the unlocking script is a digital signature and public key proving ownership of the bitcoin. However, not all unlocking scripts contain signatures.
 
-To build a transaction, a wallet selects from the UTXO it controls, UTXO with enough value to make the requested payment. Sometimes one UTXO is enough, other times more than one is needed. For each UTXO that will be consumed to make this payment, the wallet creates one input pointing to the UTXO and unlocks it with an unlocking script.
-
-Let's look at the components of an input in greater detail. The first part of an input is a pointer to an UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. The second part is an unlocking script, which the wallet constructs in order to satisfy the spending conditions set in the UTXO. Most often, the unlocking script is a digital signature and public key proving ownership of the bitcoin. However, not all unlocking scripts contain signatures. The third part is a sequence number which will be discussed later.
-
-Consider our example in <<alice_tx>>. The transaction inputs are an array (list) called +vin+:
+Let's look back at our example in <<alice_tx>>. The transaction inputs are an array (list) called +vin+:
 
 [[vin]]
 .The transaction inputs in Alice's transaction
@@ -188,25 +177,21 @@ Consider our example in <<alice_tx>>. The transaction inputs are an array (list)
 ]
 ----
 
-As you can see, there is only one input in the list (because one UTXO contained sufficient value to make this payment). The input contains four elements:
+As you can see, there is only one input in the list. It contains four elements:
 
 * A transaction ID, referencing the transaction which contains the UTXO being spent
 * An output index (+vout+), identifying which UTXO from that transaction is referenced (first one is zero)
 * A scriptSig, which satisfies the conditions placed on the UTXO, unlocking it for spending
 * A sequence number (to be discussed later)
 
-In Alice's transaction, the input points to transaction ID +7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18+ and output index +0+ (i.e. the first UTXO created by that transaction). The unlocking script is constructed by Alice's wallet by first retrieving the referenced UTXO, examining its locking script and then using that to build the necessary unlocking script to satisfy it.
+The transaction ID and output index, together uniquely identify a previously created UTXO, by reference (transaction ID) to the transaction that contains it and an index number, which starts at zero. In Alice's transaction, the input points to transaction ID +7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18+ and output index +0+ (ie. the first UTXO created by that transaction).
 
-Looking just at the input you may have noticed that we don't know anything about this UTXO, other than a reference to the transaction containing it. We don't know it's value (amount in satoshi), and we don't know the locking script that sets the conditions for spending it. To find this information, we must retrieve the referenced UTXO by retrieving the underlying transaction. Notice that because the value of the input is not explicitly stated, we must also use the referenced UTXO in order to calculate fees that will be paid in this transaction (see <<tx_fees>>).
+At this point you may have noticed that we don't know anything about this UTXO, other than a reference to the transaction containing it. We don't know it's value (amount in satoshi), and we don't know the locking script that sets the conditions for spending it. To find this information, we must retrieve the transaction from the blockchain and look at the specific UTXO.
 
-It's not just Alice's wallet that needs to retrieve UTXO referenced in the inputs. Once this transaction is broadcast to the network, every validating node will also need to retrieve the UTXO referenced in the transaction inputs in order to validate the transaction.
-
-Transactions on their own seem incomplete because they lack context. They reference UTXO in their inputs but without retrieving that UTXO we cannot know the value of the inputs or their locking conditions. When writing bitcoin software, anytime you decode a transaction with the intent of validating it or counting the fees or checking the unlocking script, your code will first have to retrieve the referenced UTXO from the blockchain in order to build the context implied but not present in the UTXO references of the inputs. For example, to calculate the amount paid in fees, you must know the sum of the values of inputs and outputs. But without retrieving the UTXO referenced in the inputs, you do not know their value. So a seemingly simple operation like counting fees in a single transaction in fact involves multiple steps and data from multiple transactions.
-
-We can use the same sequence of commands with Bitcoin Core as we used when retrieving Alice's transaction (+getrawtransaction+ and +decoderawtransaction+). With that we can get the UTXO referenced in the input above and take a look:
+We can use the same sequence of commands with Bitcoin Core as we used when retrieving Alice's transaction (+getrawtransaction+ and +decoderawtransaction+). With that we can get the outputs and take a look:
 
 [[alice_input_tx]]
-.Alice's UTXO from the previous transaction, referenced in the input
+.Alice's UTXO from the previous transaction, used as an input
 [source,json]
 ----
 "vout": [
@@ -217,14 +202,12 @@ We can use the same sequence of commands with Bitcoin Core as we used when retri
  ]
 ----
 
-We see that this UTXO has a value of 0.1 BTC and that it has a locking script (+scriptPubKey+) which contains "OP_DUP OP_HASH160...".
+When we retrieve the previous transaction we find it only has one output (vout index +0+). We see that it has a value of 0.1 BTC and that it has a locking script (+scriptPubKey+) which contains "OP_DUP OP_HASH160...". This UTXO of 0.1 BTC is the input that is spent (indivisibly and entirely) by Alice's transaction.
 
 [TIP]
 ====
 To fully understand Alice's transaction we had to retrieve the previous transaction(s) referenced as inputs. A function that retrieves previous transactions and unspent transaction outputs is very common and exists in almost every bitcoin library and API.
 ====
-
-===== Transaction Serialization - Inputs
 
 When transactions are serialized for transmission on the network, their inputs are encoded into a byte-stream as follows:
 
@@ -281,49 +264,25 @@ Hints:
 [[tx_fees]]
 ==== Transaction Fees
 
-((("fees, transaction", id="ix_ch06-asciidoc6", range="startofrange")))Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Fees also serve as a security mechanism themselves, by making it economically infeasible for attackers to flood the network with transactions. Mining and the fees and rewards collected by miners are discussed in more detail in <<ch8>>.
+((("fees, transaction", id="ix_ch06-asciidoc6", range="startofrange")))Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Mining and the fees and rewards collected by miners are discussed in more detail in <<ch8>>. This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command-line interface, you must manually account for and include these fees.
 
-This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command-line interface, you must manually account for and include these fees.
+Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against "spam" transactions or any kind of abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain.
 
-Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain.
+((("fees, transaction","calculating")))Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next-most–mined block, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing.
 
-((("fees, transaction","calculating")))Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next block mined, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing.
+Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been evolving. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. The current minimum transaction fee is fixed at 0.0001 bitcoin or a tenth of a milli-bitcoin per kilobyte, recently decreased from one milli-bitcoin. Most transactions are less than one kilobyte; however, those with multiple inputs or outputs can be larger. In future revisions of the bitcoin protocol, it is expected that wallet applications will use statistical analysis to calculate the most appropriate fee to attach to a transaction based on the average fees of recent transactions.
 
-Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been evolving. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. Since at least the beginning of 2016, capacity limits in bitcoin (see <<blocksize_limit>>) have created competition between transactions, resulting in higher fees and effectively making free transactions a thing of the past. Zero fee or very low fee transactions rarely get mined and sometimes will not even be propagated across the network.
-
-In Bitcoin Core, fee relay policies are set by the +minrelaytxfee+ option. The current default +minrelaytxfee+ is 0.00001 bitcoin or a hundredth of a milli-bitcoin per kilobyte. Therefore by default, transactions with a fee less than 0.0001 bitcoin are treated as free and are only relayed if there is space in the mempool, otherwise they are dropped. Bitcoin nodes can override the default fee relay policy by adjusting the value of +minrelaytxfee+.
-
-Any bitcoin service that creates transactions, including wallets, exchanges, retail applications, etc. *must* implement dynamic fees. Dynamic fees can be implemented through a third party fee estimation service or with a built-in fee estimation algorithm. If you're unsure, begin with a third party service and as you gain experience design and implement your own algorithm if you wish to remove the third party dependency.
-
-Fee estimation algorithms calculate the appropriate fee, based on capacity and the fees offered by "competing" transactions. These algorithms range from simplistic (average or median fee in the last block) to sophisticated (statistical analysis). They estimate the necessary fee (in satoshis per byte) that will give a transaction a high probability of being selected and included within a certain number of blocks. Most services offer users the option of choosing high, medium, or low priority fees. High priority means users pay higher fees but the transaction is likely to be included in the next block. Medium and low priority means users pay lower transaction fees but the transactions may take much longer to confirm.
-
-Many wallet applications use third-party services for fee calculations. One popular service is http://bitcoinfees.21.co/[http://bitcoinfees.21.co], which provides an API and a visual chart showing the fee in satoshi/byte for different priorities.
-
-[TIP]
-====
-Static fees are no longer viable on the bitcoin network. Wallets that set static fees will produce a poor user experience as transactions will often get "stuck" and remain unconfirmed. Users who don't understand bitcoin transactions and fees, are dismayed by "stuck" transactions because they think they've lost their money.
-====
-
-[[bitcoinfees21co]]
-.Fee Estimation Service bitcoinfees.21.co
-image::images/bitcoinfees21co.png [Fee Estimation Service bitcoinfees.21.co]
-
-The chart in <<bitcoinfees21co>> shows the real-time estimate of fees in 10 satoshi/byte increments and the expected confirmation time (in minutes and number of blocks) for transactions with fees in each range. For each fee range (eg. 61-70 satoshi/byte), two horizontal bars show the number of unconfirmed transactions (1405) and total number of transactions in the past 24 hours (102975), with fees in that range. Based on the graph, the recommended high-priority fee at this time was 80 satoshi/byte, a fee likely to result in the transaction being mined in the very next block (zero block delay). For perspective, the median transaction size is 226 bytes, so the recommended fee for a transaction size would be 18,080 satoshis (0.00018080 BTC).
-
-The fee estimation data can be retrieved via a simple HTTP REST API, at https://bitcoinfees.21.co/api/v1/fees/recommended[https://bitcoinfees.21.co/api/v1/fees/recommended]. For example, on the command-line using the +curl+ command:
-
-.Using the fee estimation API
-----
-$ curl https://bitcoinfees.21.co/api/v1/fees/recommended
-
-{"fastestFee":80,"halfHourFee":80,"hourFee":60}
-----
-
-The API returns a JSON object with the current fee estimate for fastest confirmation (fastestFee), confirmation within 3 blocks (halfHourFee) and 6 blocks (hourFee), in satoshi per byte.
+The current algorithm used by miners to prioritize transactions for inclusion in a block based on their fees is examined in detail in <<ch8>>.(((range="endofrange", startref="ix_ch06-asciidoc6")))
 
 ==== Adding Fees to Transactions
 
+////
+
+Fees market - bitcoin fees - confirmation time and competition
+////
+
 ((("fees, transaction","adding", id="ix_ch06-asciidoc7", range="startofrange")))((("transactions","fees", id="ix_ch06-asciidoc8", range="startofrange")))The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners.
+
 
 [[tx_fee_equation]]
 .Transaction fees are implied, as the excess of inputs minus outputs:
@@ -344,9 +303,30 @@ Let's see how this works in practice, by looking at Alice's coffee purchase agai
 
 Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines, has completed a fundraiser to purchase school books for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin, so her wallet is full of very small payments (UTXO). Now she wants to purchase hundreds of school books from a local publisher, paying in bitcoin.
 
-As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps a kilobyte or several kilobytes in size. As a result, it will require a much higher fee than the median sized transaction.
+As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2 to 3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin.
 
 Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size—the fee is independent of the transaction's bitcoin value.(((range="endofrange", startref="ix_ch06-asciidoc8")))(((range="endofrange", startref="ix_ch06-asciidoc7")))
+
+
+
+
+
+[[tx_chains]]
+=== Transaction Chaining and Orphan Transactions
+
+////
+CPFP
+////
+
+((("chaining transactions")))((("orphan transactions")))((("transactions","chaining")))((("transactions","orphan")))As we have seen, transactions form a chain, whereby one transaction spends the outputs of the previous transaction (known as the parent) and creates outputs for a subsequent transaction (known as the child). Sometimes an entire chain of transactions depending on each other—say a parent, child, and grandchild transaction—are created at the same time, to fulfill a complex transactional workflow that requires valid children to be signed before the parent is signed. For example, this is a technique used in((("CoinJoin"))) CoinJoin transactions where multiple parties join transactions together to protect their privacy.
+
+When a chain of transactions is transmitted across the network, they don't always arrive in the same order. Sometimes, the child might arrive before the parent. In that case, the nodes that see a child first can see that it references a parent transaction that is not yet known. Rather than reject the child, they put it in a temporary pool to await the arrival of its parent and propagate it to every other node. The pool of transactions without parents is known as the((("orphan transaction pool"))) _orphan transaction pool_. Once the parent arrives, any orphans that reference the UTXO created by the parent are released from the pool, revalidated recursively, and then the entire chain of transactions can be included in the transaction pool, ready to be mined in a block. Transaction chains can be arbitrarily long, with any number of generations transmitted simultaneously. The mechanism of holding orphans in the orphan pool ensures that otherwise valid transactions will not be rejected just because their parent has been delayed and that eventually the chain they belong to is reconstructed in the correct order, regardless of the order of arrival.
+
+There is a limit to the number of orphan transactions stored in memory, to prevent a denial-of-service attack against bitcoin nodes. The limit is defined as((("MAX_ORPHAN_TRANSACTIONS constant"))) +MAX_ORPHAN_TRANSACTIONS+ in the source code of the bitcoin reference client. If the number of orphan transactions in the pool exceeds +MAX_ORPHAN_TRANSACTIONS+, one or more randomly selected orphan transactions are evicted from the pool, until the pool size is back within limits.
+
+[[tx_lock_unlock]]
+==== Locking and Unlocking UTXO - Cryptographic Puzzles and Witnesses
+
 
 [[tx_script]]
 === Transaction Scripts and Script Language
@@ -395,6 +375,7 @@ The scripting language executes the script by processing each item from left to 
 Conditional operators evaluate a condition, producing a boolean result of TRUE or FALSE. For example, +OP_EQUAL+ pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the TRUE result that signifies a valid transaction.
 
 In <<simplemath_script>>, the script +2 3 OP_ADD 5 OP_EQUAL+ demonstrates the arithmetic addition operator +OP_ADD+, adding two numbers and putting the result on the stack, followed by the conditional operator +OP_EQUAL+, which checks that the resulting sum is equal to +5+. For brevity, the +OP_+ prefix is omitted in the step-by-step example.
+
 
 The following is a slightly more complex script, which calculates ++2 + 7 – 3 + 1++. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
 
