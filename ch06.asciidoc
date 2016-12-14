@@ -350,9 +350,9 @@ Eugenia's wallet application will calculate the appropriate fee by measuring the
 
 ((("scripts", id="ix_ch06-asciidoc9", range="startofrange")))((("transactions","script language for", id="ix_ch06-asciidoc10", range="startofrange")))((("transactions","validation", id="ix_ch06-asciidoc11", range="startofrange")))((("validation (transaction)", id="ix_ch06-asciidoc12", range="startofrange")))Bitcoin clients validate transactions by executing a script, written in a Forth-like scripting language. Both the locking script (encumbrance) placed on a UTXO and the unlocking script that usually contains a signature are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition.
 
-Today, most transactions processed through the bitcoin network have the form "Alice pays Bob" and are based on the same script called a Pay-to-Public-Key-Hash script. However, the use of scripts to lock outputs and unlock inputs means that through use of the programming language, transactions can contain an infinite number of conditions. Bitcoin transactions are not limited to the "Alice pays Bob" form and pattern.
+Today, most transactions processed through the bitcoin network have the form "Payment to Bob's bitcoin address" and are based on a script called a Pay-to-Public-Key-Hash script. However, the use of scripts to lock outputs and unlock inputs means that through use of the programming language, transactions can contain an infinite number of conditions. Bitcoin transactions are not limited to the "Payment to Bob's bitcoin address" script.
 
-This is only the tip of the iceberg of possibilities that can be expressed with this scripting language. In this section, we will demonstrate the components of the bitcoin transaction scripting language and show how it can be used to express complex conditions for spending and how those conditions can be satisfied by unlocking scripts.
+The Pay-to-Public-Key-Hash script is only the tip of the iceberg of possibilities that can be expressed with this scripting language. In this section, we will demonstrate the components of the bitcoin transaction scripting language and show how it can be used to express complex conditions for spending and how those conditions can be satisfied by unlocking scripts.
 
 [TIP]
 ====
@@ -363,15 +363,15 @@ Bitcoin transaction validation is not based on a static pattern, but instead is 
 
 ((("scripts","construction of")))((("validation (transaction)","script construction for")))Bitcoin's transaction validation engine relies on two types of scripts to validate transactions: a locking script and an unlocking script.
 
-((("locking scripts","transaction validation and")))((("validation (transaction)","locking scripts")))A locking script is an encumbrance placed on an output, and it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address. In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+.
+((("locking scripts","transaction validation and")))((("validation (transaction)","locking scripts")))A locking script is an spending condition placed on an output: it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address (public key hash). In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+. You will also see the locking script referred to as a _witness script_ (see <<segwit>>) or more generally as a _cryptographic puzzle_. These terms all mean the same thing, at different levels of abstraction.
 
-((("unlocking scripts","transaction validation and")))An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input, and most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
+((("unlocking scripts","transaction validation and")))An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input. Most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. You will also see the unlocking script referred to as a _witness_ (see <<segwit>>). In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
 
-Every bitcoin client will validate transactions by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and execute the two scripts.
+Every bitcoin validating node will validate transactions by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and execute the two scripts.
 
 In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack and corrupt the locking script. In the current implementation, the scripts are executed separately with the stack transferred between the two executions, as described next.
 
-First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g., it has no "dangling" operators left over), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE," the unlocking script has succeeded in resolving the conditions imposed by the locking script and, therefore, the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid because it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available (unspent) UTXO.
+First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g., it has no "dangling" operators left over), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE," the unlocking script has succeeded in resolving the conditions imposed by the locking script and, therefore, the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid because it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the output results in the output being considered as "spent" and removed from the set of unspent transaction outputs (UTXO set).
 
 <<scriptSig_and_scriptPubKey>> is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation.
 
@@ -385,7 +385,7 @@ image::images/msbt_0501.png["scriptSig_and_scriptPubKey"]
 
 ((("Script language", id="ix_ch06-asciidoc13", range="startofrange")))((("scripts","language for", id="ix_ch06-asciidoc14", range="startofrange")))The bitcoin transaction script language, called _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages. Script is a very simple language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device, such as a handheld calculator. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. In the case of programmable money, that is a deliberate security feature.
 
-Bitcoin's scripting language is called a stack-based language because it uses a data structure called a((("stack, defined"))) _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack.
+Bitcoin's scripting language is called a stack-based language because it uses a data structure called a((("stack, defined"))) _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. Operations on a stack can only act on the top-most item on the stack. A stack data structure is also called a Last-In-First-Out, or "LIFO" queue.
 
 The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and might push a result onto the stack. For example, +OP_ADD+ will pop two items from the stack, add them, and push the resulting sum onto the stack.
 
@@ -400,7 +400,7 @@ The following is a slightly more complex script, which calculates ++2 + 7 – 3 
 ----
 Try validating the preceding script yourself using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
 
-Although most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. The simple arithmetic we used as an example of the scripting language is also a valid locking script that can be used to lock a transaction output.
+Although most locking scripts refer to a public key hash (essentially, a bitcoin address), thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. The simple arithmetic we used as an example of the scripting language is also a valid locking script that can be used to lock a transaction output.
 
 Use part of the arithmetic example script as the locking script:
 
@@ -443,7 +443,7 @@ Transactions are valid if the top result on the stack is TRUE (noted as ++&#x7b;
 [[p2pkh]]
 ==== Pay-to-Public-Key-Hash (P2PKH)
 
-((("pay-to-public-key-hash (P2PKH)", id="ix_ch06-asciidoc15", range="startofrange")))((("transactions","pay-to-public-key-hash", id="ix_ch06-asciidoc16", range="startofrange")))The vast majority of transactions processed on the bitcoin network are P2PKH transactions. These contain a locking script that encumbers the output with a public key hash, more commonly known as a bitcoin address. Transactions that pay a bitcoin address contain P2PKH scripts. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key.
+((("pay-to-public-key-hash (P2PKH)", id="ix_ch06-asciidoc15", range="startofrange")))((("transactions","pay-to-public-key-hash", id="ix_ch06-asciidoc16", range="startofrange")))The vast majority of transactions processed on the bitcoin network spend outputs locked with a Pay-to-Public-Key-Hash or "P2PKH" script. These outputs contain a locking script that locks the output to a public key hash, more commonly known as a bitcoin address. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key (see <digital_sigs>>).
 
 For example, let's look at Alice's payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to the cafe's bitcoin address. That transaction output would have a locking script of the form:
 
@@ -477,3 +477,189 @@ image::images/msbt_0503.png["Tx_Script_P2PubKeyHash_1"]
 [[P2PubKHash2]]
 .Evaluating a script for a P2PKH transaction (Part 2 of 2)
 image::images/msbt_0504.png["Tx_Script_P2PubKeyHash_2"]
+
+[[digital_sigs]]
+=== Digital Signatures (ECDSA)
+
+So far, we have not delved into any detail about "digital signatures". In this section we look at how digital signatures work and how they can present proof of ownership of a private key without revealing that private key.
+
+The digital signature algorithm used in bitcoin is the _Elliptic Curve Digital Signature Algorithm_, or _ECDSA_. ECDSA is the algorithm used for digital signatures based on elliptic curve private/public key pairs, as described in <<ecc>>.
+
+A digital signature serves three purposes in bitcoin (see <<digital_signature_definition>>). First, the signature proves that the owner of the private key, who is by implication the owner of the funds, has *authorized* the spending of those funds.  Secondly, the proof of authorization is *undeniable* (non-repudiation). Thirdly, the signature proves that the transaction (or specific parts of the transaction) have not and *can not be modified* by anyone other than the owner of the private key.
+
+Note that each transaction input is signed independently. This is critical, as neither the signatures, nor the inputs have to belong or be applied by the same "owners". In fact, a specific transaction scheme called "CoinJoin" uses this fact to create multi-party transactions for privacy.
+
+[NOTE]
+====
+Each transaction input and any signature it may contain is _completely_ independent of any other input or signature. Multiple parties can collaborate to construct transactions and sign only one input each.
+====
+
+[[digital_signature_definition]]
+.Wikipedia's Definition of a "Digital Signature"
+****
+A digital signature is a mathematical scheme for demonstrating the authenticity of a digital message or documents. A valid digital signature gives a recipient reason to believe that the message was created by a known sender (authentication), that the sender cannot deny having sent the message (non-repudiation), and that the message was not altered in transit (integrity).
+
+_Source: https://en.wikipedia.org/wiki/Digital_signature_
+****
+
+==== How Digital Signatures Work
+
+A digital signature is a _mathematical scheme_, that consists of two parts. The first part is an algorithm for creating a signature, using a private key (the signing key), from a message (the transaction). The second part is an algorithm that allows anyone to verify the signature, given also the message and a public key.
+
+===== Creating a Digital Signature
+
+In bitcoin's implementation of the ECDSA algorithm, the "message" being signed is the transaction, or more accurately a hash of a specific subset of the data in the transaction (see <<sighash_types>>). The signing key is the user's private key. The result is the signature:
+
+latexmath:[\(Sig = F_sig(F_hash(m), dA\)]
+
+where:
+
+* dA is the signing private key
+* m is the transaction (or parts of it)
+* F~hash~ is the hashing function
+* F~sig~ is the signing algorithm
+* Sig is the resulting signature
+
+More details on the mathematics of ECDSA can be found in <<ecdsa_math>>
+
+The function F~sig~ produces a signature +Sig+ that is composed of two values, commonly referred to as +R+ and +S+.
+
+----
+Sig = (R, S)
+----
+
+Now that the two values +R+ and +S+ have been calculated, they are serialized into a byte-stream using an international standard encoding scheme called the _Distinguished Encoding Rules_ or _DER_.
+
+===== Serialization of Signatures (DER)
+
+Let's look at the transaction Alice created again. In the transaction input there is an unlocking script that contains the following _DER_ encoded signature from Alice's wallet:
+
+----
+3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
+----
+
+That signature is a serialized byte-stream of the +R+ and +S+ values produced by Alice's wallet to prove she owns the private key authorized to spend that output. The serialization format consists of nine elements as follows:
+
+[[decoded_alice_sig]]
+.Alice's DER-encoded signature - decoded
+====
+* 0x30 - indicating the start of a DER sequence
+* 0x45 - the length of the sequence (69 bytes)
+  * 0x02 - an integer value follows
+  * 0x21 - the length of the integer (33 bytes)
+  * R: 00884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb
+  * 0x02 - another integer follows
+  * 0x20 - the length of the integer (32 bytes)
+  * S: 4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813
+* A suffix (0x01) indicating the type of hash used (SIGHASH_ALL)
+====
+
+See if you can decode Alice's serialized (DER-encoded) signature using the guide above. The important numbers are +R+ and +S+, the rest of the data is part of the DER encoding scheme.
+
+==== Verifying the Signature
+
+To verify the signature, one must have the signature (+R+ and +S+), the serialized transaction and the public key (that corresponds to the private key used to create the signature). Essentially, verification of a signature means "Only the owner of the private key that generated this public key could have produced this signature on this transaction".
+
+The signature verification algorithm takes the message (transaction or parts of it), the signer's public key and the signature (+R+ and +S+ values) and returns TRUE if the signature is valid for this transaction and public key.
+
+==== Signature Hash Types (SIGHASH)
+
+Digital signatures are applied to messages, which in the case of bitcoin, are the transactions themselves. The signature implies a _commitment_ by the signer to specific transaction data. In the simplest form, the signature applies to the entire transaction, thereby committing all the inputs, outputs and other transaction fields. But, a signature can commit to only a subset of the data in a transaction, which is useful for a number of scenarios as we will see below.
+
+Bitcoin signatures have a way of indicating which part of a transaction's data is included in the data signed by the transaction, through the use of a SIGHASH flag. The SIGHASH flag is a single byte that is appended to the signature.
+
+Remember, each input may contain a signature in its unlocking script. As a result, a transaction that contains several inputs may have signatures with different SIGHASH flags that commit different parts of the transaction in each of the inputs. Note also that bitcoin transactions may contain inputs from different "owners", who may sign only one input in a partially constructed (and invalid) transaction, collaborating with others to gather all the necessary signatures to make a valid transaction. Many of the SIGHASH flag types only make sense if you think of multiple participants collaborating outside the bitcoin network and updating a partially signed transaction.
+
+There are three SIGHASH flags: ALL, NONE and SINGLE
+
+|=======================
+|SIGHASH flag| Value | Description
+| ALL | 0x01 | Signature applies to all inputs and outputs
+| NONE | 0x02 | Signature applies to all inputs, none of the outputs
+| SINGLE | 0x03 | Signature applies to all inputs but only the one output with the same index number as the signed input
+|=======================
+
+In addition, there is a modifier flag SIGHASH_ANYONECANPAY, which can be combined with each of the above flags. When ANYONECANPAY is set, only one input is signed, leaving the rest (and their sequence numbers) open for modification. The ANYONECANPAY has the value +0x80+ and is applied by bitwise OR, resulting in the combined flags:
+
+|=======================
+|SIGHASH flag| Value | Description
+| SIGHASH_ALL\|ANYONECANPAY | 0x81 | Signature applies to one inputs and all outputs
+| NONE\|ANYONECANPAY | 0x82 | Signature applies to one inputs, none of the outputs
+| SINGLE\|ANYONECANPAY | 0x83 | Signature applies to one input & the output with the same index number
+|=======================
+
+The way SIGHASH flags are applied during signing and verification, is that a copy of the transaction is made and certain fields within are truncated (set to zero length and emptied). The resulting transaction is serialized. The SIGHASH flag is added to the end of the serialized transaction and the result is hashed. The hash itself is the "message" that is signed. Depending on which SIGHASH flag is used, different parts of the transaction are truncated. This the resulting hash depends on different subsets of the data in the transaction. By including the SIGHASH as the last step before hashing, the signature commits the SIGHASH type as well, so it can't be changed (eg. by a miner).
+
+[NOTE]
+====
+All SIGHASH types sign the transaction nLocktime field. In addition, the SIGHASH type itself is appended to the transaction before it is signed, so that it can't be modified one signed.
+====
+
+In the example of Alice's transaction (see <<decoded_alice_sig>>), we saw that the last part of the DER-encoded signature was +01+, which is the SIGHASH_ALL flag. This locks the transaction data,so Alice's signature is committing the state of all inputs and outputs. This is the most common signature form.
+
+Let's look at some of the other SIGHASH types and how they can be used in practice:
+
+ALL|ANYONECANPAY :: This construction can be used to make a "crowdfunding"-style transaction. Someone attempting to raise funds can construct a transaction with a single output. The single output pays the "goal" amount to the fundraiser. Such a transaction, is obviously not valid, as it has no inputs. However, others can now amend it by adding an input of their own, as a donation. They sign their own input with ALL|ANYONECANPAY. Unless enough inputs are gathered to reach the value of the output, the transaction is invalid. Each donation is a "pledge", which cannot be collected by the fundraiser until the entire goal amount is raised.
+
+NONE :: This construction can be used to create a "bearer-check" of a specific amount. It commits to the input, but allows the output locking script to be changed. Anyone can write their own bitcoin address into the output locking script and redeem the transaction. However, the output value itself is locked by the signature.
+
+NONE|ANYONECANPAY :: This constuction can be used to build a "dust collector". User's who have tiny UTXO in their wallets can't spend these without the cost in fees exceeding the value of the dust. With this type of signature, the dust UTXO can be donated, for anyone to aggregate and spend whenever they want.
+
+There are some proposals to modify or expand the SIGHASH system. One such proposal is _Bitmask Sighash Modes_ by Blockstream's Glenn Willen, as part of the Elements project. This aims to create a flexible replacement for SIGHASH types that allows "arbitrary, miner-rewritable bitmasks of inputs and outputs" that can express "more complex contractual pre-commitment schemes, such as signed offers with change in a distributed asset exchange."
+
+[[ecdsa_math]]
+==== ECDSA Math
+
+As mentioned previously, signatures are created by a mathematical function F~sig~, that produces a signature composes of two values +R+ and +S+. In this section we look at the function F~sig~ in more detail.
+
+The signature algorithm first generates an _ephemeral_ (temporary) private public key pair. This temporary key pair is used in the calculation of the +R+ and +S+ values, after a transformation involving the signing private key and the transaction hash.
+
+The temporary key pair is based on a random number +k+, which is used as the temporary private key. From +k+, we generate the corresponding temporary public key +P+ (calculated as +P = k*G+, in the same way bitcoin public keys are derived <<pubkey>>). The +R+ value of the digital signature is then the x-coordinate of the ephemeral public key +P+.
+
+From there, the algorithm calculates the +S+ value of the signature, such that:
+
+latexmath:[\(S = k^-1 (Hash(m) + dA * R) mod p\)]
+
+where:
+
+* k is the ephemeral private key
+* R is the x-coordinate of the ephemeral public key
+* dA is the signing private key
+* m is the transaction data
+* p is the prime order of the elliptic curve
+
+Verification is the inverse of the signature generation function, using the +R+, +S+ values and the public key to calculate a value +P+, which is a point on the elliptic curve (the ephemeral public key used in signature creation):
+
+latexmath:[\(P = S^-1 * Hash(m) * G + S^-1 * R * Qa\)]
+
+where:
+
+* R and S are the signature values
+* Qa is Alice's public key
+* m is the transaction data that was signed
+* G is the elliptic curve generator point
+
+If the x-coordinate of the calculated point +P+ is equal to +R+, then the verifier can conclude that the signature is valid.
+
+Note that in verifying the signature, the private key is neither known nor revealed.
+
+[TIP]
+====
+The math of ECDSA is complex and difficult to understand. There are a number of great guides online which might help. Search for "ECDSA explained" or try this one:
+
+http://www.instructables.com/id/Understanding-how-ECDSA-protects-your-data/?ALLSTEPS
+
+==== The Importance of Randomness in Signatures
+
+As we saw in <<ecdsa_math>>, the signature generation algorithm uses a random key +k+, as the basis for an ephemeral private/public key pair. The value of +k+ is not important, *as long as it is random*. Specifically, if the same value +k+ is used to produce two signatures on different messages (transactions), then the signing private key can be calculated by anyone. Re-use of the same value for +k+ in a signature algorithm leads to exposure of the private key!
+
+[WARNING]
+====
+If the same value +k+ is used in the signing algorithm on two different transactions, the private key can be calculated and is exposed!
+====
+
+This is not just a theoretical possibility. We have seen this issue lead to exposure of private keys in a few different implementations of transaction signing algorithms in bitcoin. People have lost funds to attackes because of inadvertent re-use of a +k+ value. The most common reason for re-use of a +k+ value is an improperly initialized random-number generator.
+
+To avoid this vulnerability, the industry best practice is to not generate +k+ with a random-number generator seeded with entropy, but instead to use a deterministic-random process seeded with the transaction data itself. That ensures that each transaction produces a different +k+. The industry-standard algorithm for deterministic initialization of +k+ is defined in https://tools.ietf.org/html/rfc6979[RFC 6979] published by the Internet Engineering Task Force.
+
+If you are implementing an algorithm to sign transactions in bitcoin, you *must* use RFC6979 or a similarly deterministic-random algorithm to ensure you generate a different +k+ for each transaction.
