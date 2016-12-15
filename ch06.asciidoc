@@ -661,6 +661,7 @@ Note that in verifying the signature, the private key is neither known nor revea
 The math of ECDSA is complex and difficult to understand. There are a number of great guides online which might help. Search for "ECDSA explained" or try this one:
 
 http://www.instructables.com/id/Understanding-how-ECDSA-protects-your-data/?ALLSTEPS
+====
 
 ==== The Importance of Randomness in Signatures
 
@@ -676,3 +677,41 @@ This is not just a theoretical possibility. We have seen this issue lead to expo
 To avoid this vulnerability, the industry best practice is to not generate +k+ with a random-number generator seeded with entropy, but instead to use a deterministic-random process seeded with the transaction data itself. That ensures that each transaction produces a different +k+. The industry-standard algorithm for deterministic initialization of +k+ is defined in https://tools.ietf.org/html/rfc6979[RFC 6979] published by the Internet Engineering Task Force.
 
 If you are implementing an algorithm to sign transactions in bitcoin, you *must* use RFC6979 or a similarly deterministic-random algorithm to ensure you generate a different +k+ for each transaction.
+
+=== Bitcoin Addresses, Balances and other abstractions
+
+We began this chapter with the discovery that transactions look very different "behind the scenes" than how they are presented in wallets, blockchain explorers and other user-facing applications. Many of the simplistic and familiar concepts from the earlier chapters, such as bitcoin addresses and balances seem to be absent from the transaction structure. We saw that transactions don't contain bitcoin addresses, per se, but instead operate through scripts that lock and unlock discreet values of bitcoin. Balances are not present anywhere in this system and yet every wallet application prominently displays the balance of the user's wallet.
+
+Now that we have explored what is actually included in a bitcoin transaction, we can examine how the higher-level abstractions are derived from the seemingly primitive components of the transaction.
+
+Let's look again at how Alice's transaction was presented on a popular block explorer:
+
+.Alice's transaction to Bob's Cafe
+image::images/msbt_0208.png["Alice Coffee Transaction"]
+
+On the left side of the transaction, the blockchain explorer shows Alice's bitcoin address as the "sender". In fact, this information is not in the transaction itself. When the blockchain explorer retrieved the transaction it also retrieved the previous transaction referenced in the input and extracted the first output from that older transaction. Within that output is a locking script that locks the UTXO to Alice's public key hash (a P2PKH script). The blockchain explorer extracted the public key hash and encoded it using Base58Check encoding to produce and display the bitcoin address that represents that public key.
+
+Similarly, on the right side, the blockchain explorer shows the two outputs, the first to Bob's bitcoin address and the second to Alice's bitcoin address (as change). Once again, to create these bitcoin addresses, the blockchain explorer extracted the locking script from each output, recognized it as a P2PKH script, and extracted the public-key-hash from within. Finally, the blockchain explorer re-encoded that public-key-hash with Base58Check to produce and display the bitcoin addresses.
+
+If you were to click on Bob's bitcoin address, the blockchain explorer would show you this view:
+
+.The balance of Bob's bitcoin address
+image::images/bobs_address.png["The balance of Bob's bitcoin address"]
+
+The blockchain explorer displays the balance of Bob's bitcoin address. But nowhere in the bitcoin system is there a concept of a "balance". Rather, the values displayed here are constructed by the blockchain explorer as follows:
+
+To construct the "Total Received" amount, the blockchain explorer first will decode the Base58Check encoding of the bitcoin address, to retrieve the 160-bit hash of Bob's public key that is encoded within the address. Then, the blockchain explorer will search through the database of transactions, looking for outputs with Pay-to-Public-Key-Hash locking scripts that contain Bob's public-key-hash. By summing up the value of all the outputs, the blockchain explorer can produce the total value received.
+
+Constructing the current balance (displayed as "Final Balance") requires a bit more work. The blockchain explorer keeps a separate database of the outputs that are currently unspent, the UTXO set. To maintain this database, the blockchain explorer must monitor the bitcoin network, add newly created UTXO and remove spent UTXO, in real time, as they appear in unconfirmed transactions. This is a complicated process which depends on keeping track of transactions as they propagate, as well as maintaining consensus with the bitcoin network to ensure that the correct chain is followed. Sometimes, the blockchain explorer goes out of sync and its perspective of the UTXO set is incomplete or incorrect.
+
+From the UTXO set, the blockchain explorer sums up the value of all unspent outputs referencing Bob's public-key-hash and produces the "Final Balance" number shown to the user.
+
+In order to produce this one image, with these two "balances", the blockchain explorer has to index and search through dozens, hundreds or even hundreds of thousands of transactions.
+
+In summary, the information presented to users through wallet applications, blockchain explorers and other bitcoin user interfaces is often composed of higher-level abstractions that are derived by searching many different transactions, inspecting their content, and manipulating the data contained within them. By presenting this simplistic view of bitcoin transactions that resemble bank checks from one sender to one recipient, these applications have to abstract a lot of underlying detail. They mostly focus on the common types of transactions: Pay-to-Public-Key-Hash with SIGHASH_ALL signatures on every input. Thus, while bitcoin applications can present more than 80% of all transactions in an easy-to-read manner, they are sometimes stumped by transactions that deviate from the norm. Transactions that contain more complex locking scripts, or different SIGHASH flags, or many inputs and outputs demonstrate the simplicity and weakness of these abstractions.
+
+Every day, hundreds of transactions which do not contain Pay-to-Public-Key-Hash outputs are confirmed on the blockchain. The blockchain explorers often present these with red warning messages saying they cannot decode an address. The link below contains the most recent "strange transactions" that were not fully decoded:
+
+https://blockchain.info/strange-transactions
+
+As we will see in the next chapter, these are not necessarily strange transactions. They are transactions which contain more complex locking scripts than the common Pay-to-Public-Key-Hash. We will learn how to decode and understand more complex scripts and the applications they support, next.
