@@ -151,7 +151,7 @@ Let's now examine each of the important industry standards that are used by many
 
 [TIP]
 ====
-Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas menmonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
+Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas mnemonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
 ====
 
 Mnemonic codes are defined in((("BIP-39"))) Bitcoin Improvement Proposal 39 (see <<bip-39>>). Note that BIP-39 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP-39. BIP-39 was proposed by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) company behind the Trezor hardware wallet and is incompatible with Electrum's implementation. However, BIP-39 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
@@ -164,17 +164,17 @@ BIP-39 defines the creation of a mnemonic code and seed, which we describe here 
 Mnemonic words are generated automatically by the wallet, using a standardized process defined in BIP-39. The wallet starts from a source of entropy, adds a checksum and then maps the entropy to a word list:
 
 1. Create a random sequence (entropy) of 128 to 256 bits.
-2. Create a checksum of the random sequence by taking the first four bits of its SHA256 hash.
+2. Create a checksum of the random sequence by taking the first (entropy-length / 32) bits of its SHA256 hash.
 3. Add the checksum to the end of the random sequence.
 4. Divide the sequence into sections of 11 bits.
 5. Map each 11-bit value to a word from the predefined dictionary of 2048 words.
 6. The mnemonic code is the sequence of words.
-
++
 .Generating entropy and encoding as mnemonic words
 image::images/Mnemonic_Words.png["Generating entropy and encoding as mnemonic words"]
-
++
 The table <<table_4-5>>, shows the relationship between the size of entropy data and the length of mnemonic codes in words.
-
++
 [[table_4-5]]
 .Mnemonic codes: entropy and word length
 [options="header"]
@@ -186,20 +186,19 @@ The table <<table_4-5>>, shows the relationship between the size of entropy data
 | 224 | 7 | 231 | 21
 | 256 | 8 | 264 | 24
 |=======
-
++
 [[mnemonic_to_seed]]
-===== From Mnemonic to Seed
-
-The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys. 
-
+**From Mnemonic to Seed**
++
+The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys.
++
 The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP-39 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
-
++
 The process described in steps 7 through 9 below continues from the process described previously in <<generating_mnemonic_words>>.
 
-[start=7]
 7. The first parameter to the PBKDF2 key-stretching function is the _mnemonic_ produced from step 6 in <<generating_mnemonic_words>>.
 8. The second parameter to the PBKDF2 key-stretching function is a _salt_. The salt is composed of the string constant "+mnemonic+" concatenated with an optional user-supplied passphrase string.
-9. PBKDF2 stretches the menmonic and salt parameters using 2048 rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit value as its final output. That 512-bit value is the seed.
+9. PBKDF2 stretches the mnemonic and salt parameters using 2048 rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit value as its final output. That 512-bit value is the seed.
 
 .From mnemonic to seed
 image::images/Mnemonic_to_seed.png["From mnemonic to seed"]
