@@ -164,6 +164,18 @@ Note that because the redeem script is not presented to the network until you at
 ((("Pay-to-Script-Hash (P2SH)","locking scripts")))P2SH locking scripts contain the hash of a redeem script, which gives no clues as to the content of the redeem script itself. The P2SH transaction will be considered valid and accepted even if the redeem script is invalid. You might accidentally lock bitcoin in such a way that it cannot later be spent.(((range="endofrange", startref="ix_ch05-asciidoc19")))(((range="endofrange", startref="ix_ch05-asciidoc18")))(((range="endofrange", startref="ix_ch05-asciidoc17")))(((range="endofrange", startref="ix_ch05-asciidoc0")))
 ====
 
+=== Scripts with Conditional Clauses
+
+////
+// script to put a number on the stack
+OP_IF
+// script that runs only if the number isn't zero
+OP_ELSE
+// script that runs only if the number is zero
+OP_ENDIF
+// script that runs no matter what
+////
+
 
 [[op_return]]
 === Data Recording Output (OP_RETURN)
@@ -182,7 +194,7 @@ OP_RETURN <data>
 
 The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44 4f 43 50 52 4f 4f 46+ in hexadecimal.
 
-Keep in mind that there is no "unlocking script" that corresponds to +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The whole point of +OP_RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+OP_RETURN+ is _provably un-spendable_. +OP_RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +OP_RETURN+ is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an +OP_RETURN+ output as an input in a transaction, that transaction is invalid.
+Keep in mind that there is no "unlocking script" that corresponds to +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The whole point of +OP_RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+OP_RETURN+ is _provably un-spendable_. +OP_RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +OP_RETURN+ is referenced as an input in a transaction, the script validation engine will halt the execution of the validation script and marking the transaction as invalid. The execution of OP_RETURN, essentially causes the script to "RETURN" with a FALSE and halt. Thus, if you accidentally reference an +OP_RETURN+ output as an input in a transaction, that transaction is invalid.
 
 A standard transaction (one that conforms to the +isStandard()+ checks) can have only one +OP_RETURN+ output. However, a single +OP_RETURN+ output can be combined in a transaction with outputs of any other type.
 
@@ -195,11 +207,137 @@ OP_RETURN was initially proposed with a limit of 80 bytes, but the limit was red
 
 === Timelocks
 
+Timelocks are restrictions on transactions or outputs that only allow spending after a point in time. Bitcoin has had a transaction-level timelock feature from the beginning. It is implemented by the nLocktime filed in a transaction. Two new timelock features were introduced in late 2015 and mid-2016 that offer UTXO-level timelocks. These are OP_+CHECKLOCKTIMEVERIFY+, and OP_CHECKSEQUENCEVERIFY.
 
+Timelocks are useful for post-dating transactions and locking funds to a date in the future. More importantly, timelocks extend bitcoin scripting into the dimension of time, opening the door for complex multi-step smart contracts. We will examine the use of timelocks for smart contracts in <<state_channels>>.
 
-==== Locktime
+==== Transaction Locktime (nLocktime)
+
+From the beginning, bitcoin has had a transaction-level timelock feature. ((("locktime")))((("transactions","nLockTime")))Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Lockitime is also known as nLockTime from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If nLockTime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with nLockTime specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified nLockTime, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of nLockTime is equivalent to postdating a paper check.
+
+<<locktime_limitations>>
+===== Transaction Locktime Limitations
+
+nLocktime has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example:
+
+Alice signs a transaction spending one of her outputs to Bob's address, and sets the transaction nLocktime to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
+
+* Bob cannot transmit the transaction to redeem the funds until 3 months have elapsed.
+* Bob may transmit the transaction after 3 months
+
+However:
+
+* Alice can create another transaction, double-spending the same inputs without a locktime. Thus, Alice can spend the same UTXO before the 3 months have elapsed
+* Bob has no guarantee that Alice won't do that.
+
+It is important to understand the limitations of transaction nLockTime. The only guarantee is that Bob will not be able to redeem it before 3 months have elapsed. There is no guarantee that Bob will get the funds. To achieve such a guarantee, the timelock restriction must be placed on the UTXO itself and be part of the locking script, rather than on the transaction. This is achieved by the next form of timelock, below.
 
 ==== Check Lock Time Verify (CLTV)
+
+In December of 2015, a new form of timelock was introduced to bitcoin as a soft-fork upgrade. Based on a specification in Bitcoin Improvement Proposal 65 (BIP-65), a new script operator _OP_CHECKLOCKTIMEVERIFY_ (known also as _CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with nLocktime. This allows for much greater flexibility in the way timelocks are applied.
+
+In simple terms, by adding the +CLTV+ opcode in the locking script of an output it restricts the output, so that it can only be spent after the specified time has elapsed.
+
+[TIP]
+====
+While nLocktime is a transaction level timelock, CLTV is an output based timelock.
+
+====
++CLTV+ doesn't replace nLocktime, but rather restricts specific UTXO such that they can only be spent in a future transaction with nLocktime set to a greater or equal value.
+
+As Peter Todd, the author of BIP-65, astutely says: "CHECKLOCKTIMEVERIFY works how you thought nLocktime worked"
+
+The +CLTV+ opcode takes one parameter as input, expressed as a number in the same format as nLocktime (either a block height or Unix epoch time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode that halts execution of the script if the outcome is +FALSE+. If it results in TRUE, execution continues.
+
+In order to lock a output with +CLTV+, you insert it into the locking script of the output, in the transaction that creates the output. For example, if Alice is paying Bob's address, the output would normally contain a P2PKH script like this:
+
+----
+DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY
+----
+
+To lock it to a time, say 3 months from now, the locking script would instead look like this:
+
+----
+<now + 3 months> CHECKLOCKTIMEVERIFY DROP DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY
+----
+
+where +<now {plus} 3 months>+ is a block height or time value estimated 3 months from the time the transaction is mined: current block height {plus} 12,960 or current Unix epoch time {plus} 7,760,000 seconds. For now, don't worry about the +DROP+ opcode that follows +CHECKLOCKTIMEVERIFY+, it will be explained shortly.
+
+When Bob tries to spend this UTXO, he constructs a transaction which references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction nLocktime to be equal or greater to the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
+
+Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal the spending transaction's nLocktime, script execution continues (acts as if a NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
+
+More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution (marking the transaction invalid) if:
+
+.CHECKLOCKTIMEVERIFY validation conditions (Source: BIP-65)
+====
+1. the stack is empty; or
+1. the top item on the stack is less than 0; or
+1. the lock-time type (height vs. timestamp) of the top stack item and the nLockTime field are not the same; or
+1. the top stack item is greater than the transaction's nLockTime field; or
+1. the nSequence field of the input is 0xffffffff;
+====
+
+[NOTE]
+====
+CLTV and nLocktime use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of nLocktime must match that of CHECKLOCKTIMEVERIFY in the inputs - they must both reference either block height or time in seconds.
+====
+
+After execution, if CHECKLOCKTIMEVERIFY is satisfied, the time-parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
+
+By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Because Alice locked the UTXO itself, it is now impossible for either Bob or Alice to spend it before the 3-month locktime has expired.
+
+By introducing timelock functionality directly in the scripting language, +CLTV+ allows us to develop some very interesting complex scripts, as we will see in the next example.
+
+BIP-65 offers an example of a multi-signature script with varying conditions depending on when it is redeemed. Alice and Bob run a business together. They want to store their funds in a multi-signature wallet, but want to add a key held by a third-party as a backup in case they lose one of the keys or one of them is incapacitated. They want to give the third key to their attorney, Lenny.
+
+If Alice and Bob use a 2-of-3 multi-sig with Lenny as the third key, they always run the risk that Lenny could collude with either one of them to steal the funds. Instead they implement a system which is a 2-of-2 multisig, unless the funds are not spent within 3 months. At that point, Lenny can add a signature and unlock the funds with either Alice or Bob's agreement.
+
+It looks like this:
+
+.Variable Multi-Signature with Timelock
+----
+IF
+  <now + 3 months> CHECKLOCKTIMEVERIFY DROP
+  <Lenny's pubkey> CHECKSIGVERIFY
+  1
+ELSE
+  2
+ENDIF
+<Alice's pubkey> <Bob's pubkey> 2 CHECKMULTISIG
+----
+
+This locking script can be unlocked, anytime with:
+
+----
+0 <Alice's signature> <Bob's signature> 0
+----
+
+In that "mode" it operates a lot like a 2-of-2 multi-sig script.
+
+However, if Alice and Bob leave these funds unspent for 3 months, after that time, the locking script can also be unlocked with:
+
+----
+0 <Alice or Bob's signature> <Lenny's signature> 1
+----
+
+So, if the funds are unspent for 3 months, the script behaves like a 2-of-3 multi-sig.
+
+To understand what is happening in the locking script, examine the +IF...ELSE+ conditional clauses. You will notice that in the first clause there is a trailing +1+, just before the ELSE. In the second conditional clause there is a +2+ right before the +ENDIF+.
+
+You will also notice that the +CHECKMULTISIG+ script seems incomplete. It should have the +M+ parameter (the quorum), before Alice's pubkey. Now if you connect these two facts, you will see that the conditional clauses leave the number +1+ or the number +2+ on the stack, which serves as the quorum number for the multisig.
+
+Essentially, the conditional clause changes the script from a 2-of-2 Alice and Bob multisig to a Lenny plus 1-of-2 Alice and Bob multisig depending on whether it is executed before or after 3 months. In addition, Lenny's key is required in the first conditional clause, only if 3 months have elapsed.
+
+Additionally, you might be wondering how the conditional clauses work. What is the IF testing? Look at the unlocking scripts and you will see that one of them ends in +0+, the other ends in +1+. Essentially, the unlocking scripts are *choosing* which branch of the conditional clause to execute. Anytime, Alice and Bob can use the unlocking script that ends in +0+ for "FALSE", executing the second clause (the ELSE clause). After 3 months, they may instead also use the other unlocking script, ending in +1+ for TRUE, activating the first clause (the IF clause).
+
+Finally, notice how the +CHECKLOCKTIMEVERIFY+ serves as a "guard" of the first conditional clause. If you try to execute it before three months have elapsed, by putting a +1+ on the end of any unlocking script, it will simply mark the transaction invalid, as the +CHECKLOCKTIMEVERIFY+ will terminate validation.
+
+Try running the script on paper to see how it behaves on the stack.
+
+The example contained in BIP-65 is one of several offered in that specification:
+
+BIP-65 - OP_CHECKLOCKTIMEVERIFY : https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki]
 
 ==== Check Sequence Verify (CSV)
 
