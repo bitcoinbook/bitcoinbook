@@ -1,301 +1,717 @@
-[[bitcoin_network_ch06]]
-== The Bitcoin Network
+[[ch06]]
+[[transactions]]
+== Transactions
 
-=== Peer-to-Peer Network Architecture
+[[ch06_intro]]
+=== Introduction
 
-((("bitcoin network", id="ix_ch06-asciidoc0", range="startofrange")))((("bitcoin network","architecture of")))((("peer-to-peer networks")))Bitcoin is structured as a peer-to-peer network architecture on top of the Internet. The term peer-to-peer, or P2P, means that the computers that participate in the network are peers to each other, that they are all equal, that there are no "special" nodes, and that all nodes share the burden of providing network services. The network nodes interconnect in a mesh network with a "flat" topology. There is no server, no centralized service, and no hierarchy within the network. Nodes in a peer-to-peer network both provide and consume services at the same time with reciprocity acting as the incentive for participation. Peer-to-peer networks are inherently resilient, decentralized, and open. The preeminent example of a P2P network architecture was the early Internet itself, where nodes on the IP network were equal. Today's Internet architecture is more hierarchical, but the Internet Protocol still retains its flat-topology essence. Beyond bitcoin, the largest and most successful application of P2P technologies is file sharing with Napster as the pioneer and BitTorrent as the most recent evolution of the architecture.
+((("transactions", id="ix_ch06-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger.
 
-Bitcoin's P2P network architecture is much more than a topology choice. Bitcoin is a peer-to-peer digital cash system by design, and the network architecture is both a reflection and a foundation of that core characteristic. Decentralization of control is a core design principle and that can only be achieved and maintained by a flat, decentralized P2P consensus network. 
+In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions. When we use the term "wallet" in this chapter, we are referring to the software that constructs transactions, not just the database of keys.
 
-((("bitcoin network","defined")))The term "bitcoin network" refers to the collection of nodes running the bitcoin P2P protocol. In addition to the bitcoin P2P protocol, there are other protocols such as((("Stratum (STM) mining protocol"))) Stratum, which are used for mining and lightweight or mobile wallets. These additional protocols are provided by gateway routing servers that access the bitcoin network using the bitcoin P2P protocol, and then extend that network to nodes running other protocols. For example, Stratum servers connect Stratum mining nodes via the Stratum protocol to the main bitcoin network and bridge the Stratum protocol to the bitcoin P2P protocol. We use the term "extended bitcoin network" to refer to the overall network that includes the bitcoin P2P protocol, pool-mining protocols, the Stratum protocol, and any other related protocols connecting the components of the bitcoin system. 
+[[tx_structure]]
+=== Transactions in Detail
 
-=== Nodes Types and Roles
+In the second chapter, we looked at the transaction Alice used to pay for coffee at Bob's Coffee shop, using a block explorer:
 
-((("bitcoin network","nodes")))((("nodes","roles of")))((("nodes","types of")))Although nodes in the bitcoin P2P network are equal, they may take on different roles depending on the functionality they are supporting. A bitcoin node is a collection of functions: routing, the blockchain database, mining, and wallet services. A full node with all four of these functions is shown in <<full_node_reference>>.
+.Alice's transaction to Bob's Cafe
+image::images/msbt_0208.png["Alice Coffee Transaction"]
 
-[[full_node_reference]]
-.A bitcoin network node with all four functions: wallet, miner, full blockchain database, and network routing
-image::images/msbt_0601.png["FullNodeReferenceClient_Small"]
+The block explorer application shows a transaction from Alice's "address" to Bob's "address". This is a much simplified view of what is contained in a transaction. In fact, as we will see in this chapter, much of the information shown above is constructed by the block explorer and is not actually in the transaction.
 
-All nodes include the routing function to participate in the network and might include other functionality. All nodes validate and propagate transactions and blocks, and discover and maintain connections to peers. In the full-node example in <<full_node_reference>>, the routing function is indicated by an orange circle named "Network Routing Node." 
+==== Transactions - Behind the Scenes
 
-Some nodes, called full nodes, also maintain a complete and up-to-date copy of the blockchain. Full nodes can autonomously and authoritatively verify any transaction without external reference. Some nodes maintain only a subset of the blockchain and verify transactions using a method called((("simplified payment verification (SPV) nodes","defined"))) _simplified payment verification_, or SPV. These nodes are known as SPV or lightweight nodes. In the full-node example in the figure, the full-node blockchain database function is indicated by a blue circle named "Full Blockchain." In <<bitcoin_network>>, SPV nodes are drawn without the blue circle, showing that they do not have a full copy of the blockchain. 
+Behind the scenes, an actual transaction looks very different from a transaction provided by a typical block explorer. In fact, most of the high-level constructs we see in the various bitcoin application user interfaces _do not actually exist_ in the bitcoin system.
 
-Mining nodes compete to create new blocks by running specialized hardware to solve the proof-of-work algorithm. Some mining nodes are also full nodes, maintaining a full copy of the blockchain, while others are lightweight nodes participating in pool mining and depending on a pool server to maintain a full node. The mining function is shown in the full node as a black circle named "Miner."
+We can use Bitcoin Core's command-line interface (+getrawtransaction+ and +decoderawtransaction+) to retrieve Alice's "raw" transaction, decode it and see what it contains. The result looks like this:
 
-User wallets might be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly, many user wallets, especially those running on resource-constrained devices such as smartphones, are SPV nodes. The wallet function is shown in <<full_node_reference>> as a green circle named "Wallet".
-
-In addition to the main node types on the bitcoin P2P protocol, there are servers and nodes running other protocols, such as specialized mining pool protocols and lightweight client-access protocols. 
-
-<<node_type_ledgend>> shows the most common node types on the extended bitcoin network.
-
-=== The Extended Bitcoin Network
-
-((("bitcoin network","extended")))((("extended bitcoin network")))The main bitcoin network, running the bitcoin P2P protocol, consists of between 7,000 and 10,000 listening nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as((("BitcoinJ library")))((("btcd")))((("libbitcoin library"))) BitcoinJ, Libbitcoin, and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions, and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top. 
-
-The extended bitcoin network includes the network running the bitcoin P2P protocol, described earlier, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of((("mining pools","on the bitcoin network"))) pool servers and protocol gateways that connect nodes running other protocols. These other protocol nodes are mostly pool mining nodes (see <<ch8>>) and lightweight wallet clients, which do not carry a full copy of the blockchain. 
-
-<<bitcoin_network>> shows the extended bitcoin network with the various types of nodes, gateway servers, edge routers, and wallet clients and the various protocols they use to connect to each other. 
-
-[[node_type_ledgend]]
-.Different types of nodes on the extended bitcoin network
-image::images/msbt_0602.png["BitcoinNodeTypes"]
-
-[[bitcoin_network]]
-.The extended bitcoin network showing various node types, gateways, and protocols
-image::images/msbt_0603.png["BitcoinNetwork"]
-
-=== Network Discovery
-
-((("bitcoin network","discovery", id="ix_ch06-asciidoc1", range="startofrange")))((("network discovery", id="ix_ch06-asciidoc2", range="startofrange")))((("nodes","network discovery and", id="ix_ch06-asciidoc3", range="startofrange")))((("peer-to-peer networks","discovery by new nodes", id="ix_ch06-asciidoc4", range="startofrange")))When a new node boots up, it must discover other bitcoin nodes on the network in order to participate. To start this process, a new node must discover at least one existing node on the network and connect to it. The geographic location of other nodes is irrelevant; the bitcoin network topology is not geographically defined. Therefore, any existing bitcoin nodes can be selected at random. 
-
-((("peer-to-peer networks","connections")))To connect to a known peer, nodes establish a TCP connection, usually to port 8333 (the port generally known as the one used by bitcoin), or an alternative port if one is provided. Upon establishing a connection, the node will start a "handshake" (see <<network_handshake>>) by transmitting a((("version message")))  +version+ message, which contains basic identifying information, including:
-
-+nVersion+:: The bitcoin P2P protocol version the client "speaks" (e.g., 70002)
-+nLocalServices+:: A list of local services supported by the node, currently just +NODE_NETWORK+
-+nTime+:: The current time
-+addrYou+:: The IP address of the remote node as seen from this node
-+addrMe+:: The IP address of the local node, as discovered by the local node
-+subver+:: A sub-version showing the type of software running on this node (e.g., "/Satoshi:0.9.2.1/")+
-+BestHeight+:: The block height of this node's blockchain
-
-(See http://bit.ly/1qlsC7w[GitHub] for an example of the +version+ network message.)
-
-The +version+ message is always the first message sent by any peer to another peer. The local peer receiving a +version+ message will examine the remote peer's reported +nVersion+ and decide if the remote peer is compatible. If the remote peer is compatible, the local peer will acknowledge the +version+ message and establish a connection, by sending a +verack+.
-
-How does a new node find peers? The first method is to query DNS using a number of ((("nodes","seed")))((("DNS seed")))"DNS seeds," which are DNS servers that provide a list of IP addresses of bitcoin nodes. Some of those DNS seeds provide a static list of IP addresses of stable bitcoin listening nodes. Some of the DNS seeds are custom implementations of BIND (Berkeley Internet Name Daemon) that return a random subset from a list of bitcoin node addresses collected by a crawler or a long-running bitcoin node.  The Bitcoin Core client contains the names of five different DNS seeds. The diversity of ownership and diversity of implementation of the different DNS seeds offers a high level or reliability for the initial bootstrapping process. In the Bitcoin Core client, the option to use the DNS seeds is controlled by the option switch +-dnsseed+ (set to 1 by default, to use the DNS seed).
-
-Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one bitcoin node, after which it can establish connections through further introductions. The command-line argument +-seednode+ can be used to connect to one node just for introductions, using it as a seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers. 
-
-[[network_handshake]]
-.The initial handshake between peers
-image::images/NetworkHandshake-corrected_msbt_0604.png["NetworkHandshake"]
-
-Once one or more connections are established, the new node will send an((("addr message"))) +addr+ message containing its own IP address to its neighbors. The neighbors will, in turn, forward the +addr+ message to their neighbors, ensuring that the newly connected node becomes well known and better connected. Additionally, the newly connected node can send +getaddr+ to the neighbors, asking them to return a list of IP addresses of other peers. That way, a node can find peers to connect to and advertise its existence on the network for other nodes to find it. <<address_propagation>> shows the address discovery protocol. 
-
-
-[[address_propagation]]
-.Address propagation and discovery
-image::images/msbt_0605.png["AddressPropagation"]
-
-A node must connect to a few different peers in order to establish diverse paths into the bitcoin network. Paths are not reliable—nodes come and go—and so the node must continue to discover new nodes as it loses old connections as well as assist other nodes when they bootstrap. Only one connection is needed to bootstrap, because the first node can offer introductions to its peer nodes and those peers can offer further introductions. It's also unnecessary and wasteful of network resources to connect to more than a handful of nodes. After bootstrapping, a node will remember its most recent successful peer connections, so that if it is rebooted it can quickly reestablish connections with its former peer network. If none of the former peers respond to its connection request, the node can use the seed nodes to bootstrap again. 
-
-On a node running the Bitcoin Core client, you can list the peer connections with the command((("getpeerinfo command"))) +getpeerinfo+:
-
-[source,bash]
-----
-$ bitcoin-cli getpeerinfo
-----
+[[alice_tx]]
+.Alice's transaction decoded
 [source,json]
 ----
-[
+{
+  "version": 1,
+  "locktime": 0,
+  "vin": [
     {
-        "addr" : "85.213.199.39:8333",
-        "services" : "00000001",
-        "lastsend" : 1405634126,
-        "lastrecv" : 1405634127,
-        "bytessent" : 23487651,
-        "bytesrecv" : 138679099,
-        "conntime" : 1405021768,
-        "pingtime" : 0.00000000,
-        "version" : 70002,
-        "subver" : "/Satoshi:0.9.2.1/",
-        "inbound" : false,
-        "startingheight" : 310131,
-        "banscore" : 0,
-        "syncnode" : true
+      "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
+      "vout": 0,
+      "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.01500000,
+      "scriptPubKey": "OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHECKSIG"
     },
     {
-        "addr" : "58.23.244.20:8333",
-        "services" : "00000001",
-        "lastsend" : 1405634127,
-        "lastrecv" : 1405634124,
-        "bytessent" : 4460918,
-        "bytesrecv" : 8903575,
-        "conntime" : 1405559628,
-        "pingtime" : 0.00000000,
-        "version" : 70001,
-        "subver" : "/Satoshi:0.8.6/",
-        "inbound" : false,
-        "startingheight" : 311074,
-        "banscore" : 0,
-        "syncnode" : false
+      "value": 0.08450000,
+      "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG",
     }
-]
+  ]
+}
 ----
 
-((("peer-to-peer networks","automatic management, overriding")))To override the automatic management of peers and to specify a list of IP addresses, users can provide the option +-connect=<IPAddress>+ and specify one or more IP addresses. If this option is used, the node will only connect to the selected IP addresses, instead of discovering and maintaining the peer connections automatically. 
+You may notice a few things about this transaction, mostly the things that are missing! Where is Alice's address? Where is Bob's address? Where is the 0.1 input "sent" by Alice? In bitcoin, there are no coins, no senders, no recipients, no balances, no accounts and no addresses. All those things are constructed at a higher level for the benefit of the user, to make things easier to understand.
 
-If there is no traffic on a connection, nodes will periodically send a message to maintain the connection. If a node has not communicated on a connection for more than 90 minutes, it is assumed to be disconnected and a new peer will be sought. Thus, the network dynamically adjusts to transient nodes and network problems, and can organically grow and shrink as needed without any central control.(((range="endofrange", startref="ix_ch06-asciidoc4")))(((range="endofrange", startref="ix_ch06-asciidoc3")))(((range="endofrange", startref="ix_ch06-asciidoc2")))(((range="endofrange", startref="ix_ch06-asciidoc1")))
+You may also notice a lot of strange and indecipherable fields and hexadecimal strings. Don't worry, we will explain each field shown here in detail in this chapter.
 
-=== Full Nodes
+[[tx_inputs_outputs]]
+=== Transaction Outputs and Inputs
 
-((("blockchains","full nodes and")))((("full nodes")))((("nodes","full")))Full nodes are nodes that maintain a full blockchain with all transactions. More accurately, they probably should be called "full blockchain nodes." In the early years of bitcoin, all nodes were full nodes and currently the Bitcoin Core client is a full blockchain node. In the past two years, however, new forms of bitcoin clients have been introduced that do not maintain a full blockchain but run as lightweight clients. We'll examine these in more detail in the next section. 
+((("transactions","unspent transaction output (UTXO)")))((("unspent transaction output (UTXO)")))The fundamental building block of a bitcoin transaction is a  _transaction output_. Transaction outputs are indivisible chunks of bitcoin currency, recorded on the blockchain, and recognized as valid by the entire network. Bitcoin full nodes track all available and spendable outputs, known as _Unspent Transaction Outputs_ or _UTXO_. The collection of all UTXO is known as the _UTXO set_ and currently numbers in the millions of UTXO. The UTXO set grows as new UTXO is created and shrinks when UTXO is consumed. Every transaction represents a change (state transition) in the UTXO set.
 
-((("blockchains","on full nodes")))Full blockchain nodes maintain a complete and up-to-date copy of the bitcoin blockchain with all the transactions, which they independently build and verify, starting with the very first block (genesis block) and building up to the latest known block in the network. A full blockchain node can independently and authoritatively verify any transaction without recourse or reliance on any other node or source of information. The full blockchain node relies on the network to receive updates about new blocks of transactions, which it then verifies and incorporates into its local copy of the blockchain. 
+When we say that a user's wallet has "received" bitcoin, what we mean is that the wallet has detected an unspent transaction output (UTXO) which can be spent with one of the keys controlled by that wallet. Thus, a user's bitcoin "balance" is the sum of all UTXO that user's wallet can spend and which may be scattered amongst hundreds of transactions and hundreds of blocks. The concept of a balance is created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating the value of any UTXO that the wallet can spend with the keys it controls. Today, all wallets maintain a database or use a database service to store a quick reference set of all the UTXO they can spend with the keys they control.
 
-Running a full blockchain node gives you the pure bitcoin experience: independent verification of all transactions without the need to rely on, or trust, any other systems. It's easy to tell if you're running a full node because it requires 20+ gigabytes of persistent storage (disk space) to store the full blockchain. If you need a lot of disk and it takes two to three days to sync to the network, you are running a full node. That is the price of complete independence and freedom from central authority. 
+A transaction output can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoins can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are *discreet* and *indivisible* units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
 
-There are a few alternative implementations of full blockchain bitcoin clients, built using different programming languages and software architectures. However, the most common implementation is the reference client((("Bitcoin Core client","and full nodes"))) Bitcoin Core, also known as the Satoshi client. More than 90% of the nodes on the bitcoin network run various versions of Bitcoin Core. It is identified as "Satoshi" in the sub-version string sent in the +version+ message and shown by the command +getpeerinfo+ as we saw earlier; for example, +/Satoshi:0.8.6/+.
+If an unspent transaction output is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. ((("change, making")))In other words, if you have a UTXO worth 20 bitcoin and want to pay only 1 bitcoin, your transaction must consume the entire 20-bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result of the indivisible nature of transaction outputs, most bitcoin transactions will have to generate change.
 
-=== Exchanging "Inventory"
+Imagine a shopper buying a $1.50 beverage, reaching into her wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (for example, a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If she hands too much money, say $5, to the shop owner, she will expect $3.50 change, which she will return to her wallet and have available for future transactions.
 
-((("blockchains","creating on nodes")))((("blockchains","on new nodes")))((("blocks","on new nodes")))((("full nodes","creating full blockchains on")))The first thing a full node will do once it connects to peers is try to construct a complete blockchain. If it is a brand-new node and has no blockchain at all, it only knows one block, the genesis block, which is statically embedded in the client software. Starting with block #0 (the genesis block), the new node will have to download hundreds of thousands of blocks to synchronize with the network and re-establish the full blockchain. 
+Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. Users cannot cut a UTXO in half any more than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO to compose an amount greater than or equal to the desired transaction amount.
 
-((("syncing the blockchain")))The process of syncing the blockchain starts with the +version+ message, because that contains +BestHeight+, a node's current blockchain height (number of blocks). A node will see the +version+ messages from its peers, know how many blocks they each have, and be able to compare to how many blocks it has in its own blockchain. Peered nodes will exchange a +getblocks+ message that contains the hash (fingerprint) of the top block on their local blockchain. One of the peers will be able to identify the received hash as belonging to a block that is not at the top, but rather belongs to an older block, thus deducing that its own local blockchain is longer than its peer's. 
+As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change. All of this complex assembly of spendable UTXO is done by the user's wallet automatically and is invisible to users. It is only relevant if you are programmatically constructing raw transactions from UTXO.
 
-The peer that has the longer blockchain has more blocks than the other node and can identify which blocks the other node needs in order to "catch up." It will identify the first 500 blocks to share and transmit their hashes using an((("inv messages"))) +inv+ (inventory) message. The node missing these blocks will then retrieve them, by issuing a series of +getdata+ messages requesting the full block data and identifying the requested blocks using the hashes from the +inv+ message.
+A transaction consumes previously-recorded unspent transaction outputs and creates new transaction outputs that can be consumed by a future transaction. This way, chunks of bitcoin value move forward from owner to owner in a chain of transactions consuming and creating UTXO.
 
-Let's assume, for example, that a node only has the genesis block. It will then receive an +inv+ message from its peers containing the hashes of the next 500 blocks in the chain. It will start requesting blocks from all of its connected peers, spreading the load and ensuring that it doesn't overwhelm any peer with requests. The node keeps track of how many blocks are "in transit" per peer connection, meaning blocks that it has requested but not received, checking that it does not exceed a limit((("MAX_BLOCKS_IN_TRANSIT_PER_PEER constant"))) (+MAX_BLOCKS_IN_TRANSIT_PER_PEER+). This way, if it needs a lot of blocks, it will only request new ones as previous requests are fulfilled, allowing the peers to control the pace of updates and not overwhelming the network. As each block is received, it is added to the blockchain, as we will see in <<blockchain>>. As the local blockchain is gradually built up, more blocks are requested and received, and the process continues until the node catches up to the rest of the network. 
-
-This process of comparing the local blockchain with the peers and retrieving any missing blocks happens any time a node goes offline for any period of time. Whether a node has been offline for a few minutes and is missing a few blocks, or a month and is missing a few thousand blocks, it starts by sending +getblocks+, gets an +inv+ response, and starts downloading the missing blocks. <<inventory_synchronization>> shows the inventory and block propagation protocol. 
-
-
-[[spv_nodes]]
-=== Simplified Payment Verification (SPV) Nodes
-
-((("nodes","SPV", id="ix_ch06-asciidoc5", range="startofrange")))((("nodes","lightweight", id="ix_ch06-asciidoc5a", range="startofrange")))((("simplified payment verification (SPV) nodes", id="ix_ch06-asciidoc6", range="startofrange")))Not all nodes have the ability to store the full blockchain. Many bitcoin clients are designed to run on space- and power-constrained devices, such as smartphones, tablets, or embedded systems. For such devices, a _simplified payment verification_ (SPV) method is used to allow them to operate without storing the full blockchain. These types of clients are called SPV clients or lightweight clients. As bitcoin adoption surges, the SPV node is becoming the most common form of bitcoin node, especially for bitcoin wallets.
-
-((("blockchains","on SPV nodes")))SPV nodes download only the block headers and do not download the transactions included in each block. The resulting chain of blocks, without transactions, is 1,000 times smaller than the full blockchain. SPV nodes cannot construct a full picture of all the UTXOs that are available for spending because they do not know about all the transactions on the network. SPV nodes verify transactions using a slightly different methodology that relies on peers to provide partial views of relevant parts of the blockchain on demand.
-
-[[inventory_synchronization]]
-.Node synchronizing the blockchain by retrieving blocks from a peer
-image::images/msbt_0606.png["InventorySynchronization"]
-
-As an analogy, a full node is like a tourist in a strange city, equipped with a detailed map of every street and every address. By comparison, an SPV node is like a tourist in a strange city asking random strangers for turn-by-turn directions while knowing only one main avenue. Although both tourists can verify the existence of a street by visiting it, the tourist without a map doesn't know what lies down any of the side streets and doesn't know what other streets exist. Positioned in front of 23 Church Street, the tourist without a map cannot know if there are a dozen other "23 Church Street" addresses in the city and whether this is the right one. The mapless tourist's best chance is to ask enough people and hope some of them are not trying to mug him.
-
-Simplified payment verification verifies transactions by reference to their _depth_ in the blockchain instead of their _height_. Whereas a full blockchain node will construct a fully verified chain of thousands of blocks and transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the chain of all blocks (but not all transactions) and link that chain to the transaction of interest. 
-
-For example, when examining a transaction in block 300,000, a full node links all 300,000 blocks down to the genesis block and builds a full database of UTXO, establishing the validity of the transaction by confirming that the UTXO remains unspent. An SPV node cannot validate whether the UTXO is unspent. Instead, the SPV node will establish a link between the transaction and the block that contains it, using a((("merkle trees","SPV and"))) _merkle path_ (see <<merkle_trees>>). Then, the SPV node waits until it sees the six blocks 300,001 through 300,006 piled on top of the block containing the transaction and verifies it by establishing its depth under blocks 300,006 to 300,001. The fact that other nodes on the network accepted block 300,000 and then did the necessary work to produce six more blocks on top of it is proof, by proxy, that the transaction was not a double-spend.
-
-An SPV node cannot be persuaded that a transaction exists in a block when the transaction does not in fact exist. The SPV node establishes the existence of a transaction in a block by requesting a merkle path proof and by validating the proof of work in the chain of blocks. However, a transaction's existence can be "hidden" from an SPV node. An SPV node can definitely prove that a transaction exists but cannot verify that a transaction, such as a double-spend of the same UTXO, doesn't exist because it doesn't have a record of all transactions. This vulnerability can be used in a denial-of-service attack or for a double-spending attack against SPV nodes. To defend against this, an SPV node needs to connect randomly to several nodes, to increase the probability that it is in contact with at least one honest node. This need to randomly connect means that SPV nodes also are vulnerable to network partitioning attacks or Sybil attacks, where they are connected to fake nodes or fake networks and do not have access to honest nodes or the real bitcoin network.
-
-For most practical purposes, well-connected SPV nodes are secure enough, striking the right balance between resource needs, practicality, and security. For infallible security, however, nothing beats running a full blockchain node. 
+The exception to the output and input chain is a special type of transaction called the _coinbase_ transaction, which is the first transaction in each block. This transaction is placed there by the "winning" miner and creates brand-new bitcoin payable to that miner as a reward for mining. This special coinbase transaction does not consume UTXO, instead it has a special type of input called the "coinbase". This is how bitcoin's money supply is created during the mining process, as we will see in <<ch8>>.
 
 [TIP]
 ====
-((("simplified payment verification (SPV) nodes","verification")))A full blockchain node verifies a transaction by checking the entire chain of thousands of blocks below it in order to guarantee that the UTXO is not spent, whereas an SPV node checks how deep the block is buried by a handful of blocks above it. 
+What comes first? Inputs or outputs, the chicken or the egg? Strictly speaking, outputs come first because coinbase transactions, which generate new bitcoin, have no inputs and create outputs from nothing.
 ====
 
-((("block headers","getting on SPV nodes")))To get the block headers, SPV nodes use a((("getheaders message"))) +getheaders+ message instead of +getblocks+. The responding peer will send up to 2,000 block headers using a single +headers+ message. The process is otherwise the same as that used by a full node to retrieve full blocks. SPV nodes also set a filter on the connection to peers, to filter the stream of future blocks and transactions sent by the peers. Any transactions of interest are retrieved using a +getdata+ request. The peer generates a((("tx messages"))) +tx+ message containing the transactions, in response. <<spv_synchronization>> shows the synchronization of block headers.
+[[tx_outs]]
+==== Transaction Outputs
 
-[[spv_synchronization]]
-.SPV node synchronizing the block headers
-image::images/msbt_0607.png["SPVSynchronization"]
+((("bitcoin ledger, outputs in", id="ix_ch06-asciidoc2", range="startofrange")))((("transactions","outputs", id="ix_ch06-asciidoc3", range="startofrange")))((("unspent transaction output (UTXO)", id="ix_ch06-asciidoc4", range="startofrange")))Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called UTXO, which are then recognized by the whole network and available for the owner to spend in a future transaction.
 
-Because SPV nodes need to retrieve specific transactions in order to selectively verify them, they also create a privacy risk. Unlike full blockchain nodes, which collect all transactions within each block, the SPV node's requests for specific data can inadvertently reveal the addresses in their wallet. For example, a third party monitoring a network could keep track of all the transactions requested by a wallet on an SPV node and use those to associate bitcoin addresses with the user of that wallet, destroying the user's privacy. 
+UTXO are tracked by every full-node bitcoin client in the UTXO set. New transactions consume (spend) one or more of these outputs from the UTXO set.
 
-Shortly after the introduction of SPV/lightweight nodes, the bitcoin developers added a feature called _bloom filters_ to address the privacy risks of SPV nodes. Bloom filters allow SPV nodes to receive a subset of the transactions without revealing precisely which addresses they are interested in, through a filtering mechanism that uses probabilities rather than fixed patterns.(((range="endofrange", startref="ix_ch06-asciidoc6")))(((range="endofrange", startref="ix_ch06-asciidoc5a")))(((range="endofrange", startref="ix_ch06-asciidoc5"))) 
+Transaction outputs consist of two parts:
 
-=== Bloom Filters
+* An amount of bitcoin, denominated in _satoshis_, the smallest bitcoin unit
+* A cryptographic puzzle that determines the conditions required to spend the output
 
-((("bitcoin network","bloom filters and", id="ix_ch06-asciidoc7", range="startofrange")))((("bloom filters", id="ix_ch06-asciidoc8", range="startofrange")))((("Simplified Payment Verification (SPV) nodes","bloom filters and", id="ix_ch06-asciidoc9", range="startofrange")))A bloom filter is a probabilistic search filter, a way to describe a desired pattern without specifying it exactly. Bloom filters offer an efficient way to express a search pattern while protecting privacy. They are used by SPV nodes to ask their peers for transactions matching a specific pattern, without revealing exactly which addresses they are searching for. 
+The cryptographic puzzle, is also known as a ((("locking scripts"))) _locking script_, a _witness script_ or a +scriptPubKey+.
 
-In our previous analogy, a tourist without a map is asking for directions to a specific address, "23 Church St." If she asks strangers for directions to this street, she inadvertently reveals her destination. A bloom filter is like asking, "Are there any streets in this neighborhood whose name ends in R-C-H?" A question like that reveals slightly less about the desired destination than asking for "23 Church St." Using this technique, a tourist could specify the desired address in more detail as "ending in U-R-C-H" or less detail as "ending in H." By varying the precision of the search, the tourist reveals more or less information, at the expense of getting more or less specific results. If she asks a less specific pattern, she gets a lot more possible addresses and better privacy, but many of the results are irrelevant. If she asks for a very specific pattern, she gets fewer results but loses privacy. 
+The transaction scripting language, used in the locking script mentioned previously, is discussed in detail in <<tx_script>>.
 
-Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned toward precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what addresses are used in the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy. 
+Now, let's look at Alice's transaction (shown previously in <<alice_tx>>) and see if we can identify the outputs. In the JSON encoding, the outputs are in an array (list) named +vout+:
 
-An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a((("pay-to-public-key-hash (P2PKH)","bloom filters and"))) pay-to-public-key-hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a((("pay-to-script-hash (P2SH)","bloom filters and"))) P2SH address, the search pattern will be a pay-to-script-hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node. 
+[source,json]
+----
+"vout": [
+  {
+    "value": 0.01500000,
+    "scriptPubKey": "OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY
+    OP_CHECKSIG"
+  },
+  {
+    "value": 0.08450000,
+    "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG",
+  }
+]
+----
 
-Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy. 
+As you can see, the transaction contains two outputs. Each output is defined by a value and a cryptographic puzzle. In the encoding shown by Bitcoin Core above, the value is shown in bitcoin. The second part of each output is the cryptographic puzzle that sets the conditions for spending. Bitcoin Core shows this as +scriptPubKey+ and shows us a human-readable representation of the script.
 
-In <<bloom1>>, we use a very small array of 16 bits and a set of three hash functions to demonstrate how bloom filters work. 
+The topic of locking and unlocking UTXO will be discussed later, in <<tx_lock_unlock>>. The scripting language that is used for the script in +scriptPubKey+ is discussed in <<tx_script>>. But before we delve into those topics, we need to understand the overall structure of transaction inputs and outputs.
 
-[[bloom1]]
-.An example of a simplistic bloom filter, with a 16-bit field and three hash functions
-image::images/msbt_0608.png["Bloom1"]
+===== Transaction Serialization - Outputs
 
-The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits that have been changed from +0+ to +1+. 
+When transactions are transmitted over the network or exchanged between applications, they are _serialized_. (((serialization)))Serialization is the process of converting the internal representation of a data structure into a format that can be transmitted one byte at a time, also known as a byte-stream. Serialization is most commonly used for encoding data structures for transmission over a network or for storage in a file. The serialization format of a transaction output is shown in <<tx_out_structure>>:
 
-<<bloom2>> is an example of adding a pattern "A" to the simple bloom filter shown in <<bloom1>>.
+[[tx_out_structure]]
+.Transaction output serialization
+[options="header"]
+|=======
+|Size| Field | Description
+| 8 bytes (little-endian) | Amount  | Bitcoin value in satoshis (10^-8^ bitcoin)
+| 1-9 bytes (VarInt) | Locking-Script Size | Locking-Script length in bytes, to follow
+| Variable | Locking-Script | A script defining the conditions needed to spend the output
+|=======
+
+Most bitcoin libraries and frameworks do not store transactions internally as byte-streams, as that would require complex parsing every time you needed to access a single field. For convenience and readability, bitcoin libraries store transactions internally in data structures (usually object-oriented structures).
+
+The process of converting from the byte-stream representation of a transaction to a library's internal representation data structure is called (((de-serialization)))_de-serialization_ or _transaction parsing_. The process of converting back to a byte-stream for transmission over the network, for hashing or for storage on disk is called (((serialization)))_serialization_.  Most bitcoin libraries have built-in functions for transaction serialization and de-serialization.
+
+See if you can manually decode Alice's transaction from the serialized hexadecimal form, finding some of the elements we saw above. The section containing the two outputs is highlighted to help you:
+
+====
++0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd73+
++4d2804fe65fa35779000000008b483045022100884d142d86652a3f47+
++ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039+
++ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813+
++01410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade84+
++16ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc1+
++7b4a10fa336a8d752adfffffffff02+*+60e31600000000001976a914ab6+*
+*+8025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef800000000000+*
+*+1976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac+*
++00000000+
+====
+
+Here are some hints:
+
+* There are two outputs in the highlighted section, each serialized as shown in the table <<tx_out_structure>>
+* The value of 0.15 bitcoin is 1,500,000 satoshis. That's +16 e3 60+ in hexadecimal.
+* In the serialized transaction, the value +16 e3 60+ is encoded in little-endian (least-significant-byte-first) byte order, so it looks like +60 e3 16+
+* The +scriptPubKey+ length is 25 bytes, which is +19+ in hexadecimal
+
+[[tx_inputs]]
+==== Transaction Inputs
+
+((("transactions","inputs", id="ix_ch06-asciidoc5", range="startofrange")))Transaction inputs identify (by reference) which UTXO will be consumed and provide proof of ownership through an unlocking script.
+
+To build a transaction, a wallet selects from the UTXO it controls, UTXO with enough value to make the requested payment. Sometimes one UTXO is enough, other times more than one is needed. For each UTXO that will be consumed to make this payment, the wallet creates one input pointing to the UTXO and unlocks it with an unlocking script.
+
+Let's look at the components of an input in greater detail. The first part of an input is a pointer to an UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. The second part is an unlocking script, which the wallet constructs in order to satisfy the spending conditions set in the UTXO. Most often, the unlocking script is a digital signature and public key proving ownership of the bitcoin. However, not all unlocking scripts contain signatures. The third part is a sequence number which will be discussed later.
+
+Consider our example in <<alice_tx>>. The transaction inputs are an array (list) called +vin+:
+
+[[vin]]
+.The transaction inputs in Alice's transaction
+[source,json]
+----
+"vin": [
+  {
+    "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
+    "vout": 0,
+    "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
+    "sequence": 4294967295
+  }
+]
+----
+
+As you can see, there is only one input in the list (because one UTXO contained sufficient value to make this payment). The input contains four elements:
+
+* A transaction ID, referencing the transaction which contains the UTXO being spent
+* An output index (+vout+), identifying which UTXO from that transaction is referenced (first one is zero)
+* A scriptSig, which satisfies the conditions placed on the UTXO, unlocking it for spending
+* A sequence number (to be discussed later)
+
+In Alice's transaction, the input points to transaction ID +7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18+ and output index +0+ (i.e. the first UTXO created by that transaction). The unlocking script is constructed by Alice's wallet by first retrieving the referenced UTXO, examining its locking script and then using that to build the necessary unlocking script to satisfy it.
+
+Looking just at the input you may have noticed that we don't know anything about this UTXO, other than a reference to the transaction containing it. We don't know it's value (amount in satoshi), and we don't know the locking script that sets the conditions for spending it. To find this information, we must retrieve the referenced UTXO by retrieving the underlying transaction. Notice that because the value of the input is not explicitly stated, we must also use the referenced UTXO in order to calculate fees that will be paid in this transaction (see <<tx_fees>>).
+
+It's not just Alice's wallet that needs to retrieve UTXO referenced in the inputs. Once this transaction is broadcast to the network, every validating node will also need to retrieve the UTXO referenced in the transaction inputs in order to validate the transaction.
+
+Transactions on their own seem incomplete because they lack context. They reference UTXO in their inputs but without retrieving that UTXO we cannot know the value of the inputs or their locking conditions. When writing bitcoin software, anytime you decode a transaction with the intent of validating it or counting the fees or checking the unlocking script, your code will first have to retrieve the referenced UTXO from the blockchain in order to build the context implied but not present in the UTXO references of the inputs. For example, to calculate the amount paid in fees, you must know the sum of the values of inputs and outputs. But without retrieving the UTXO referenced in the inputs, you do not know their value. So a seemingly simple operation like counting fees in a single transaction in fact involves multiple steps and data from multiple transactions.
+
+We can use the same sequence of commands with Bitcoin Core as we used when retrieving Alice's transaction (+getrawtransaction+ and +decoderawtransaction+). With that we can get the UTXO referenced in the input above and take a look:
+
+[[alice_input_tx]]
+.Alice's UTXO from the previous transaction, referenced in the input
+[source,json]
+----
+"vout": [
+   {
+     "value": 0.10000000,
+     "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG"
+   }
+ ]
+----
+
+We see that this UTXO has a value of 0.1 BTC and that it has a locking script (+scriptPubKey+) which contains "OP_DUP OP_HASH160...".
+
+[TIP]
+====
+To fully understand Alice's transaction we had to retrieve the previous transaction(s) referenced as inputs. A function that retrieves previous transactions and unspent transaction outputs is very common and exists in almost every bitcoin library and API.
+====
+
+===== Transaction Serialization - Inputs
+
+When transactions are serialized for transmission on the network, their inputs are encoded into a byte-stream as follows:
+
+[[tx_in_structure]]
+.Transaction input serialization
+[options="header"]
+|=======
+|Size| Field | Description
+| 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
+| 4 bytes | Output Index | The index number of the UTXO to be spent; first one is 0
+| 1-9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
+| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script.
+| 4 bytes | Sequence Number | Used for locktime or disabled (0xFFFFFFFF)
+|=======
+
+As with the outputs, let's see if we can find the inputs from Alice's transaction in the serialized format. First, the inputs decoded:
+
+[source,json]
+----
+"vin": [
+  {
+    "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
+    "vout": 0,
+    "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
+    "sequence": 4294967295
+  }
+],
+----
+
+Now, let's see if we can identify these fields in the serialized hex encoding:
+
+====
+
++0100000001+*+186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd73+*
+*+4d2804fe65fa35779000000008b483045022100884d142d86652a3f47+*
+*+ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039+*
+*+ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813+*
+*+01410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade84+*
+*+16ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc1+*
+*+7b4a10fa336a8d752adfffffffff+*+0260e31600000000001976a914ab6+
++8025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef800000000000+
++1976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000+
++000+
+
+====
+
+Hints:
+
+* The transaction ID is serialized in reversed byte order, so it starts with (hex) +18+ and ends with +79+
+* The output index is a 4-byte group of zeroes, easy to identify
+* The length of the scriptSig is 139 bytes, or +8b+ in hex.
+* The sequence number is set to +FFFFFFFF+, again easy to identify
+
+[[tx_fees]]
+==== Transaction Fees
+
+((("fees, transaction", id="ix_ch06-asciidoc6", range="startofrange")))Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Fees also serve as a security mechanism themselves, by making it economically infeasible for attackers to flood the network with transactions. Mining and the fees and rewards collected by miners are discussed in more detail in <<ch8>>.
+
+This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command-line interface, you must manually account for and include these fees.
+
+Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain.
+
+((("fees, transaction","calculating")))Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next block mined, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing.
+
+Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been evolving. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. Since at least the beginning of 2016, capacity limits in bitcoin (see <<blocksize_limit>>) have created competition between transactions, resulting in higher fees and effectively making free transactions a thing of the past. Zero fee or very low fee transactions rarely get mined and sometimes will not even be propagated across the network.
+
+In Bitcoin Core, fee relay policies are set by the +minrelaytxfee+ option. The current default +minrelaytxfee+ is 0.00001 bitcoin or a hundredth of a milli-bitcoin per kilobyte. Therefore by default, transactions with a fee less than 0.0001 bitcoin are treated as free and are only relayed if there is space in the mempool, otherwise they are dropped. Bitcoin nodes can override the default fee relay policy by adjusting the value of +minrelaytxfee+.
+
+Any bitcoin service that creates transactions, including wallets, exchanges, retail applications, etc. *must* implement dynamic fees. Dynamic fees can be implemented through a third party fee estimation service or with a built-in fee estimation algorithm. If you're unsure, begin with a third party service and as you gain experience design and implement your own algorithm if you wish to remove the third party dependency.
+
+Fee estimation algorithms calculate the appropriate fee, based on capacity and the fees offered by "competing" transactions. These algorithms range from simplistic (average or median fee in the last block) to sophisticated (statistical analysis). They estimate the necessary fee (in satoshis per byte) that will give a transaction a high probability of being selected and included within a certain number of blocks. Most services offer users the option of choosing high, medium, or low priority fees. High priority means users pay higher fees but the transaction is likely to be included in the next block. Medium and low priority means users pay lower transaction fees but the transactions may take much longer to confirm.
+
+Many wallet applications use third-party services for fee calculations. One popular service is http://bitcoinfees.21.co/[http://bitcoinfees.21.co], which provides an API and a visual chart showing the fee in satoshi/byte for different priorities.
+
+[TIP]
+====
+Static fees are no longer viable on the bitcoin network. Wallets that set static fees will produce a poor user experience as transactions will often get "stuck" and remain unconfirmed. Users who don't understand bitcoin transactions and fees, are dismayed by "stuck" transactions because they think they've lost their money.
+====
+
+[[bitcoinfees21co]]
+.Fee Estimation Service bitcoinfees.21.co
+image::images/bitcoinfees21co.png [Fee Estimation Service bitcoinfees.21.co]
+
+The chart in <<bitcoinfees21co>> shows the real-time estimate of fees in 10 satoshi/byte increments and the expected confirmation time (in minutes and number of blocks) for transactions with fees in each range. For each fee range (eg. 61-70 satoshi/byte), two horizontal bars show the number of unconfirmed transactions (1405) and total number of transactions in the past 24 hours (102975), with fees in that range. Based on the graph, the recommended high-priority fee at this time was 80 satoshi/byte, a fee likely to result in the transaction being mined in the very next block (zero block delay). For perspective, the median transaction size is 226 bytes, so the recommended fee for a transaction size would be 18,080 satoshis (0.00018080 BTC).
+
+The fee estimation data can be retrieved via a simple HTTP REST API, at https://bitcoinfees.21.co/api/v1/fees/recommended[https://bitcoinfees.21.co/api/v1/fees/recommended]. For example, on the command-line using the +curl+ command:
+
+.Using the fee estimation API
+----
+$ curl https://bitcoinfees.21.co/api/v1/fees/recommended
+
+{"fastestFee":80,"halfHourFee":80,"hourFee":60}
+----
+
+The API returns a JSON object with the current fee estimate for fastest confirmation (fastestFee), confirmation within 3 blocks (halfHourFee) and 6 blocks (hourFee), in satoshi per byte.
+
+==== Adding Fees to Transactions
+
+((("fees, transaction","adding", id="ix_ch06-asciidoc7", range="startofrange")))((("transactions","fees", id="ix_ch06-asciidoc8", range="startofrange")))The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners.
+
+[[tx_fee_equation]]
+.Transaction fees are implied, as the excess of inputs minus outputs:
+----
+Fees = Sum(Inputs) -- Sum(Outputs)
+----
+
+This is a somewhat confusing element of transactions and an important point to understand, because if you are constructing your own transactions you must ensure you do not inadvertently include a very large fee by underspending the inputs. That means that you must account for all inputs, if necessary by creating change, or you will end up giving the miners a very big tip!
+
+For example, if you consume a 20-bitcoin UTXO to make a 1-bitcoin payment, you must include a 19-bitcoin change output back to your wallet. Otherwise, the 19-bitcoin "leftover" will be counted as a transaction fee and will be collected by the miner who mines your transaction in a block. Although you will receive priority processing and make a miner very happy, this is probably not what you intended.
+
+[WARNING]
+====
+If you forget to add a change output in a manually constructed transaction, you will be paying the change as a transaction fee. "Keep the change!" might not be what you intended.
+====
+
+Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.001. That will mean that the total cost of the transaction will be 0.016. Her wallet must therefore source a set of UTXO that adds up to 0.016 bitcoin or more and, if necessary, create change. Let's say her wallet has a 0.2-bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.184 bitcoin in change back to her own wallet, leaving 0.001 bitcoin unallocated, as an implicit fee for the transaction.
+
+Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines, has completed a fundraiser to purchase school books for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin, so her wallet is full of very small payments (UTXO). Now she wants to purchase hundreds of school books from a local publisher, paying in bitcoin.
+
+As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps a kilobyte or several kilobytes in size. As a result, it will require a much higher fee than the median sized transaction.
+
+Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size--the fee is independent of the transaction's bitcoin value.(((range="endofrange", startref="ix_ch06-asciidoc8")))(((range="endofrange", startref="ix_ch06-asciidoc7")))
+
+[[tx_script]]
+=== Transaction Scripts and Script Language
+
+((("scripts", id="ix_ch06-asciidoc9", range="startofrange")))((("transactions","script language for", id="ix_ch06-asciidoc10", range="startofrange")))((("transactions","validation", id="ix_ch06-asciidoc11", range="startofrange")))((("validation (transaction)", id="ix_ch06-asciidoc12", range="startofrange")))((("Script language", id="ix_ch06-asciidoc13", range="startofrange")))((("scripts","language for", id="ix_ch06-asciidoc14", range="startofrange")))The bitcoin transaction script language, called _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages, but that's ok - we will explain it all in this chapter. Both the locking script placed on a UTXO and the unlocking script are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition.
+
+Script is a very simple language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. For its use in validating programmable money, this is a deliberate security feature.
+
+Today, most transactions processed through the bitcoin network have the form "Payment to Bob's bitcoin address" and are based on a script called a Pay-to-Public-Key-Hash script.  However, bitcoin transactions are not limited to the "Payment to Bob's bitcoin address" script. In fact, locking scripts can be written to express a vast variety of complex conditions. In order to understand these more complex scripts, we must first understand the basics of transaction scripts and script language.
+
+In this section, we will demonstrate the basic components of the bitcoin transaction scripting language and show how it can be used to express simple conditions for spending and how those conditions can be satisfied by unlocking scripts.
+
+[TIP]
+====
+Bitcoin transaction validation is not based on a static pattern, but instead is achieved through the execution of a scripting language. This language allows for a nearly infinite variety of conditions to be expressed. This is how bitcoin gets the power of "programmable money."
+====
 
 
-Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result might coincide with a bit that is already set to +1+, in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure—it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy. 
+==== Turing Incompleteness
 
-[[bloom2]]
-.Adding a pattern "A" to our simple bloom filter
-image::images/msbt_0609.png["Bloom2"]
+((("Script language","flow-control/loops in")))((("Script language","statelessness of")))((("Turing Complete")))The bitcoin transaction script language contains many operators, but is deliberately limited in one important way--there are no loops or complex flow control capabilities other than conditional flow control. This ensures that the language is not _Turing Complete_, meaning that scripts have limited complexity and predictable execution times. Script is not a general-purpose language. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a((("denial-of-service attack","Script language and"))) denial-of-service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability.
 
-<<bloom3>> is an example of adding a second pattern "B" to the simple bloom filter.
+==== Stateless Verification
 
-[[bloom3]]
-.Adding a second pattern "B" to our simple bloom filter
-image::images/msbt_0610.png["Bloom3"]
-
-To test if a pattern is part of a bloom filter, the pattern is hashed by each hash function and the resulting bit pattern is tested against the bit array. If all the bits indexed by the hash functions are set to +1+, then the pattern is _probably_ recorded in the bloom filter. Because the bits may be set because of overlap from multiple patterns, the answer is not certain, but is rather probabilistic. In simple terms, a bloom filter positive match is a "Maybe, Yes." 
-
-<<bloom4>> is an example of testing the existence of pattern "X" in the simple bloom filter. The corresponding bits are set to +1+, so the pattern is probably a match.
-
-[[bloom4]]
-.Testing the existence of pattern "X" in the bloom filter. The result is probabilistic positive match, meaning "Maybe."
-image::images/msbt_0611.png["Bloom4"]
-
-On the contrary, if a pattern is tested against the bloom filter and any one of the bits is set to +0+, this proves that the pattern was not recorded in the bloom filter. A negative result is not a probability, it is a certainty. In simple terms, a negative match on a bloom filter is a "Definitely Not!" 
-
-<<bloom5>> is an example of testing the existence of pattern "Y" in the simple bloom filter. One of the corresponding bits is set to +0+, so the pattern is definitely not a match.
-
-[[bloom5]]
-.Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
-image::images/msbt_0612.png[]
-
-Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP0037). See <<appdxbitcoinimpproposals>> or visit http://bit.ly/1x6qCiO[GitHub].
-
-=== Bloom Filters and Inventory Updates
-
-((("inventory updates, bloom filters and")))Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a((("filterload message"))) +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions that match the filter are sent to the node. 
-
-In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (see <<merkle_trees>>) for each matching transaction. The peer will then also send +tx+ messages containing the transactions matched by the filter.
-
-The node setting the bloom filter can interactively add patterns to the filter by sending a((("filteradd message"))) +filteradd+ message. To clear the bloom filter, the node can send a((("filterclear message"))) +filterclear+ message. Because it is not possible to remove a pattern from a bloom filter, a node has to clear and resend a new bloom filter if a pattern is no longer desired.(((range="endofrange", startref="ix_ch06-asciidoc9")))(((range="endofrange", startref="ix_ch06-asciidoc8")))(((range="endofrange", startref="ix_ch06-asciidoc7"))) 
-
-[[transaction_pools]]
-=== Transaction Pools
-
-((("bitcoin network","transaction pools")))((("transaction pools")))((("memory pool")))((("mempool")))((("transactions","unconfirmed, pools of")))((("unconfirmed transactions")))Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the _memory pool_, _mempool_, or _transaction pool_. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the blockchain. For example, a node that holds a user's wallet will use the transaction pool to track incoming payments to the user's wallet that have been received on the network but are not yet confirmed. 
-
-As transactions are received and verified, they are added to the transaction pool and relayed to the neighboring nodes to propagate on the network.
-
-((("orphan transaction pool")))Some node implementations also maintain a separate pool of orphaned transactions. If a transaction's inputs refer to a transaction that is not yet known, such as a missing parent, the orphan transaction will be stored temporarily in the orphan pool until the parent transaction arrives. 
-
-When a transaction is added to the transaction pool, the orphan pool is checked for any orphans that reference this transaction's outputs (its children). Any matching orphans are then validated. If valid, they are removed from the orphan pool and added to the transaction pool, completing the chain that started with the parent transaction. In light of the newly added transaction, which is no longer an orphan, the process is repeated recursively looking for any further descendants, until no more descendants are found. Through this process, the arrival of a parent transaction triggers a cascade reconstruction of an entire chain of interdependent transactions by re-uniting the orphans with their parents all the way down the chain. 
-
-((("orphan transaction pool","storage")))((("transaction pools","storage")))Both the transaction pool and orphan pool (where implemented) are stored in local memory and are not saved on persistent storage; rather, they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network.
-
-Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage. 
-
-Whereas the transaction and orphan pools represent a single node's local perspective and might vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
-
-=== Alert Messages
-
-((("alert messages")))((("bitcoin network","alert messages")))Alert messages are a seldom used function, but are nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system," a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably in early 2013 when a critical database bug caused a multiblock fork to occur in the bitcoin blockchain. 
-
-Alert messages are propagated by the +alert+ message. The alert message contains several fields, including:
-
-ID::
-An alert identified so that duplicate alerts can be detected
-
-Expiration::
-A time after which the alert expires
-
-RelayUntil::
-A time after which the alert should not be relayed
-
-MinVer, MaxVer::
-The range of bitcoin protocol versions that this alert applies to
-
-subVer::
-The client software version that this alert applies to
-
-Priority::
-An alert priority level, currently unused
-
-Alerts are cryptographically signed by a public key. The corresponding private key is held by a few select members of the core development team. The digital signature ensures that fake alerts will not be propagated on the network.
-
-Each node receiving this alert message will verify it, check for expiration, and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, the nodes might implement a user interface function to present the alert to the user. 
-
-((("Bitcoin Core client","alerts, configuring")))In the Bitcoin Core client, the alert is configured with the command-line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the +alertnotify+ command. Most commonly, the +alertnotify+ command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running. 
-
-Other implementations of the bitcoin protocol might handle the alert in different ways. ((("mining","hardware, alerts and")))Many hardware-embedded bitcoin mining systems do not implement the alert message function because they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes.(((range="endofrange", startref="ix_ch06-asciidoc0"))) 
+((("stateless verification of transactions")))((("transactions","statelessness of")))The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script, you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. This predictability of outcomes is an essential benefit of the bitcoin system.(((range="endofrange", startref="ix_ch06-asciidoc12")))(((range="endofrange", startref="ix_ch06-asciidoc11")))(((range="endofrange", startref="ix_ch06-asciidoc10")))(((range="endofrange", startref="ix_ch06-asciidoc9")))
 
 
+==== Script Construction (Lock + Unlock)
 
+((("scripts","construction of")))((("validation (transaction)","script construction for")))Bitcoin's transaction validation engine relies on two types of scripts to validate transactions: a locking script and an unlocking script.
+
+((("locking scripts","transaction validation and")))((("validation (transaction)","locking scripts")))A locking script is a spending condition placed on an output: it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address (public key hash). In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+. You will also see the locking script referred to as a _witness script_ (see <<segwit>>) or more generally as a _cryptographic puzzle_. These terms all mean the same thing, at different levels of abstraction.
+
+((("unlocking scripts","transaction validation and")))An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input. Most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. You will also see the unlocking script referred to as a _witness_ (see <<segwit>>). In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
+
+Every bitcoin validating node will validate transactions by executing the locking and unlocking scripts together. Each input contains an unlocking script and refers to a previously existing UTXO. The validation software will copy the unlocking script, retrieve the UTXO referenced by the input and copy the locking script from that UTXO. The unlocking and locking script are then executed in sequence. The input is valid if the unlocking script satisfies the locking script conditions (see <<script_exec>>). All the inputs are validated independently, as part of the overall validation of the transaction.
+
+Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the output results in the output being considered as "spent" and removed from the set of unspent transaction outputs (UTXO set)((("UTXO Set", "removing outputs")))((("UTXO", "spending"))).
+
+<<scriptSig_and_scriptPubKey>> is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation.
+
+[[scriptSig_and_scriptPubKey]]
+.Combining scriptSig and scriptPubKey to evaluate a transaction script
+image::images/msbt_0501.png["scriptSig_and_scriptPubKey"]
+
+===== The Script Execution Stack
+
+Bitcoin's scripting language is called a stack-based language because it uses a data structure called a((("stack, defined"))) _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. Operations on a stack can only act on the top-most item on the stack. A stack data structure is also called a Last-In-First-Out, or "LIFO" queue.
+
+The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and might push a result onto the stack. For example, +OP_ADD+ will pop two items from the stack, add them, and push the resulting sum onto the stack.
+
+Conditional operators evaluate a condition, producing a boolean result of TRUE or FALSE. For example, +OP_EQUAL+ pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the TRUE result that signifies a valid transaction.
+
+===== A Simple Script
+
+Now let's apply what we've learned about scripts and stacks to some simple examples.
+
+In <<simplemath_script>>, the script +2 3 OP_ADD 5 OP_EQUAL+ demonstrates the arithmetic addition operator +OP_ADD+, adding two numbers and putting the result on the stack, followed by the conditional operator +OP_EQUAL+, which checks that the resulting sum is equal to +5+. For brevity, the +OP_+ prefix is omitted in the step-by-step example. For more details on the available script operators and functions, see <<tx_script_ops>>.
+
+Although most locking scripts refer to a public key hash (essentially, a bitcoin address), thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. The simple arithmetic we used as an example of the scripting language is also a valid locking script that can be used to lock a transaction output.
+
+Use part of the arithmetic example script as the locking script:
+
+----
+3 OP_ADD 5 OP_EQUAL
+----
+
+which can be satisfied by a transaction containing an input with the unlocking script:
+----
+2
+----
+
+The validation software combines the locking and unlocking scripts and the resulting script is:
+----
+2 3 OP_ADD 5 OP_EQUAL
+----
+
+As we saw in the step-by-step example in <<simplemath_script>>, when this script is executed, the result is +OP_TRUE+, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. (((range="endofrange", startref="ix_ch06-asciidoc14")))(((range="endofrange", startref="ix_ch06-asciidoc13")))
+
+[[simplemath_script]]
+.Bitcoin's script validation doing simple math
+image::images/msbt_0502.png["TxScriptSimpleMathExample"]
+
+
+[TIP]
+====
+Transactions are valid if the top result on the stack is TRUE (noted as ++&#x7b;0x01&#x7d;++), any other non-zero value or if the stack is empty after script execution. Transactions are invalid if the top value on the stack is FALSE (a zero-length empty value, noted as ++&#x7b;&#x7d;++) or if script execution is halted explicitly by an operator, such as OP_VERIFY, OP_RETURN, or a conditional terminator such as OP_ENDIF. See <<tx_script_ops>> for details.
+====
+
+The following is a slightly more complex script, which calculates ++2 + 7 -- 3 + 1++. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
+
+----
+2 7 OP_ADD 3 OP_SUB 1 OP_ADD 7 OP_EQUAL
+----
+Try validating the preceding script yourself using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
+
+[[script_exec]]
+===== Separate Execution of Unlocking and Locking Scripts
+
+In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack an corrupt the locking script. In the current implementation, the scripts are executed separately with the stack transferred between the two executions, as described next.
+
+First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g., it has no "dangling" operators left over), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE," the unlocking script has succeeded in resolving the conditions imposed by the locking script and, therefore, the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid because it has failed to satisfy the spending conditions placed on the UTXO.
+
+
+[[p2pkh]]
+==== Pay-to-Public-Key-Hash (P2PKH)
+
+((("pay-to-public-key-hash (P2PKH)", id="ix_ch06-asciidoc15", range="startofrange")))((("transactions","pay-to-public-key-hash", id="ix_ch06-asciidoc16", range="startofrange")))The vast majority of transactions processed on the bitcoin network spend outputs locked with a Pay-to-Public-Key-Hash or "P2PKH" script. These outputs contain a locking script that locks the output to a public key hash, more commonly known as a bitcoin address. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key (see <digital_sigs>>).
+
+For example, let's look at Alice's payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to the cafe's bitcoin address. That transaction output would have a locking script of the form:
+
+----
+OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
+----
+
+The +Cafe Public Key Hash+ is equivalent to the bitcoin address of the cafe, without the Base58Check encoding. Most applications would show the _public key hash_ in hexadecimal encoding and not the familiar bitcoin address Base58Check format that begins with a "1".
+
+The preceding locking script can be satisfied with an unlocking script of the form:
+
+----
+<Cafe Signature> <Cafe Public Key>
+----
+
+The two scripts together would form the following combined validation script:
+
+----
+<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160
+<Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
+----
+
+When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In other words, the result will be TRUE if the unlocking script has a valid signature from the cafe's private key that corresponds to the public key hash set as an encumbrance.
+
+Figures pass:[<a data-type="xref" href="#P2PubKHash1" data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] and pass:[<a data-type="xref" href="#P2PubKHash2" data-xrefstyle="select: labelnumber">#P2PubKHash2</a>] show (in two parts) a step-by-step execution of the combined script, which will prove this is a valid transaction.(((range="endofrange", startref="ix_ch06-asciidoc16")))(((range="endofrange", startref="ix_ch06-asciidoc15")))
+
+[[P2PubKHash1]]
+.Evaluating a script for a P2PKH transaction (Part 1 of 2)
+image::images/msbt_0503.png["Tx_Script_P2PubKeyHash_1"]
+
+[[P2PubKHash2]]
+.Evaluating a script for a P2PKH transaction (Part 2 of 2)
+image::images/msbt_0504.png["Tx_Script_P2PubKeyHash_2"]
+
+[[digital_sigs]]
+=== Digital Signatures (ECDSA)
+
+So far, we have not delved into any detail about "digital signatures". In this section we look at how digital signatures work and how they can present proof of ownership of a private key without revealing that private key.
+
+The digital signature algorithm used in bitcoin is the _Elliptic Curve Digital Signature Algorithm_, or _ECDSA_. ECDSA is the algorithm used for digital signatures based on elliptic curve private/public key pairs, as described in <<ecc>>. ECDSA is used by the script functions OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY. Any time you see those in a locking script, the unlocking script must contain an ECDSA signature.
+
+A digital signature serves three purposes in bitcoin (see <<digital_signature_definition>>). First, the signature proves that the owner of the private key, who is by implication the owner of the funds, has *authorized* the spending of those funds. Secondly, the proof of authorization is *undeniable* (non-repudiation). Thirdly, the signature proves that the transaction (or specific parts of the transaction) have not and *can not be modified* by anyone after it has been been signed.
+
+Note that each transaction input is signed independently. This is critical, as neither the signatures, nor the inputs have to belong to or be applied by the same "owners". In fact, a specific transaction scheme called "CoinJoin" uses this fact to create multi-party transactions for privacy.
+
+[NOTE]
+====
+Each transaction input and any signature it may contain is _completely_ independent of any other input or signature. Multiple parties can collaborate to construct transactions and sign only one input each.
+====
+
+[[digital_signature_definition]]
+.Wikipedia's Definition of a "Digital Signature"
+****
+A digital signature is a mathematical scheme for demonstrating the authenticity of a digital message or documents. A valid digital signature gives a recipient reason to believe that the message was created by a known sender (authentication), that the sender cannot deny having sent the message (non-repudiation), and that the message was not altered in transit (integrity).
+
+_Source: https://en.wikipedia.org/wiki/Digital_signature_
+****
+
+==== How Digital Signatures Work
+
+A digital signature is a _mathematical scheme_, that consists of two parts. The first part is an algorithm for creating a signature, using a private key (the signing key), from a message (the transaction). The second part is an algorithm that allows anyone to verify the signature, given also the message and a public key.
+
+===== Creating a Digital Signature
+
+In bitcoin's implementation of the ECDSA algorithm, the "message" being signed is the transaction, or more accurately a hash of a specific subset of the data in the transaction (see <<sighash_types>>). The signing key is the user's private key. The result is the signature:
+
+latexmath:[\(Sig = F_sig(F_hash(m), dA\)]
+
+where:
+
+* dA is the signing private key
+* m is the transaction (or parts of it)
+* F~hash~ is the hashing function
+* F~sig~ is the signing algorithm
+* Sig is the resulting signature
+
+More details on the mathematics of ECDSA can be found in <<ecdsa_math>>
+
+The function F~sig~ produces a signature +Sig+ that is composed of two values, commonly referred to as +R+ and +S+.
+
+----
+Sig = (R, S)
+----
+
+Now that the two values +R+ and +S+ have been calculated, they are serialized into a byte-stream using an international standard encoding scheme called the _Distinguished Encoding Rules_ or _DER_.
+
+===== Serialization of Signatures (DER)
+
+Let's look at the transaction Alice created again. In the transaction input there is an unlocking script that contains the following _DER_ encoded signature from Alice's wallet:
+
+----
+3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
+----
+
+That signature is a serialized byte-stream of the +R+ and +S+ values produced by Alice's wallet to prove she owns the private key authorized to spend that output. The serialization format consists of nine elements as follows:
+
+[[decoded_alice_sig]]
+.Alice's DER-encoded signature - decoded
+====
+* 0x30 - indicating the start of a DER sequence
+* 0x45 - the length of the sequence (69 bytes)
+  * 0x02 - an integer value follows
+  * 0x21 - the length of the integer (33 bytes)
+  * R: 00884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb
+  * 0x02 - another integer follows
+  * 0x20 - the length of the integer (32 bytes)
+  * S: 4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813
+* A suffix (0x01) indicating the type of hash used (SIGHASH_ALL)
+====
+
+See if you can decode Alice's serialized (DER-encoded) signature using the guide above. The important numbers are +R+ and +S+, the rest of the data is part of the DER encoding scheme.
+
+==== Verifying the Signature
+
+To verify the signature, one must have the signature (+R+ and +S+), the serialized transaction and the public key (that corresponds to the private key used to create the signature). Essentially, verification of a signature means "Only the owner of the private key that generated this public key could have produced this signature on this transaction".
+
+The signature verification algorithm takes the message (a hash of the transaction or parts of it), the signer's public key and the signature (+R+ and +S+ values) and returns TRUE if the signature is valid for this message and public key.
+
+==== Signature Hash Types (SIGHASH)
+
+Digital signatures are applied to messages, which in the case of bitcoin, are the transactions themselves. The signature implies a _commitment_ by the signer to specific transaction data. In the simplest form, the signature applies to the entire transaction, thereby committing all the inputs, outputs and other transaction fields. But, a signature can commit to only a subset of the data in a transaction, which is useful for a number of scenarios as we will see below.
+
+Bitcoin signatures have a way of indicating which part of a transaction's data is included in the hash signed by the private key, through the use of a SIGHASH flag. The SIGHASH flag is a single byte that is appended to the signature. Every signature has a SIGHASH flag and the flag can be different from to input to input. A transaction with three signed inputs may have three signatures with different SIGHASH flags, each signature signing (committing) different parts of the transaction.
+
+Remember, each input may contain a signature in its unlocking script. As a result, a transaction that contains several inputs may have signatures with different SIGHASH flags that commit different parts of the transaction in each of the inputs. Note also that bitcoin transactions may contain inputs from different "owners", who may sign only one input in a partially constructed (and invalid) transaction, collaborating with others to gather all the necessary signatures to make a valid transaction. Many of the SIGHASH flag types only make sense if you think of multiple participants collaborating outside the bitcoin network and updating a partially signed transaction.
+
+There are three SIGHASH flags: ALL, NONE and SINGLE
+
+|=======================
+|SIGHASH flag| Value | Description
+| ALL | 0x01 | Signature applies to all inputs and outputs
+| NONE | 0x02 | Signature applies to all inputs, none of the outputs
+| SINGLE | 0x03 | Signature applies to all inputs but only the one output with the same index number as the signed input
+|=======================
+
+In addition, there is a modifier flag SIGHASH_ANYONECANPAY, which can be combined with each of the above flags. When ANYONECANPAY is set, only one input is signed, leaving the rest (and their sequence numbers) open for modification. The ANYONECANPAY has the value +0x80+ and is applied by bitwise OR, resulting in the combined flags:
+
+|=======================
+|SIGHASH flag| Value | Description
+| ALL\|ANYONECANPAY | 0x81 | Signature applies to one inputs and all outputs
+| NONE\|ANYONECANPAY | 0x82 | Signature applies to one inputs, none of the outputs
+| SINGLE\|ANYONECANPAY | 0x83 | Signature applies to one input & the output with the same index number
+|=======================
+
+The way SIGHASH flags are applied during signing and verification, is that a copy of the transaction is made and certain fields within are truncated (set to zero length and emptied). The resulting transaction is serialized. The SIGHASH flag is added to the end of the serialized transaction and the result is hashed. The hash itself is the "message" that is signed. Depending on which SIGHASH flag is used, different parts of the transaction are truncated. This the resulting hash depends on different subsets of the data in the transaction. By including the SIGHASH as the last step before hashing, the signature commits the SIGHASH type as well, so it can't be changed (eg. by a miner).
+
+[NOTE]
+====
+All SIGHASH types sign the transaction nLocktime field (see <<locktime>>). In addition, the SIGHASH type itself is appended to the transaction before it is signed, so that it can't be modified once signed.
+====
+
+In the example of Alice's transaction (see <<decoded_alice_sig>>), we saw that the last part of the DER-encoded signature was +01+, which is the SIGHASH_ALL flag. This locks the transaction data, so Alice's signature is committing the state of all inputs and outputs. This is the most common signature form.
+
+Let's look at some of the other SIGHASH types and how they can be used in practice:
+
+ALL|ANYONECANPAY :: This construction can be used to make a "crowdfunding"-style transaction. Someone attempting to raise funds can construct a transaction with a single output. The single output pays the "goal" amount to the fundraiser. Such a transaction, is obviously not valid, as it has no inputs. However, others can now amend it by adding an input of their own, as a donation. They sign their own input with ALL|ANYONECANPAY. Unless enough inputs are gathered to reach the value of the output, the transaction is invalid. Each donation is a "pledge", which cannot be collected by the fundraiser until the entire goal amount is raised.
+
+NONE :: This construction can be used to create a "bearer-check" or "blank check" of a specific amount. It commits to the input, but allows the output locking script to be changed. Anyone can write their own bitcoin address into the output locking script and redeem the transaction. However, the output value itself is locked by the signature.
+
+NONE|ANYONECANPAY :: This construction can be used to build a "dust collector". User's who have tiny UTXO in their wallets can't spend these without the cost in fees exceeding the value of the dust. With this type of signature, the dust UTXO can be donated, for anyone to aggregate and spend whenever they want.
+
+There are some proposals to modify or expand the SIGHASH system. One such proposal is _Bitmask Sighash Modes_ by Blockstream's Glenn Willen, as part of the Elements project. This aims to create a flexible replacement for SIGHASH types that allows "arbitrary, miner-rewritable bitmasks of inputs and outputs" that can express "more complex contractual pre-commitment schemes, such as signed offers with change in a distributed asset exchange."
+
+[NOTE]
+====
+You will not see SIGHASH flags presented as an option in a user's wallet application. With few exceptions, wallets construct P2PKH scripts and sign with SIGHASH_ALL flags. To use a different SIGHASH flag, you would have to write software to construct and sign transactions. More importantly, SIGHASH flags can be used by special purpose bitcoin applications that enable novel uses.
+====
+
+[[ecdsa_math]]
+==== ECDSA Math
+
+As mentioned previously, signatures are created by a mathematical function F~sig~, that produces a signature composes of two values +R+ and +S+. In this section we look at the function F~sig~ in more detail.
+
+The signature algorithm first generates an _ephemeral_ (temporary) private public key pair. This temporary key pair is used in the calculation of the +R+ and +S+ values, after a transformation involving the signing private key and the transaction hash.
+
+The temporary key pair is based on a random number +k+, which is used as the temporary private key. From +k+, we generate the corresponding temporary public key +P+ (calculated as +P = k*G+, in the same way bitcoin public keys are derived <<pubkey>>). The +R+ value of the digital signature is then the x-coordinate of the ephemeral public key +P+.
+
+From there, the algorithm calculates the +S+ value of the signature, such that:
+
+latexmath:[\(S = k^-1 (Hash(m) + dA * R) mod p\)]
+
+where:
+
+* k is the ephemeral private key
+* R is the x-coordinate of the ephemeral public key
+* dA is the signing private key
+* m is the transaction data
+* p is the prime order of the elliptic curve
+
+Verification is the inverse of the signature generation function, using the +R+, +S+ values and the public key to calculate a value +P+, which is a point on the elliptic curve (the ephemeral public key used in signature creation):
+
+latexmath:[\(P = S^-1 * Hash(m) * G + S^-1 * R * Qa\)]
+
+where:
+
+* R and S are the signature values
+* Qa is Alice's public key
+* m is the transaction data that was signed
+* G is the elliptic curve generator point
+
+If the x-coordinate of the calculated point +P+ is equal to +R+, then the verifier can conclude that the signature is valid.
+
+Note that in verifying the signature, the private key is neither known nor revealed.
+
+[TIP]
+====
+The math of ECDSA is complex and difficult to understand. There are a number of great guides online which might help. Search for "ECDSA explained" or try this one:
+
+http://www.instructables.com/id/Understanding-how-ECDSA-protects-your-data/?ALLSTEPS
+====
+
+==== The Importance of Randomness in Signatures
+
+As we saw in <<ecdsa_math>>, the signature generation algorithm uses a random key +k+, as the basis for an ephemeral private/public key pair. The value of +k+ is not important, *as long as it is random*. Specifically, if the same value +k+ is used to produce two signatures on different messages (transactions), then the signing private key can be calculated by anyone. Re-use of the same value for +k+ in a signature algorithm leads to exposure of the private key!
+
+[WARNING]
+====
+If the same value +k+ is used in the signing algorithm on two different transactions, the private key can be calculated and exposed to the world!
+====
+
+This is not just a theoretical possibility. We have seen this issue lead to exposure of private keys in a few different implementations of transaction signing algorithms in bitcoin. People have had funds stolen because of inadvertent re-use of a +k+ value. The most common reason for re-use of a +k+ value is an improperly initialized random-number generator.
+
+To avoid this vulnerability, the industry best practice is to not generate +k+ with a random-number generator seeded with entropy, but instead to use a deterministic-random process seeded with the transaction data itself. That ensures that each transaction produces a different +k+. The industry-standard algorithm for deterministic initialization of +k+ is defined in https://tools.ietf.org/html/rfc6979[RFC 6979] published by the Internet Engineering Task Force.
+
+If you are implementing an algorithm to sign transactions in bitcoin, you *must* use RFC6979 or a similarly deterministic-random algorithm to ensure you generate a different +k+ for each transaction.
+
+=== Bitcoin Addresses, Balances and other abstractions
+
+We began this chapter with the discovery that transactions look very different "behind the scenes" than how they are presented in wallets, blockchain explorers and other user-facing applications. Many of the simplistic and familiar concepts from the earlier chapters, such as bitcoin addresses and balances seem to be absent from the transaction structure. We saw that transactions don't contain bitcoin addresses, per se, but instead operate through scripts that lock and unlock discreet values of bitcoin. Balances are not present anywhere in this system and yet every wallet application prominently displays the balance of the user's wallet.
+
+Now that we have explored what is actually included in a bitcoin transaction, we can examine how the higher-level abstractions are derived from the seemingly primitive components of the transaction.
+
+Let's look again at how Alice's transaction was presented on a popular block explorer:
+
+.Alice's transaction to Bob's Cafe
+image::images/msbt_0208.png["Alice Coffee Transaction"]
+
+On the left side of the transaction, the blockchain explorer shows Alice's bitcoin address as the "sender". In fact, this information is not in the transaction itself. When the blockchain explorer retrieved the transaction it also retrieved the previous transaction referenced in the input and extracted the first output from that older transaction. Within that output is a locking script that locks the UTXO to Alice's public key hash (a P2PKH script). The blockchain explorer extracted the public key hash and encoded it using Base58Check encoding to produce and display the bitcoin address that represents that public key.
+
+Similarly, on the right side, the blockchain explorer shows the two outputs, the first to Bob's bitcoin address and the second to Alice's bitcoin address (as change). Once again, to create these bitcoin addresses, the blockchain explorer extracted the locking script from each output, recognized it as a P2PKH script, and extracted the public-key-hash from within. Finally, the blockchain explorer re-encoded that public-key-hash with Base58Check to produce and display the bitcoin addresses.
+
+If you were to click on Bob's bitcoin address, the blockchain explorer would show you this view:
+
+.The balance of Bob's bitcoin address
+image::images/bobs_address.png["The balance of Bob's bitcoin address"]
+
+The blockchain explorer displays the balance of Bob's bitcoin address. But nowhere in the bitcoin system is there a concept of a "balance". Rather, the values displayed here are constructed by the blockchain explorer as follows:
+
+To construct the "Total Received" amount, the blockchain explorer first will decode the Base58Check encoding of the bitcoin address, to retrieve the 160-bit hash of Bob's public key that is encoded within the address. Then, the blockchain explorer will search through the database of transactions, looking for outputs with Pay-to-Public-Key-Hash locking scripts that contain Bob's public-key-hash. By summing up the value of all the outputs, the blockchain explorer can produce the total value received.
+
+Constructing the current balance (displayed as "Final Balance") requires a bit more work. The blockchain explorer keeps a separate database of the outputs that are currently unspent, the UTXO set. To maintain this database, the blockchain explorer must monitor the bitcoin network, add newly created UTXO and remove spent UTXO, in real time, as they appear in unconfirmed transactions. This is a complicated process which depends on keeping track of transactions as they propagate, as well as maintaining consensus with the bitcoin network to ensure that the correct chain is followed. Sometimes, the blockchain explorer goes out of sync and its perspective of the UTXO set is incomplete or incorrect.
+
+From the UTXO set, the blockchain explorer sums up the value of all unspent outputs referencing Bob's public-key-hash and produces the "Final Balance" number shown to the user.
+
+In order to produce this one image, with these two "balances", the blockchain explorer has to index and search through dozens, hundreds or even hundreds of thousands of transactions.
+
+In summary, the information presented to users through wallet applications, blockchain explorers and other bitcoin user interfaces is often composed of higher-level abstractions that are derived by searching many different transactions, inspecting their content, and manipulating the data contained within them. By presenting this simplistic view of bitcoin transactions that resemble bank checks from one sender to one recipient, these applications have to abstract a lot of underlying detail. They mostly focus on the common types of transactions: Pay-to-Public-Key-Hash with SIGHASH_ALL signatures on every input. Thus, while bitcoin applications can present more than 80% of all transactions in an easy-to-read manner, they are sometimes stumped by transactions that deviate from the norm. Transactions that contain more complex locking scripts, or different SIGHASH flags, or many inputs and outputs demonstrate the simplicity and weakness of these abstractions.
+
+Every day, hundreds of transactions which do not contain Pay-to-Public-Key-Hash outputs are confirmed on the blockchain. The blockchain explorers often present these with red warning messages saying they cannot decode an address. The link below contains the most recent "strange transactions" that were not fully decoded:
+
+https://blockchain.info/strange-transactions
+
+As we will see in the next chapter, these are not necessarily strange transactions. They are transactions which contain more complex locking scripts than the common Pay-to-Public-Key-Hash. We will learn how to decode and understand more complex scripts and the applications they support, next.

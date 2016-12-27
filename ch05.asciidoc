@@ -1,594 +1,472 @@
-[[ch5]]
-[[transactions]]
-== Transactions
+[[ch05_wallets]]
+== Wallets
 
-[[ch5_intro]]
-=== Introduction
+The word "wallet" is used to describe a few different things in bitcoin. 
 
-((("transactions", id="ix_ch05-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger. 
+At a high-level, a wallet is an application that serves as the primary user interface. The wallet controls access to a user's money, managing keys and addresses, tracking the balance, and creating and signing transactions. 
 
-In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions. 
+More narrowly, from a programmer's perspective, the word "wallet" refers to the data structure used to store and manage a user's keys. 
 
-[[tx_lifecycle]]
-=== Transaction Lifecycle
+In this chapter we will look at the second meaning, where ((("wallets", id="ix_ch04-asciidoc23", range="startofrange")))wallets are containers for private keys, usually implemented as structured files or simple databases. 
 
-((("transactions","lifecycle of", id="ix_ch05-asciidoc1", range="startofrange")))A transaction's lifecycle starts with the transaction's creation, also known as((("origination of transactions"))) _origination_. The transaction is then signed with one or more signatures indicating the authorization to spend the funds referenced by the transaction. The transaction is then broadcast on the bitcoin network, where each network node (participant) validates and propagates the transaction until it reaches (almost) every node in the network. Finally, the transaction is verified by a mining node and included in a block of transactions that is recorded on the blockchain. 
+=== Wallet Technology Overview
 
-Once recorded on the blockchain and confirmed by sufficient subsequent blocks (confirmations), the transaction is a permanent part of the bitcoin ledger and is accepted as valid by all participants. The funds allocated to a new owner by the transaction can then be spent in a new transaction, extending the chain of ownership and beginning the lifecycle of a transaction again. 
+In this section we summarize the various technologies used to construct user-friendly, secure and flexible bitcoin wallets. 
 
-[[tx_origination]]
-==== Creating Transactions
-
-((("transactions","creating")))In some ways it helps to think of a transaction in the same way as a paper check. Like a check, a transaction is an instrument that expresses the intent to transfer money and is not visible to the financial system until it is submitted for execution. Like a check, the originator of the transaction does not have to be the one signing the transaction. 
-
-Transactions can be created online or offline by anyone, even if the person creating the transaction is not an authorized signer on the account. For example, an accounts payable clerk might process payable checks for signature by the CEO. Similarly, an accounts payable clerk can create bitcoin transactions and then have the CEO apply digital signatures to make them valid. Whereas a check references a specific account as the source of the funds, a bitcoin transaction references a specific previous transaction as its source, rather than an account. 
-
-Once a transaction has been created, it is signed by the owner (or owners) of the source funds. If it is properly formed and signed, the signed transaction is now valid and contains all the information needed to execute the transfer of funds. Finally, the valid transaction has to reach the bitcoin network so that it can be propagated until it reaches a miner for inclusion in the public ledger (the blockchain).
-
-[[tx_bcast]]
-==== Broadcasting Transactions to the Bitcoin Network
-
-((("bitcoin network","broadcasting transactions to")))((("transactions","broadcasting to network")))First, a transaction needs to be delivered to the bitcoin network so that it can be propagated and included in the blockchain. In essence, a bitcoin transaction is just 300 to 400 bytes of data and has to reach any one of tens of thousands of bitcoin nodes. The senders do not need to trust the nodes they use to broadcast the transaction, as long as they use more than one to ensure that it propagates. The nodes don't need to trust the sender or establish the sender's "identity." Because the transaction is signed and contains no confidential information, private keys, or credentials, it can be publicly broadcast using any underlying network transport that is convenient. Unlike credit card transactions, for example, which contain sensitive information and can only be transmitted on encrypted networks, a bitcoin transaction can be sent over any network. As long as the transaction can reach a bitcoin node that will propagate it into the bitcoin network, it doesn't matter how it is transported to the first node. 
-
-((("insecure networks, transmitting bitcoin over")))Bitcoin transactions can therefore be transmitted to the bitcoin network over insecure networks such as WiFi, Bluetooth, NFC, Chirp, barcodes, or by copying and pasting into a web form. In extreme cases, a bitcoin transaction could be transmitted over packet radio, satellite relay, or shortwave using burst transmission, spread spectrum, or frequency hopping to evade detection and jamming. A bitcoin transaction could even be encoded as smileys (emoticons) and posted in a public forum or sent as a text message or Skype chat message. Bitcoin has turned money into a data structure, making it virtually impossible to stop anyone from creating and executing a bitcoin transaction. 
-
-[[tx_propagation]]
-==== Propagating Transactions on the Bitcoin Network
-
-((("bitcoin network","propagating transactions on")))((("transactions","propagating")))Once a bitcoin transaction is sent to any node connected to the bitcoin network, the transaction will be validated by that node. If valid, that node will propagate it to the other nodes to which it is connected, and a success message will be returned synchronously to the originator. If the transaction is invalid, the node will reject it and synchronously return a rejection message to the originator. 
-
-The bitcoin network is a peer-to-peer network, meaning that each bitcoin node is connected to a few other bitcoin nodes that it discovers during startup through the peer-to-peer protocol. The entire network forms a loosely connected mesh without a fixed topology or any structure, making all nodes equal peers. Messages, including transactions and blocks, are propagated from each node to all the peers to which it is connected, a process called "flooding." A new validated transaction injected into any node on the network will be sent to all of the nodes connected to it (neighbors), each of which will send the transaction to all its neighbors, and so on. In this way, within a few seconds a valid transaction will propagate in an exponentially expanding ripple across the network until all nodes in the network have received it. 
-
-The bitcoin network is designed to propagate transactions and blocks to all nodes in an efficient and resilient manner that is resistant to attacks. To prevent spamming, denial-of-service attacks, or other nuisance attacks against the bitcoin system, every node independently validates every transaction before propagating it further. A malformed transaction will not get beyond one node. The rules by which transactions are validated are explained in more detail in <<tx_verification>>.(((range="endofrange", startref="ix_ch05-asciidoc1"))) 
-
-[[tx_structure]]
-=== Transaction Structure
-
-((("transactions","structure of")))A transaction is a((("data structure"))) _data structure_ that encodes a transfer of value from a source of funds, called an((("inputs, defined"))) _input_, to a destination, called an((("outputs, defined"))) _output_. Transaction inputs and outputs are not related to accounts or identities. Instead, you should think of them as bitcoin amounts—chunks of bitcoin—being locked with a specific secret that only the owner, or person who knows the secret, can unlock. A transaction contains a number of fields, as shown in <<tx_data_structure>>.
-
-[[tx_data_structure]]
-.The structure of a transaction
-[options="header"]
-|=======
-|Size| Field | Description
-| 4 bytes | Version | Specifies which rules this transaction follows
-| 1–9 bytes (VarInt) | Input Counter | How many inputs are included
-| Variable | Inputs | One or more transaction inputs
-| 1–9 bytes (VarInt) | Output Counter | How many outputs are included
-| Variable | Outputs | One or more transaction outputs
-| 4 bytes | Locktime | A Unix timestamp or block number
-|=======
-
-.Transaction Locktime
-****
-((("locktime")))((("transactions","locktime")))Locktime, also known as nLockTime from the variable name used in the reference client, defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. It is set to zero in most transactions to indicate immediate propagation and execution. If locktime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with locktime specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. The use of locktime is equivalent to postdating a paper check.
-****
-
-[[tx_inputs_outputs]]
-=== Transaction Outputs and Inputs
-
-((("transactions","unspent transaction output (UTXO)")))((("unspent transaction output (UTXO)")))The fundamental building block of a bitcoin transaction is an _unspent transaction output_, or UTXO. UTXO are indivisible chunks of bitcoin currency locked to a specific owner, recorded on the blockchain, and recognized as currency units by the entire network. The bitcoin network tracks all available (unspent) UTXO currently numbering in the millions. Whenever a user receives bitcoin, that amount is recorded within the blockchain as a UTXO. Thus, a user's bitcoin might be scattered as UTXO amongst hundreds of transactions and hundreds of blocks. In effect, there is no such thing as a stored balance of a bitcoin address or account; there are only scattered UTXO, locked to specific owners. The concept of a user's bitcoin balance is a derived construct created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating all UTXO belonging to that user.
+A common misconception about bitcoin is that bitcoin wallets contain bitcoin. In fact, the wallet contains only keys. The "coins" are recorded in the blockchain on the bitcoin network. Users control the coins on the network by signing transactions with the keys in their wallets. In a sense, a bitcoin wallet is a _keychain_.
 
 [TIP]
 ====
-((("accounts")))((("balances")))There are no accounts or balances in bitcoin; there are only _unspent transaction outputs_ (UTXO) scattered in the blockchain. 
+Bitcoin wallets contain keys, not coins. Each user has a wallet containing keys. Wallets are really keychains containing pairs of private/public keys (see <<private_public_keys>>). Users sign transactions with the keys, thereby proving they own the transaction outputs (their coins). The coins are stored on the blockchain in the form of transaction-outputs (often noted as vout or txout).((("txout notation")))((("vout notation")))
 ====
 
-A UTXO can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoins can be divided down to eight decimal places as satoshis. Although UTXO can be any arbitrary value, once created it is indivisible just like a coin that cannot be cut in half. If a UTXO is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. ((("change, making")))In other words, if you have a 20 bitcoin UTXO and want to pay 1 bitcoin, your transaction must consume the entire 20 bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result, most bitcoin transactions will generate change. 
+There are two primary types of wallets, distinguished by whether the keys they contain are related to each other or not. 
 
-Imagine a shopper buying a $1.50 beverage, reaching into her wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a five dollar bank note. If she hands too much money, say $5, to the shop owner, she will expect $3.50 change, which she will return to her wallet and have available for future transactions.
+The first type is _non-deterministic wallets_, where each key is independently generated from a random number. The keys are not related to each other. ((("Just a Bunch Of Keys (JBOK) wallets")))This type of wallet is also known as a JBOK wallet from the phrase "Just a Bunch Of Keys." 
 
-Similarly, a bitcoin transaction must be created from a user's UTXO in whatever denominations that user has available. Users cannot cut a UTXO in half any more than they can cut a dollar bill in half and use it as currency. The user's wallet application will typically select from the user's available UTXO various units to compose an amount greater than or equal to the desired transaction amount. 
+((("deterministic key generation")))The second type of wallet is a _deterministic wallet_, where all the keys are derived from a single master key, known as the _seed_. All the keys in this type of wallet are related to each other and can be generated again if one has the original seed. There are a number of different _key derivation_ methods used in deterministic wallets. The most commonly used derivation method uses a tree-like structure and is known as a _hierarchical deterministic_ or _HD_ wallet. 
 
-As with real life, the bitcoin application can use several strategies to satisfy the purchase amount: combining several smaller units, finding exact change, or using a single unit larger than the transaction value and making change. All of this complex assembly of spendable UTXO is done by the user's wallet automatically and is invisible to users. It is only relevant if you are programmatically constructing raw transactions from UTXO. 
+Deterministic wallets are initialized from a seed. To make these easier to use, seeds are encoded as english words, also known as _mnemonic code words_.
 
-The UTXO consumed by a transaction are called transaction inputs, and the UTXO created by a transaction are called transaction outputs. This way, chunks of bitcoin value move forward from owner to owner in a chain of transactions consuming and creating UTXO. Transactions consume UTXO by unlocking it with the signature of the current owner and create UTXO by locking it to the bitcoin address of the new owner. 
+The next few sections introduce each of these technologies at a high level. 
 
-The exception to the output and input chain is a special type of transaction called the _coinbase_ transaction, which is the first transaction in each block. This transaction is placed there by the "winning" miner and creates brand-new bitcoin payable to that miner as a reward for mining. This is how bitcoin's money supply is created during the mining process, as we will see in <<ch8>>.
+[[random_wallet]]
+==== Nondeterministic (Random) Wallets
+
+In the first bitcoin wallet (now called Bitcoin Core), wallets were collections of randomly generated private keys. For example, the original Bitcoin Core client pregenerates 100 random private keys when first started and generates more keys as needed, using each key only once.  Such wallets are being replaced with deterministic wallets because they are cumbersome to manage, back up, and import. ((("backups","of random wallets")))((("random wallets","backing up")))The disadvantage of random keys is that if you generate many of them you must keep copies of all of them, meaning that the wallet must be backed up frequently. Each key must be backed up, or the funds it controls are irrevocably lost if the wallet becomes inaccessible. This conflicts directly with the principle of avoiding address re-use, by using each bitcoin address for only one transaction. Address re-use reduces privacy by associating multiple transactions and addresses with each other. A Type-0 nondeterministic wallet is a poor choice of wallet, especially if you want to avoid address re-use because that means managing many keys, which creates the need for frequent backups. Although the Bitcoin Core client includes a Type-0 wallet, using this wallet is discouraged by developers of Bitcoin Core. <<Type0_wallet>> shows a nondeterministic wallet, containing a loose collection of random keys.
 
 [TIP]
 ====
-What comes first? Inputs or outputs, the chicken or the egg? Strictly speaking, outputs come first because coinbase transactions, which generate new bitcoin, have no inputs and create outputs from nothing. 
+The use of non-deterministic wallets is discouraged for anything other than simple tests. They are simply too cumbersome to backup and use. Instead, use an industry standard based _hierarchical deterministic wallet_ with a _mnemonic_ seed for backup. 
 ====
 
-[[tx_outs]]
-==== Transaction Outputs
+[[Type0_wallet]]
+.Type-0 nondeterministic (random) wallet: a collection of randomly generated keys
+image::images/msbt_new0501.png["Non-Deterministic Wallet"]
 
-((("bitcoin ledger, outputs in", id="ix_ch05-asciidoc2", range="startofrange")))((("transactions","outputs", id="ix_ch05-asciidoc3", range="startofrange")))((("unspent transaction output (UTXO)", id="ix_ch05-asciidoc4", range="startofrange")))Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called _unspent transaction outputs_ or UTXO, which are then recognized by the whole network and available for the owner to spend in a future transaction. Sending someone bitcoin is creating an unspent transaction output (UTXO) registered to their address and available for them to spend.
+==== Deterministic (Seeded) Wallets
 
-UTXO are tracked by every full-node bitcoin client as a data set called the((("UTXO pool")))((("UTXO set"))) _UTXO set_ or _UTXO pool_, held in a database. New transactions consume (spend) one or more of these outputs from the UTXO set. 
+((("deterministic wallets")))((("seeded wallets")))((("wallets","deterministic")))((("wallets","seeded")))Deterministic, or "seeded" wallets are wallets that contain private keys that are all derived from a common seed, through the use of a one-way hash function. The seed is a randomly generated number that is combined with other data, such as an index number or "chain code" (see <<hd_wallets>>) to derive the private keys. In a deterministic wallet, the seed is sufficient to recover all the derived keys, and therefore a single backup at creation time is sufficient. The seed is also sufficient for a wallet export or import, allowing for easy migration of all the user's keys between different wallet implementations.
 
-Transaction outputs consist of two parts: 
+[[Type1_wallet]]
+.Type-1 Deterministic (seeded) wallet: a deterministic sequence of keys derived from a seed
+image::images/deterministic_wallet.png["Deterministic Wallet"]
 
-* An amount of bitcoin, denominated in _satoshis_, the smallest bitcoin unit
-* A((("encumbrance")))((("locking scripts"))) _locking script_, also known as an "encumbrance" that "locks" this amount by specifying the conditions that must be met to spend the output
+[[hd_wallets]]
+==== Hierarchical Deterministic Wallets (BIP-32/BIP-44)
 
-The transaction scripting language, used in the locking script mentioned previously, is discussed in detail in <<tx_script>>. <<tx_out_structure>> shows the structure of a transaction output.
+((("deterministic wallets","hierarchical", id="ix_ch04-asciidoc24", range="startofrange")))((("hierarchical deterministic wallets (HD wallets)", id="ix_ch04-asciidoc25", range="startofrange")))((("BIP-32", id="ix_ch04-asciidoc25a", range="startofrange")))((("BIP-44", id="ix_ch04-asciidoc25b", range="startofrange")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the _hierarchical deterministic wallet_ or _HD wallet_ defined by the BIP-32 standard. Hierarchical deterministic wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.((("hierarchical deterministic wallets (HD wallets)","tree structure for")))
 
-[[tx_out_structure]]
-.The structure of a transaction output
-[options="header"]
-|=======
-|Size| Field | Description
-| 8 bytes | Amount | Bitcoin value in satoshis (10^-8^ bitcoin)
-| 1-9 bytes (VarInt) | Locking-Script Size | Locking-Script length in bytes, to follow
-| Variable | Locking-Script | A script defining the conditions needed to spend the output
-|=======
+[[Type2_wallet]]
+.Type-2 hierarchical deterministic wallet: a tree of keys generated from a single seed
+image::images/msbt_0409.png["HD wallet"]
 
-In <<get_utxo>>, we use the blockchain.info API to find the unspent outputs (UTXO) of a specific address.
+HD wallets offer two major advantages over random (nondeterministic) keys. First, the tree structure can be used to express additional organizational meaning, such as when a specific branch of subkeys is used to receive incoming payments and a different branch is used to receive change from outgoing payments. Branches of keys can also be used in a corporate setting, allocating different branches to departments, subsidiaries, specific functions, or accounting categories. 
 
-[[get_utxo]]
-.A script that calls the blockchain.info API to find the UTXO related to an address
-====
-[source, python]
+The second advantage of HD wallets is that users can create a sequence of public keys without having access to the corresponding private keys. This allows HD wallets to be used on an insecure server or in a receive-only capacity, issuing a different public key for each transaction. The public keys do not need to be preloaded or derived in advance, yet the server doesn't have the private keys that can spend the funds. 
+
+==== Seeds and Mnemonic Codes (BIP-39)
+
+Hierarchical Deterministic Wallets are a very powerful mechanism for managing many keys and addresses. They are even more useful if they are combined with a standardized way of creating seeds from a sequence of english words that are easy to transcribe, export and import across wallets. This is known as a _mnemonic_ and the standard is defined by BIP-39. Today, most bitcoin wallets (as well as wallets for other crypto-currencies) use this standard and can import and export seeds for backup and recovery using interoperable mnemonics.
+
+Let's look at this from a practical perspective. Which of the following seeds is easier to transcribe, record on paper, read without error, export and import into another wallet?
+
+.A seed for an deterministic wallet, in hex
 ----
-include::code/get-utxo.py[]
+0C1E24E5917779D297E14D45F14E1A1A
 ----
+
+.A seed for an deterministic wallet, from a 12-word mnemonic
+----
+army van defense carry jealous true 
+garbage claim echo media make crunch
+----
+
+==== Wallet Best Practices
+
+As bitcoin wallet technology has matured, certain common industry standards have emerged that make bitcoin wallets broadly interoperable, easy to use, secure and flexible. These common standards are:
+
+* Mnemonic Code Words, based on BIP-39
+* Hierarchical Deterministic Wallets, based on BIP-32
+* Multi-purpose HD wallet structure, based on BIP-43
+* Multi-currency and multi-account wallets, based on BIP-44
+
+These standards may change or may become obsolete by future developments, but for now they form a set of interlocking technologies that have become the de-facto wallet standard for bitcoin.
+
+The standards have been adopted by a broad range of software and hardware bitcoin wallets, making all these wallets interoperable. A user can export a mnemonic generated on one of these wallets and import it in another wallet, recovering all transactions, keys and addresses. 
+
+Some example of software wallets supporting these standards include (listed alphabetically) Copay, Breadwallet, Multibit HD and Mycelium. Examples of hardware wallets supporting these standards include (listed alphabetically) Keepkey, Ledger and Trezor. 
+
+The following sections examine each of these technologies in detail. 
+
+[TIP]
+====
+If you are implementing a bitcoin wallet, it should be built as a Hierarchical Deterministic Wallet, with a seed encoded as Mnemonic Code for backup, following the BIP-32, BIP-39, BIP-43 and BIP-44 standards, as described in the following sections. 
 ====
 
-Running the script, we see a list of transaction IDs, a colon, the index number of the specific unspent transaction output (UTXO), and the value of that UTXO in satoshis. The locking script is not shown in the output in <<get_utxo_run>>.
+==== Using a bitcoin wallet
 
-[[get_utxo_run]]
-.Running the get-utxo.py script
-====
-[source,bash]
-----
-$ python get-utxo.py 
-ebadfaa92f1fd29e2fe296eda702c48bd11ffd52313e986e99ddad9084062167:1 - 8000000 Satoshis
-6596fd070679de96e405d52b51b8e1d644029108ec4cbfe451454486796a1ecf:0 - 16050000 Satoshis
-74d788804e2aae10891d72753d1520da1206e6f4f20481cc1555b7f2cb44aca0:0 - 5000000 Satoshis
-b2affea89ff82557c60d635a2a3137b8f88f12ecec85082f7d0a1f82ee203ac4:0 - 10000000 Satoshis
-...
-----
-====
+In <<user-stories>> we introduced Gabriel, an enterprising young teenager in Rio de Janeiro, who is running a simple web store that sells bitcoin-branded t-shirts, coffee mugs, and stickers. 
 
-===== Spending conditions (encumbrances)
+Gabriel uses a Trezor bitcoin hardware wallet, to securely manage his bitcoins. The Trezor is a simple USB device with two buttons that stores keys (in the form of an HD wallet) and signs transactions. Trezor wallets implement all the industry standards discussed in this chapter, so Gabriel is not reliant on any proprietary technology or single vendor solution. 
 
-((("encumbrance")))((("locking scripts")))Transaction outputs associate a specific amount (in satoshis) to a specific _encumbrance_ or locking script that defines the condition that must be met to spend that amount. In most cases, the locking script will lock the output to a specific bitcoin address, thereby transferring ownership of that amount to the new owner. When Alice paid Bob's Cafe for a cup of coffee, her transaction created a 0.015 bitcoin output _encumbered_ or locked to the cafe's bitcoin address. That 0.015 bitcoin output was recorded on the blockchain and became part of the Unspent Transaction Output set, meaning it showed in Bob's wallet as part of the available balance. When Bob chooses to spend that amount, his transaction will release the encumbrance, unlocking the output by providing an unlocking script containing a signature from Bob's private key.(((range="endofrange", startref="ix_ch05-asciidoc4")))(((range="endofrange", startref="ix_ch05-asciidoc3")))(((range="endofrange", startref="ix_ch05-asciidoc2"))) 
+.A Trezor device: a bitcoin HD-wallet in hardware
+image::images/trezor-grey-medium.png[alt]
 
-[[tx_inputs]]
-==== Transaction Inputs
+When Gabriel used the Trezor for the first time, the device generated a mnemonic and seed from a built-in hardware random number generator. During this initialization phase, the wallet displayed a numbered sequence of words, one by one, on the screen (see <<trezor_mnemonic_display>>).
 
-((("transactions","inputs", id="ix_ch05-asciidoc5", range="startofrange")))In simple terms, transaction inputs are pointers to UTXO. They point to a specific UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. To spend UTXO, a transaction input also includes unlocking scripts that satisfy the spending conditions set by the UTXO. The unlocking script is usually a signature proving ownership of the bitcoin address that is in the locking script. 
+[[trezor_mnemonic_display]]
+.Trezor displaying one of the mnemonic words
+image::images/trezor-seed-display.png["Trezor wallet display of mnemonic word"]
 
-When users make a payment, their wallet constructs a transaction by selecting from the available UTXO. For example, to make a 0.015 bitcoin payment, the wallet app may select a 0.01 UTXO and a 0.005 UTXO, using them both to add up to the desired payment amount. 
+By writing down this mnemonic, Gabriel created a backup (see <<mnemonic_paper_backup>>) that can be used for recovery in the case of loss or damage to the Trezor device. This mnemonic can be used for recovery in a new Trezor or in any one of the many compatible software or hardware wallets. Note that the sequence of words is important, so mnemonic paper backups have numbered spaces for each word. Gabriel had to carefully record each word in the numbered space to preserve the correct sequence. 
 
-In <<select_utxo>>, we show the use of a "greedy" algorithm to select from available UTXO in order to make a specific payment amount. In the example, the available UTXO are provided as a constant array, but in reality, the available UTXO would be retrieved with an RPC call to Bitcoin Core, or to a third-party API as shown in <<get_utxo>>. 
-
-[[select_utxo]]
-.A script for calculating how much total bitcoin will be issued
-====
-[source, python]
-----
-include::code/select-utxo.py[]
-----
-====
-
-If we run the _select-utxo.py_ script without a parameter, it will attempt to construct a set of UTXO (and change) for a payment of 55,000,000 satoshis (0.55 bitcoin). If you provide a target payment amount as a parameter, the script will select UTXO to make that target payment amount. In <<select_utxo_run>>, we run the script trying to make a payment of 0.5 bitcoin or 50,000,000 satoshis.
-
-[[select_utxo_run]]
-.Running the select-utxo.py script
-====
-----
-$ python select-utxo.py 50000000
-For transaction amount 50000000 Satoshis (0.500000 bitcoin) use: 
-([<7dbc497969c7475e45d952c4a872e213fb15d45e5cd3473c386a71a1b0c136a1:0 with 25000000 Satoshis>, <7f42eda67921ee92eae5f79bd37c68c9cb859b899ce70dba68c48338857b7818:0 with 16100000 Satoshis>, <6596fd070679de96e405d52b51b8e1d644029108ec4cbfe451454486796a1ecf:0 with 16050000 Satoshis>], 'Change: 7150000 Satoshis')
-----
-====
-
-Once the UTXO is selected, the wallet then produces unlocking scripts containing signatures for each of the UTXO, thereby making them spendable by satisfying their locking script conditions. The wallet adds these UTXO references and unlocking scripts as inputs to the transaction. <<tx_in_structure>> shows the structure of a transaction input. 
-
-[[tx_in_structure]]
-.The structure of a transaction input
-[options="header"]
-|=======
-|Size| Field | Description
-| 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
-| 4 bytes | Output Index | The index number of the UTXO to be spent; first one is 0
-| 1-9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
-| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script.
-| 4 bytes | Sequence Number | Currently disabled Tx-replacement feature, set to 0xFFFFFFFF
-|=======
+[[mnemonic_paper_backup]]
+.Gabriel's paper backup of the mnemonic
+[cols="<1,^50,<1,^50", width="80%"]
+|===
+|*1.*| _army_ |*7.*| _garbage_
+|*2.*| _van_ |*8.*| _claim_
+|*3.*| _defense_ |*9.*| _echo_
+|*4.*| _carry_ |*10.*| _media_
+|*5.*| _jealous_ |*11.*| _make_
+|*6.*| _true_ |*12.*| _crunch_
+|===
 
 [NOTE]
 ====
-The sequence number is used to override a transaction prior to the expiration of the transaction locktime, which is a feature that is currently disabled in bitcoin. Most transactions set this value to the maximum integer value (0xFFFFFFFF) and it is ignored by the bitcoin network. If the transaction has a nonzero locktime, at least one of its inputs must have a sequence number below 0xFFFFFFFF in order to enable locktime.(((range="endofrange", startref="ix_ch05-asciidoc5")))
+A 12-word mnemonic is shown above, for simplicity. In fact, most hardware wallets generate a more secure 24-word mnemonic. The mnemonic is used in exactly the same way, regardless of length.
 ====
 
-[[tx_fees]]
-==== Transaction Fees
+For the first implementation of his web store, Gabriel uses a single bitcoin address, generated on his Trezor device. This single address is used by all customers for all orders. As we will see, this approach has some drawbacks and can be improved upon with HD wallets. 
 
-((("fees, transaction", id="ix_ch05-asciidoc6", range="startofrange")))Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Mining and the fees and rewards collected by miners are discussed in more detail in <<ch8>>. This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command-line interface, you must manually account for and include these fees. 
-    
-Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against "spam" transactions or any kind of abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain. 
+=== Wallet Technology Details
 
-((("fees, transaction","calculating")))Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next-most–mined block, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing. 
+Let's now examine each of the important industry standards that are used by many bitcoin wallets, in detail.
 
-Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been evolving. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. The current minimum transaction fee is fixed at 0.0001 bitcoin or a tenth of a milli-bitcoin per kilobyte, recently decreased from one milli-bitcoin. Most transactions are less than one kilobyte; however, those with multiple inputs or outputs can be larger. In future revisions of the bitcoin protocol, it is expected that wallet applications will use statistical analysis to calculate the most appropriate fee to attach to a transaction based on the average fees of recent transactions. 
+[[mnemonic_code_words]]
+==== Mnemonic Code Words (BIP-39)
 
-The current algorithm used by miners to prioritize transactions for inclusion in a block based on their fees is examined in detail in <<ch8>>.(((range="endofrange", startref="ix_ch05-asciidoc6")))
-    
-==== Adding Fees to Transactions
-
-((("fees, transaction","adding", id="ix_ch05-asciidoc7", range="startofrange")))((("transactions","fees", id="ix_ch05-asciidoc8", range="startofrange")))The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners. 
-
-
-[[tx_fee_equation]]
-.Transaction fees are implied, as the excess of inputs minus outputs:
-----
-Fees = Sum(Inputs) – Sum(Outputs)
-----
-
-This is a somewhat confusing element of transactions and an important point to understand, because if you are constructing your own transactions you must ensure you do not inadvertently include a very large fee by underspending the inputs. That means that you must account for all inputs, if necessary by creating change, or you will end up giving the miners a very big tip!
-
-For example, if you consume a 20-bitcoin UTXO to make a 1-bitcoin payment, you must include a 19-bitcoin change output back to your wallet. Otherwise, the 19-bitcoin "leftover" will be counted as a transaction fee and will be collected by the miner who mines your transaction in a block. Although you will receive priority processing and make a miner very happy, this is probably not what you intended. 
-
-[WARNING]
-====
-If you forget to add a change output in a manually constructed transaction, you will be paying the change as a transaction fee. "Keep the change!" might not be what you intended.
-====
-
-Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.001. That will mean that the total cost of the transaction will be 0.016. Her wallet must therefore source a set of UTXO that adds up to 0.016 bitcoin or more and, if necessary, create change. Let's say her wallet has a 0.2-bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.184 bitcoin in change back to her own wallet, leaving 0.001 bitcoin unallocated, as an implicit fee for the transaction. 
-
-Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines, has completed a fundraiser to purchase school books for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin, so her wallet is full of very small payments (UTXO). Now she wants to purchase hundreds of school books from a local publisher, paying in bitcoin. 
-
-As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps 2 to 3 kilobytes in size. As a result, it will require a higher fee than the minimal network fee of 0.0001 bitcoin. 
-
-Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size—the fee is independent of the transaction's bitcoin value.(((range="endofrange", startref="ix_ch05-asciidoc8")))(((range="endofrange", startref="ix_ch05-asciidoc7"))) 
-
-[[tx_chains]]
-=== Transaction Chaining and Orphan Transactions
-
-((("chaining transactions")))((("orphan transactions")))((("transactions","chaining")))((("transactions","orphan")))As we have seen, transactions form a chain, whereby one transaction spends the outputs of the previous transaction (known as the parent) and creates outputs for a subsequent transaction (known as the child). Sometimes an entire chain of transactions depending on each other—say a parent, child, and grandchild transaction—are created at the same time, to fulfill a complex transactional workflow that requires valid children to be signed before the parent is signed. For example, this is a technique used in((("CoinJoin"))) CoinJoin transactions where multiple parties join transactions together to protect their privacy. 
-
-When a chain of transactions is transmitted across the network, they don't always arrive in the same order. Sometimes, the child might arrive before the parent. In that case, the nodes that see a child first can see that it references a parent transaction that is not yet known. Rather than reject the child, they put it in a temporary pool to await the arrival of its parent and propagate it to every other node. The pool of transactions without parents is known as the((("orphan transaction pool"))) _orphan transaction pool_. Once the parent arrives, any orphans that reference the UTXO created by the parent are released from the pool, revalidated recursively, and then the entire chain of transactions can be included in the transaction pool, ready to be mined in a block. Transaction chains can be arbitrarily long, with any number of generations transmitted simultaneously. The mechanism of holding orphans in the orphan pool ensures that otherwise valid transactions will not be rejected just because their parent has been delayed and that eventually the chain they belong to is reconstructed in the correct order, regardless of the order of arrival. 
-
-There is a limit to the number of orphan transactions stored in memory, to prevent a denial-of-service attack against bitcoin nodes. The limit is defined as((("MAX_ORPHAN_TRANSACTIONS constant"))) +MAX_ORPHAN_TRANSACTIONS+ in the source code of the bitcoin reference client. If the number of orphan transactions in the pool exceeds +MAX_ORPHAN_TRANSACTIONS+, one or more randomly selected orphan transactions are evicted from the pool, until the pool size is back within limits. 
-
-[[tx_script]]
-=== Transaction Scripts and Script Language
-
-((("scripts", id="ix_ch05-asciidoc9", range="startofrange")))((("transactions","script language for", id="ix_ch05-asciidoc10", range="startofrange")))((("transactions","validation", id="ix_ch05-asciidoc11", range="startofrange")))((("validation (transaction)", id="ix_ch05-asciidoc12", range="startofrange")))Bitcoin clients validate transactions by executing a script, written in a Forth-like scripting language. Both the locking script (encumbrance) placed on a UTXO and the unlocking script that usually contains a signature are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition. 
-
-Today, most transactions processed through the bitcoin network have the form "Alice pays Bob" and are based on the same script called a Pay-to-Public-Key-Hash script. However, the use of scripts to lock outputs and unlock inputs means that through use of the programming language, transactions can contain an infinite number of conditions. Bitcoin transactions are not limited to the "Alice pays Bob" form and pattern.  
-
-This is only the tip of the iceberg of possibilities that can be expressed with this scripting language. In this section, we will demonstrate the components of the bitcoin transaction scripting language and show how it can be used to express complex conditions for spending and how those conditions can be satisfied by unlocking scripts. 
+((("deterministic wallets","mnemonic code words")))((("mnemonic code words")))((("seeded wallets","mnemonic code words")))Mnemonic code words are word sequences that represent (encode) a random number used as a seed to derive a deterministic wallet. The sequence of words is sufficient to re-create the seed and from there re-create the wallet and all the derived keys. A wallet application that implements deterministic wallets with mnemonic words will show the user a sequence of 12 to 24 words when first creating a wallet. That sequence of words is the wallet backup and can be used to recover and re-create all the keys in the same or any compatible wallet application. Mnemonic words make it easier for users to back up wallets because they are easy to read and correctly transcribe, as compared to a random sequence of numbers. 
 
 [TIP]
 ====
-Bitcoin transaction validation is not based on a static pattern, but instead is achieved through the execution of a scripting language. This language allows for a nearly infinite variety of conditions to be expressed. This is how bitcoin gets the power of "programmable money."
+Mnemonic words are often confused with "brainwallets". They are not the same. The primary difference is that a brainwallet consists of words chosen by the user, whereas mnemonic words are created randomly by the wallet and presented to the user. This important difference makes mnemonic words much more secure, because humans are very poor sources of randomness.
 ====
 
-==== Script Construction (Lock + Unlock)
+Mnemonic codes are defined in((("BIP-39"))) Bitcoin Improvement Proposal 39 (see <<bip-39>>). Note that BIP-39 is one implementation of a mnemonic code standard. Specifically, there is a different standard, with a different set of words, used by the((("Electrum wallet")))((("mnemonic code words","Electrum wallet and"))) Electrum wallet and predating BIP-39. BIP-39 was proposed by the((("mnemonic code words","Trezor wallet and")))((("Trezor wallet"))) company behind the Trezor hardware wallet and is incompatible with Electrum's implementation. However, BIP-39 has now achieved broad industry support across dozens of interoperable implementations and should be considered the de-facto industry standard.
+    
+BIP-39 defines the creation of a mnemonic code and seed, which we describe here in 9 steps. For clarity, the process is split in two parts: Steps 1 through 6 are shown in <<generating_mnemonic_words>> and steps 7 through 9 are shown in <<mnemonic_to_seed>>.
 
-((("scripts","construction of")))((("validation (transaction)","script construction for")))Bitcoin's transaction validation engine relies on two types of scripts to validate transactions: a locking script and an unlocking script. 
+[[generating_mnemonic_words]]
+===== Generating Mnemonic Words
 
-((("locking scripts","transaction validation and")))((("validation (transaction)","locking scripts")))A locking script is an encumbrance placed on an output, and it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address. In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+. 
+Mnemonic words are generated automatically by the wallet, using a standardized process defined in BIP-39. The wallet starts from a source of entropy, adds a checksum and then maps the entropy to a word list:
 
-((("unlocking scripts","transaction validation and")))An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input, and most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
+1. Create a random sequence (entropy) of 128 to 256 bits.
+2. Create a checksum of the random sequence by taking the first (entropy-length / 32) bits of its SHA256 hash.
+3. Add the checksum to the end of the random sequence.
+4. Divide the sequence into sections of 11 bits.
+5. Map each 11-bit value to a word from the predefined dictionary of 2048 words.
+6. The mnemonic code is the sequence of words.
++
+.Generating entropy and encoding as mnemonic words
+image::images/Mnemonic_Words.png["Generating entropy and encoding as mnemonic words"]
++
+The table <<table_4-5>>, shows the relationship between the size of entropy data and the length of mnemonic codes in words.
++
+[[table_4-5]]
+.Mnemonic codes: entropy and word length
+[options="header"]
+|=======
+|Entropy (bits) | Checksum (bits) | Entropy *+* checksum (bits) | Mnemonic length (words)
+| 128 | 4 | 132 | 12
+| 160 | 5 | 165 | 15
+| 192 | 6 | 198 | 18
+| 224 | 7 | 231 | 21
+| 256 | 8 | 264 | 24
+|=======
++
+[[mnemonic_to_seed]]
+**From Mnemonic to Seed**
++
+The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys.
++
+The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP-39 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
++
+The process described in steps 7 through 9 below continues from the process described previously in <<generating_mnemonic_words>>.
 
-Every bitcoin client will validate transactions by executing the locking and unlocking scripts together. For each input in the transaction, the validation software will first retrieve the UTXO referenced by the input. That UTXO contains a locking script defining the conditions required to spend it. The validation software will then take the unlocking script contained in the input that is attempting to spend this UTXO and execute the two scripts. 
+7. The first parameter to the PBKDF2 key-stretching function is the _mnemonic_ produced from step 6 in <<generating_mnemonic_words>>.
+8. The second parameter to the PBKDF2 key-stretching function is a _salt_. The salt is composed of the string constant "+mnemonic+" concatenated with an optional user-supplied passphrase string.
+9. PBKDF2 stretches the mnemonic and salt parameters using 2048 rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit value as its final output. That 512-bit value is the seed.
 
-In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack and corrupt the locking script. In the current implementation, the scripts are executed separately with the stack transferred between the two executions, as described next.
-
-First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g., it has no "dangling" operators left over), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE," the unlocking script has succeeded in resolving the conditions imposed by the locking script and, therefore, the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid because it has failed to satisfy the spending conditions placed on the UTXO. Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the UTXO results in the UTXO being marked as "spent" and removed from the set of available (unspent) UTXO.
-
-<<scriptSig_and_scriptPubKey>> is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation. 
-
-[[scriptSig_and_scriptPubKey]]
-.Combining scriptSig and scriptPubKey to evaluate a transaction script
-image::images/msbt_0501.png["scriptSig_and_scriptPubKey"]
-
-
-[[tx_script_language]]
-==== Scripting Language
-
-((("Script language", id="ix_ch05-asciidoc13", range="startofrange")))((("scripts","language for", id="ix_ch05-asciidoc14", range="startofrange")))The bitcoin transaction script language, called _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages. Script is a very simple language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device, such as a handheld calculator. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. In the case of programmable money, that is a deliberate security feature. 
-
-Bitcoin's scripting language is called a stack-based language because it uses a data structure called a((("stack, defined"))) _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. 
-
-The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and might push a result onto the stack. For example, +OP_ADD+ will pop two items from the stack, add them, and push the resulting sum onto the stack. 
-
-Conditional operators evaluate a condition, producing a boolean result of TRUE or FALSE. For example, +OP_EQUAL+ pops two items from the stack and pushes TRUE (TRUE is represented by the number 1) if they are equal or FALSE (represented by zero) if they are not equal. Bitcoin transaction scripts usually contain a conditional operator, so that they can produce the TRUE result that signifies a valid transaction. 
-
-In <<simplemath_script>>, the script +2 3 OP_ADD 5 OP_EQUAL+ demonstrates the arithmetic addition operator +OP_ADD+, adding two numbers and putting the result on the stack, followed by the conditional operator +OP_EQUAL+, which checks that the resulting sum is equal to +5+. For brevity, the +OP_+ prefix is omitted in the step-by-step example. 
-
-
-The following is a slightly more complex script, which calculates ++2 + 7 – 3 + 1++. Notice that when the script contains several operators in a row, the stack allows the results of one operator to be acted upon by the next operator:
-
-----
-2 7 OP_ADD 3 OP_SUB 1 OP_ADD 7 OP_EQUAL
-----
-Try validating the preceding script yourself using pencil and paper. When the script execution ends, you should be left with the value TRUE on the stack.
-
-Although most locking scripts refer to a bitcoin address or public key, thereby requiring proof of ownership to spend the funds, the script does not have to be that complex. Any combination of locking and unlocking scripts that results in a TRUE value is valid. The simple arithmetic we used as an example of the scripting language is also a valid locking script that can be used to lock a transaction output.
-
-Use part of the arithmetic example script as the locking script:
-
-----
-3 OP_ADD 5 OP_EQUAL
-----
-
-which can be satisfied by a transaction containing an input with the unlocking script:
-----
-2
-----
-
-The validation software combines the locking and unlocking scripts and the resulting script is:
-----
-2 3 OP_ADD 5 OP_EQUAL
-----
-
-As we saw in the step-by-step example in <<simplemath_script>>, when this script is executed, the result is +OP_TRUE+, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. (((range="endofrange", startref="ix_ch05-asciidoc14")))(((range="endofrange", startref="ix_ch05-asciidoc13")))
-
-[[simplemath_script]]
-.Bitcoin's script validation doing simple math
-image::images/msbt_0502.png["TxScriptSimpleMathExample"]
-
+.From mnemonic to seed
+image::images/Mnemonic_to_seed.png["From mnemonic to seed"]
 
 [TIP]
 ====
-Transactions are valid if the top result on the stack is TRUE (noted as ++&#x7b;0x01&#x7d;++), any other non-zero value or if the stack is empty after script execution. Transactions are invalid if the top value on the stack is FALSE (a zero-length empty value, noted as ++&#x7b;&#x7d;++) or if script execution is halted explicitly by an operator, such as OP_VERIFY, OP_RETURN, or a conditional terminator such as OP_ENDIF. See <<tx_script_ops>> for details.
+The key-stretching function, with its 2048 rounds of hashing, is a very effective protection against brute-force attacks against the mnemonic or the passphrase. It makes it extremely costly (in computation) to try more than a few thousand passphrase and mnemonic combinations, while the number of possible derived seeds is vast (2^512^).
 ====
 
+Tables pass:[<a data-type="xref" href="#table_4-6" data-xrefstyle="select: labelnumber">#table_4-6</a>] and pass:[<a data-type="xref" href="#table_4-7" data-xrefstyle="select: labelnumber">#table_4-7</a>] show some examples of mnemonic codes and the seeds they produce (without any passphrase).
 
-==== Turing Incompleteness
+[[mnemonic_128_no_pass]]
+.128-bit entropy mnemonic code, no passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
+| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Passphrase*| (none)
+| *Seed  (512 bits)* | +5b56c417303faa3fcba7e57400e120a0ca83ec5a4fc9ffba757fbe63fbd77a89a1a3be4c67196f57c39a88b76373733891bfaba16ed27a813ceed498804c0570+
+|=======
 
-((("Script language","flow-control/loops in")))((("Script language","statelessness of")))((("Turing Complete")))The bitcoin transaction script language contains many operators, but is deliberately limited in one important way—there are no loops or complex flow control capabilities other than conditional flow control. This ensures that the language is not _Turing Complete_, meaning that scripts have limited complexity and predictable execution times. Script is not a general-purpose language. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a((("denial-of-service attack","Script language and"))) denial-of-service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability. 
-
-==== Stateless Verification
-
-((("stateless verification of transactions")))((("transactions","statelessness of")))The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script, you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. This predictability of outcomes is an essential benefit of the bitcoin system.(((range="endofrange", startref="ix_ch05-asciidoc12")))(((range="endofrange", startref="ix_ch05-asciidoc11")))(((range="endofrange", startref="ix_ch05-asciidoc10")))(((range="endofrange", startref="ix_ch05-asciidoc9")))
-
-[[std_tx]]
-=== Standard Transactions
-
-In the first few years of bitcoin's development, the developers introduced some limitations in the types of scripts that could be processed by the reference client. These limitations are encoded in a function called +isStandard()+, which defines five types of "standard" transactions. These limitations are temporary and might be lifted by the time you read this. Until then, the five standard types of transaction scripts are the only ones that will be accepted by the reference client and most miners who run the reference client. Although it is possible to create a nonstandard transaction containing a script that is not one of the standard types, you must find a miner who does not follow these limitations to mine that transaction into a block. 
-
-Check the source code of the Bitcoin Core client (the reference implementation) to see what is currently allowed as a valid transaction script. 
-
-The five standard types of transaction scripts are pay-to-public-key-hash (P2PKH), public-key, multi-signature (limited to 15 keys), pay-to-script-hash (P2SH), and data output (OP_RETURN), which are described in more detail in the following sections.
-
-[[p2pkh]]
-==== Pay-to-Public-Key-Hash (P2PKH)
-
-((("pay-to-public-key-hash (P2PKH)", id="ix_ch05-asciidoc15", range="startofrange")))((("transactions","pay-to-public-key-hash", id="ix_ch05-asciidoc16", range="startofrange")))The vast majority of transactions processed on the bitcoin network are P2PKH transactions. These contain a locking script that encumbers the output with a public key hash, more commonly known as a bitcoin address. Transactions that pay a bitcoin address contain P2PKH scripts. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key. 
-
-For example, let's look at Alice's payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to the cafe's bitcoin address. That transaction output would have a locking script of the form:
-
-----
-OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
-----
-
-The +Cafe Public Key Hash+ is equivalent to the bitcoin address of the cafe, without the Base58Check encoding. Most applications would show the _public key hash_ in hexadecimal encoding and not the familiar bitcoin address Base58Check format that begins with a "1". 
-
-The preceding locking script can be satisfied with an unlocking script of the form:
-
-----
-<Cafe Signature> <Cafe Public Key>
-----
-
-The two scripts together would form the following combined validation script:
-
-----
-<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160 
-<Cafe Public Key Hash> OP_EQUAL OP_CHECKSIG
-----
-
-When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In other words, the result will be TRUE if the unlocking script has a valid signature from the cafe's private key that corresponds to the public key hash set as an encumbrance. 
-
-Figures pass:[<a data-type="xref" href="#P2PubKHash1" data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] and pass:[<a data-type="xref" href="#P2PubKHash2" data-xrefstyle="select: labelnumber">#P2PubKHash2</a>] show (in two parts) a step-by-step execution of the combined script, which will prove this is a valid transaction.(((range="endofrange", startref="ix_ch05-asciidoc16")))(((range="endofrange", startref="ix_ch05-asciidoc15")))
-
-[[P2PubKHash1]]
-.Evaluating a script for a P2PKH transaction (Part 1 of 2)
-image::images/msbt_0503.png["Tx_Script_P2PubKeyHash_1"]
+[[mnemonic_128_w_pass]]
+.128-bit entropy mnemonic code, with passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
+| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Passphrase*| SuperDuperSecret
+| *Seed  (512 bits)* | +3b5df16df2157104cfdd22830162a5e170c0161653e3afe6c88defeefb0818c793dbb28ab3ab091897d0715861dc8a18358f80b79d49acf64142ae57037d1d54+
+|=======
 
 
-[[p2pk]]    
-==== Pay-to-Public-Key
+[[mnemonic_256_no_pass]]
+.256-bit entropy mnemonic code, no passphrase, resulting seed
+[cols="h,"]
+|=======
+| *Entropy input (256 bits)* | +2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c+
+| *Mnemonic (24 words)* | +cake apple borrow silk endorse fitness top denial coil riot stay wolf 
+luggage oxygen faint major edit measure invite love trap field dilemma oblige+
+| *Passphrase*| (none)
+| *Seed (512 bits)* | +3269bce2674acbd188d4f120072b13b088a0ecf87c6e4cae41657a0bb78f5315b33b3a04356e53d062e55f1e0deaa082df8d487381379df848a6ad7e98798404+
+|=======
 
-((("pay-to-public-key")))Pay-to-public-key is a simpler form of a bitcoin payment than pay-to-public-key-hash. With this script form, the public key itself is stored in the locking script, rather than a public-key-hash as with P2PKH earlier, which is much shorter. Pay-to-public-key-hash was invented by Satoshi to make bitcoin addresses shorter, for ease of use. Pay-to-public-key is now most often seen in coinbase transactions, generated by older mining software that has not been updated to use P2PKH. 
+[[mnemonic_passphrase]]
+===== Optional Passphrase in BIP-39
 
-A pay-to-public-key locking script looks like this:
+The BIP-39 standard allows the use of an optional passphrase in the derivation of the seed. If no passphrase is used, the mnemonic is stretched with a salt consisting of the constant string "+mnemonic+", producing a specific 512-bit seed from any given mnemonic. If a passphrase is used, the stretching function produces a _different_ seed from that same mnemonic. In fact, given a single mnemonic, every possible passphrase leads to a different seed. Essentially, there is no "wrong" passphrase. All passphrases are valid and they all lead to different seeds, forming a vast set of possible uninitialized wallets. The set of possible wallets is so large (2^512^) that there is no practical possibility of brute-forcing or accidentally guessing one that is in use. 
 
-----
-<Public Key A> OP_CHECKSIG
-----
+[TIP]
+====
+There are no "wrong" passphrases in BIP-39. Every passphrase leads to some wallet, which unless previously used will be empty.
+====
 
-The corresponding unlocking script that must be presented to unlock this type of output is a simple signature, like this:
+The optional passphrase creates two important features:
 
-----
-<Signature from Private Key A>
-----
+* A second factor (something memorized) that makes a mnemonic useless on its own, protecting mnemonic backups from compromise by a thief.
 
-The combined script, which is validated by the transaction validation software, is:
+* A form of plausible deniability or "duress wallet", where a chosen passphrase leads to a wallet with a small amount of funds used to distract an attacker from the "real" wallet that contains the majority of funds.
 
-----
-<Signature from Private Key A> <Public Key A> OP_CHECKSIG
-----
+However, it is important to note that the use of a passphrase also introduces the risk of loss:
 
-This script is a simple invocation of the +CHECKSIG+ operator, which validates the signature as belonging to the correct key and returns TRUE on the stack.
+* If the wallet owner is incapacitated or dead and no one else knows the passphrase, the seed is useless and all the funds stored in the wallet are lost forever.
 
-[[P2PubKHash2]]
-.Evaluating a script for a P2PKH transaction (Part 2 of 2)
-image::images/msbt_0504.png["Tx_Script_P2PubKeyHash_2"]
+* Conversely, if the owner backs up the passphrase in the same place as the seed, it defeats the purpose of a second factor. 
 
-[[multisig]]
-==== Multi-Signature
+While passphrases are very useful, they should only be used in combination with a carefully planned process for backup and recovery, considering the possibility of surviving the owner and allowing their family to recover their crypto-currency estate. 
 
-((("multi-signature scripts")))((("transactions","multi-signature scripts")))Multi-signature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to release the encumbrance. This is also known as an M-of-N scheme, where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multi-signature is one where three public keys are listed as potential signers and at least two of those must be used to create signatures for a valid transaction to spend the funds. ((("multi-signature scripts","limits on")))At this time, standard multi-signature scripts are limited to at most 15 listed public keys, meaning you can do anything from a 1-of-1 to a 15-of-15 multi-signature or any combination within that range. The limitation to 15 listed keys might be lifted by the time this book is published, so check the((("isStandard() function"))) +isStandard()+ function to see what is currently accepted by the network. 
+===== Working with mnemonic codes
 
-The general form of a locking script setting an M-of-N multi-signature condition is:
+BIP-39 is implemented as a library in many different programming languages:
 
-----
-M <Public Key 1> <Public Key 2> ... <Public Key N> N OP_CHECKMULTISIG
-----
+python-mnemonic:: The reference implementation of the standard by the Satoshilabs team that proposed BIP-39, in Python (https://github.com/trezor/python-mnemonic)
 
-where N is the total number of listed public keys and M is the threshold of required signatures to spend the output.
- 
-A locking script setting a 2-of-3 multi-signature condition looks like this:
+bitcoinjs/bip39:: An implementation of BIP-39, as part of the popular bitcoinJS framework, in JavaScript
+(https://github.com/bitcoinjs/bip39)
 
-----
-2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
-----
+libbitcoin/mnemonic:: An implementation of BIP-39, as part of the popular Libbitcoin framework, in C++
+(https://github.com/libbitcoin/libbitcoin/blob/master/src/wallet/mnemonic.cpp)
 
-The preceding locking script can be satisfied with an unlocking script containing pairs of signatures and public keys:
+There is also a BIP-39 generator implemented in a standalone web-page, which is extremely useful for testing and experimentation. 
 
-----
-OP_0 <Signature B> <Signature C>
-----
-or any combination of two signatures from the private keys corresponding to the three listed public keys. 
+.A BIP-39 generator as a standalone web page
+image::images/bip39-web-generator.png["BIP-39 generator web-page"]
 
-[NOTE]
+The page can be used offline in a browser, or accessed online at:
+https://dcpos.github.io/bip39/
+
+==== Creating an HD wallet from the seed
+
+((("hierarchical deterministic wallets (HD wallets)","creation from seeds")))((("seeded wallets","HD wallets")))HD wallets are created from a single((("root seeds"))) _root seed_, which is a 128-, 256-, or 512-bit random number. Most commonly, these seed is generated from a _mnemonic_ as detailed in the previous section. 
+
+Every key in the HD wallet is deterministically derived from this root seed, which makes it possible to re-create the entire HD wallet from that seed in any compatible HD wallet. This makes it easy to back up, restore, export, and import HD wallets containing thousands or even millions of keys by simply transferring only the mnemonic that the root seed is derived from.
+
+The process of creating the master keys and master chain code for an HD wallet is shown in <<HDWalletFromSeed>>.
+
+[[HDWalletFromSeed]]
+.Creating master keys and chain code from a root seed
+image::images/msbt_0410.png["HDWalletFromRootSeed"]
+
+The root seed is input into the HMAC-SHA512 algorithm and the resulting hash is used to create a _master private key_ (m) and a _master chain code_ (c). 
+
+The master private key (m) then generates a corresponding master public key (M), using the normal elliptic curve multiplication process +m * G+ that we saw in <<pubkey>>.
+
+The chain code (c) is used to introduce entropy in the function that creates child keys from parent keys, as we will see in the next section.
+
+===== Private child key derivation
+
+((("child key derivation (CKD) function")))((("child private keys")))((("hierarchical deterministic wallets (HD wallets)","CKD function and")))((("private keys","CKD function and")))((("seeded wallets","CKD function and")))Hierarchical deterministic wallets use a _child key derivation_ (CKD) function to derive child keys from parent keys. 
+
+The child key derivation functions are based on a one-way hash function that combines: 
+
+* A parent private or public key (ECDSA uncompressed key)
+* A seed called a chain code (256 bits)
+* An index number (32 bits)
+
+The chain code is used to introduce deterministic random data to the process, so that knowing the index and a child key is not sufficient to derive other child keys. Knowing a child key does not make it possible to find its siblings, unless you also have the chain code. The initial chain code seed (at the root of the tree) is made from the seed, while subsequent child chain codes are derived from each parent chain code. 
+
+These three items (parent key, chain code and index) are combined and hashed to generate children keys, as follows.
+
+The parent public key, chain code, and the index number are combined and hashed with the HMAC-SHA512 algorithm to produce a 512-bit hash. This 512-bit hash is split into two 256-bit halves. The right-half 256 bits of the hash output become the chain code for the child. The left-half 256 bits of the hash and the index number are added to the parent private key to produce the child private key. In <<CKDpriv>>, we see this illustrated with the index set to 0 to produce the "zero" (first by index) child of the parent.
+
+[[CKDpriv]]
+.Extending a parent private key to create a child private key
+image::images/msbt_0411.png["ChildPrivateDerivation"]
+
+Changing the index allows us to extend the parent and create the other children in the sequence, e.g., Child 0, Child 1, Child 2, etc. Each parent key can have 2,147,483,647 (2^31^) children (2^31^ is half of the entire 2^32^ range available because the other half is reserved for a special type of derivation we will talk about later in this chapter)
+
+Repeating the process one level down the tree, each child can in turn become a parent and create its own children, in an infinite number of generations. 
+
+===== Using derived child keys
+
+((("child key derivation (CKD) function","using")))((("child private keys","using")))((("security","child private keys and")))Child private keys are indistinguishable from nondeterministic (random) keys. Because the derivation function is a one-way function, the child key cannot be used to find the parent key. The child key also cannot be used to find any siblings. If you have the n~th~ child, you cannot find its siblings, such as the n-1 child or the n+1 child, or any other children that are part of the sequence. Only the parent key and chain code can derive all the children. Without the child chain code, the child key cannot be used to derive any grandchildren either. You need both the child private key and the child chain code to start a new branch and derive grandchildren. 
+
+So what can the child private key be used for on its own? It can be used to make a public key and a bitcoin address. Then, it can be used to sign transactions to spend anything paid to that address.  
+
+[TIP]
+====
+A child private key, the corresponding public key, and the bitcoin address are all indistinguishable from keys and addresses created randomly. The fact that they are part of a sequence is not visible outside of the HD wallet function that created them. Once created, they operate exactly as "normal" keys. 
+====
+
+===== Extended keys
+
+((("extended keys")))((("hierarchical deterministic wallets (HD wallets)","extended keys")))((("keys","extended")))As we saw earlier, the key derivation function can be used to create children at any level of the tree, based on the three inputs: a key, a chain code, and the index of the desired child. The two essential ingredients are the key and chain code, and combined these are called an _extended key_. The term "extended key" could also be thought of as "extensible key" because such a key can be used to derive children. 
+
+Extended keys are stored and represented simply as the concatenation of the 256-bit key and 256-bit chain code into a 512-bit sequence. There are two types of extended keys. An extended private key is the combination of a private key and chain code and can be used to derive child private keys (and from them, child public keys). An extended public key is a public key and chain code, which can be used to create child public keys (*public only*), as described in <<public_key_derivation>>.
+
+Think of an extended key as the root of a branch in the tree structure of the HD wallet. With the root of the branch, you can derive the rest of the branch. The extended private key can create a complete branch, whereas the extended public key can *only* create a branch of public keys.
+
+[TIP]
+====
+An extended key consists of a private or public key and chain code. An extended key can create children, generating its own branch in the tree structure. Sharing an extended key gives access to the entire branch. 
 ==== 
-((("CHECKMULTISIG implementation")))The prefix +OP_0+ is required because of a bug in the original implementation of +CHECKMULTISIG+ where one item too many is popped off the stack. It is ignored by +CHECKMULTISIG+ and is simply a placeholder.
-====
 
-The two scripts together would form the combined validation script:
+((("Base58Check encoding","extended keys and")))Extended keys are encoded using Base58Check, to easily export and import between different BIP-32-compatible wallets. The Base58Check coding for extended keys uses a special version number that results in the prefix "xprv" and "xpub" when encoded in Base58 characters, to make them easily recognizable. Because the extended key is 512 or 513 bits, it is also much longer than other Base58Check-encoded strings we have seen previously.
 
-----
-OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
-----
-
-When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In this case, the condition is whether the unlocking script has a valid signature from the two private keys that correspond to two of the three public keys set as an encumbrance. 
-
-[[op_return]]
-==== Data Output (OP_RETURN)
-
-((("ledger, storing unrelated information in")))((("OP_RETURN operator")))((("transactions","storing unrelated information in")))Bitcoin's distributed and timestamped ledger, the blockchain, has potential uses far beyond payments. Many developers have tried to use the transaction scripting language to take advantage of the security and resilience of the system for applications such as((("digital notary services")))((("smart contracts")))((("stock certificates"))) digital notary services, stock certificates, and smart contracts. Early attempts to use bitcoin's script language for these purposes involved creating transaction outputs that recorded data on the blockchain; for example, to record a digital fingerprint of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction.
-
-((("blockchains","storing unrelated information in")))The use of bitcoin's blockchain to store data unrelated to bitcoin payments is a controversial subject. Many developers consider such use abusive and want to discourage it. Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of non-payment data argue that it causes "blockchain bloat," burdening those running full bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry. Moreover, such transactions create UTXO that cannot be spent, using the destination bitcoin address as a free-form 20-byte field. Because the address is used for data, it doesn't correspond to a private key and the resulting UTXO can _never_ be spent; it's a fake payment. These transactions that can never be spent are therefore never removed from the UTXO set and cause the size of the UTXO database to forever increase, or "bloat."
-
-In version 0.9 of the Bitcoin Core client, a compromise was reached with the introduction of the +OP_RETURN+ operator. +OP_RETURN+ allows developers to add 80 bytes of nonpayment data to a transaction output. However, unlike the use of "fake" UTXO, the +OP_RETURN+ operator creates an explicitly _provably unspendable_ output, which does not need to be stored in the UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they consume disk space and contribute to the increase in the blockchain's size, but they are not stored in the UTXO set and therefore do not bloat the UTXO memory pool and burden full nodes with the cost of more expensive RAM. 
-
-+OP_RETURN+ scripts look like this:
+Here's an example of an extended _private_ key, encoded in Base58Check:
 
 ----
-OP_RETURN <data>
+xprv9tyUQV64JT5qs3RSTJkXCWKMyUgoQp7F3hA1xzG6ZGu6u6Q9VMNjGr67Lctvy5P8oyaYAL9CAWrUE9i6GoNMKUga5biW6Hx4tws2six3b9c
 ----
 
-The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44 4f 43 50 52 4f 4f 46+ in hexadecimal.
-
-Keep in mind that there is no "unlocking script" that corresponds to +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The whole point of +OP_RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+OP_RETURN+ is _provably un-spendable_. +OP_RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +OP_RETURN+ is encountered by the script validation software, it results immediately in halting the execution of the validation script and marking the transaction as invalid. Thus, if you accidentally reference an +OP_RETURN+ output as an input in a transaction, that transaction is invalid. 
-
-A standard transaction (one that conforms to the +isStandard()+ checks) can have only one +OP_RETURN+ output. However, a single +OP_RETURN+ output can be combined in a transaction with outputs of any other type. 
-
-Two new command-line options have been added in Bitcoin Core as of version 0.10. The option +datacarrier+ controls relay and mining of OP_RETURN transactions, with the default set to "1" to allow them. The option +datacarriersize+ takes a numeric argument specifying the maximum size in bytes of the OP_RETURN data, 40 bytes by default.
-
-[NOTE]
-====
-OP_RETURN was initially proposed with a limit of 80 bytes, but the limit was reduced to 40 bytes when the feature was released. In February 2015, in version 0.10 of Bitcoin Core, the limit was raised back to 80 bytes. Nodes may choose not to relay or mine OP_RETURN, or only relay and mine OP_RETURN containing less than 80 bytes of data.
-====
-
-[[p2sh]]
-==== Pay-to-Script-Hash (P2SH)
-
-((("multi-signature scripts","P2SH and", id="ix_ch05-asciidoc17", range="startofrange")))((("Pay-to-script-hash (P2SH)", id="ix_ch05-asciidoc18", range="startofrange")))((("transactions","Pay-to-script-hash", id="ix_ch05-asciidoc19", range="startofrange")))Pay-to-script-hash (P2SH) was introduced in 2012 as a powerful new type of transaction that greatly simplifies the use of complex transaction scripts. To explain the need for P2SH, let's look at a practical example.
-
-In <<ch01_intro_what_is_bitcoin>> we introduced Mohammed, an electronics importer based in Dubai. Mohammed's company uses bitcoin's multi-signature feature extensively for its corporate accounts. Multi-signature scripts are one of the most common uses of bitcoin's advanced scripting capabilities and are a very powerful feature. Mohammed's company uses a multi-signature script for all customer payments, known in accounting terms as "accounts receivable," or AR. With the multi-signature scheme, any payments made by customers are locked in such a way that they require at least two signatures to release, from Mohammed and one of his partners or from his attorney who has a backup key. A multi-signature scheme like that offers corporate governance controls and protects against theft, embezzlement, or loss. 
-
-The resulting script is quite long and looks like this:
+Here's the corresponding extended _public_ key, encoded in Base58Check:
 
 ----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
+xpub67xpozcx8pe95XVuZLHXZeG6XWXHpGq6Qv5cmNfi7cS5mtjJ2tgypeQbBs2UAR6KECeeMVKZBPLrtJunSDMstweyLXhRgPxdp14sk9tJPW9
 ----
 
-    
-Although multi-signature scripts are a powerful feature, they are cumbersome to use. Given the preceding script, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts, and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, because this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex output scripts difficult in practice. 
+[[public__child_key_derivation]]
+===== Public child key derivation
 
-Pay-to-script-hash (P2SH) was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script that will be presented later when this output is spent." 
+((("child key derivation (CKD) function","public")))((("hierarchical deterministic wallets (HD wallets)","public child key derivation")))((("public child key derivation")))As mentioned  previously, a very useful characteristic of hierarchical deterministic wallets is the ability to derive public child keys from public parent keys, _without_ having the private keys. This gives us two ways to derive a child public key: either from the child private key, or directly from the parent public key. 
 
-In P2SH transactions, the locking script that is replaced by a hash is referred to as the((("redeem script"))) _redeem script_ because it is presented to the system at redemption time rather than as a locking script. <<without_p2sh>> shows the script without P2SH and <<with_p2sh>> shows the same script encoded with P2SH.
+An extended public key can be used, therefore, to derive all of the _public_ keys (and only the public keys) in that branch of the HD wallet structure.
 
-[[without_p2sh]]
-.Complex script without P2SH
+((("private keys","deployments without")))This shortcut can be used to create very secure public-key-only deployments where a server or application has a copy of an extended public key and no private keys whatsoever. That kind of deployment can produce an infinite number of public keys and bitcoin addresses, but cannot spend any of the money sent to those addresses. Meanwhile, on another, more secure server, the extended private key can derive all the corresponding private keys to sign transactions and spend the money. 
+
+((("ecommerce servers, keys for")))((("shopping carts, public keys for")))One common application of this solution is to install an extended public key on a web server that serves an ecommerce application. The web server can use the public key derivation function to create a new bitcoin address for every transaction (e.g., for a customer shopping cart). The web server will not have any private keys that would be vulnerable to theft. Without HD wallets, the only way to do this is to generate thousands of bitcoin addresses on a separate secure server and then preload them on the ecommerce server. That approach is cumbersome and requires constant maintenance to ensure that the ecommerce server doesn't "run out" of keys.
+
+((("cold-storage wallets","public child key derivation and")))((("hardware wallets","public child key derivation and")))Another common application of this solution is for cold-storage or hardware wallets. In that scenario, the extended private key can be stored on a paper wallet or hardware device (such as a((("Trezor wallet","public key derivation and"))) Trezor hardware wallet), while the extended public key can be kept online. The user can create "receive" addresses at will, while the private keys are safely stored offline. To spend the funds, the user can use the extended private key on an offline signing bitcoin client or sign transactions on the hardware wallet device (e.g., Trezor). <<CKDpub>> illustrates the mechanism for extending a parent public key to derive child public keys. 
+
+[[CKDpub]]
+.Extending a parent public key to create a child public key
+image::images/msbt_0412.png["ChildPublicDerivation"]
+
+==== Using an extended public key on a web store
+
+Let's see how HD wallets are used by continuing our story with Gabriel's web store. 
+
+Gabriel first set up his web store as a hobby, based on a simple hosted Wordpress page. His store was quite basic with only a few pages and an order form with a single bitcoin address. 
+
+Gabriel used the first bitcoin address generated by his Trezor device as the main bitcoin address for his store. This way, all incoming payments would be paid to an address controlled by his Trezor hardware wallet.
+
+Customers would submit an order using the form and send payment to Gabriel's published bitcoin address, triggering an email with the order details for Gabriel to process. With just a few orders each week, this system worked well enough.
+
+However, the little web store became quite successful and attracted many orders from the local community. Soon, Gabriel was overwhelmed. With all the orders paying the same address, it became difficult to correctly match orders and transactions, especially when multiple orders for the same amount came in close together.
+
+Gabriel's HD wallet offers a much better solution through the ability to derive public child keys without knowing the private keys. Gabriel can load an extended public key on his website, which can be used to derive a unique address for every customer order. Gabriel can spend the funds from his Trezor, but the extended public key loaded on the website can only generate addresses and receive funds. This feature of hierarchical deterministic wallets is a great security feature. Gabriel's website does not contain any private keys and therefore does not need high levels of security.
+
+To export the extended public key, Gabriel uses the web-based software in conjunction with the Trezor hardware wallet. The Trezor device must be plugged in, for the public keys to be exported. Note that hardware wallets will never export private keys - those always remain on the device. <<export_xpub>> shows the web interface Gabriel uses to export the xpub.
+
+[[export_xpub]]
+.Exporting an extended public key (xpub) from a Trezor hardware wallet. 
+image::images/trezor_xpub_export.png["Exporting the xpub from the Trezor"]
+
+Gabriel copies the xpub to his web store's bitcoin shop software. He uses _Mycelium Gear_, which is an open source web-store plugin for a variety of web hosting and content platforms. Mycelium gear uses the xpub to generate a unique address for every purchase. 
+
+===== Hardened child key derivation
+
+((("child key derivation (CKD) function","hardened")))((("hardened child key derivation")))((("hierarchical deterministic wallets (HD wallets)","hardened child key derivation")))((("security","extended public keys and")))((("security","hardened child key derivation")))The ability to derive a branch of public keys from an extended public key is very useful, but it comes with a potential risk. Access to an extended public key does not give access to child private keys. However, because the extended public key contains the chain code, if a child private key is known, or somehow leaked, it can be used with the chain code to derive all the other child private keys. A single leaked child private key, together with a parent chain code, reveals all the private keys of all the children. Worse, the child private key together with a parent chain code can be used to deduce the parent private key. 
+
+To counter this risk, HD wallets use an alternative derivation function called _hardened derivation_, which "breaks" the relationship between parent public key and child chain code. The hardened derivation function uses the parent private key to derive the child chain code, instead of the parent public key. This creates a "firewall" in the parent/child sequence, with a chain code that cannot be used to compromise a parent or sibling private key. The hardened derivation function looks almost identical to the normal child private key derivation, except that the parent private key is used as input to the hash function, instead of the parent public key, as shown in the diagram in <<CKDprime>>.
+
+[[CKDprime]]
+.Hardened derivation of a child key; omits the parent public key
+image::images/msbt_0413.png["ChildHardPrivateDerivation"]
+
+When the hardened private derivation function is used, the resulting child private key and chain code are completely different from what would result from the normal derivation function. The resulting "branch" of keys can be used to produce extended public keys that are not vulnerable, because the chain code they contain cannot be exploited to reveal any private keys. Hardened derivation is therefore used to create a "gap" in the tree above the level where extended public keys are used. 
+
+In simple terms, if you want to use the convenience of an extended public key to derive branches of public keys, without exposing yourself to the risk of a leaked chain code, you should derive it from a hardened parent, rather than a normal parent. As a best practice, the level-1 children of the master keys are always derived through the hardened derivation, to prevent compromise of the master keys. 
+
+===== Index numbers for normal and hardened derivation
+
+((("hardened child key derivation","indexes for")))((("public child key derivation","indexes for")))The index number used in the derivation function is a 32-bit integer. To easily distinguish between keys derived through the normal derivation function versus keys derived through hardened derivation, this index number is split into two ranges. ((("child private keys","index numbers for")))Index numbers between 0 and 2^31^-1 (0x0 to 0x7FFFFFFF) are used _only_ for normal derivation. Index numbers between 2^31^ and 2^32^-1 (0x80000000 to 0xFFFFFFFF) are used _only_ for hardened derivation. Therefore, if the index number is less than 2^31^, that means the child is normal, whereas if the index number is equal or above 2^31^, the child is hardened. 
+
+To make the index number easier to read and display, the index number for hardened children is displayed starting from zero, but with a prime symbol. The first normal child key is therefore displayed as 0, whereas the first hardened child (index 0x80000000) is displayed as pass:[<span class="markup">0'</span>]. In sequence then, the second hardened key would have index 0x80000001 and would be displayed as 1', and so on. When you see an HD wallet index i', that means 2^31^+i.
+
+===== HD wallet key identifier (path)
+
+((("hierarchical deterministic wallets (HD wallets)","identifier for")))((("hierarchical deterministic wallets (HD wallets)","paths for")))Keys in an HD wallet are identified using a "path" naming convention, with each level of the tree separated by a slash (/) character (see <<table_4-8>>). Private keys derived from the master private key start with "m". Public keys derived from the master public key start with "M". Therefore, the first child private key of the master private key is m/0. The first child public key is M/0. The second grandchild of the first child is m/0/1, and so on. 
+ 
+The "ancestry" of a key is read from right to left, until you reach the master key from which it was derived. For example, identifier m/x/y/z describes the key that is the z-th child of key m/x/y, which is the y-th child of key m/x, which is the x-th child of m.
+
+[[table_4-8]]
+.HD wallet path examples
+[options="header"]
 |=======
-| Locking Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
-| Unlocking Script | Sig1 Sig2   
+|HD path | Key described
+| m/0 | The first (0) child private key from the master private key (m)
+| m/0/0 | The first grandchild private key of the first child (m/0) 
+| m/0'/0 | The first normal grandchild of the first _hardened_ child (m/0')
+| m/1/0 | The first grandchild private key of the second child (m/1)
+| M/23/17/0/0 | The first great-great-grandchild public key of the first great-grandchild of the 18th grandchild of the 24th child
 |=======
 
-[[with_p2sh]]
-.Complex script as P2SH
+===== Navigating the HD wallet tree structure
+
+((("BIP-43")))((("hierarchical deterministic wallets (HD wallets)","navigating")))((("hierarchical deterministic wallets (HD wallets)","tree structure for")))The HD wallet tree structure offers tremendous flexibility. Each parent extended key can have 4 billion children: 2 billion normal children and 2 billion hardened children. Each of those children can have another 4 billion children, and so on. The tree can be as deep as you want, with an infinite number of generations. With all that flexibility, however, it becomes quite difficult to navigate this infinite tree. It is especially difficult to transfer HD wallets between implementations, because the possibilities for internal organization into branches and subbranches are endless. 
+
+Two Bitcoin Improvement Proposals (BIPs) offer a solution to this complexity, by creating some proposed standards for the structure of HD wallet trees. BIP-43 proposes the use of the first hardened child index as a special identifier that signifies the "purpose" of the tree structure. Based on BIP-43, an HD wallet should use only one level-1 branch of the tree, with the index number identifying the structure and namespace of the rest of the tree by defining its purpose. For example, an HD wallet using only branch m/i'/ is intended to signify a specific purpose and that purpose is identified by index number "i".
+
+((("multiaccount structure")))Extending that specification, BIP-44 proposes a multiaccount structure as "purpose" number +44'+ under BIP-43. All HD wallets following the BIP-44 structure are identified by the fact that they only used one branch of the tree: m/44'/. 
+
+BIP-44 specifies the structure as consisting of five predefined tree levels:
+
++m / purpose' / coin_type' / account' / change / address_index+
+
+((("coin type level (multiaccount structure)")))((("purpose level (multiaccount structure)")))The first-level "purpose" is always set to +44'+. The second-level "coin_type" specifies the type of cryptocurrency coin, allowing for multicurrency HD wallets where each currency has its own subtree under the second level. There are three currencies defined for now: Bitcoin is m/44'/0', Bitcoin Testnet is pass:[<span class="markup">m/44'/1'</span>]; and Litecoin is pass:[<span class="markup">m/44'/2'</span>]. 
+
+((("account level (multiaccount structure)")))The third level of the tree is "account," which allows users to subdivide their wallets into separate logical subaccounts, for accounting or organizational purposes. For example, an HD wallet might contain two bitcoin "accounts": pass:[<span class="markup">m/44'/0'/0'</span>] and pass:[<span class="markup">m/44'/0'/1'</span>]. Each account is the root of its own subtree. 
+
+((("change level (multiaccount structure)")))On the fourth level, "change," an HD wallet has two subtrees, one for creating receiving addresses and one for creating change addresses. Note that whereas the previous levels used hardened derivation, this level uses normal derivation. This is to allow this level of the tree to export extended public keys for use in a nonsecured environment. Usable addresses are derived by the HD wallet as children of the fourth level, making the fifth level of the tree the "address_index." For example, the third receiving address for bitcoin payments in the primary account would be M/44'/0'/0'/0/2. <<table_4-9>> shows a few more examples.
+
+[[table_4-9]]
+.BIP-44 HD wallet structure examples
+[options="header"]
 |=======
-| Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
-| Locking Script | OP_HASH160 <20-byte hash of redeem script> OP_EQUAL
-| Unlocking Script | Sig1 Sig2 redeem script 
+|HD path | Key described
+| M/44'/0'/0'/0/2 | The third receiving public key for the primary bitcoin account
+| M/44'/0'/3'/1/14 | The fifteenth change-address public key for the fourth bitcoin account
+| m/44'/2'/0'/0/1 | The second private key in the Litecoin main account, for signing transactions
 |=======
-
-As you can see from the tables, with P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeem script itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction. 
-
-Let's look at Mohammed's company, the complex multi-signature script, and the resulting P2SH scripts. 
-
-First, the multi-signature script that Mohammed's company uses for all incoming payments from customers:
-
-----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
-----
-
-If the placeholders are replaced by actual public keys (shown here as 520-bit numbers starting with 04) you can see that this script becomes very long:
-
-----
-2 
-04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C58704A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D99779650421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800 5 OP_CHECKMULTISIG
-----
-
-This entire script can instead be represented by a 20-byte cryptographic hash, by first applying the SHA256 hashing algorithm and then applying the RIPEMD160 algorithm on the result. The 20-byte hash of the preceding script is:
-
-----
-54c557e07dde5bb6cb791c7a540e0a4796f5e97e
-----
-
-A P2SH transaction locks the output to this hash instead of the longer script, using the locking script:
-
-----
-OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
-----
-which, as you can see, is much shorter. Instead of "pay to this 5-key multi-signature script," the P2SH equivalent transaction is "pay to a script with this hash." A customer making a payment to Mohammed's company need only include this much shorter locking script in his payment. When Mohammed wants to spend this UTXO, they must present the original redeem script (the one whose hash locked the UTXO) and the signatures necessary to unlock it, like this:
-
-----
-<Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
-----
-
-The two scripts are combined in two stages. First, the redeem script is checked against the locking script to make sure the hash matches:
-
-----
-<2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <redeem scriptHash> OP_EQUAL
-----
-If the redeem script hash matches, the unlocking script is executed on its own, to unlock the redeem script:
-
-----
-<Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG
-----
-
-===== Pay-to-script-hash addresses
-
-((("addresses, bitcoin","Pay-to-Script-Hash (P2SH)")))((("Pay-to-script-hash (P2SH)","addresses")))Another important part of the P2SH feature is the ability to encode a script hash as an address, as defined in BIP0013. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5", which results in Base58Check-encoded addresses that start with a "3". For example, Mohammed's complex script, hashed and Base58Check-encoded as a P2SH address becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a bitcoin address. 
-
-P2SH addresses hide all of the complexity, so that the person making a payment does not see the script. 
-
-===== Benefits of pay-to-script-hash 
-
-((("Pay-to-script-hash (P2SH)","benefits of")))The pay-to-script-hash feature offers the following benefits compared to the direct use of complex scripts in locking outputs:
-
-* Complex scripts are replaced by shorter fingerprints in the transaction output, making the transaction smaller.
-* Scripts can be coded as an address, so the sender and the sender's wallet don't need complex engineering to implement P2SH.
-* P2SH shifts the burden of constructing the script to the recipient, not the sender.
-* P2SH shifts the burden in data storage for the long script from the output (which is in the UTXO set) to the input (stored on the blockchain).
-* P2SH shifts the burden in data storage for the long script from the present time (payment) to a future time (when it is spent).
-* P2SH shifts the transaction fee cost of a long script from the sender to the recipient, who has to include the long redeem script to spend it.
-
-===== Redeem script and isStandard validation
-
-((("pay-to-script-hash (P2SH)","isStandard validation")))((("pay-to-script-hash (P2SH)","redeem script for")))Prior to version 0.9.2 of the Bitcoin Core client, pay-to-script-hash was limited to the standard types of bitcoin transaction scripts, by the +isStandard()+ function. That means that the redeem script presented in the spending transaction could only be one of the standard types: P2PK, P2PKH, or multi-sig nature, excluding +OP_RETURN+ and P2SH itself.
-
-As of version 0.9.2 of the Bitcoin Core client, P2SH transactions can contain any valid script, making the P2SH standard much more flexible and allowing for experimentation with many novel and complex types of transactions.  
-
-Note that you are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. You are also still not able to use +OP_RETURN+ in a redeem script because +OP_RETURN+ cannot be redeemed by definition.
-
-Note that because the redeem script is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of an invalid transaction it will be processed regardless. However, you will not be able to spend it because the spending transaction, which includes the redeem script, will not be accepted because it is an invalid script. This creates a risk, because you can lock bitcoin in a P2SH that cannot be spent later. The network will accept the P2SH encumbrance even if it corresponds to an invalid redeem script, because the script hash gives no indication of the script it represents. 
-
-[WARNING]
-====
-((("Pay-to-Script-Hash (P2SH)","locking scripts")))P2SH locking scripts contain the hash of a redeem script, which gives no clues as to the content of the redeem script itself. The P2SH transaction will be considered valid and accepted even if the redeem script is invalid. You might accidentally lock bitcoin in such a way that it cannot later be spent.(((range="endofrange", startref="ix_ch05-asciidoc19")))(((range="endofrange", startref="ix_ch05-asciidoc18")))(((range="endofrange", startref="ix_ch05-asciidoc17")))(((range="endofrange", startref="ix_ch05-asciidoc0"))) 
-====
-
