@@ -229,7 +229,7 @@ Timelocks are useful for post-dating transactions and locking funds to a date in
 
 From the beginning, bitcoin has had a transaction-level timelock feature. ((("locktime")))((("transactions","nLockTime")))Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as nLockTime from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If nLockTime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with nLockTime specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified nLockTime, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of nLockTime is equivalent to postdating a paper check.
 
-<<locktime_limitations>>
+[[locktime_limitations]]
 ===== Transaction Locktime Limitations
 
 nLocktime has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example:
@@ -343,8 +343,10 @@ When interpreting nSequence as a relative timelock, only the 16 least significan
 
 The following diagram shows the binary layout of the nSequence value, as defined by BIP-68:
 
-.BIP-68 definition of nSequence encoding
+.BIP-68 definition of nSequence encoding (Source: BIP-68)
 image::images/nSequence_encoding.png["BIP-68 definition of nSequence encoding"]
+
+
 
 Relative timelocks based on consensus enforcement of the nSequence value are defined in BIP-68:
 
@@ -601,3 +603,5 @@ A few more things to consider when reading this example. See if you can find the
 * Are the funds lost if the lawyer loses their key? Does your answer change if 91 days have elapsed?
 
 * How do the partners "reset" the clock every 29 or 89 days to prevent the lawyer from accessing the funds?
+
+* Why do some +CHECKSIG+ opcodes in this script have the +VERIFY+ suffix while others don't?
