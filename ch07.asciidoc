@@ -5,9 +5,9 @@
 [[ch07_intro]]
 === Introduction
 
-In the previous chapter, we introduced the basic elements of bitcoin transactions and looked at the most common type of transaction script, the Pay-to-Public-Key-Hash script. In this chapter we will look at more advanced scripting and how we can use them to build complex transactions, smart contracts and even overlay transaction networks on top of bitcoin.
+In the previous chapter, we introduced the basic elements of bitcoin transactions and looked at the most common type of transaction script, the Pay-to-Public-Key-Hash script. In this chapter we will look at more advanced scripting and how we can use it to build transactions with complex conditions.
 
-First, we will look at _multi-signature_ scripts. Next we will examine the second most common transaction script, _Pay-to-Script-Hash_, which opens up a whole world of complex scripts. Then, we will examine new script operators that add a time-dimension to bitcoin, through _timelocks_. Then, we will look at a major architecture change in transactions called _Segregated Witness_. Finally, we will close with an overview of proposed future advancements in bitcoin scripting and transactions, such as _MAST_, _Confidential Transactions_, _Schnorr Signatures_ and _Covenants_.
+First, we will look at _multi-signature_ scripts. Next we will examine the second most common transaction script, _Pay-to-Script-Hash_, which opens up a whole world of complex scripts. Then, we will examine new script operators that add a time-dimension to bitcoin, through _timelocks_.
 
 [[multisig]]
 === Multi-Signature
@@ -46,7 +46,7 @@ When executed, this combined script will evaluate to TRUE if, and only if, the u
 [[multisig_bug]]
 ===== A bug in CHECKMULTISIG execution
 
-There is a bug in CHECKMULTISIG's execution that requires a slight workaround. When CHECKMULTISIG executes, it should consume M+N+2 items on the stack as parameters. However, due to the bug, CHECKMULTISIG attempts to pop one value more than expected.
+There is a bug in CHECKMULTISIG's execution that requires a slight workaround. When CHECKMULTISIG executes, it should consume M+N+2 items on the stack as parameters. However, due to the bug, CHECKMULTISIG will pop an extra value or one value more than expected.
 
 Let's look at this in greater detail using the validation example above.
 
@@ -62,7 +62,7 @@ Because this bug became part of the consensus rules, it must now be replicated f
 0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
 ----
 
-Therefore, the unlocking script actually used in multisig is not:
+Thus the unlocking script actually used in multisig is not:
 
 ----
 <Signature B> <Signature C>
@@ -89,7 +89,7 @@ The resulting script is quite long and looks like this:
 2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 CHECKMULTISIG
 ----
 
-Although multi-signature scripts are a powerful feature, they are cumbersome to use. Given the preceding script, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts, and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, because this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex output scripts difficult in practice.
+Although multi-signature scripts are a powerful feature, they are cumbersome to use. Given the preceding script, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts, and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, because this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex locking scripts difficult in practice.
 
 Pay-to-script-hash (P2SH) was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script that will be presented later when this output is spent."
 
@@ -107,7 +107,7 @@ In P2SH transactions, the locking script that is replaced by a hash is referred 
 |=======
 | Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
 | Locking Script | HASH160 <20-byte hash of redeem script> EQUAL
-| Unlocking Script | Sig1 Sig2 redeem script
+| Unlocking Script | Sig1 Sig2 <redeem script>
 |=======
 
 As you can see from the tables, with P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeem script itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction.
@@ -180,9 +180,9 @@ P2SH addresses hide all of the complexity, so that the person making a payment d
 
 As of version 0.9.2 of the Bitcoin Core client, P2SH transactions can contain any valid script, making the P2SH standard much more flexible and allowing for experimentation with many novel and complex types of transactions.
 
-Note that you are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. You are also still not able to use +RETURN+ in a redeem script because +RETURN+ cannot be redeemed by definition.
+Note that you are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. While it is technically possible to include +RETURN+ in a redeem script, as nothing in the rules prevents you from doing so, it is of no practical use as executing +RETURN+ during validation will cause the transaction to be marked invalid.
 
-Note that because the redeem script is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of an invalid transaction it will be processed regardless. However, you will not be able to spend it because the spending transaction, which includes the redeem script, will not be accepted because it is an invalid script. This creates a risk, because you can lock bitcoin in a P2SH that cannot be spent later. The network will accept the P2SH encumbrance even if it corresponds to an invalid redeem script, because the script hash gives no indication of the script it represents.
+Note that because the redeem script is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of an invalid redeem script it will be processed regardless. The UTXO will be successfully locked. However, you will not be able to spend it because the spending transaction, which includes the redeem script, will not be accepted because it is an invalid script. This creates a risk, because you can lock bitcoin in a P2SH that cannot be spent later. The network will accept the P2SH locking script even if it corresponds to an invalid redeem script, because the script hash gives no indication of the script it represents.
 
 [WARNING]
 ====
@@ -208,7 +208,7 @@ RETURN <data>
 
 The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44 4f 43 50 52 4f 4f 46+ in hexadecimal.
 
-Keep in mind that there is no "unlocking script" that corresponds to +RETURN+ that could possibly be used to "spend" an +RETURN+ output. The whole point of +RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+RETURN+ is _provably un-spendable_. +RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +RETURN+ is referenced as an input in a transaction, the script validation engine will halt the execution of the validation script and marking the transaction as invalid. The execution of RETURN, essentially causes the script to "RETURN" with a FALSE and halt. Thus, if you accidentally reference an +RETURN+ output as an input in a transaction, that transaction is invalid.
+Keep in mind that there is no "unlocking script" that corresponds to +RETURN+ that could possibly be used to "spend" an +RETURN+ output. The whole point of +RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+RETURN+ is _provably un-spendable_. +RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If an +RETURN+ is referenced as an input in a transaction, the script validation engine will halt the execution of the validation script and marking the transaction as invalid. The execution of +RETURN+, essentially causes the script to "RETURN" with a FALSE and halt. Thus, if you accidentally reference an +RETURN+ output as an input in a transaction, that transaction is invalid.
 
 A standard transaction (one that conforms to the +isStandard()+ checks) can have only one +RETURN+ output. However, a single +RETURN+ output can be combined in a transaction with outputs of any other type.
 
@@ -227,7 +227,7 @@ Timelocks are useful for post-dating transactions and locking funds to a date in
 
 ==== Transaction Locktime (nLocktime)
 
-From the beginning, bitcoin has had a transaction-level timelock feature. ((("locktime")))((("transactions","nLockTime")))Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Lockitime is also known as nLockTime from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If nLockTime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with nLockTime specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified nLockTime, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of nLockTime is equivalent to postdating a paper check.
+From the beginning, bitcoin has had a transaction-level timelock feature. ((("locktime")))((("transactions","nLockTime")))Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as nLockTime from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If nLockTime is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with nLockTime specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified nLockTime, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of nLockTime is equivalent to postdating a paper check.
 
 <<locktime_limitations>>
 ===== Transaction Locktime Limitations
@@ -303,7 +303,7 @@ By introducing timelock functionality directly in the scripting language, +CLTV+
 
 BIP-65 (CHECKLOCKTIMEVERIFY):: https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki]
 
-=== Relative Timelocks
+==== Relative Timelocks
 
 nLocktime and CLTV are both _absolute timelocks_ in that the specify an absolute point in time. The next two timelock features we will examine are _relative timelocks_ in that they specify, as a condition of spending an output, an elapsed time from the confirmation of the output in the blockchain.
 
@@ -335,9 +335,9 @@ Programmatically, that means that if the most significant bit (1<<31) is not set
 
 Since the activation of BIP-68, the new consensus rules apply for any transaction containing an input whose nSequence value is less than 2^31^ (bit 1<<31 is not set).
 
-For transactions setting nSequence as a relative timelock, the UTXO referenced by that input must be "older" than the value of nSequence or the transaction is invalid.
+Transactions can contain inputs with nSequence values less than 2^31^. Any such input is interpreted as having a relative timelock. Meaning that the transaction which includes it is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with nSequence relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since nSequence is a per input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A valid transaction can include both timelocked inputs (nSequence < 2^31^) and inputs without a relative timelock (nSequence >= 2^31^).
 
-The nSequence value is specified in either blocks or seconds, but in a slightly different format than we saw used in nLocktime. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type flag is set in the 23rd least significant bit (ie. value 1<<22). if the type-flag is set, then the nSequence value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the nSequence value is interpreted as a number of blocks.
+The nSequence value is specified in either blocks or seconds, but in a slightly different format than we saw used in nLocktime. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type flag is set in the 23rd least significant bit (ie. value 1<<22). If the type-flag is set, then the nSequence value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the nSequence value is interpreted as a number of blocks.
 
 When interpreting nSequence as a relative timelock, only the 16 least significant bits are considered. Once the flags (bits 32 and 23) are evaluted, the nSequence value is usually "masked" with a 16-bit mask (eg. nSequence & 0x0000FFFF).
 
@@ -350,7 +350,7 @@ Relative timelocks based on consensus enforcement of the nSequence value are def
 
 BIP-68 Relative lock-time using consensus-enforced sequence numbers:: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki]
 
-==== Check Sequence Verify (CSV)
+==== Relative timelocks with CHECKSEQUENCEVERIFY (CSV)
 
 Just like CLTV and nLocktime, there is a script opcode for relative timelocks that leverages the nSequence value in scripts. That opcode is +CHECKSEQUENCEVERIFY+ commonly referred to as +CSV_ for short.
 
@@ -358,30 +358,43 @@ The CSV opcode when evaluated in a UTXO's redeem script, allows spending only in
 
 As with CLTV, the value in CSV must match the format in the corresponding nSequence value. If CSV is specified in terms of blocks, then so must nSequence. If CSV is specified in terms of seconds, then so must nSequence.
 
-Relative timelocks with CSV are especially useful when several (chained) transactions are created and signed, but not submitted to the blockchain, but kept "off-chain". A child transaction cannot be used until the parent transaction has been propagated, mined, and aged by the time specified in the relative timelock. One application of this use case can be seen in <<state_channels>> and <<lightning_network>>.
+Relative timelocks with CSV are especially useful when several (chained) transactions are created and signed, but not propagated, when they're kept "off-chain". A child transaction cannot be used until the parent transaction has been propagated, mined, and aged by the time specified in the relative timelock. One application of this use case can be seen in <<state_channels>> and <<lightning_network>>.
 
 CSV is defined in detail in BIP-112:
 
 BIP-112 CHECKSEQUENCEVERIFY:: https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki]
 
 
-=== Median-Time-Past
+==== Median-Time-Past
 
-As part of the activation of relative timelocks, there was also a change in the way "time" is calculated for timelocks (both absolute and relative).
+As part of the activation of relative timelocks, there was also a change in the way "time" is calculated for timelocks (both absolute and relative). In bitcoin there is a subtle, but very significant difference, between wall time and consensus time. Bitcoin is a decentralized network, which means that each participant has their own perspective of time. Events on the network do not occur instantaneously everywhere. Network latency must be factored into the perspective of each node. Eventually everything is synchronized to create a common ledger. Bitcoin reaches consensus every 10 minutes about the state of the ledger as it existed in the _past_.
 
-The timestamps set in block headers are set by the miners. There is a certain degree of latitude allowed by the consensus rules to account for differences in clock accuracy between decentralized nodes. However, this creates an unfortunate incentive for miners to lie about the time in a block so as to earn extra fees by including time-locked transactions that are not yet mature.
+The timestamps set in block headers are set by the miners. There is a certain degree of latitude allowed by the consensus rules to account for differences in clock accuracy between decentralized nodes. However, this creates an unfortunate incentive for miners to lie about the time in a block so as to earn extra fees by including time-locked transactions that are not yet mature. See <<fee_sniping>>.
 
-To remove the incentive to lie and strengthen the security of time locks, a Bitcoin Improvement Proposal was proposed and activated at the same time as the BIPs for relative timelocks. This is BIP-113 which defines a new consensus measurement of time called _Median Time Past_.
+To remove the incentive to lie and strengthen the security of timelocks, a Bitcoin Improvement Proposal was proposed and activated at the same time as the BIPs for relative timelocks. This is BIP-113 which defines a new consensus measurement of time called _Median Time Past_.
 
-Median-Time-Past replaces time in any calculations for timelocks as the median time of the last 11 blocks, instead of the timestamp in the current block.
+Median-Time-Past is calculated by taking the timestamps of the last 11 blocks and finding the median. That median time then becomes consensus time and it is used for all timelock calculations. By taking the midpoint from approximately two hours in the past, the influence of any one block's timestamp is reduced. By incorporating 11 blocks, no single miner can influence the timestamps in such a way as to gain fees from transactions with a time lock that hasn't yet matured.
 
-By incorporating 11 blocks, no single miner can influence the timestamps in such a way as to gain fees from transactions with a time lock that hasn't yet matured.
-
-Median-Time-Past changes the implementation of time calculations for nLocktime, CLTV, nSequence and CSV.
+Median-Time-Past changes the implementation of time calculations for nLocktime, CLTV, nSequence and CSV. The consensus time calculated by Median-Time-Past is always approximately one hour behind wall clock time. If you create timelock transactions, you should account for it when estimating the desired value to encode in nLocktime, nSequence, CLTV, and CSV.
 
 Median-Time-Past is specified in BIP-113:
 
 BIP-113 Median time-past as endpoint for lock-time calculations:: https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki]
+
+[[fee_sniping]]
+==== Timelock defense against fee-sniping
+
+Fee-sniping is a theoretical attack scenario, where miners attempting to rewrite past blocks, "snipe" higher-fee transactions from future blocks to maximize their profitability.
+
+For example, let's say the highest block in existence is block  #100,000. If instead of attempting to mine block #100,001 to extend the chain, some miners are attempting to re-mine  #100,000. These miners can choose to include any valid transaction (that hasn't been mined yet) in their candidate block  #100,000. They don't have to re-mine the block with the same transactions. In fact, they have the incentive to select the most profitable (highest fee per kB) transactions to include in their block. They can include any transactions that were in the "old" block  #100,000, as well as any transactions from the current mempool. Eseentially they have the option to pull transactions from the "present", into the rewritten "past" when they re-create block  #100,000.
+
+Today, this attack is not very lucrative, because block reward is much higher than total fees per block. But at some point in the future, transaction fees will be the majority of the reward (or even the entirety of the reward). At that time, this scenario becomes inevitable.
+
+To prevent "fee sniping", when Bitcoin Core creates transactions, it uses nLocktime to limit them to the "next block", by default. In our scenario above, Bitcoin Core would set nLocktime to 100,001 on any transaction it created. Under normal circumstances, this nLocktime has no effect - the transactions could only be included in block #100,001 anyway, it's the next block.
+
+ But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only re-mine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
+
+To achieve this, Bitcoin Core sets the nLocktime on all new transactions to <current block # + 1> and sets the nSequence on all the inputs to 0xFFFFFFFE, to enable nLocktime.
 
 === Scripts with Flow Control (Conditional Clauses)
 
