@@ -1,10 +1,4 @@
-////
 
-
-Will be merged later into chapter 6 or 7, as the book is reorganized
-
-
-////
 [[segwit]]
 === Segregated Witness
 
@@ -44,7 +38,7 @@ Script Versioning :: With the introduction of segregated witness scripts, every 
 
 Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multi-sig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction, segregated witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
 
-Signature Verification Optimization :: Segregated Witness upgrades the signature functions (OP_CHECKSIG, OP_CHECKMULTISIG etc), to reduce the algorithm's computational complexity. Before segwit, the algorithm used to produce a signature required a number of hash operations that was proportional to the size of the transaction. Data-hasing computations increased in O(n^2^) with respect to the number of signature operations, introducing a substantial computational burden on all nodes verifying the signature. With segwit, the algorithm is changed to reduce the complexity to O(n).
+Signature Verification Optimization :: Segregated Witness upgrades the signature functions (CHECKSIG, CHECKMULTISIG etc), to reduce the algorithm's computational complexity. Before segwit, the algorithm used to produce a signature required a number of hash operations that was proportional to the size of the transaction. Data-hasing computations increased in O(n^2^) with respect to the number of signature operations, introducing a substantial computational burden on all nodes verifying the signature. With segwit, the algorithm is changed to reduce the complexity to O(n).
 
 Offline Signing Improvement :: Segregated Witness signatures incorporate the value (amount) referenced by each input in the hash that is signed. Previously, an offline signing device, such as a hardware wallet, would have to verify the amount of each input before signing a transaction. This was usually accomplished by streaming a large amount of data about the previous transactions referenced as inputs. Since the amount is now part of the commitment hash that is signed, an offline device does not need the previous transactions. If the amounts do not match (are misrepresented by a compromised online system), the signature will be invalid.
 
@@ -73,7 +67,7 @@ In <<cup_of_coffee>>, Alice created a transaction to pay Bob for a cup of coffee
 
 .Example P2PKH output script
 ----
-OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHECKSIG
+DUP HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 EQUALVERIFY CHECKSIG
 ----
 
 With segregated witness, a Pay-to-Public-Key-Hash output, is created instead a Pay-to-Witness-Public-Key-Hash (P2WPKH), which looks like this:
@@ -90,13 +84,10 @@ Now, let’s look at the corresponding transaction that Bob uses to spend this o
 .Decoded transaction showing a P2PKH output being spent with a signature
 ----
 [...]
-"vin": [
-  {
-    "txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
-    "vout": 0,
-    "scriptSig": "<Bob’s scriptSig>",
-    ...
-  }
+“Vin” : [
+"txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
+"vout": 0,
+     	 "scriptSig": “<Bob’s scriptSig>”,
 ]
 [...]
 ----
@@ -106,13 +97,10 @@ However, to spend the segregated witness output, the transaction has no signatur
 .Decoded transaction showing a P2WPKH output being spent with separate witness data
 ----
 [...]
-"vin": [
-  {
-    "txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
-    "vout": 0,
-    "scriptSig": "",
-    ...
-  }
+“Vin” : [
+"txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
+"vout": 0,
+     	 "scriptSig": “”,
 ]
 [...]
 “witness”: “<Bob’s witness data>”
@@ -137,7 +125,7 @@ The second type of witness program corresponds to a Pay-to-Script-Hash (P2SH) sc
 
 .Example P2SH output script
 ----
-OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
+HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
 ----
 
 The P2SH script above references the hash of a _redeem script_ that defines a 2-of-3 multi-signature requirement to spend funds. To spend this output, Mohammed's company would present the redeem script (whose hash matches the script hash in the P2SH output) and the signatures necessary to satisfy that redeem script, all inside the transaction input:
@@ -145,13 +133,10 @@ The P2SH script above references the hash of a _redeem script_ that defines a 2-
 .Decoded transaction showing a P2SH output being spent
 ----
 [...]
-"vin": [
-  {
-    "txid": "abcdef12345...",
-    "vout": 0,
-    "scriptSig": "<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>",
-    ...
-  }
+“Vin” : [
+"txid": "abcdef12345...",
+"vout": 0,
+     	 "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”,
 ]
 ----
 
@@ -175,13 +160,10 @@ Mohammed's company can spend outputs the Pay-to-Witness-Script-Hash output by pr
 .Decoded transaction showing a P2WSH output being spent with separate witness data
 ----
 [...]
-"vin": [
-  {
-    "txid": "abcdef12345...",
-    "vout": 0,
-    "scriptSig": "",
-    ...
-  }
+“Vin” : [
+"txid": "abcdef12345...",
+"vout": 0,
+     	 "scriptSig": “”,
 ]
 [...]
 “witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”
@@ -216,7 +198,7 @@ Segregated witness will not be implemented simultaneously across the entire netw
 
 Let's assume, for example, that Alice's wallet is not upgraded to segwit, but Bob's wallet is upgraded and can handle segwit transactions. Alice and Bob can use "old" non-segwit transactions. But Bob would likely want to use segwit to reduce transaction fees, taking advantage of the discount that applies to witness data.
 
- In this case Bob's wallet can construct a P2SH address that contains a segwit script inside it. Alice's wallet sees this as a "normal" P2SH address and can make payments to it without any knowledge of segwit. Bob's wallet can then spend this payment with a segwit transaction, taking full advantage of segwit and reducing transaction fees.
+In this case Bob's wallet can construct a P2SH address that contains a segwit script inside it. Alice's wallet sees this as a "normal" P2SH address and can make payments to it without any knowledge of segwit. Bob's wallet can then spend this payment with a segwit transaction, taking full advantage of segwit and reducing transaction fees.
 
 Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a P2SH address. The first is noted as P2SH(P2WPKH) and the second is noted as P2SH(P2WSH).
 
@@ -245,7 +227,7 @@ Bob's wallet then hashes the above witness program, first with SHA256, then with
 The hash of the witness program is then embedded in a P2SH script:
 .P2SH script containing the hash of a P2WPKH witness program
 ----
-OP_HASH160 660a5ab01c8468ac2e3cd58e9b17f8ba637867a4 OP_EQUAL
+HASH160 660a5ab01c8468ac2e3cd58e9b17f8ba637867a4 EQUAL
 ----
 
 Finally, the P2SH script is converted to a P2SH bitcoin address:
@@ -280,7 +262,7 @@ e3cca368764d7b32ed27a15b2e8d7d45d4edd2c6
 Next, Mohammed's wallet puts the hash into a P2SH script
 .P2SH script containing the hash of a P2WSH witness program
 ----
-OP_HASH160 e3cca368764d7b32ed27a15b2e8d7d45d4edd2c6 OP_EQUAL
+HASH160 e3cca368764d7b32ed27a15b2e8d7d45d4edd2c6 EQUAL
 ----
 
 Finally, the wallet constructs a bitcoin address from this script:
@@ -318,7 +300,7 @@ Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The +txid+ is 
 
 ==== Segregated Witness' New Signing Algorithm
 
-Segregated Witness modifies the semantics of the four signature verification functions (OP_CHECKSIG, OP_CHECKSIGVERIFY, OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY), changing the way a transaction commitment hash is calculated.
+Segregated Witness modifies the semantics of the four signature verification functions (CHECKSIG, CHECKSIGVERIFY, CHECKMULTISIG and CHECKMULTISIGVERIFY), changing the way a transaction commitment hash is calculated.
 
 Signatures in bitcoin transactions are applied on a _commitment hash_ which is calculated from the transaction data, locking specific parts of the data indicating the signer's commitment to those values. For example, in a simple SIGHASH_ALL type signature, the commitment hash includes all inputs and outputs.
 
@@ -362,7 +344,16 @@ Transaction A fee: 8,130 satoshi
 Transaction B fee: 12,045 satoshi
 
 
-
 Both transactions are less expensive when segregated witness is implemented. But comparing the costs between the two transactions, we see that before segregated witness, the fee is higher for the transaction that has a negative Net-new-UTXO. After segregated witness, the transaction fees align with the incentive to minimize new UTXO creation, by not inadvertently penalizing transactions with many inputs.
 
 Segregated witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data correcting a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.
+
+=== Proposed Future Scripting and Transaction Improvements
+
+==== Confidential Transactions
+
+==== Schnorr Signatures
+
+==== Merkleized Abstract Syntax Trees (Pay-to-Merkle-Root)
+
+==== Covenants

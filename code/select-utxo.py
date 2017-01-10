@@ -26,9 +26,9 @@ def select_outputs_greedy(unspent, min_value):
     key_func = lambda utxo: utxo.value
     if greaters:
         # Not-empty. Find the smallest greater.
-        min_greater = min(greaters)
+        min_greater = min(greaters, key=key_func)
         change = min_greater.value - min_value
-        return [min_greater], change
+        return [min_greater], "Change: %d Satoshis" % change
     # Not found in greaters. Try several lessers instead.
     # Rearrange them from biggest to smallest. We want to use the least
     # amount of inputs as possible.

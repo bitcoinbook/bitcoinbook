@@ -108,7 +108,7 @@ If you are implementing a bitcoin wallet, it should be built as a Hierarchical D
 
 In <<user-stories>> we introduced Gabriel, an enterprising young teenager in Rio de Janeiro, who is running a simple web store that sells bitcoin-branded t-shirts, coffee mugs, and stickers. 
 
-Gabriel uses a Trezor bitcoin hardware wallet, to securely manage his bitcoins. The Trezor is a simple USB device with two buttons that stores keys (in the form of an HD wallet) and signs transactions. Trezor wallets implement all the industry standards discussed in this chapter, so Gabriel is not reliant on any proprietary technology or single vendor solution. 
+Gabriel uses a Trezor bitcoin hardware wallet, to securely manage his bitcoin. The Trezor is a simple USB device with two buttons that stores keys (in the form of an HD wallet) and signs transactions. Trezor wallets implement all the industry standards discussed in this chapter, so Gabriel is not reliant on any proprietary technology or single vendor solution. 
 
 .A Trezor device: a bitcoin HD-wallet in hardware
 image::images/trezor-grey-medium.png[alt]
@@ -169,12 +169,12 @@ Mnemonic words are generated automatically by the wallet, using a standardized p
 4. Divide the sequence into sections of 11 bits.
 5. Map each 11-bit value to a word from the predefined dictionary of 2048 words.
 6. The mnemonic code is the sequence of words.
-
++
 .Generating entropy and encoding as mnemonic words
 image::images/Mnemonic_Words.png["Generating entropy and encoding as mnemonic words"]
-
++
 The table <<table_4-5>>, shows the relationship between the size of entropy data and the length of mnemonic codes in words.
-
++
 [[table_4-5]]
 .Mnemonic codes: entropy and word length
 [options="header"]
@@ -186,17 +186,16 @@ The table <<table_4-5>>, shows the relationship between the size of entropy data
 | 224 | 7 | 231 | 21
 | 256 | 8 | 264 | 24
 |=======
-
++
 [[mnemonic_to_seed]]
-===== From Mnemonic to Seed
-
-The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys. 
-
+**From Mnemonic to Seed**
++
+The mnemonic words represent entropy with a length of 128 to 256 bits. The entropy is then used to derive a longer (512-bit) seed through the use of the key-stretching function PBKDF2. The seed produced is then used to build a deterministic wallet and derive its keys.
++
 The key-stretching function takes two parameters: the mnemonic and a _salt_. The purpose of a salt in a key-stretching function is to make it difficult to build a lookup table enabling a brute force attack. In the BIP-39 standard, the salt has another purpose - it allows the introduction of a passphrase which serves as an additional security factor protecting the seed, as we will describe in more detail in <<mnemonic_passphrase>>.
-
++
 The process described in steps 7 through 9 below continues from the process described previously in <<generating_mnemonic_words>>.
 
-[start=7]
 7. The first parameter to the PBKDF2 key-stretching function is the _mnemonic_ produced from step 6 in <<generating_mnemonic_words>>.
 8. The second parameter to the PBKDF2 key-stretching function is a _salt_. The salt is composed of the string constant "+mnemonic+" concatenated with an optional user-supplied passphrase string.
 9. PBKDF2 stretches the mnemonic and salt parameters using 2048 rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit value as its final output. That 512-bit value is the seed.
