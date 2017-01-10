@@ -392,7 +392,7 @@ Today, this attack is not very lucrative, because block reward is much higher th
 
 To prevent "fee sniping", when Bitcoin Core creates transactions, it uses nLocktime to limit them to the "next block", by default. In our scenario above, Bitcoin Core would set nLocktime to 100,001 on any transaction it created. Under normal circumstances, this nLocktime has no effect - the transactions could only be included in block #100,001 anyway, it's the next block.
 
- But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only re-mine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
+But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only re-mine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
 
 To achieve this, Bitcoin Core sets the nLocktime on all new transactions to <current block # + 1> and sets the nSequence on all the inputs to 0xFFFFFFFE, to enable nLocktime.
 
@@ -434,9 +434,9 @@ code to run in either case
 
 When reading Bitcoin Script, remember that the condition being evaluated comes *before* the +IF+ opcode.
 
-==== Flow Control with VERIFY opcodes
+==== Conditional clauses with VERIFY opcodes
 
-Another form of flow control in Bitcoin Script is any opcode that ends in +VERIFY+. The +VERIFY+ suffix means that if the condition evaluated is not TRUE, execution of the script terminates immediately and the transaction is deemed invalid.
+Another form of conditional in Bitcoin Script is any opcode that ends in +VERIFY+. The +VERIFY+ suffix means that if the condition evaluated is not TRUE, execution of the script terminates immediately and the transaction is deemed invalid.
 
 Unlike an +IF+ clause which offers alternative execution paths, the +VERIFY+ suffix acts as a _guard clause_, continuing only if a precondition is met.
 
@@ -475,7 +475,7 @@ Bob's unlocking script is identical:
 
 The script with +IF+ does the same thing as using an opcode with a +VERIFY+ suffix, they both operate as guard clauses. However, the +VERIFY+ construction is more efficient, using one fewer opcode.
 
-So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do is to attach a pre-condition (guard clause), then +VERIFY+ is better. If however, we want to have more than one execution path, then we need an +IF...ELSE+ flow control clause.
+So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do is to attach a pre-condition (guard clause), then +VERIFY+ is better. If however, we want to have more than one execution path (flow control), then we need an +IF...ELSE+ flow control clause.
 
 ==== Using Flow Control in Scripts
 
