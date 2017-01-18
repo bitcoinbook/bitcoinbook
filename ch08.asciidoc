@@ -17,13 +17,13 @@ Bitcoin's P2P network architecture is much more than a topology choice. Bitcoin 
 .A bitcoin network node with all four functions: wallet, miner, full blockchain database, and network routing
 image::images/msbt_0601.png["FullNodeReferenceClient_Small"]
 
-All nodes include the routing function to participate in the network and might include other functionality. All nodes validate and propagate transactions and blocks, and discover and maintain connections to peers. In the full-node example in <<full_node_reference>>, the routing function is indicated by an orange circle named "Network Routing Node."
+All nodes include the routing function to participate in the network and might include other functionality. All nodes validate and propagate transactions and blocks, and discover and maintain connections to peers. In the full-node example in <<full_node_reference>>, the routing function is indicated by an orange circle named "Network Routing Node.", or with the letter "N".
 
-Some nodes, called full nodes, also maintain a complete and up-to-date copy of the blockchain. Full nodes can autonomously and authoritatively verify any transaction without external reference. Some nodes maintain only a subset of the blockchain and verify transactions using a method called((("simplified payment verification (SPV) nodes","defined"))) _simplified payment verification_, or SPV. These nodes are known as SPV or lightweight nodes. In the full-node example in the figure, the full-node blockchain database function is indicated by a blue circle named "Full Blockchain." In <<bitcoin_network>>, SPV nodes are drawn without the blue circle, showing that they do not have a full copy of the blockchain.
+Some nodes, called full nodes, also maintain a complete and up-to-date copy of the blockchain. Full nodes can autonomously and authoritatively verify any transaction without external reference. Some nodes maintain only a subset of the blockchain and verify transactions using a method called((("simplified payment verification (SPV) nodes","defined"))) _simplified payment verification_, or SPV. These nodes are known as SPV or lightweight nodes. In the full-node example in the figure, the full-node blockchain database function is indicated by a blue circle named "Full Blockchain.", or the letter "B". In <<bitcoin_network>>, SPV nodes are drawn without the blue circle, showing that they do not have a full copy of the blockchain.
 
-Mining nodes compete to create new blocks by running specialized hardware to solve the proof-of-work algorithm. Some mining nodes are also full nodes, maintaining a full copy of the blockchain, while others are lightweight nodes participating in pool mining and depending on a pool server to maintain a full node. The mining function is shown in the full node as a black circle named "Miner."
+Mining nodes compete to create new blocks by running specialized hardware to solve the proof-of-work algorithm. Some mining nodes are also full nodes, maintaining a full copy of the blockchain, while others are lightweight nodes participating in pool mining and depending on a pool server to maintain a full node. The mining function is shown in the full node as a black circle named "Miner", or the letter  "M".
 
-User wallets might be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly, many user wallets, especially those running on resource-constrained devices such as smartphones, are SPV nodes. The wallet function is shown in <<full_node_reference>> as a green circle named "Wallet".
+User wallets might be part of a full node, as is usually the case with desktop bitcoin clients. Increasingly, many user wallets, especially those running on resource-constrained devices such as smartphones, are SPV nodes. The wallet function is shown in <<full_node_reference>> as a green circle named "Wallet" or the letter "W".
 
 In addition to the main node types on the bitcoin P2P protocol, there are servers and nodes running other protocols, such as specialized mining pool protocols and lightweight client-access protocols.
 
@@ -31,9 +31,9 @@ In addition to the main node types on the bitcoin P2P protocol, there are server
 
 === The Extended Bitcoin Network
 
-((("bitcoin network","extended")))((("extended bitcoin network")))The main bitcoin network, running the bitcoin P2P protocol, consists of between 7,000 and 10,000 listening nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as((("BitcoinJ library")))((("btcd")))((("libbitcoin library"))) BitcoinJ, Libbitcoin, and btcd. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions, and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top.
+((("bitcoin network","extended")))((("extended bitcoin network")))The main bitcoin network, running the bitcoin P2P protocol, consists of between 5,000 and 8,000 listening nodes running various versions of the bitcoin reference client (Bitcoin Core) and a few hundred nodes running various other implementations of the bitcoin P2P protocol, such as((("BitcoinJ library")))((("btcd")))((("libbitcoin library")))((("bcoin"))) BitcoinJ, Libbitcoin, btcd and bcoin. A small percentage of the nodes on the bitcoin P2P network are also mining nodes, competing in the mining process, validating transactions, and creating new blocks. Various large companies interface with the bitcoin network by running full-node clients based on the Bitcoin Core client, with full copies of the blockchain and a network node, but without mining or wallet functions. These nodes act as network edge routers, allowing various other services (exchanges, wallets, block explorers, merchant payment processing) to be built on top.
 
-The extended bitcoin network includes the network running the bitcoin P2P protocol, described earlier, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of((("mining pools","on the bitcoin network"))) pool servers and protocol gateways that connect nodes running other protocols. These other protocol nodes are mostly pool mining nodes (see <<ch8>>) and lightweight wallet clients, which do not carry a full copy of the blockchain.
+The extended bitcoin network includes the network running the bitcoin P2P protocol, described earlier, as well as nodes running specialized protocols. Attached to the main bitcoin P2P network are a number of((("mining pools","on the bitcoin network"))) pool servers and protocol gateways that connect nodes running other protocols. These other protocol nodes are mostly pool mining nodes (see <<mining>>) and lightweight wallet clients, which do not carry a full copy of the blockchain.
 
 <<bitcoin_network>> shows the extended bitcoin network with the various types of nodes, gateway servers, edge routers, and wallet clients and the various protocols they use to connect to each other.
 
@@ -44,6 +44,20 @@ image::images/msbt_0602.png["BitcoinNodeTypes"]
 [[bitcoin_network]]
 .The extended bitcoin network showing various node types, gateways, and protocols
 image::images/msbt_0603.png["BitcoinNetwork"]
+
+=== Bitcoin Relay Networks
+
+While the bitcoin P2P network serves the general needs of a broad variety of node types, it exhibits too high network latency for the specialized needs of bitcoin mining nodes.
+
+Bitcoin miners are engaged in a time-sensitive competition to solve the Proof-of-Work problem and extend the blockchain (See <<mining>>). While participating in this competition, bitcoin miners must minimize the time between the propagation of a winning block and the beginning of the next round of competition. In mining, network latency is directly related to profit margins.
+
+A _Bitcoin Relay Network_ is a network that attempts minimize the latency in the transmission of blocks between miners. The original Bitcoin Relay Network (http://www.bitcoinrelaynetwork.org/) was created by core developer Matt Corallo in 2015 to enable fast synchronization of blocks between miners with very low latency. The network consisted of several specialized nodes hosted on Amazon Web Services infrastructure around the world and served to connect the majority of miners and mining pools.
+
+The original Bitcoin Relay Network was replaced in 2016 with the introduction of the _Fast Internet Bitcoin Relay Engine_ or _FIBRE_ (http://bitcoinfibre.org/), also created by core developer Matt Corallo. FIBRE is a UDP-based relay network that relays blocks within a network of nodes. FIBRE implements the _Compact Block_ (see <<compact_block>>) optimization to further reduce the amount of data transmitted and the network latency.
+
+Another relay network (still in the proposal phase) is _Falcon_ (http://www.falcon-net.org/about), based on research at Cornell University. Falcon uses "cut-through-routing" instead of "store-and-forward" to reduce latency by propagating parts of blocks as they are received rather than waiting until a complete block is received.
+
+Relay networks are not replacements for bitcoin's P2P network. Instead they are overlay networks that provide additional connectivity between nodes with specialized needs. Like freeways are not replacements for rural roads, but shortcuts between two points with heavy traffic, you still need small roads to connect to the freeways.
 
 === Network Discovery
 
@@ -150,7 +164,6 @@ Let's assume, for example, that a node only has the genesis block. It will then 
 
 This process of comparing the local blockchain with the peers and retrieving any missing blocks happens any time a node goes offline for any period of time. Whether a node has been offline for a few minutes and is missing a few blocks, or a month and is missing a few thousand blocks, it starts by sending +getblocks+, gets an +inv+ response, and starts downloading the missing blocks. <<inventory_synchronization>> shows the inventory and block propagation protocol.
 
-
 [[spv_nodes]]
 === Simplified Payment Verification (SPV) Nodes
 
@@ -170,7 +183,7 @@ For example, when examining a transaction in block 300,000, a full node links al
 
 An SPV node cannot be persuaded that a transaction exists in a block when the transaction does not in fact exist. The SPV node establishes the existence of a transaction in a block by requesting a merkle path proof and by validating the proof of work in the chain of blocks. However, a transaction's existence can be "hidden" from an SPV node. An SPV node can definitely prove that a transaction exists but cannot verify that a transaction, such as a double-spend of the same UTXO, doesn't exist because it doesn't have a record of all transactions. This vulnerability can be used in a denial-of-service attack or for a double-spending attack against SPV nodes. To defend against this, an SPV node needs to connect randomly to several nodes, to increase the probability that it is in contact with at least one honest node. This need to randomly connect means that SPV nodes also are vulnerable to network partitioning attacks or Sybil attacks, where they are connected to fake nodes or fake networks and do not have access to honest nodes or the real bitcoin network.
 
-For most practical purposes, well-connected SPV nodes are secure enough, striking the right balance between resource needs, practicality, and security. For infallible security, however, nothing beats running a full blockchain node.
+For most practical purposes, well-connected SPV nodes are secure enough, striking a balance between resource needs, practicality, and security. For infallible security, however, nothing beats running a full blockchain node.
 
 [TIP]
 ====
@@ -187,15 +200,15 @@ Because SPV nodes need to retrieve specific transactions in order to selectively
 
 Shortly after the introduction of SPV/lightweight nodes, the bitcoin developers added a feature called _bloom filters_ to address the privacy risks of SPV nodes. Bloom filters allow SPV nodes to receive a subset of the transactions without revealing precisely which addresses they are interested in, through a filtering mechanism that uses probabilities rather than fixed patterns.(((range="endofrange", startref="ix_ch08-asciidoc6")))(((range="endofrange", startref="ix_ch08-asciidoc5a")))(((range="endofrange", startref="ix_ch08-asciidoc5")))
 
-=== Bloom Filters
+=== Bloom filters
 
-((("bitcoin network","bloom filters and", id="ix_ch08-asciidoc7", range="startofrange")))((("bloom filters", id="ix_ch08-asciidoc8", range="startofrange")))((("Simplified Payment Verification (SPV) nodes","bloom filters and", id="ix_ch08-asciidoc9", range="startofrange")))A bloom filter is a probabilistic search filter, a way to describe a desired pattern without specifying it exactly. Bloom filters offer an efficient way to express a search pattern while protecting privacy. They are used by SPV nodes to ask their peers for transactions matching a specific pattern, without revealing exactly which addresses they are searching for.
+((("bitcoin network","bloom filters and", id="ix_ch08-asciidoc7", range="startofrange")))((("bloom filters", id="ix_ch08-asciidoc8", range="startofrange")))((("Simplified Payment Verification (SPV) nodes","bloom filters and", id="ix_ch08-asciidoc9", range="startofrange")))A bloom filter is a probabilistic search filter, a way to describe a desired pattern without specifying it exactly. Bloom filters offer an efficient way to express a search pattern while protecting privacy. They are used by SPV nodes to ask their peers for transactions matching a specific pattern, without revealing exactly which addresses, keys or transactions they are searching for.
 
 In our previous analogy, a tourist without a map is asking for directions to a specific address, "23 Church St." If she asks strangers for directions to this street, she inadvertently reveals her destination. A bloom filter is like asking, "Are there any streets in this neighborhood whose name ends in R-C-H?" A question like that reveals slightly less about the desired destination than asking for "23 Church St." Using this technique, a tourist could specify the desired address in more detail as "ending in U-R-C-H" or less detail as "ending in H." By varying the precision of the search, the tourist reveals more or less information, at the expense of getting more or less specific results. If she asks a less specific pattern, she gets a lot more possible addresses and better privacy, but many of the results are irrelevant. If she asks for a very specific pattern, she gets fewer results but loses privacy.
 
-Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned toward precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what addresses are used in the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy.
+Bloom filters serve this function by allowing an SPV node to specify a search pattern for transactions that can be tuned toward precision or privacy. A more specific bloom filter will produce accurate results, but at the expense of revealing what patterns the SPV node is interested in, thus revealing the addresses owned by the user's wallet. A less specific bloom filter will produce more data about more transactions, many irrelevant to the node, but will allow the node to maintain better privacy.
 
-An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses in its wallet and create a search pattern matching the transaction output that corresponds to each address. Usually, the search pattern is a((("pay-to-public-key-hash (P2PKH)","bloom filters and"))) pay-to-public-key-hash script that is the expected locking script that will be present in any transaction paying to the public-key-hash (address). If the SPV node is tracking the balance of a((("pay-to-script-hash (P2SH)","bloom filters and"))) P2SH address, the search pattern will be a pay-to-script-hash script, instead. The SPV node then adds each of the search patterns to the bloom filter, so that the bloom filter can recognize the search pattern if it is present in a transaction. Finally, the bloom filter is sent to the peer and the peer uses it to match transactions for transmission to the SPV node.
+==== How bloom filters work
 
 Bloom filters are implemented as a variable-size array of N binary digits (a bit field) and a variable number of M hash functions. The hash functions are designed to always produce an output that is between 1 and N, corresponding to the array of binary digits. The hash functions are generated deterministically, so that any node implementing a bloom filter will always use the same hash functions and get the same results for a specific input. By choosing different length (N) bloom filters and a different number (M) of hash functions, the bloom filter can be tuned, varying the level of accuracy and therefore privacy.
 
@@ -208,7 +221,6 @@ image::images/msbt_0608.png["Bloom1"]
 The bloom filter is initialized so that the array of bits is all zeros. To add a pattern to the bloom filter, the pattern is hashed by each hash function in turn. Applying the first hash function to the input results in a number between 1 and N. The corresponding bit in the array (indexed from 1 to N) is found and set to +1+, thereby recording the output of the hash function. Then, the next hash function is used to set another bit and so on. Once all M hash functions have been applied, the search pattern will be "recorded" in the bloom filter as M bits that have been changed from +0+ to +1+.
 
 <<bloom2>> is an example of adding a pattern "A" to the simple bloom filter shown in <<bloom1>>.
-
 
 Adding a second pattern is as simple as repeating this process. The pattern is hashed by each hash function in turn and the result is recorded by setting the bits to +1+. Note that as a bloom filter is filled with more patterns, a hash function result might coincide with a bit that is already set to +1+, in which case the bit is not changed. In essence, as more patterns record on overlapping bits, the bloom filter starts to become saturated with more bits set to +1+ and the accuracy of the filter decreases. This is why the filter is a probabilistic data structure—it gets less accurate as more patterns are added. The accuracy depends on the number of patterns added versus the size of the bit array (N) and number of hash functions (M). A larger bit array and more hash functions can record more patterns with higher accuracy. A smaller bit array or fewer hash functions will record fewer patterns and produce less accuracy.
 
@@ -238,20 +250,80 @@ On the contrary, if a pattern is tested against the bloom filter and any one of 
 .Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
 image::images/msbt_0612.png[]
 
-Bitcoin's implementation of bloom filters is described in Bitcoin Improvement Proposal 37 (BIP-37). See <<appdxbitcoinimpproposals>> or visit http://bit.ly/1x6qCiO[GitHub].
+=== How SPV nodes use bloom filters
 
-=== Bloom Filters and Inventory Updates
+((("inventory updates, bloom filters and")))Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers, selecting only transactions of interest to the SPV node without revealing which addresses or keys it is interested in.
 
-((("inventory updates, bloom filters and")))Bloom filters are used to filter the transactions (and blocks containing them) that an SPV node receives from its peers. SPV nodes will create a filter that matches only the addresses held in the SPV node's wallet. The SPV node will then send a((("filterload message"))) +filterload+ message to the peer, containing the bloom filter to use on the connection. After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions that match the filter are sent to the node.
+An SPV node will initialize a bloom filter as "empty" and in that state the bloom filter will not match any patterns. The SPV node will then make a list of all the addresses, keys and hashes that it is interested in. It will do this by extracting the ((("pay-to-public-key-hash (P2PKH)","bloom filters and")))public-key-hash and ((("pay-to-script-hash (P2SH)","bloom filters and"))) script-hash and transaction IDs from any unspent transaction outputs (UTXO) controlled by its wallet. The SPV node then adds each of these to the bloom filter, so that the bloom filter will "match" if these patterns are present in a transaction, without revealing the patterns themselves.
+
+The SPV node will then send a((("filterload message"))) +filterload+ message to the peer, containing the bloom filter to use on the connection. On the peer bloom filters are checked against each incoming transaction. The full node checks several parts of the transaction against the bloom filter, looking for a match including:
+
+* The transaction ID
+* Each of the transaction outputs' locking scripts' data components (every key and hash in the script)
+* Each of the transaction inputs
+* Each of the input signatures data components (or witness scripts)
+
+By checking against all these components, bloom filters can be used to match public key hashes, scripts, OP_RETURN values, public keys in signatures, or any future component of a smart contract or complex script.
+
+After a filter is established, the peer will then test each transaction's outputs against the bloom filter. Only transactions that match the filter are sent to the node.
 
 In response to a +getdata+ message from the node, peers will send a +merkleblock+ message that contains only block headers for blocks matching the filter and a merkle path (see <<merkle_trees>>) for each matching transaction. The peer will then also send +tx+ messages containing the transactions matched by the filter.
 
+As the full node sends transactions to the SPV node, the SPV node discards any false positives and uses the correctly matched transactions to update its UTXO set and wallet balance. As it updates its own view of the UTXO set, it also modifies the bloom filter to match any future transactions referencing the UTXO it just found. The full node then uses the new bloom filter to match new transactions and the whole process repeats.
+
 The node setting the bloom filter can interactively add patterns to the filter by sending a((("filteradd message"))) +filteradd+ message. To clear the bloom filter, the node can send a((("filterclear message"))) +filterclear+ message. Because it is not possible to remove a pattern from a bloom filter, a node has to clear and resend a new bloom filter if a pattern is no longer desired.(((range="endofrange", startref="ix_ch08-asciidoc9")))(((range="endofrange", startref="ix_ch08-asciidoc8")))(((range="endofrange", startref="ix_ch08-asciidoc7")))
 
+The network protocol and bloom filter mechanism for SPV nodes is defined in BIP-37:
+
+BIP-37 (Peer Services):: https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki]
+
+
+=== SPV nodes and privacy
+
+Nodes that implement Simple Payment Verification have weaker privacy than a full node. A full node receives all transactions and therefore reveals no information about whether it is using some address in its wallet. An SPV node receives a filtered list of transactions related to the addresses that are in its wallet. As a result, it reduces the privacy of the owner.
+
+Bloom filters are a way to reduce the loss of privacy. Without them, an SPV node would have to explicitly list the addresses it was interested in, creating a serious breach of privacy. However, even with bloom filters, an adversary monitoring the traffic of an SPV client or connected to it directly as a node in the P2P network can collect enough information over time to learn the addresses in the wallet of the SPV client.
+
+=== Encrypted and Authenticated Connections
+
+Most new users of bitcoin assume that the network communications of a bitcoin node are encrypted. In fact, the original implementation of bitcoin communicates entirely in the clear. While this is not a major privacy concern for full nodes, it is a big problem for SPV nodes.
+
+As a way to increase the privacy and security of the bitcoin P2P network, there are two solutions that provide encryption of the communications: _Tor Transport_ and _Peer to Peer Authentication and Encryption_ with BIP-150/151.
+
+==== Tor Transport
+
+Tor, which stands for _The Onion Routing network_ is a software project and network that offers encryption and encapsulation of data through randomized network paths that offers anonymity, untraceability and privacy. ((("Tor")))
+
+Bitcoin Core offers several configuration options that allow you to run a bitcoin node with its traffic transported over the Tor network. In addition, Bitcoin Core can also offer a Tor hidden service allowing other Tor nodes to connect to your node directly over Tor.
+
+As of Bitcoin Core version 0.12, a node will offer a hidden Tor service automatically if it is able to connect to a local Tor service. If you have Tor installed and the Bitcoin Core process runs as a user with adequate permissions to access the Tor authentication cookie, it should work automatically. Use the +debug+ flag to turn on Bitcoin Core's debugging for the tor service like this:
+
+----
+$ bitcoind --daemon --debug=tor
+----
+
+You should see "tor: ADD_ONION successful" in the logs, indicating that Bitcoin Core has added a hidden service to the Tor network.
+
+You can find more instructions on running Bitcoin Core as a Tor hidden service in the Bitcoin Core documentation (+docs/tor.md+) and various online tutorials.
+
+==== Peer to peer authentication and encryption
+
+Two Bitcoin Improvement Proposals, BIP-150 and BIP-151, add support for Peer-to-Peer authentication and encryption in the bitcoin P2P network.  These two BIPs define optional services that may be offered by compatible bitcoin nodes. BIP-151 enables negotiated encryption for all communications between two nodes that support BIP-151. BIP-150 offers optional peer-authentication which allows nodes to authenticate each others identity using ECDSA and private keys. BIP-150 requires that prior to authentication the two nodes have established encrypted communications as per BIP-151.
+
+As of January 2017, BIP-150 and BIP-151 are not implemented in Bitcoin Core. However, the two proposals have been implemented by at least one alternative bitcoin client, named bcoin.((("bcoin")))
+
+BIP-150 and BIP-151 allow users to run SPV clients that connect to a trusted full node, using encryption and authentication to protect the privacy of the SPV client.
+
+ Additionally, authentication can be used to create networks of trusted bitcoin nodes and prevent Man-In-The-Middle attacks. Finally, peer-to-peer encryption, if deployed broadly, would strengthen the resistance of bitcoin to traffic analysis and privacy eroding surveillance, especially in totalitarian countries where Internet use is heavily controlled and monitored.
+
+BIP-150 (Peer Authentication):: https://github.com/bitcoin/bips/blob/master/bip-0150.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0150.mediawiki]
+
+BIP-151 (Peer-to-Peer Communication Encryption):: https://github.com/bitcoin/bips/blob/master/bip-0151.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0151.mediawiki]
 [[transaction_pools]]
+
 === Transaction Pools
 
-((("bitcoin network","transaction pools")))((("transaction pools")))((("memory pool")))((("mempool")))((("transactions","unconfirmed, pools of")))((("unconfirmed transactions")))Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the _memory pool_, _mempool_, or _transaction pool_. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the blockchain. For example, a node that holds a user's wallet will use the transaction pool to track incoming payments to the user's wallet that have been received on the network but are not yet confirmed.
+((("bitcoin network","transaction pools")))((("transaction pools")))((("memory pool")))((("mempool")))((("transactions","unconfirmed, pools of")))((("unconfirmed transactions")))Almost every node on the bitcoin network maintains a temporary list of unconfirmed transactions called the _memory pool_, _mempool_, or _transaction pool_. Nodes use this pool to keep track of transactions that are known to the network but are not yet included in the blockchain. For example, a wallet node will use the transaction pool to track incoming payments to the user's wallet that have been received on the network but are not yet confirmed.
 
 As transactions are received and verified, they are added to the transaction pool and relayed to the neighboring nodes to propagate on the network.
 
@@ -261,38 +333,6 @@ When a transaction is added to the transaction pool, the orphan pool is checked 
 
 ((("orphan transaction pool","storage")))((("transaction pools","storage")))Both the transaction pool and orphan pool (where implemented) are stored in local memory and are not saved on persistent storage; rather, they are dynamically populated from incoming network messages. When a node starts, both pools are empty and are gradually populated with new transactions received on the network.
 
-Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, including some dating back to 2009. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage.
+((("UTXO","pool")))Some implementations of the bitcoin client also maintain a UTXO database or UTXO pool, which is the set of all unspent outputs on the blockchain. Although the name "UTXO pool" sounds similar to the transaction pool, it represents a different set of data. Unlike the transaction and orphan pools, the UTXO pool is not initialized empty but instead contains millions of entries of unspent transaction outputs, everything that is unspent from all the way back to the genesis block. The UTXO pool may be housed in local memory or as an indexed database table on persistent storage.
 
-Whereas the transaction and orphan pools represent a single node's local perspective and might vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.
-
-=== Alert Messages
-
-((("alert messages")))((("bitcoin network","alert messages")))Alert messages are a seldom used function, but are nevertheless implemented in most nodes. Alert messages are bitcoin's "emergency broadcast system," a means by which the core bitcoin developers can send an emergency text message to all bitcoin nodes. This feature is implemented to allow the core developer team to notify all bitcoin users of a serious problem in the bitcoin network, such as a critical bug that requires user action. The alert system has only been used a handful of times, most notably in early 2013 when a critical database bug caused a multiblock fork to occur in the bitcoin blockchain.
-
-Alert messages are propagated by the +alert+ message. The alert message contains several fields, including:
-
-ID::
-An alert identified so that duplicate alerts can be detected
-
-Expiration::
-A time after which the alert expires
-
-RelayUntil::
-A time after which the alert should not be relayed
-
-MinVer, MaxVer::
-The range of bitcoin protocol versions that this alert applies to
-
-subVer::
-The client software version that this alert applies to
-
-Priority::
-An alert priority level, currently unused
-
-Alerts are cryptographically signed with a private key that is held by a few select members of the core development team. The digital signature ensures that fake alerts will not be propagated on the network.
-
-Each node receiving this alert message will verify it, check for expiration, and propagate it to all its peers, thus ensuring rapid propagation across the entire network. In addition to propagating the alert, the nodes might implement a user interface function to present the alert to the user.
-
-((("Bitcoin Core client","alerts, configuring")))In the Bitcoin Core client, the alert is configured with the command-line option +-alertnotify+, which specifies a command to run when an alert is received. The alert message is passed as a parameter to the +alertnotify+ command. Most commonly, the +alertnotify+ command is set to generate an email message to the administrator of the node, containing the alert message. The alert is also displayed as a pop-up dialog in the graphical user interface (bitcoin-Qt) if it is running.
-
-Other implementations of the bitcoin protocol might handle the alert in different ways. ((("mining","hardware, alerts and")))Many hardware-embedded bitcoin mining systems do not implement the alert message function because they have no user interface. It is strongly recommended that miners running such mining systems subscribe to alerts via a mining pool operator or by running a lightweight node just for alert purposes.(((range="endofrange", startref="ix_ch08-asciidoc0")))
+Whereas the transaction and orphan pools represent a single node's local perspective and might vary significantly from node to node depending upon when the node was started or restarted, the UTXO pool represents the emergent consensus of the network and therefore will vary little between nodes. Furthermore, the transaction and orphan pools only contain unconfirmed transactions, while the UTXO pool only contains confirmed outputs.(((range="endofrange", startref="ix_ch08-asciidoc0")))
