@@ -9,7 +9,7 @@ Each block within the blockchain is identified by a hash, generated using the SH
 
 Although a block has just one parent, it can temporarily have multiple children. Each of the children refers to the same block as its parent and contains the same (parent) hash in the "previous block hash" field. Multiple children arise during a blockchain "fork," a temporary situation that occurs when different blocks are discovered almost simultaneously by different miners (see <<forks>>). Eventually, only one child block becomes part of the blockchain and the "fork" is resolved. Even though a block may have more than one child, each block can have only one parent. This is because a block has one single "previous block hash" field referencing its single parent.
 
-The "previous block hash" field is inside the block header and thereby affects the _current_ block's hash. The child's own identity changes if the parent's identity changes. When the parent is modified in any way, the parent's hash changes. The parent's changed hash necessitates a change in the "previous block hash" pointer of the child. This in turn causes the child's hash to change, which requires a change in the pointer of the grandchild, which in turn changes the grandchild, and so on. ((("security","immutability of blockchain and")))This cascade effect ensures that once a block has many generations following it, it cannot be changed without forcing a recalculation of all subsequent blocks. Because such a recalculation would require enormous computation, the existence of a long chain of blocks makes the blockchain's deep history immutable, which is a key feature of bitcoin's security.
+The "previous block hash" field is inside the block header and thereby affects the _current_ block's hash. The child's own identity changes if the parent's identity changes. When the parent is modified in any way, the parent's hash changes. The parent's changed hash necessitates a change in the "previous block hash" pointer of the child. This in turn causes the child's hash to change, which requires a change in the pointer of the grandchild, which in turn changes the grandchild, and so on. ((("security","immutability of blockchain and")))This cascade effect ensures that once a block has many generations following it, it cannot be changed without forcing a recalculation of all subsequent blocks. Because such a recalculation would require enormous computation (and therefore energy consumption), the existence of a long chain of blocks makes the blockchain's deep history immutable, which is a key feature of bitcoin's security.
 
 One way to think about the blockchain is like layers in a geological formation, or glacier core sample. The surface layers might change with the seasons, or even be blown away before they have time to settle. But once you go a few inches deep, geological layers become more and more stable. By the time you look a few hundred feet down, you are looking at a snapshot of the past that has remained undisturbed for millions of years. In the blockchain, the most recent few blocks might be revised if there is a chain recalculation due to a fork. The top six blocks are like a few inches of topsoil. But once you go more deeply into the blockchain, beyond six blocks, blocks are less and less likely to change. After 100 blocks back there is so much stability that the coinbase transaction—the transaction containing newly mined bitcoin—can be spent. A few thousand blocks back (a month) and the blockchain is settled history, for all practical purposes. While the protocol always allows a chain to be undone by a longer chain and while the possibility of any block being reversed always exists, the probability of such an event decreases as time passes until it becomes infinitesimal.
 
@@ -253,4 +253,153 @@ As you can see from the table, while the block size increases rapidly, from 4 KB
 
 ((("merkle trees","SPV and")))((("Simplified Payment Verification (SPV) nodes","merkle trees and")))Merkle trees are used extensively by SPV nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an authentication path, or merkle path.
 
-Consider, for example, an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a((("merkleblock message"))) +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is more than a thousand times less than a full block (about 1 megabyte currently).(((range="endofrange", startref="ix_ch09-asciidoc0")))
+Consider, for example, an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter (see <<bloom_filters>>) on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a((("merkleblock message"))) +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is more than a thousand times less than a full block (about 1 megabyte currently).(((range="endofrange", startref="ix_ch09-asciidoc0")))
+
+=== Bitcoin's Test Blockchains
+
+You might be surprised to learn that there is more than one bitcoin blockchain. The "main" bitcoin blockchain, the one created by Satoshi Nakamoto on January 3rd 2009, the one with the genesis block we studied in this chapter, is called _mainnet_. ((("mainnet")))((("blockchain", "mainnet"))) There are other bitcoin blockchains that are used for testing purposes: at this time _testnet_, _segnet_ and _regtest_. Let's look at each in turn.((("testnet")))((("blockchain","testnet")))((("segnet")))
+((("blockchain","segnet")))((("regtest")))(("blockchain","regtest")))
+
+==== Testnet - Bitcoin's testing playground
+
+((("testnet")))((("blockchain","testnet"))) Testnet is the name of the test blockchain, network and currency that is used for testing purposes. The testnet is a fully featured live P2P network, with wallets, test bitcoins (testnet coins), mining and all the other features of mainnet. ((("testnet","coins")))((("testnet","mining"))) There are really only two differences: testnet coins are meant to be worthless and mining difficulty should be low enough that anyone can mine testnet coins relatively easily (keeping them worthless).
+
+Any software development that is intended for production use on bitcoin's mainnet should first be tested on testnet with test coins. This protects both the developers from monetary losses due to bugs and the network from unintended behavior due to bugs.
+
+Keeping the coins worthless and the mining easy, however, is not easy. Despite pleas from developers, some people use advanced mining equipment (GPUs and ASICs) to mine on testnet. This increases the difficulty, makes it impossible to mine with a CPU and eventually makes it difficult enough to get test coins that people start valuing them, so they're not worthless. As a result, every now and then, the testnet has to be scrapped and restarted from a new genesis block, resetting the difficulty.
+
+The current testnet is called _testnet3_, the third iteration of testnet, restarted in Feb 2011 to reset the difficulty from the previous testnet.
+
+((("testnet","running a node")))Keep in mind that testnet3 is a large blockchain, in excess of 20GB in early 2017. It will take a day or so to sync fully and use up resources on your computer. Not as much as mainnet, but not exactly "lightweight" either. One good way to run a testnet node is as a virtual machine image (eg. virtualbox, docker, cloud server etc) dedicated for that purpose.
+
+===== Using testnet
+
+((("testnet","running a node")))((("testing")))Bitcoin Core, like almost all other bitcoin software has full support for operation on testnet instead of mainnet, but also allows you to mine testnet coins and operate a full testnet node.
+
+To start Bitcoin Core on testnet instead of mainnet you use the +testnet+ switch:
+
+----
+$ bitcoind -testnet
+----
+
+In the logs you should see that bitcoind is building a new blockchain in the +testnet3+ subdirectory of the default bitcoind directory:
+
+----
+bitcoind: Using data directory /home/username/.bitcoin/testnet3
+----
+
+To connect to bitcoind, you use the +bitcoin-cli+ command-line tool, but you must also switch it to testnet mode:
+
+----
+$ bitcoin-cli -testnet getinfo
+{
+  "version": 130200,
+  "protocolversion": 70015,
+  "walletversion": 130000,
+  "balance": 0.00000000,
+  "blocks": 416,
+  "timeoffset": 0,
+  "connections": 3,
+  "proxy": "",
+  "difficulty": 1,
+  "testnet": true,
+  "keypoololdest": 1484801486,
+  "keypoolsize": 100,
+  "paytxfee": 0.00000000,
+  "relayfee": 0.00001000,
+  "errors": ""
+}
+----
+
+You can also use the +getblockchaininfo+ command to confirm the details of the testnet3 blockchain and your sync progress:
+
+----
+$ bitcoin-cli -testnet getblockchaininfo
+{
+  "chain": "test",
+  "blocks": 1088,
+  "headers": 139999,
+  "bestblockhash": "0000000063d29909d475a1c4ba26da64b368e56cce5d925097bf3a2084370128",
+  "difficulty": 1,
+  "mediantime": 1337966158,
+  "verificationprogress": 0.001644065914099759,
+  "chainwork": "0000000000000000000000000000000000000000000000000000044104410441",
+  "pruned": false,
+  "softforks": [
+
+  [...]
+----
+
+You can also run on testnet3 with other full node implementations, such as +btcd+ (written in Go) and +bcoin+ (written in Javascript), to experiment and learn in other programming languages and frameworks.
+
+In early 2017, testnet3 supports all the features of mainnet, in addition to Segregated Witness (see <<segwit>>), which has yet to activate on mainnet. Therefore, testnet3 can also be used to test Segregated Witness features.
+
+=== Segnet - The Segregated Witness Testnet
+
+((("segnet")))
+((("blockchain","segnet")))((("segiwt","testing")))In 2016, a special-purpose testnet was launched to aid in development and testing of Segregated Witness (aka. segwit see <<segwit>>). This test blockchain is called +segnet+ and can be joined by running a special version (branch) of Bitcoin Core.
+
+Since segwit was added to testnet3, it is no longer necessary to use segnet for testing of segwit features.
+
+((("testing")))In the future it is likely we will see other testnet blockchains that are specifically designed to test a single feature or major architectural change, like segnet.
+
+=== Regtest - The local blockchain
+
+((("regtest")))(("blockchain","regtest")))((("testing")))Regtest, which stands for "Regression Testing" is a Bitcoin Core feature that allows you to create a local blockchain for testing purposes. Unlike testnet3, which is a public and share test blockchain, the regtest blockchains are intended to be run as closed systems for local testing. You launch a regtest blockchain from scratch, creating a local genesis block. You may add other nodes to the network, or run it with a single node only to test the Bitcoin Core software.
+
+To start Bitcoin Core in regtest mode, you use the +regtest+ flag:
+
+----
+$ bitcoind -regtest
+----
+
+Just like with testnet, Bitcoin Core will initialize a new blockchain under the +regtest+ subdirectory of your bitcoind default directory:
+
+----
+bitcoind: Using data directory /home/username/.bitcoin/regtest
+----
+
+To use the command-line tool, you need to specify the +regtest+ flag too. Let's try the +getblockchaininfo+ command to inspect the regtest blockchain:
+
+----
+$ bitcoin-cli -regtest getblockchaininfo
+{
+  "chain": "regtest",
+  "blocks": 0,
+  "headers": 0,
+  "bestblockhash": "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206",
+  "difficulty": 4.656542373906925e-10,
+  "mediantime": 1296688602,
+  "verificationprogress": 1,
+  "chainwork": "0000000000000000000000000000000000000000000000000000000000000002",
+  "pruned": false,
+  [...]
+----
+
+As you can see, there are no blocks yet. Let's mine some (500 blocks) and earn the reward:
+
+----
+$ bitcoin-cli -regtest generate 500
+[
+  "7afed70259f22c2bf11e406cb12ed5c0657b6e16a6477a9f8b28e2046b5ba1ca",
+  "1aca2f154a80a9863a9aac4c72047a6d3f385c4eec5441a4aafa6acaa1dada14",
+  "4334ecf6fb022f30fbd764c3ee778fabbd53b4a4d1950eae8a91f1f5158ed2d1",
+  "5f951d34065efeaf64e54e91d00b260294fcdfc7f05dbb5599aec84b957a7766",
+  "43744b5e77c1dfece9d05ab5f0e6796ebe627303163547e69e27f55d0f2b9353",
+   [...]
+  "6c31585a48d4fc2b3fd25521f4515b18aefb59d0def82bd9c2185c4ecb754327"
+]
+----
+
+It will only take a few seconds to mine all these blocks, which certainly makes it easy for testing. If you check your wallet balance, you will see that you earned reward for the first 400 blocks (coinbase rewards must be 100 blocks deep before you can spend them):
+
+----
+$ bitcoin-cli -regtest getbalance
+12462.50000000
+----
+
+=== Using test blockchains for development
+
+Bitcoin's various blockchains (+regtest+, +segnet+, +testnet3+, +mainnet+) offer a range of testing environments for bitcoin development. ((("testing")))Use the test blockchains whether you are developing for Bitcoin Core, or another full-node consensus client; an application such as a wallet, exchange, e-commerce site; or even developing novel smart contracts and complex scripts.
+
+You can use the test blockchains to establish a development pipeline. Test your code locally on a +regtest+ as you develop it. Once ready to try it on a public network, switch to +testnet+ to expose your code to a more dynamic environment with more diversity of code and applications. Finally, once you are confident your code works as expected, switch to +mainnet+ to deploy it in production. As you make changes, improvements, bug fixes etc., start the pipeline again deploying each change first on +regtest+, then on +testnet+ and finally into production.
