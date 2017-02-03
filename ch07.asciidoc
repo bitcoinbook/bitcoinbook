@@ -329,11 +329,9 @@ The nSequence field was originally intended (but never properly implemented) to 
 
 The original meaning of nSequence was never properly implemented and the value of nSequence is customarily set to 2^32^ in transactions that do not utilize timelocks. For transactions with nLocktime or CHECKLOCKTIMEVEIRFY, the nSequence value must be set to less than 2^32^. Customarily, it is set to 2^32^ - 1 (0xFFFFFFFE).
 
-Programmatically, that means that if the most significant bit (1<<31) is not set, it is a flag that means "relative locktime". Otherwise (bit 1<<31 set), the nSequnce value is reserved for other uses such as enabling CHECKLOCKTIMEVERIFY, nLocktime, Opt-In-Replace-By-Fee and other future developments.
-
 ===== nSequence as consensus-enforced relative timelock
 
-Since the activation of BIP-68, the new consensus rules apply for any transaction containing an input whose nSequence value is less than 2^31^ (bit 1<<31 is not set).
+Since the activation of BIP-68, the new consensus rules apply for any transaction containing an input whose nSequence value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (1<<31) is not set, it is a flag that means "relative locktime". Otherwise (bit 1<<31 set), the nSequnce value is reserved for other uses such as enabling CHECKLOCKTIMEVERIFY, nLocktime, Opt-In-Replace-By-Fee and other future developments.
 
 Transactions can contain inputs with nSequence values less than 2^31^. Any such input is interpreted as having a relative timelock. Meaning that the transaction which includes it is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with nSequence relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since nSequence is a per input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A valid transaction can include both timelocked inputs (nSequence < 2^31^) and inputs without a relative timelock (nSequence >= 2^31^).
 
