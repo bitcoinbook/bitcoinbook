@@ -961,7 +961,7 @@ Hard forks are seen as risky because they force a minority to either upgrade or 
 
 The issue of hard forks is highly controversial in the bitcoin development community, especially as it relates to any proposed changes to the consensus rules controlling the maximum block size limit. Some developers are opposed to any form of hard fork, seeing it as too risky. Others see the mechanism of hard fork as an essential tool for upgrading the consensus rules in a way that avoids "technical debt" and provides a clean break with the past. Finally, some developers see hard forks as a mechanism that should be used rarely, with a lot of advance planning and only under near-unanimous consensus.
 
-Already we have seen the emergence of new methodologies to address the risks of hard forks. In the next section, we will look at soft forks, and the BIP9 method for signaling and activation of consensus modifications.
+Already we have seen the emergence of new methodologies to address the risks of hard forks. In the next section, we will look at soft forks, and the BIP-34 and BIP-9 methods for signaling and activation of consensus modifications.
 
 ==== Soft Forks
 
@@ -997,6 +997,86 @@ Validation relaxation:: Unmodified clients see transactions as valid, without ev
 
 Irreversible Upgrades:: Because soft forks create transactions with additional consensus constraints, they become irreversible upgrades in practice. If a soft fork upgrade were to be reversed after being activated, any transactions created under the new rules could result in a loss of funds under the old rules. For example, if a CLTV transaction is evaluated under the old rules, there is no timelock constraint and it can be spent whenever. Therefore, critics contend that a failed soft fork that had to be reversed because of a bug would almost certainly lead to loss of funds.
 
+[[softforksignaling]]
+=== Soft Fork Signaling with Block Version
+
+Since soft forks allow unmodified clients to continue to operate within consensus, the mechanism for "activating" a soft fork is through a vote by miners. A majority of miners must agree that they are ready and willing to enforce the new consensus rules. To coordinate their actions, there is a voting mechanism that allows them to signal their support for a consensus rule change. This mechanism was introduced with the activation of BIP-34 in March of 2013 and replaced by the activation of BIP-9 in July of 2016.
+
+==== BIP-34 Signaling and Activation
+
+The first implementation, in BIP-34, used the block version field to allow miners to signal readiness for a specific consensus rule change. Prior to BIP-34, block version was set to "1" by *convention* not enforced by *consensus*.
+
+BIP-34 defined a consensus rule change that required the coinbase field (input) of the coinbase transaction to contain the block height. Prior to BIP-34, the coinbase could contain any arbitrary data the miners chose to include. After activation of BIP-34, valid blocks would have to contain a specific block-height at the beginning of the coinbase and be identified with a version number greater than or equal to "2".
+
+To signal the change and activation of BIP-34, miners set the block version to "2", instead of "1". This did not immediately make version "1" blocks invalid. Once activated, version "1" blocks would become invalid and all version "2" blocks would be required to contain the block height in the coinbase to be valid.
+
+BIP-34 defined a two-step activation mechanism, based on a rolling window of 1000 blocks. A miner would signal their individual readiness and vote yes on BIP-34 by constructing blocks with "2" as the version number. Strictly speaking, these blocks did not yet have to comply with the new consensus rule of including the block-height in the coinbase transaction because the consensus rule had not yet activated. The consensus rules activated in two steps:
+
+* If 75% percent (750 of the most recent 1000 blocks) are marked with version "2", then version "2" blocks must contain block-height in the coinbase transaction or they are rejected as invalid. Version "1" blocks are still accepted by the network and do not need contain block-height. The old and new consensus rules co-exist during this period.
+
+* When 95% percent (950 of the most recent 1000 blocks) are version "2", version "1" blocks are no longer considered valid. Version "2" blocks are valid only if they contain the block-height in the coinbase (as per the previous threshold). Thereafter, all blocks must comply with the new consensus rules, all valid blocks must contain block-height in the coinbase transaction.
+
+After the successful signaling and activation under the BIP-34 rules, this mechanism was used twice more to activate soft forks:
+
+* BIP-66 Strict DER Encoding of Signatures was activated by BIP-34 style signaling with a block version "3" and invalidating version "2" blocks
+
+* BIP-65 CHECKLOCKTIMEVERIFY was activated by BIP-34 style signaling with a block version "4" and invalidating version "3" blocks.
+
+After the activation of BIP-65, the signaling and activation mechanism of BIP-34 was retired and replaced with the BIP-9 signaling mechanism described next.
+
+BIP-34 (Block v2, Height in Coinbase):: https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki]
+
+==== BIP-9 Signaling and Activation
+
+The mechanism used by BIP-34, BIP-66 and BIP-65 was successful in activating 3 soft forks. However, it was replaced because it had several limitations:
+
+* By using the integer value of the block version, only one soft fork could be activated at a time, so it required coordination between soft fork proposals and agreement on their prioritization and sequencing.
+
+* Furthermore, because the block version was incremented, the mechanism didn't offer a straightforward way to reject a change and then propose a different one. If old clients were still running, they could mistake signaling for a new change as signaling for the previously rejected change.
+
+* Each new change irrevocably reduced the available block versions for future changes.
+
+BIP-9 was proposed to overcome these challenges and improve the rate and ease of implementing future changes.
+
+BIP-9 interprets the block version as a bit field instead of an integer. Because the block version was originally used as an integer, versions 1 through 4, only 29 bits remain available to be used as a bit field. This leaves 29 bits which can be used to independently and simultaneously vote on 29 different proposals.
+
+BIP-9 also sets a maximum time for signaling and activation. Thus a change is not voted on perpetually. If it is not activated within the TIMEOUT period (defined in the proposal), the proposal is considered rejected.
+
+Furthermore, after the TIMEOUT has past and a feature has been activated or rejected, the signaling bit can be reused for another feature without confusion. Therefore, up to 29 changes can be voted on in parallel and after TIMEOUT the bits can be "recycled" to propose new changes.
+
+[NOTE]
+====
+While signaling bits can be reused or recycled, as long as the voting period does not overlap, the authors of BIP-9 recommend that bits are reused only when necessary, unexpected behavior could occur due to bugs in older software. In short, we should not expect to see reuse until all 29 bits have been used once.
+====
+
+Proposed changes are identified by a data structure that contains the following fields:
+
+name:: A short description used to distinguish between proposals. Most often the BIP describing the proposal, as "bipN", where N is the BIP number.
+
+bit:: 0 through 28, the bit in the block version that miners use to signal approval for this proposal.
+
+starttime:: The time (based on Median Time Past) that signaling starts after which the bit's value is interpreted as signaling readiness for the proposal.
+
+endtime:: The time (based on Median Time Past) after which the change is considered rejected if it has not reach the activation threshold.
+
+Unlike BIP-34, BIP-9 counts votes in whole intervals based on the difficulty retarget period of 2016 blocks. For every retarget period, if the sum of blocks signaling for a proposal exceeds 95% (1916 of 2016), the proposal will be activated one retarget period later.
+
+BIP-9 offers a proposal state diagram to illustrate the various stages and transitions for a proposal:
+
+[[bip9states]]
+.BIP-9 Proposal State Transition Diagram
+image::images/bip-9-states.png[BIP-9 Proposal State Transition Diagram]
+
+Proposals start in the DEFINED state, once their parameters are known (defined) in the bitcoin software. For blocks with MTP after the start time, the proposal state transitions to STARTED. If the voting threshold is exceeded within a retarget period and the timeout has not been exceeded, the proposal state transitions to LOCKED_IN. One retarget period later, the proposal becomes ACTIVE. Proposals remain in the ACTIVE state perpetually once they reach that state. If the timeout is elapsed before the voting threshold has been reached, the proposal state changes to FAILED, indicating a rejected proposal. REJECTED proposals remain in that state perpetually.
+
+BIP-9 was first implemented for the activation of CHECKSEQUENCEVERIFY and associated BIPs (68, 112, 113). The proposal named "csv" was activated successfully in July of 2016.
+
+BIP-9 ():: https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki[https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki]
+
 === Consensus Software Development
 
-There is no perfect solution for consensus development. Both hard forks and soft forks involve tradeoffs. For some types of changes, soft forks may be a better choice, for others hard forks may be a better choice. There is no perfect choice; both carry risks. The one constant characteristic of consensus software development is that change is difficult and consensus forces compromise. Some see this as a weakness of consensus systems. In time, you may come to see it as I do, as the system's greatest strength.
+Consensus software development continues to evolve and there is much discussion on the various mechanisms for changing the consensus rules. By its very nature, bitcoin sets a very high bar on coordination and consensus for changes. As a decentralized system, it has no "authority" that can impose its will on the participants of the network. Power is diffused between multiple constituencies such as miners, core developers, wallet developers, exchanges, merchants and end-users. Decisions cannot be made unilaterally by any of these constituencies. For example, while miners can theoretically change the rules by simple majority (51%), they are constrained by the consent of the other constituencies. If they act unilaterally, the rest of the participants may simply refuse to follow them, keeping the economic activity on a minority chain. Without economic activity (transactions, merchants, wallets, exchanges), the miners will be mining a worthless coin with empty blocks. This diffusion of power means that all the participants must coordinate, or no changes can be made. Status quo is the stable state of this system with only a few changes possible if there is strong consensus by a very large majority. The 95% threshold for soft forks is reflective of this reality.
+
+It is important to recognize that there is no perfect solution for consensus development. Both hard forks and soft forks involve  tradeoffs. For some types of changes, soft forks may be a better choice, for others hard forks may be a better choice. There is no perfect choice; both carry risks. The one constant characteristic of consensus software development is that change is difficult and consensus forces compromise.
+
+Some see this as a weakness of consensus systems. In time, you may come to see it as I do, as the system's greatest strength.
