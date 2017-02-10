@@ -64,7 +64,7 @@ You may also notice a lot of strange and indecipherable fields and hexadecimal s
 
 When we say that a user's wallet has "received" bitcoin, what we mean is that the wallet has detected an unspent transaction output (UTXO) which can be spent with one of the keys controlled by that wallet. Thus, a user's bitcoin "balance" is the sum of all UTXO that user's wallet can spend and which may be scattered amongst hundreds of transactions and hundreds of blocks. The concept of a balance is created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating the value of any UTXO that the wallet can spend with the keys it controls. Today, all wallets maintain a database or use a database service to store a quick reference set of all the UTXO they can spend with the keys they control.
 
-A transaction output can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoin can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are *discreet* and *indivisible* units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
+A transaction output can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoin can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are *discrete* and *indivisible* units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
 
 If an unspent transaction output is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. ((("change, making")))In other words, if you have a UTXO worth 20 bitcoin and want to pay only 1 bitcoin, your transaction must consume the entire 20-bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result of the indivisible nature of transaction outputs, most bitcoin transactions will have to generate change.
 
@@ -156,7 +156,7 @@ See if you can manually decode Alice's transaction from the serialized hexadecim
 Here are some hints:
 
 * There are two outputs in the highlighted section, each serialized as shown in the table <<tx_out_structure>>
-* The value of 0.15 bitcoin is 15,000,000 satoshis. That's +16 e3 60+ in hexadecimal.
+* The value of 0.015 bitcoin is 1,500,000 satoshis. That's +16 e3 60+ in hexadecimal.
 * In the serialized transaction, the value +16 e3 60+ is encoded in little-endian (least-significant-byte-first) byte order, so it looks like +60 e3 16+
 * The +scriptPubKey+ length is 25 bytes, which is +19+ in hexadecimal
 
@@ -443,7 +443,7 @@ Try validating the preceding script yourself using pencil and paper. When the sc
 [[script_exec]]
 ===== Separate Execution of Unlocking and Locking Scripts
 
-In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack an corrupt the locking script. In the current implementation, the scripts are executed separately with the stack transferred between the two executions, as described next.
+In the original bitcoin client, the unlocking and locking scripts were concatenated and executed in sequence. For security reasons, this was changed in 2010, because of a vulnerability that allowed a malformed unlocking script to push data onto the stack and corrupt the locking script. In the current implementation, the scripts are executed separately with the stack transferred between the two executions, as described next.
 
 First, the unlocking script is executed, using the stack execution engine. If the unlocking script executed without errors (e.g., it has no "dangling" operators left over), the main stack (not the alternate stack) is copied and the locking script is executed. If the result of executing the locking script with the stack data copied from the unlocking script is "TRUE," the unlocking script has succeeded in resolving the conditions imposed by the locking script and, therefore, the input is a valid authorization to spend the UTXO. If any result other than "TRUE" remains after execution of the combined script, the input is invalid because it has failed to satisfy the spending conditions placed on the UTXO.
 
