@@ -1,0 +1,193 @@
+[[ch12]]
+== Blockchain Applications
+
+Let's now build on our understanding of bitcoin by looking at it as a _application platform_. Nowadays, many people use the term "blockchain" to refer to any application platform that shares the design principles of bitcoin. The term is often misused and applied to many things that fail to deliver the primary features that bitcoin's blockchain delivers.
+
+In this chapter we will look at the features offered by the bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as: colored coins, payment (state) channels and routed payment channels (Lightning Network).
+
+=== Introduction
+
+((("blockchain applications", id="ix_ch12-asciidoc0", range="startofrange")))The bitcoin system was designed as a decentralized currency and payment system. However, most of its functionality is derived from much lower level constructs that can be used for much broader applications. Bitcoin wasn't built with components such as accounts, users, balances and payments. Instead, it uses a transactional scripting language with low level cryptographic functions, as we saw in <<transactions>>. Just like the higher-level concepts of accounts, balances and payments can be derived from these basic primitives, so can many other complex applications. Thus, the bitcoin blockchain can become an application platform offering trust services to applications, such as smart contracts.
+
+=== Building Blocks (Primitives)
+
+The bitcoin system offers certain guarantees, which can be used as building blocks to create applications. These include:
+
+Immutability:: Once a transaction is recorded in the blockchain and sufficient work has been added with subsequent blocks, the transaction's data becomes immutable. Immutability is underwritten by energy, as rewriting the blockchain requires the expenditure of energy to produce proof of work. The energy required and therefore the degree of immutability increases with the amount of work committed on top of the block containing a transaction.
+
+Censorship Resistance:: The decentralized bitcoin network propagates valid transactions regardless of the origin or content of those transactions. This means that anyone ca holds a valid transaction with sufficient fees and trust they will be able to transmit that transaction and have it included in the blockchain at anytime without interference by any third party.
+
+Non-Expiration:: A valid transaction does not expire. If it is valid today, it will be valid in the near future, as long as the inputs remain unspent and the consensus rules do not change.
+
+Secure Timestamping:: The consensus rules reject any block whose timestamp is too far in the past or future. This ensures that timestamps on blocks can be trusted. The timestamp on a block implies an unspent-before guarantee for the inputs of all included transactions. Combined with immutability, this offers Proof of Existence for data published in the blockchain.
+
+Authorization:: Digital signatures, validated in a decentralized network, offer authorization guarantees. Scripts that contain a requirement for a digital signature cannot be executed without authorization by the holder of the private key implied in the script.
+
+Transaction Atomicity:: Bitcoin transactions are atomic. They are either valid and confirmed (mined) or not. Partial transactions cannot be mined and there is no interim state for a transaction. At any point in time a transaction is either mined, or not.
+
+Discrete (Indivisible) Units of Value:: Transaction outputs are discrete and indivisible units of value. They can either be spent or unspent, in full. They cannot be divided or partially spent.
+
+Integrity:: A bitcoin transaction signed with SIGHASH_ALL or parts of a transaction signed by another SIGHASH type cannot be modified without invalidating the signature, this invalidating the transaction itself.
+
+Consistency:: In any transaction (except the coinbase transaction) the value of inputs is equal to the value of outputs plus fees. It is not possible to create or destroy bitcoin value in a transaction. The outputs cannot exceed the inputs.
+
+Quorum of Control:: Multi-signature constraints in scripts impose a quorum of authorization, predefined in the multi-signature scheme. The M-of-N requirement is enforced by the consensus rules.
+
+Timelock/Aging:: Any script clause containing a relative or absolute timelock can only be executed after its age exceeds the time specified.
+
+Durability:: The decentralized storage of the blockchain ensures that when a transaction is mined, after sufficient confirmations, it is replicated across the network and becomes durable and resilient to power loss, data loss etc.
+
+No Double-Spend:: The most fundamental guarantee of bitcoin's decentralized consensus algorithm ensures that no UTXO can be spent twice.
+
+The list of building blocks above is not complete and more are added with each new feature introduced into bitcoin.
+
+=== Applications from Building Blocks
+
+The building blocks offered by bitcoin are elements of a trust platform that can be used to compose applications. Here are some examples of applications that exist today and the building blocks they use:
+
+Proof-of-Existence (Digital Notary):: Immutability + Timestamp + Durability. A digital fingerprint can be committed with a transaction to the blockchain, proving that a document existed (Timestamp) at the time it was recorded. The fingerprint cannot be modified ex-post-facto (Immutability) and the proof will be stored permanently (Durability).
+
+Kickstarter (Lighthouse):: Consistency + Atomicity + Integrity. If you sign one input and the output (Integrity) of a fundraiser transaction, others can contribute to the fundraiser but it cannot be spent (Atomicity) until the goal (output value) is funded (Consistency).
+
+Payment Channels:: Quorum of Control + Timelock + No Double Spend + Non-Expiration + Censorship Resistance + Authorization. A multi-sig 2-of-2 (Quorum) with a timelock (Timelock), used as the "settlement" transaction of a payment channel can be held (Non-Expiration) and spent whenever (Censorship Resistance) by either party (Authorization). The two parties can then create update transactions that double-spend (No Double Spend) the settlement on a shorter timelock (Timelock).
+
+=== Colored Coins
+
+The first blockchain application we will discuss is _Colored Coins_
+
+Colored coins refers to a set of similar technologies that use bitcoin transactions to record the creation, ownership and transfer of extrinsic assets other than bitcoin. By "extrinsic" we mean assets that are not stored directly on the bitcoin blockchain, as opposed to bitcoin itself which is an asset intrinsic to the blockchain.
+
+Colored coins are used to track digital assets as well as physical assets held by third parties and traded through colored coins certificates of ownership. Digital asset colored coins can represent intangible assets such as a stock certificate, license, virtual property (game items), or most any form of licensed intellectual property (trademarks, copyrights, etc). Tangible asset colored coins can represent certificates of ownership of commodities (gold, silver, oil), land title, automobiles, boats, aircraft, etc.
+
+The term derives from the idea of "coloring" or marking a nominal amount of bitcoin, for example a single satoshi, to represent something other than the bitcoin value itself. As an analogy, consider stamping a $1 note with a message saying "This is a stock certificate of ACME" or "This note can be redeemed for 1 oz of silver" and then trading the $1 note as a certificate of ownership of this other asset. The first implementation of colored coins, named _Enhanced Padded-Order-Based Coloring_ or _EPOBC_ assigned extrinsic assets to a 1 satoshi output. In this way, it was a true "colored coin", as each asset was added as an attribute (color) of a single satoshi.
+
+After _EPOBC_, more recent implementations of colored coins use the OP_RETURN script opcode to store metadata in a transaction, in conjunction with external data stores which associate the metadata to specific assets.
+
+The two most prominent implementations of colored coins today are http://www.openassets.org/[_Open Assets_] and https://coloredcoins.org[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
+
+==== Using Colored Coins
+
+Colored coins are created, transfered and generally viewed in special wallets that can interpret the colored coins protocol metadata attached to bitcoin transactions. Special care must be taken to avoid using a colored coin related key in a regular bitcoin wallet, as the regular wallet may destroy the metadata. Similarly, colored coins should not be sent to addresses managed by regular wallets, but only to addresses that are managed by wallets that are colored-coin-aware. Both Colu and Open Assets systems use special colored-coin addresses to mitigat this risk and to ensure that colored coins are not sent to unaware wallets.
+
+Colored coins are also not visible to most general-purpose blockchain explorers. Instead, you must use a colored-coins explorer to interpret the metadata of a colored coins transaction.
+
+An Open Assets compatible wallet application and blockchain explorer can be found at:
+
+coinprism: https://www.coinprism.info[https://www.coinprism.info]
+
+A Colu Colored Coins compatible wallet application and blockchain explorer can be found at:
+
+Blockchain Explorer: http://coloredcoins.org/explorer/[http://coloredcoins.org/explorer/]
+
+Copay wallet plugin:
+http://coloredcoins.org/colored-coins-copay-addon/[http://coloredcoins.org/colored-coins-copay-addon/]
+
+==== Issuing Colored Coins
+
+Each of the colored coins implementations has a different way of creating colored coins, but they all provide similar functionality. The process of creating a colored coin asset is called _issuance_. An initial transaction, the _issuance transaction_ registers the asset on the bitcoin blockchain and creates an _asset ID_ that is used to reference the asset. Once issued, assets can be transferred between addresses using _transfer transactions_.
+
+Assets issued as colored coins can have multiple properties. They can be _divisible_ or _indivisible_, meaning that the amount of asset in a transfer can be an integer (eg. 5) or have decimal subdivision (eg. 4.321). Assets can also have _fixed issuance_, meaning a certain amount are issued only once, or can be _reissued_, meaning that new units of the asset can be issued by the original issuer after the initial issuance.
+
+Finally, some colored coins enable _dividends_, allowing the distribution of bitcoin payments to the owners of a colored coin asset in proportion to their ownership.
+
+==== Colored Coins Transactions
+
+The metadata that gives meaning to a colored coin transaction is usually stored in one of the outputs using the OP_RETURN opcode. Different colored coins protocols use different encodings for the content of the OP_RETURN data. The output containing the OP_RETURN is called the _marker output_
+
+The order of the outputs and position of the marker output may have special meaning in the colored coins protocol. In Open Assets, for example, any outputs before the marker output represent asset issuance. Any outputs after the marker represent asset transfer. The marker output assigns specific values and colors to the other outputs by referencing their order in the transaction.
+
+In Colored Coins (Colu), by comparison, the marker output encodes an opcode that determines how the metadata is interpreted. Opcodes 0x01 through 0x0F indicate an issuance transaction. An issuance opcode is usually followed by an asset ID or other identifier that can be used to retrieve the asset information from an external source (eg. bittorrent).
+Opcodes 0x10 through 0x1F represent a transfer transaction.  Transfer transaction metadata contain simple scripts that transfer specific amounts of assets from inputs to outputs, by reference to their index. Ordering of inputs and outputs is therefore important in the interpretation of the script.
+
+If the metadata is too long to fit in OP_RETURN, the colored coins protocol may use other "tricks" to store metadata in a transaction. Examples include putting metadata in a redeem script, followed by OP_DROP opcodes to ensure the script ignores the metadata. Another mechanism used is a 1-of-N multi-sig script where only the first public key is a real public key that can spend the output and subsequent "keys" are replaced by encoded metadata.
+
+In order to correctly interpret the metadata in a colored coins transaction you must use a compatible wallet or block explorer. Otherwise, the transaction looks like a "normal" bitcoin transaction with an OP_RETURN output.
+
+As an example, I created and issued a MasterBTC asset using colored coins. The MasterBTC asset represents a voucher for a free copy of this book. These vouchers can be transfered, traded and redeemed using a colored coins compatible wallet.
+
+For this particular example, I used the wallet and explorer at http://coinprism.info/[https://coinprism.info], which uses the Open Assets colored coin protocol.
+
+Let's look at the issuance transaction using the Coinprism block explorer:
+
+https://www.coinprism.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec[https://www.coinprism.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec]
+
+.The Issuance Transaction - as viewed on coinprism.info
+image::images/coinprism_issuance.png[The Issuance Transaction - as viewed on coinprism.info]
+
+As you can see, coinprism shows the issuance of 20 units of "Free copy of Mastering Bitcoin", the MasterBTC asset, to a special colored coin address +akTnsDt5uzpioRST76VFRQM8q8sBFnQiwcx+
+
+[WARNING]
+====
+Any funds or colored assets sent to this address will be lost forever. Do not send value to this example address!
+====
+
+The transaction ID of the issuance transaction is a "normal" bitcoin transaction ID. Let's look at that same transaction in a block explorer that doesn't decode colored coins. We'll use blockchain.info
+
+https://blockchain.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec[https://blockchain.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec]
+
+.The Issuance Transaction - on a block explorer that doesn't decode colored coins
+image::images/coloredcoins_tx.png[The Issuance Transaction - on a block explorer that doesn't decode colored coins]
+
+As you can see, blockchain.info doesn't recognize this as a colored coins transaction. In fact, it marks the second output with "Unable to decode output address" in red letters.
+
+If you select "Show scripts & coinbase" on that screen, you can see more detail about the transaction:
+
+.The scripts in the Issuance Transaction
+image::images/coloredcoins_tx_scripts.png[The scripts in the Issuance Transaction]
+
+Once again, blockchain.info doesn't understand the second output. It marks it with "Strange" in red letters. However, we can see some of the metadata in the marker output is human-readable:
+
+----
+OP_RETURN 4f41010001141b753d68747470733a2f2f6370722e736d2f466f796b777248365559
+(decoded) "OA____u=https://cpr.sm/FoykwrH6UY
+----
+
+Let's retrieve the transaction using +bitcoin-cli+:
+
+----
+$ bitcoin-cli decoderawtransaction `bitcoin-cli getrawtransaction 10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec`
+----
+
+Stripping out the rest of the transaction, the second output looks like this:
+
+[source,json]
+----
+{
+  "value": 0.00000000,
+  "n": 1,
+  "scriptPubKey": "OP_RETURN 4f41010001141b753d68747470733a2f2f6370722e736d2f466f796b777248365559"
+
+}
+----
+
+The prefix +4F41+ represents the letters "OA" which stands for "Open Assets" and helps us identify that what follows is metadata defined by the Open Assets protocol. The ASCII encoded string that follows is a link to an asset definition:
+
+----
+u=https://cpr.sm/FoykwrH6UY
+----
+
+If we retrieve this URL, we get a JSON encoded asset definition, as shown below:
+
+[source,json]
+----
+{
+  "asset_ids": [
+    "AcuRVsoa81hoLHmVTNXrRD8KpTqUXeqwgH"
+  ],
+  "contract_url": null,
+  "name_short": "MasterBTC",
+  "name": "Free copy of \"Mastering Bitcoin\"",
+  "issuer": "Andreas M. Antonopoulos",
+  "description": "This token is redeemable for a free copy of the book \"Mastering Bitcoin\"",
+  "description_mime": "text/x-markdown; charset=UTF-8",
+  "type": "Other",
+  "divisibility": 0,
+  "link_to_website": false,
+  "icon_url": null,
+  "image_url": null,
+  "version": "1.0"
+}
+----
+
+
+=== Payment (State) Channels
