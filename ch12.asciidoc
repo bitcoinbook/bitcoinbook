@@ -229,9 +229,9 @@ Finally, the channel can be closed either cooperatively, by submitting a final _
 
 In the entire lifetime of the channel, only two transactions need to be submitted for mining on the blockchain: the funding and settlement transactions. In between these two states, the two parties can exchange any number of commitment transactions that are never seen by anyone else, nor submitted to the blockchain.
 
-==== Uni-directional Payment Channel
+==== Simple Payment Channel Example
 
-To explain state channels, we have to start with a very simple example. A one-way channel, meaning that value is flowing in one direction only. We will also start with the naive assumption that no one is trying to cheat, to keep things simple. Once we have the basic channel idea explained, we will then look at what it takes to make it trustless so that neither party *can* cheat, even if they are trying to.
+To explain state channels, we have to start with a very simple example. We demonstrate a one-way channel, meaning that value is flowing in one direction only. We will also start with the naive assumption that no one is trying to cheat, to keep things simple. Once we have the basic channel idea explained, we will then look at what it takes to make it trustless so that neither party *can* cheat, even if they are trying to.
 
 For this example we will assume two participants: Emma and Fabian. Fabian offers a video streaming service that is billed by the second, using a micro-payment channel. Fabian charges 0.01 millibit (0.00001 BTC) per second of video, equivalent to 36 millibits (0.036 BTC) per hour of video. Emma is a user who purchases this streaming video service from Fabian.
 
@@ -269,7 +269,7 @@ The refund transaction acts as the first commitment transaction and its timelock
 
 Now that Emma has a fully signed refund transaction, she can confidently stransmit the signed funding transaction knowing that she can eventually, after the timelock expires, redeem the refund transaction even if Fabian disappears.
 
-Every commitment transaction the parties exchange during the life of the channel will be timelocked into the future. But the delay will be slightly shorter for each commitment so the most recent commitment can be redeemed before the prior commitment it invalidates. Because of hte nLockTime, neither party can successfully propagate any of the commitment transactions until their timelock expires. If all goes well, they will cooperate and close the channel gracefully with a settlement transaction, making it unnecessary to transmit an intermediate commitment transaction. In essence, the commitment transactions are only used in 
+Every commitment transaction the parties exchange during the life of the channel will be timelocked into the future. But the delay will be slightly shorter for each commitment so the most recent commitment can be redeemed before the prior commitment it invalidates. Because of hte nLockTime, neither party can successfully propagate any of the commitment transactions until their timelock expires. If all goes well, they will cooperate and close the channel gracefully with a settlement transaction, making it unnecessary to transmit an intermediate commitment transaction. In essence, the commitment transactions are only used in
 
 For example, commitment transaction 1 cannot be spent before 1000 blocks, then if commitment transaction 2 is timelocked to 995 blocks. Commitment transaction 600 can be spent 600 blocks earlier than commitment transaction 1.
 
@@ -279,11 +279,107 @@ State channels use timelocks to establish smart contracts across a time dimensio
 
 The most form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers. You can still see it at streamium.io.
 
-Timelocks are not the only way to invalidate prior commitment transactions. In the next sections we will see how a construct called a _hashed timelocked contract_ or _HTLC_ can be used to achieve the same result. Timelocks are effective but they have two distinct disadvantages. By establishing a maximum timelock when the channel is first opened, they limit the lifetime of the channel. Worse they force channel implementations to strike a balance between allowing long lived channels and forcing one of the participants to wait a very long time for a refund in case of premature closure. For example, if you allow the channel to remain open for 30 days, by setting the refund timelock to 30 days, if one of the parties disappears immediately the other party must wait 30 days for a refund. The more distant the endpoint, the more distant the refund. The second problem is that
+Timelocks are not the only way to invalidate prior commitment transactions. In the next sections we will see how a revocation key can be used to achieve the same result. Timelocks are effective but they have two distinct disadvantages. By establishing a maximum timelock when the channel is first opened, they limit the lifetime of the channel. Worse they force channel implementations to strike a balance between allowing long lived channels and forcing one of the participants to wait a very long time for a refund in case of premature closure. For example, if you allow the channel to remain open for 30 days, by setting the refund timelock to 30 days, if one of the parties disappears immediately the other party must wait 30 days for a refund. The more distant the endpoint, the more distant the refund. The second problem is that
 
 Since each subsequent commitment transaction must decrement the timelock there is an explicit limit on the number of commitment transactions that can be exchanged between the parties. For example, a 30 day channel, setting a timelock of 4320 blocks into the future, can only accommodate 4320 intermediate commitment transactions before it must be closed. There is a danger in setting the timelock commitment transaction interval at 1 block. By setting the timelock interval between commitment transactions to 1 block, a developer is creating a very high burden for the channel participants who have to be vigilant, remain online and watching, and be ready to transmit the right commitment transaction at anytime.
 
-Now that we understand how timelocks can be used to invalidate prior commitments, we can see the difference between closing the channel cooperatively and closing it unilaterally by broadcasting a commitment transaction. All commitment transactions are timelocked, therefore broadcasting a commitment transaction will always involve waiting until the timelock has expired. But if the two parties agree on what the final balance is and know they both hold commitment transactions that will make that balance a reality, in time, they can construct a settlement transaction without a timelock representing that same balance. In a cooperative close, either party takes the most recent commitment transaction, and builds a settlement transaction that is identical in every way except it omits the timelock. Both parties can sign this settlement transaction knowing there is no way to cheat and get a more favorable balance. By cooperatively signing and transmitting the settlement transaction they can close the channel and redeem their balance immediately. Worst case, one of the parties can be petty, refuse to cooperate and force the other party to do a unilateral close with the most recent commitment transaction. But if they do that, they have to wait for their funds too.
+Now that we understand how timelocks can be used to invalidate prior commitments, we can see the difference between closing the channel cooperatively and closing it unilaterally by broadcasting a commitment transaction. All commitment transactions are timelocked, therefore broadcasting a commitment transaction will always involve waiting until the timelock has expired. But if the two parties agree on what the final balance is and know they both hold commitment transactions that will make eventually make that balance a reality, they can construct a settlement transaction without a timelock representing that same balance. In a cooperative close, either party takes the most recent commitment transaction, and builds a settlement transaction that is identical in every way except it omits the timelock. Both parties can sign this settlement transaction knowing there is no way to cheat and get a more favorable balance. By cooperatively signing and transmitting the settlement transaction they can close the channel and redeem their balance immediately. Worst case, one of the parties can be petty, refuse to cooperate and force the other party to do a unilateral close with the most recent commitment transaction. But if they do that, they have to wait for their funds too.
+
+==== Revocation of prior commitments
+
+A better way to handle the prior commitment states is to explicitly revoke them. However, this is not easy to achieve. A key characteristic of bitcoin is that once a transaction is valid, it remains valid and does not expire. The only way to cancel a transaction is by double-spending its inputs with another transaction before it is mined. That's why we used timelocks in the simple payment channel example above, to ensure that more recent commitments could be spent before older commitments were valid. However, sequencing commitments in time creates a number of constraints that make payment channels difficult to use.
+
+Even though a transaction cannot be canceled, it can be constructed in such a way as to make it undesirable to use. The way we do that is by giving each party a _revocation key_ that can be used to punish the other party if they try to cheat. This mechanism for revoking prior commitment transactions was first proposed as part of the Lightning Network paper by Joseph Poon and Thadeus Dryja.
+
+To explain revocation keys, we will construct a more complex payment channel between two exchanges run by Hitesh and Irene. Hitesh and Irene run bitcoin exchanges in India and the USA, respectively. Customers of Hitesh's Indian exchange often send payments to customers of Irene's USA exchange and vice versa. Currently, these transactions occur on the bitcoin blockchain, but this means paying fees and waiting several blocks for confirmations. Setting up a payment channel between the exchanges will significantly reduce the cost and accelerate the transaction flow.
+
+Hitesh and Irene start the channel by collaboratively constructing a funding transaction, each funding the channel with 5 bitcoin.
+////
+describe the funding transaction in greater detail
+////
+The initial balance is 5 bitcoin for Hitesh and 5 bitcoin for Irene. The funding transaction locks the channel state in a 2-of-2 multisig, just like in the example of a simple channel.
+
+Now, instead of creating a single commitment transaction that both parties sign, Hitesh and Irene create two different commitment transactions that are *asymetric*:
+
+Hitesh has a commitment transaction with two outputs. The first output pays Irene the 5 bitcoin she is owed *immediately*. The second output pays Hitesh the 5 bitcoin he is owed, but only after a timelock of 1000 blocks. The transaction outputs look like this:
+
+----
+Input: 2-of-2 funding output, signed by Irene
+
+Output 0 <5 bitcoin>:
+    <Irene's Public Key> CHECKSIG
+
+Output 1:
+    <1000 blocks>
+    CHECKSEQUENCEVERIFY
+    DROP
+    <Hitesh's Public Key> CHECKSIG
+----
+
+Irene has a different commitment transaction with two outputs. The first output pays Hitesh the 5 bitcoin he is owed immediately. The second output pays Irene the 5 bitcoin she is own but only after a timelock of 1000 blocks. The commitment transaction Irene holds (signed by Hitesh), looks like this:
+
+----
+Input: 2-of-2 funding output, signed by Hitesh
+
+Output 0 <5 bitcoin>:
+    <Hitesh's Public Key> CHECKSIG
+
+Output 1:
+    <1000 blocks>
+    CHECKSEQUENCEVERIFY
+    DROP
+    <Irene's Public Key> CHECKSIG
+----
+
+This way, each party has a commitment transaction, with the 2-of-2 input signed by the other party which they can also sign and broadcast. However, if they broadcast the commitment transaction, it pays the other party immediately and they have to wait for a short timelock to expire. By imposing a delay on the redemption of one of the outputs, we put each party at a slight disadvantage when they choose to unilaterally broadcast a commitment transaction. But a time delay, alone, isn't enough to encourage fair conduct.
+
+Now we introduce the final element of this scheme: a revocation key that allows a wronged party to punish a cheater by taking the entire balance of the channel.
+
+Each of the commitment transactions has a "delayed" output. The redemption script for that output allows one party to redeem it after 1000 blocks *or* the other party to redeem it if they have a revocation key. So when Hitesh creates a commitment transaction for Irene to sign, he makes the second output payable to himself after 1000 blocks, or to whoever can present a revocation key. Hitesh constructs this transaction and creates a revocation key that he keeps secret. He will only reveal it to Irene when he is ready to move to a new channel state and wants to revoke this commitment. The second output's script looks like this:
+
+----
+Output 0 <5 bitcoin>:
+    <Irene's Public Key> CHECKSIG
+
+Output 1 <5 bitcoin>:
+IF
+    # Revocation penalty output
+    <Revocation Public Key>
+ELSE
+    <1000 blocks>
+    CHECKSEQUENCEVERIFY
+    DROP
+    <Hitesh's Public Key>
+ENDIF
+CHECKSIG
+----
+
+Irene can confidently sign this transaction, since if transmitted it will immediately pay her what she is owed. Hitesh holds the transaction, but knows that if he transmits it in a unilateral channel closing, he will have to wait 1000 blocks to get paid.
+
+When the channel is advanced to the next state, Hitesh has to _revoke_ this commitment transaction, before Irene agrees to sign the next commitment transaction. To do that, all he has to do is send the _revocation key_ to Irene. Once Irene has the revocation key for this commitment, she can sign the next commitment with confidence. She knows that if Hitesh tries to cheat by publishing the prior commitment, she can use the revocation key to redeem Hitesh's delayed output. *If Hitesh cheats, Irene gets BOTH outputs*.
+
+The revocation protocol is bilateral, meaning that in each round, as the channel state is advanced, the two parties exchange new commitments, exchange revocation keys for the previous commitment and sign each other's commitment transactions. As they accept a new state, they make the prior state impossible to use, by giving each other the necessary revocation keys to punish any cheating.
+
+Let's look at an example of how it works. One of Irene's customers wants to send 2 bitcoin to one of Hitesh's customers. To transmit 2 bitcoin across the channel, Hitesh and Irene must advance the channel state to reflect the new balance. They will commit to a new state (state number 2) where the channel's 10 bitcoin are split 7 bitcoin to Hitesh and 3 bitcoin to Irene. To advance the state of the channel, they will each create new commitment transactions reflecting the new channel balance.
+
+As before, these commitment transactions are asymetric so that the commitment transaction each party holds forces them to wait if they redeem it. Crucially, before signing new commitment transactions, they must first exchange revocation keys to invalidate the prior commitment. In this particular case, Hitesh's interests are aligned with the real state of the channel and therefore he has no reason to broadcast a prior state. However, for Irene, state number 1 leaves her with a higher balance than state 2. When Irene gives Hitesh the revocation key for her prior commitment transaction (state number 1) she is effectively revoking her ability to profit from regressing the channel to a prior state because with the revocation key, Hitesh can redeem both outputs of the prior commitment transaction without delay. Meaning if Irene broadcasts the prior state, Hitesh can exercise his right to take all of the outputs.
+
+Importantly, the revocation doesn't happen automatically. While Hitesh has the ability to punish Irene for cheating, he has to watch the blockchain diligently for signs of cheating. If he sees a prior commitment transaction broadcast, he has 1000 blocks to take action and use the revocation key to thwart Irene's cheating and punish her by taking the entire balance, all 10 bitcoin.
+
+
+Solves three problems, The channel can remain open indefinitely. In the previous example, rolling time. Infinite number of state transitions. A single channel can be open forever, process state transitions at thousands per second,
+
+Checksequenceverify is deceptively important to state channels. Without it
+
+
+
+
+
+
+
+
+
+
 
 ////
 skin in the game - bi directional channels with minimal funds to prevent denial of service, incentivize cooperative closes, prevent bad actor from locking up your funds
