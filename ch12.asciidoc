@@ -8,37 +8,47 @@ In this chapter we will look at the features offered by the bitcoin blockchain, 
 
 === Introduction
 
-((("blockchain applications", id="ix_ch12-asciidoc0", range="startofrange")))The bitcoin system was designed as a decentralized currency and payment system. However, most of its functionality is derived from much lower level constructs that can be used for much broader applications. Bitcoin wasn't built with components such as accounts, users, balances and payments. Instead, it uses a transactional scripting language with low level cryptographic functions, as we saw in <<transactions>>. Just like the higher-level concepts of accounts, balances and payments can be derived from these basic primitives, so can many other complex applications. Thus, the bitcoin blockchain can become an application platform offering trust services to applications, such as smart contracts.
+((("blockchain applications", id="ix_ch12-asciidoc0", range="startofrange")))The bitcoin system was designed as a decentralized currency and payment system. However, most of its functionality is derived from much lower level constructs that can be used for much broader applications. Bitcoin wasn't built with components such as accounts, users, balances and payments. Instead, it uses a transactional scripting language with low level cryptographic functions, as we saw in <<transactions>>. Just like the higher-level concepts of accounts, balances and payments can be derived from these basic primitives, so can many other complex applications. Thus, the bitcoin blockchain can become an application platform offering trust services to applications, such as smart contracts, far surpassing the original purpose of digital currency and payments.
 
 === Building Blocks (Primitives)
 
-The bitcoin system offers certain guarantees, which can be used as building blocks to create applications. These include:
+When operating correctly and over the long term, the bitcoin system offers certain guarantees, which can be used as building blocks to create applications. These include:
+
+No Double-Spend:: The most fundamental guarantee of bitcoin's decentralized consensus algorithm ensures that no UTXO can be spent twice.
 
 Immutability:: Once a transaction is recorded in the blockchain and sufficient work has been added with subsequent blocks, the transaction's data becomes immutable. Immutability is underwritten by energy, as rewriting the blockchain requires the expenditure of energy to produce proof of work. The energy required and therefore the degree of immutability increases with the amount of work committed on top of the block containing a transaction.
 
-Censorship Resistance:: The decentralized bitcoin network propagates valid transactions regardless of the origin or content of those transactions. This means that anyone ca holds a valid transaction with sufficient fees and trust they will be able to transmit that transaction and have it included in the blockchain at anytime without interference by any third party.
+Neutrality:: The decentralized bitcoin network propagates valid transactions regardless of the origin or content of those transactions. This means that anyone can create a valid transaction with sufficient fees and trust they will be able to transmit that transaction and have it included in the blockchain at anytime.
+
+Secure Timestamping:: The consensus rules reject any block whose timestamp is too far in the past or future. This ensures that timestamps on blocks can be trusted. The timestamp on a block implies an unspent-before guarantee for the inputs of all included transactions.
+
+Authorization:: Digital signatures, validated in a decentralized network, offer authorization guarantees. Scripts that contain a requirement for a digital signature cannot be executed without authorization by the holder of the private key implied in the script.
+
+Auditability:: All transactions are public and can be audited. All transactions and blocks can be linked back in an unbroken chain to the genesis block.
+
+Accounting:: In any transaction (except the coinbase transaction) the value of inputs is equal to the value of outputs plus fees. It is not possible to create or destroy bitcoin value in a transaction. The outputs cannot exceed the inputs.
 
 Non-Expiration:: A valid transaction does not expire. If it is valid today, it will be valid in the near future, as long as the inputs remain unspent and the consensus rules do not change.
 
-Secure Timestamping:: The consensus rules reject any block whose timestamp is too far in the past or future. This ensures that timestamps on blocks can be trusted. The timestamp on a block implies an unspent-before guarantee for the inputs of all included transactions. Combined with immutability, this offers Proof of Existence for data published in the blockchain.
-
-Authorization:: Digital signatures, validated in a decentralized network, offer authorization guarantees. Scripts that contain a requirement for a digital signature cannot be executed without authorization by the holder of the private key implied in the script.
+Integrity:: A bitcoin transaction signed with SIGHASH_ALL or parts of a transaction signed by another SIGHASH type cannot be modified without invalidating the signature, thus invalidating the transaction itself.
 
 Transaction Atomicity:: Bitcoin transactions are atomic. They are either valid and confirmed (mined) or not. Partial transactions cannot be mined and there is no interim state for a transaction. At any point in time a transaction is either mined, or not.
 
 Discrete (Indivisible) Units of Value:: Transaction outputs are discrete and indivisible units of value. They can either be spent or unspent, in full. They cannot be divided or partially spent.
 
-Integrity:: A bitcoin transaction signed with SIGHASH_ALL or parts of a transaction signed by another SIGHASH type cannot be modified without invalidating the signature, this invalidating the transaction itself.
-
-Consistency:: In any transaction (except the coinbase transaction) the value of inputs is equal to the value of outputs plus fees. It is not possible to create or destroy bitcoin value in a transaction. The outputs cannot exceed the inputs.
-
 Quorum of Control:: Multi-signature constraints in scripts impose a quorum of authorization, predefined in the multi-signature scheme. The M-of-N requirement is enforced by the consensus rules.
 
 Timelock/Aging:: Any script clause containing a relative or absolute timelock can only be executed after its age exceeds the time specified.
 
-Durability:: The decentralized storage of the blockchain ensures that when a transaction is mined, after sufficient confirmations, it is replicated across the network and becomes durable and resilient to power loss, data loss etc.
+Replication:: The decentralized storage of the blockchain ensures that when a transaction is mined, after sufficient confirmations, it is replicated across the network and becomes durable and resilient to power loss, data loss etc.
 
-No Double-Spend:: The most fundamental guarantee of bitcoin's decentralized consensus algorithm ensures that no UTXO can be spent twice.
+Forgery Protection:: A transaction can only spend existing, validated outputs. It is not possible to create or counterfeit value.
+
+Consistency:: In the absence of miner partitions, blocks that are recorded in the blockchain are subject to reorganization or disagreement with exponentially decreasing likelihood, based on the depth at which they are recorded. Once deeply recorded, the computation and energy required to change makes change practically infeasible.
+
+Recording External State:: A transaction can commit a data value, via OP_RETURN, representing a state transition in an external state machine.
+
+Predictable Issuance:: Less than 21 million bitcoin will be issued, at a predictable rate.
 
 The list of building blocks above is not complete and more are added with each new feature introduced into bitcoin.
 
@@ -201,19 +211,15 @@ Counterparty can be used as a platform for other applications and services, in t
 More details about Counterparty can be found at https://counterparty.io. The open source project can be found at https://github.com/CounterpartyXCP
 
 
-=== Payment Channels and State Channels.
+=== Payment Channels and State Channels
 
 _Payment Channels_ are a trustless mechanism for exchanging bitcoin transactions between two parties, outside of the bitcoin blockchain. These transactions, which would be valid if settled on the bitcoin blockchain, are held off-chain instead, acting as _promissory notes_ for eventual batch settlement. Because the transactions are not settled, they can be exchanged without the usual settlement latency, allowing extremely high transaction throughput, low (sub-millisecond) latency and fine (satoshi-level) granularity.
 
-Actually, the term channel is a metaphor. State channels are virtual constructs represented by the exchange of state between two parties, outside of the blockchain. There are no "channels", per se and the underlying data transport mechanism is not the channel. We use the term channel to represent the relationship and shared state between two parties, outside of the blockchain.
+Actually, the term channel is a metaphor. State channels are virtual constructs represented by the exchange of state between two parties, outside of the blockchain. There are no "channels", per-se and the underlying data transport mechanism is not the channel. We use the term channel to represent the relationship and shared state between two parties, outside of the blockchain.
 
-////
-TCP metaphor
-A state channel is a virtual construct, like a TCP session or an email thread. It consists of a series of bitcoin transactions, being reconstructed in sequence, just as an email thread is a virtual construct made up of a reconstructed sequence of emails and a TCP session is a virtual channel made up of a sequence of IP packets.
-////
+To further explain this concept, think of a TCP stream. From the perspective of higher-level protocols it is a "socket" connecting two applications across the Internet. But if you look at the network traffic, a TCP stream is just a virtual channel over IP packets. Each endpoint of the TCP stream sequences and assembles IP packets to create the illusion of a stream of bytes. Underneath, it's all disconnected packets. Similarly, a payment channel is just a series of transactions. If properly sequenced and connected, they create redeemable obligations that you can trust even though you don't trust the other side of the channel.
 
 In this section we will look at various forms of payment channels. First we will examine the mechanisms used to construct a one-way (uni-directional) payment channel for a metered micro-payment service, such as streaming video. Then, we will expand on this mechanism and introduce bi-directional payment channels. Finally, we will look at how bi-directional channels can be connected end-to-end to form multi-hop channels in a routed network, first proposed under the name _Lightning Network_.
-
 
 Payment channels are part of the broader concept of a _State Channel_, which represents an off-chain alteration of state, secured by eventual settlement in a blockchain. A payment channel is a state channel where the state being altered is the balance of a virtual currency.
 
@@ -239,7 +245,7 @@ In this example, Fabian and Emma are using special software that handles both th
 
 To setup the payment channel, Emma and Fabian establish a 2-of-2 multisignature address, with each of them holding one of the keys. From Emma's perspective, the software in her browser presents a QR code with a P2SH address (starting with "3"), and asks her to submit a "deposit" for up to 1 hour of video. The address is then funded by Emma. Emma's transaction, paying to the multisignature address is the funding or anchor transaction for the payment channel.
 
-For this example, let's say that Emma funds the channel with 36 milliibits (0.036 BTC). This will allow Emma to consume *up to* 1 hour of streaming video. The funding transaction in this case sets the maximum amount that can be transmitted in this channel, setting the _channel capacity_.
+For this example, let's say that Emma funds the channel with 36 millibits (0.036 BTC). This will allow Emma to consume *up to* 1 hour of streaming video. The funding transaction in this case sets the maximum amount that can be transmitted in this channel, setting the _channel capacity_.
 
 The funding transaction consumes one or more inputs from Emma's wallet, sourcing the funds. It creates one output with a value of 36 millibits paid to the multisignature 2-of-2 address controlled jointly between Emma and Fabian. It may have additional outputs for change back to Emma's wallet.
 
@@ -253,7 +259,7 @@ Finally, Emma clicks "Stop" to stop streaming video. Either Fabian or Emma can n
 
 In the end, only two transactions are recorded on the blockchain: the funding transaction that established the channel and a settlement transaction that allocated the final balance correctly between the two participants.
 
-==== Making the channel trustless
+==== Making Trustless Channels
 
 The channel we described above works, but only if both parties cooperate, without any failures or attempts to cheat. Let's look at some of the scenarios that break this channel and see what is needed to fix those:
 
@@ -265,17 +271,17 @@ Both of the above problems can be solved with timelocks, let's look at how we co
 
 Emma cannot risk funding a 2-of-2 multisig unless she has a guaranteed refund. To solve this problem, Emma constructs the funding and refund transaction at the same time. She signs the funding transaction but doesn't transmit it to anyone. Emma transmits the refund transaction, only, to Fabian and obtains his signature.
 
-The refund transaction acts as the first commitment transaction and its timelock establishes the upperbound for the channel's life. In this case, Emma could set the nLockTime to 30 days or 4320 blocks into the future. All subsequent commitment transactions must have a shorter timelock, so that they can be redeemed before the refund transaction.
+The refund transaction acts as the first commitment transaction and its timelock establishes the upper bound for the channel's life. In this case, Emma could set the nLockTime to 30 days or 4320 blocks into the future. All subsequent commitment transactions must have a shorter timelock, so that they can be redeemed before the refund transaction.
 
-Now that Emma has a fully signed refund transaction, she can confidently stransmit the signed funding transaction knowing that she can eventually, after the timelock expires, redeem the refund transaction even if Fabian disappears.
+Now that Emma has a fully signed refund transaction, she can confidently transmit the signed funding transaction knowing that she can eventually, after the timelock expires, redeem the refund transaction even if Fabian disappears.
 
-Every commitment transaction the parties exchange during the life of the channel will be timelocked into the future. But the delay will be slightly shorter for each commitment so the most recent commitment can be redeemed before the prior commitment it invalidates. Because of hte nLockTime, neither party can successfully propagate any of the commitment transactions until their timelock expires. If all goes well, they will cooperate and close the channel gracefully with a settlement transaction, making it unnecessary to transmit an intermediate commitment transaction. In essence, the commitment transactions are only used in
+Every commitment transaction the parties exchange during the life of the channel will be timelocked into the future. But the delay will be slightly shorter for each commitment so the most recent commitment can be redeemed before the prior commitment it invalidates. Because of the nLockTime, neither party can successfully propagate any of the commitment transactions until their timelock expires. If all goes well, they will cooperate and close the channel gracefully with a settlement transaction, making it unnecessary to transmit an intermediate commitment transaction. In essence, the commitment transactions are only used in
 
 For example, commitment transaction 1 cannot be spent before 1000 blocks, then if commitment transaction 2 is timelocked to 995 blocks. Commitment transaction 600 can be spent 600 blocks earlier than commitment transaction 1.
 
 Each subsequent commitment transaction must have a shorter timelock so that it may be broadcast before its predecessors and before the refund transaction. The ability to broadcast a commitment earlier ensures it will be able to spend the funding output and preclude any other commitment transaction from being redeemed by spending the output. The guarantees offered by the bitcoin blockchain, preventing double spends and enforcing timelocks, effectively allow each commitment transaction to invalidate its predecessors.
 
-State channels use timelocks to establish smart contracts across a time dimension. In this example we saw how the time dimension guarantees that a fair commitment, representing the correct channel balance can be transmitted and confirmed before an unfair commitment transaction, representing a channel's prior state, can be transmitted and confirmed. This implementation, needs nothing more than absolute transaction level timelocks (nLockTime). Next we will see how script level timelocks, OP_CHECKLOCKTIMEVERIFY and OP_CHECKSEQUENCEVERIFY can be used to construct more flexible, useful, and sophisticated state channels.
+State channels use timelocks to establish smart contracts across a time dimension. In this example we saw how the time dimension guarantees that a fair commitment, representing the correct channel balance can be transmitted and confirmed before an unfair commitment transaction, representing a channel's prior state, can be transmitted and confirmed. This implementation, needs nothing more than absolute transaction level timelocks (nLockTime). Next we will see how script level timelocks, CHECKLOCKTIMEVERIFY and CHECKSEQUENCEVERIFY can be used to construct more flexible, useful, and sophisticated state channels.
 
 The most form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers. You can still see it at streamium.io.
 
@@ -285,21 +291,20 @@ Since each subsequent commitment transaction must decrement the timelock there i
 
 Now that we understand how timelocks can be used to invalidate prior commitments, we can see the difference between closing the channel cooperatively and closing it unilaterally by broadcasting a commitment transaction. All commitment transactions are timelocked, therefore broadcasting a commitment transaction will always involve waiting until the timelock has expired. But if the two parties agree on what the final balance is and know they both hold commitment transactions that will make eventually make that balance a reality, they can construct a settlement transaction without a timelock representing that same balance. In a cooperative close, either party takes the most recent commitment transaction, and builds a settlement transaction that is identical in every way except it omits the timelock. Both parties can sign this settlement transaction knowing there is no way to cheat and get a more favorable balance. By cooperatively signing and transmitting the settlement transaction they can close the channel and redeem their balance immediately. Worst case, one of the parties can be petty, refuse to cooperate and force the other party to do a unilateral close with the most recent commitment transaction. But if they do that, they have to wait for their funds too.
 
-==== Revocation of prior commitments
+==== Asymmetric Revocable Commitments
 
 A better way to handle the prior commitment states is to explicitly revoke them. However, this is not easy to achieve. A key characteristic of bitcoin is that once a transaction is valid, it remains valid and does not expire. The only way to cancel a transaction is by double-spending its inputs with another transaction before it is mined. That's why we used timelocks in the simple payment channel example above, to ensure that more recent commitments could be spent before older commitments were valid. However, sequencing commitments in time creates a number of constraints that make payment channels difficult to use.
 
-Even though a transaction cannot be canceled, it can be constructed in such a way as to make it undesirable to use. The way we do that is by giving each party a _revocation key_ that can be used to punish the other party if they try to cheat. This mechanism for revoking prior commitment transactions was first proposed as part of the Lightning Network paper by Joseph Poon and Thadeus Dryja.
+Even though a transaction cannot be canceled, it can be constructed in such a way as to make it undesirable to use. The way we do that is by giving each party a _revocation key_ that can be used to punish the other party if they try to cheat. This mechanism for revoking prior commitment transactions was first proposed as part of the Lightning Network.
 
 To explain revocation keys, we will construct a more complex payment channel between two exchanges run by Hitesh and Irene. Hitesh and Irene run bitcoin exchanges in India and the USA, respectively. Customers of Hitesh's Indian exchange often send payments to customers of Irene's USA exchange and vice versa. Currently, these transactions occur on the bitcoin blockchain, but this means paying fees and waiting several blocks for confirmations. Setting up a payment channel between the exchanges will significantly reduce the cost and accelerate the transaction flow.
 
 Hitesh and Irene start the channel by collaboratively constructing a funding transaction, each funding the channel with 5 bitcoin.
-////
-describe the funding transaction in greater detail
-////
 The initial balance is 5 bitcoin for Hitesh and 5 bitcoin for Irene. The funding transaction locks the channel state in a 2-of-2 multisig, just like in the example of a simple channel.
 
-Now, instead of creating a single commitment transaction that both parties sign, Hitesh and Irene create two different commitment transactions that are *asymetric*:
+The funding transaction may have one or more inputs from Hitesh (adding up to 5 bitcoin or more), and one or more inputs from Irene (adding up to 5 bitcoin or more). The inputs have to slightly exceed the channel capacity in order to cover the transaction fees. The transaction has one output that locks the 10 total bitcoin to a 2-of-2 multisig address controlled by both Hitesh and Irene. The funding transaction may also have one or more outputs returning change to Hitesh and Irene if their inputs exceeded their intended channel contribution. This is a single transaction with inputs offered and signed by two parties. It has to be constructed in collaboration and signed by each party before it is transmitted.
+
+Now, instead of creating a single commitment transaction that both parties sign, Hitesh and Irene create two different commitment transactions that are *asymmetric*:
 
 Hitesh has a commitment transaction with two outputs. The first output pays Irene the 5 bitcoin she is owed *immediately*. The second output pays Hitesh the 5 bitcoin he is owed, but only after a timelock of 1000 blocks. The transaction outputs look like this:
 
@@ -331,7 +336,7 @@ Output 1:
     <Irene's Public Key> CHECKSIG
 ----
 
-This way, each party has a commitment transaction, with the 2-of-2 input signed by the other party which they can also sign and broadcast. However, if they broadcast the commitment transaction, it pays the other party immediately and they have to wait for a short timelock to expire. By imposing a delay on the redemption of one of the outputs, we put each party at a slight disadvantage when they choose to unilaterally broadcast a commitment transaction. But a time delay, alone, isn't enough to encourage fair conduct.
+This way, each party has a commitment transaction, spending the 2-of-2 funding output. This input is signed by the *other* party. At any time the party holding the transaction can also sign (completing the 2-of-2) and broadcast. However, if they broadcast the commitment transaction, it pays the other party immediately whereas they have to wait for a short timelock to expire. By imposing a delay on the redemption of one of the outputs, we put each party at a slight disadvantage when they choose to unilaterally broadcast a commitment transaction. But a time delay, alone, isn't enough to encourage fair conduct.
 
 Now we introduce the final element of this scheme: a revocation key that allows a wronged party to punish a cheater by taking the entire balance of the channel.
 
@@ -362,25 +367,91 @@ The revocation protocol is bilateral, meaning that in each round, as the channel
 
 Let's look at an example of how it works. One of Irene's customers wants to send 2 bitcoin to one of Hitesh's customers. To transmit 2 bitcoin across the channel, Hitesh and Irene must advance the channel state to reflect the new balance. They will commit to a new state (state number 2) where the channel's 10 bitcoin are split 7 bitcoin to Hitesh and 3 bitcoin to Irene. To advance the state of the channel, they will each create new commitment transactions reflecting the new channel balance.
 
-As before, these commitment transactions are asymetric so that the commitment transaction each party holds forces them to wait if they redeem it. Crucially, before signing new commitment transactions, they must first exchange revocation keys to invalidate the prior commitment. In this particular case, Hitesh's interests are aligned with the real state of the channel and therefore he has no reason to broadcast a prior state. However, for Irene, state number 1 leaves her with a higher balance than state 2. When Irene gives Hitesh the revocation key for her prior commitment transaction (state number 1) she is effectively revoking her ability to profit from regressing the channel to a prior state because with the revocation key, Hitesh can redeem both outputs of the prior commitment transaction without delay. Meaning if Irene broadcasts the prior state, Hitesh can exercise his right to take all of the outputs.
+As before, these commitment transactions are asymmetric so that the commitment transaction each party holds forces them to wait if they redeem it. Crucially, before signing new commitment transactions, they must first exchange revocation keys to invalidate the prior commitment. In this particular case, Hitesh's interests are aligned with the real state of the channel and therefore he has no reason to broadcast a prior state. However, for Irene, state number 1 leaves her with a higher balance than state 2. When Irene gives Hitesh the revocation key for her prior commitment transaction (state number 1) she is effectively revoking her ability to profit from regressing the channel to a prior state because with the revocation key, Hitesh can redeem both outputs of the prior commitment transaction without delay. Meaning if Irene broadcasts the prior state, Hitesh can exercise his right to take all of the outputs.
 
 Importantly, the revocation doesn't happen automatically. While Hitesh has the ability to punish Irene for cheating, he has to watch the blockchain diligently for signs of cheating. If he sees a prior commitment transaction broadcast, he has 1000 blocks to take action and use the revocation key to thwart Irene's cheating and punish her by taking the entire balance, all 10 bitcoin.
 
+Asymmetric revocable commitments with relative time locks (CSV) are a much better way to implement payment channels and a very significant innovation in this technology.  With this construct, the channel can remain open indefinitely and can have billions of intermediate commitment transactions. In prototype implementations of Lightning Network, the commitment state is identified by a 48-bit index, allowing more than 281 trillion (2.8 x 10^14^) state transitions in any single channel!
 
-Solves three problems, The channel can remain open indefinitely. In the previous example, rolling time. Infinite number of state transitions. A single channel can be open forever, process state transitions at thousands per second,
+==== Hash Time Lock Contracts (HTLC)
 
-Checksequenceverify is deceptively important to state channels. Without it
+Payment channels can be further extended with a special type of smart contract that allows the participants to commit funds to a redeemable secret, with an expiration time. This feature is called a _Hash Time Lock Contract_ or _HTLC_ and is used in both bi-directional and routed payment channels.
 
+Let's first explain the "hash" part of the HTLC. To create an HTLC, the intended recipient of the payment will first create a secret +R+. They then calculate the hash of this secret +H+:
 
+----
+H = Hash(R)
+----
 
+This produces a hash +H+ that can be included in an output's locking script. Whoever knows the secret can use it to redeem the output. The secret +R+ is also referred to as a _pre-image_ to the hash function. Pre-image just means the data that is used as input to a hash function.
 
+[TIP]
+====
+The hash function used....
 
+====
 
+The second part of an HTLC is the "time lock" component. If the secret is not revealed, the payer of the HTLC can get a "refund" after some time. This is achieved with an absolute time lock using CHECKLOCKTIMEVERIFY.
 
+The script implementing an HTLC might look like this:
 
+----
+IF
+    # Payment if you have the secret R
+    HASH160 <H> EQUALVERIFY
+ELSE
+    # Refund after timeout.
+    <locktime> CHECKLOCKTIMEVERIFY DROP
+    <Payee Pubic Key> CHECKSIG
+ENDIF
+----
 
+Anyone who knows he secret +R+, which when hashed equals to +H+, can redeem this output by exercising the first clause of the +IF+ flow.
 
+If the secret is not revealed and the HTLC claimed, after a certain number of blocks the payee can claim a refund using the second clause in the +IF+ flow.
 
-////
-skin in the game - bi directional channels with minimal funds to prevent denial of service, incentivize cooperative closes, prevent bad actor from locking up your funds
-////
+This is a basic implementation of an HTLC. This type of HTLC can be redeemed by *anyone* who has the secret R. An HTLC can take many different forms with slight variations to the script. For example, adding a CHECKSIG operator and a public key in the first clause restricts redemption of the hash to a named recipient, who must also know the secret R.
+
+=== Routed Payment Channels (Lightning Network)
+
+The Lightning Network is a proposed routed network of bi-directional payment channels connected end-to-end. A network like this can allow any participant to route a payment from channel to channel without trusting any of the intermediaries. The Lightning Network was first described by Joseph Poon and Thadeus Dryja in January 2016, building on the concept of payment channels as proposed and elaborate by many others:
+
+http://lightning.network/lightning-network-paper.pdf[lightning.network/lightning-network-paper.pdf]
+
+"Lightning Network" refers to a specific design for a routed payment channel network, which has now been implemented by at least five different open source teams. The independent implementations are coordinated by a set of interoperability standards described in the _Basics of Lightning Technology (BOLT)_ papers:
+
+https://github.com/lightningnetwork/lightning-rfc/blob/master/00-introduction.md[https://github.com/lightningnetwork/lightning-rfc/blob/master/00-introduction.md]
+
+Prototype implementations of the Lightning Network have been released by several teams. For now, these implementations can only be run on testnet because they use Segregated Witness, which is not activated on the main bitcoin blockchain (mainnet).
+
+The Lightning Network is one possible way of implementing routed payment channels. There are several other designs that aim to achieve similar goals, such as Teechan and Tumblebit.
+
+==== Basic Lightning Network Example
+
+Let's see how this works.
+
+In this example, we have 5 participants: Alice, Bob, Carol, Diana, and Eric. These 5 participants have opened payment channels with each other, in pairs. Alice has a payment channel with Bob. Bob is connected to Carol, Carol to Diana and Diana to Eric. For simplicity let's assume each channel is funded with 2 bitcoin by each participant, for a total capacity of 4 bitcoin in each channel.
+
+Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a payment channel. Creating a payment channel requires a funding transaction, which must be committed to the bitcoin blockchain. Alice does not want to open a new payment channel and commit more of her funds. Is there a way to pay Eric, indirectly?
+
+Alice is running a Lightning Network (LN) node that is keeping track of her payment channel to Bob and has the ability to discover routes between payment channels. Alice LN node also has the ability to connect over the Internet to Eric's LN node. Eric's LN node creates a secret R using a random number generator. Eric's node does not reveal this secret to anyone. Instead, Eric's node calculates a hash +H+ of the secret +R+ and transmits this hash to Alice's node.
+
+Now Alice's LN node constructs a route between Alice's LN node and Eric's LN node. The routing algorithm used will be examined in more detail later, but for now let's assume that Alice's node can find an efficient route.
+
+Alice's node then constructs an HTLC, payable to the hash +H+, with a 10 block refund timeout (current block + 10), for an amount of 1.003 bitcoin. The extra 0.003 will be used to compensate the intermediate nodes for their participation in this payment route. Alice offers this HTLC to Bob, deducting 1.003 bitcoin from her channel balance with Bob and committing it to the HTLC. The HTLC has the following meaning: _"Alice is committing 1.003 of her channel balance to be paid to Bob if Bob knows the secret, or refunded back to Alice's balance if 10 blocks elapse."_. The channel balance between Alice and Bob is now expressed by commitment transactions with 3 outputs: 2 bitcoin balance to Bob, 0.997 bitcoin balance to Alice, 1.003 bitcoin committed in Alice's HTLC. Alice's balance is reduced by the amount committed to the HTLC.
+
+Bob now has a commitment that if he is able to get the secret +R+ within the next 10 blocks, he can claim the 1.003 locked by Alice. With this commitment in hand, Bob's node constructs an HTLC on his payment channel with Carol. Bob's HTLC commits 1.002 bitcoin to hash +H+ for 9 blocks, which Carol can redeem if she has secret +R+. Bob knows that if Carol can claim his HTLC, she has to produce +R+. If Bob has +R+ in 9 blocks, he can use it to claim Alice's HTLC to him. He also makes 0.001 bitcoin for committing his channel balance for 9 blocks. If Carol is unable to claim his HTLC and he is unable to claim Alice's HTLC, everything reverts back to the prior channel balances and no one is at a loss. The channel balance between Bob and Carol is now: 2 to Carol, 0.998 to Bob, 1.002 committed by Bob to the HTLC.
+
+Carol now has a commitment that if she gets +R+ within the next 9 blocks, she can claim 1.002 bitcoin locked by Bob. Now she can make an HTLC commitment on her channel with Diana. She commits an HTLC of 1.001 bitcoin to hash +H+, for 8 blocks, which Diana can redeem if she has secret +R+. From Carol's perspective, if this works she is 0.001 bitcoin better off and if it doesn't she loses nothing. Her HTLC to Diana is only viable +R+ is revealed, at which point she can claim the HTLC from Bob. The channel balance between Carol and Diana is now: 2 to Diana, 0.999 to Carol, 1.001 committed by Carol to the HTLC.
+
+Finally, Diana can offer an HTLC to Eric, committing 1 bitcoin for 7 blocks to hash +H+. The channel balance between Diana and Eric is now: 2 to Eric, 1 to Diana, 1 committed by Diana to the HTLC.
+
+However, at this hop in the route, Eric *has* secret +R+. He can therefore claim the HTLC offered by Diana. He sends +R+ to Diana and claims the 1 bitcoin, adding it to his channel balance. The channel balance is now: 1 to Diana, 3 to Eric.
+
+Now, Diana has secret +R+. Therefore, she can now claim the HTLC from Carol. Diana transmits +R+ to Carol and adds the 1.001 bitcoin to her channel balance. Now the channel balance between Carol and Diana is: 0.999 to Carol, 3.001 to Diana. Diana has "earned" 0.001 for participating in this payment route.
+
+Flowing back through the route, the secret +R+ allows each participant to claim the outstanding HTLCs. Carol claims 1.002 from Bob, setting the balance on their channel to: 0.998 to Bob, 3.002 to Carol. Finally, Bob claims the HTLC from Alice. Their channel balance is updated as: 0.997 to Alice, 3.003 to Bob.
+
+Alice has paid Eric 1 bitcoin without opening a channel to Eric. None of the intermediate parties in the payment route had to trust each other. For the short-term commitment of their funds in the channel they are able to earn a small fee, with the only risk being a small delay in refund if the channel was closed or the routed payment failed.
+
+==== Routing in the Lightning Network
