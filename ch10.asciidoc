@@ -278,9 +278,7 @@ The initial subsidy is calculated in satoshis by multiplying 50 with the +COIN+ 
 
 ((("halvings, calculating")))Next, the function calculates the number of +halvings+ that have occurred by dividing the current block height by the halving interval (+SubsidyHalvingInterval+). In the case of block 277,316, with a halving interval every 210,000 blocks, the result is 1 halving.
 
-The maximum number of halvings allowed is 64, so the code imposes a zero reward (return only the fees) if the 64 halvings is exceeded.
-
-Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by two for each round of halving. In the case of block 277,316, this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoin. The binary-right-shift operator is used because it is more efficient for division by two than integer or floating-point division.
+Next, the function uses the binary-right-shift operator to divide the reward (+nSubsidy+) by two for each round of halving. In the case of block 277,316, this would binary-right-shift the reward of 5 billion satoshis once (one halving) and result in 2.5 billion satoshis, or 25 bitcoins. The binary-right-shift operator is used because it is more efficient than multiple repeated divisions. To avoid a potential bug, the shift operation is skipped after 63 halvings, and the subsidy is assumed to be 0 by then.
 
 Finally, the coinbase reward (+nSubsidy+) is added to the transaction fees (+nFees+), and the sum is returned.
 
