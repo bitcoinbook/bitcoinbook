@@ -1,3 +1,4 @@
+#include <random>
 #include <bitcoin/bitcoin.hpp>
 
 // The string we are searching for
@@ -30,7 +31,7 @@ int main()
         {
             // Success!
             std::cout << "Found vanity address! " << address << std::endl;
-            std::cout << "Secret: " << bc::encode_hex(secret) << std::endl;
+            std::cout << "Secret: " << bc::encode_base16(secret) << std::endl;
             return 0;
         }
     }
@@ -51,11 +52,9 @@ bc::ec_secret random_secret(std::default_random_engine& engine)
 
 std::string bitcoin_address(const bc::ec_secret& secret)
 {
-    // Convert secret to pubkey...
-    bc::ec_point pubkey = bc::secret_to_public_key(secret);
-    // Finally create address.
-    bc::payment_address payaddr;
-    bc::set_public_key(payaddr, pubkey);
+    // Convert secret to payment address
+    bc::wallet::ec_private private_key(secret);
+    bc::wallet::payment_address payaddr(private_key);
     // Return encoded form.
     return payaddr.encoded();
 }

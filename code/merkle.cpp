@@ -24,10 +24,10 @@ bc::hash_digest create_merkle(bc::hash_list& merkle)
         {
             // Join both current hashes together (concatenate).
             bc::data_chunk concat_data(bc::hash_size * 2);
-            auto concat = bc::make_serializer(concat_data.begin());
+            auto concat = bc::serializer<
+                decltype(concat_data.begin())>(concat_data.begin());
             concat.write_hash(*it);
             concat.write_hash(*(it + 1));
-            assert(concat.iterator() == concat_data.end());
             // Hash both of the hashes.
             bc::hash_digest new_root = bc::bitcoin_hash(concat_data);
             // Add this to the new list.
@@ -39,7 +39,7 @@ bc::hash_digest create_merkle(bc::hash_list& merkle)
         // DEBUG output -------------------------------------
         std::cout << "Current merkle hash list:" << std::endl;
         for (const auto& hash: merkle)
-            std::cout << "  " << bc::encode_hex(hash) << std::endl;
+            std::cout << "  " << bc::encode_base16(hash) << std::endl;
         std::cout << std::endl;
         // --------------------------------------------------
     }
@@ -56,7 +56,7 @@ int main()
         bc::hash_literal("0000000000000000000000000000000000000000000000000000000000000022"),
     }};
     const bc::hash_digest merkle_root = create_merkle(tx_hashes);
-    std::cout << "Result: " << bc::encode_hex(merkle_root) << std::endl;
+    std::cout << "Result: " << bc::encode_base16(merkle_root) << std::endl;
     return 0;
 }
 
