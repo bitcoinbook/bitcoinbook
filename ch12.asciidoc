@@ -2,7 +2,7 @@
 [[ch12]]
 == Blockchain Applications
 
-Let's now build on our understanding of bitcoin by looking at it as a _application platform_. Nowadays, many people use the term "blockchain" to refer to any application platform that shares the design principles of bitcoin. The term is often misused and applied to many things that fail to deliver the primary features that bitcoin's blockchain delivers.
+Let's now build on our understanding of bitcoin by looking at it as an _application platform_. Nowadays, many people use the term "blockchain" to refer to any application platform that shares the design principles of bitcoin. The term is often misused and applied to many things that fail to deliver the primary features that bitcoin's blockchain delivers.
 
 In this chapter we will look at the features offered by the bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as: colored coins, payment (state) channels and routed payment channels (Lightning Network).
 
@@ -74,11 +74,11 @@ The term derives from the idea of "coloring" or marking a nominal amount of bitc
 
 After _EPOBC_, more recent implementations of colored coins use the OP_RETURN script opcode to store metadata in a transaction, in conjunction with external data stores which associate the metadata to specific assets.
 
-The two most prominent implementations of colored coins today are http://www.openassets.org/[_Open Assets_] and https://coloredcoins.org[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
+The two most prominent implementations of colored coins today are http://www.openassets.org/[_Open Assets_] and http://coloredcoins.org[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
 
 ==== Using Colored Coins
 
-Colored coins are created, transfered and generally viewed in special wallets that can interpret the colored coins protocol metadata attached to bitcoin transactions. Special care must be taken to avoid using a colored coin related key in a regular bitcoin wallet, as the regular wallet may destroy the metadata. Similarly, colored coins should not be sent to addresses managed by regular wallets, but only to addresses that are managed by wallets that are colored-coin-aware. Both Colu and Open Assets systems use special colored-coin addresses to mitigat this risk and to ensure that colored coins are not sent to unaware wallets.
+Colored coins are created, transfered and generally viewed in special wallets that can interpret the colored coins protocol metadata attached to bitcoin transactions. Special care must be taken to avoid using a colored coin related key in a regular bitcoin wallet, as the regular wallet may destroy the metadata. Similarly, colored coins should not be sent to addresses managed by regular wallets, but only to addresses that are managed by wallets that are colored-coin-aware. Both Colu and Open Assets systems use special colored-coin addresses to mitigate this risk and to ensure that colored coins are not sent to unaware wallets.
 
 Colored coins are also not visible to most general-purpose blockchain explorers. Instead, you must use a colored-coins explorer to interpret the metadata of a colored coins transaction.
 
@@ -103,7 +103,7 @@ Finally, some colored coins enable _dividends_, allowing the distribution of bit
 
 ==== Colored Coins Transactions
 
-The metadata that gives meaning to a colored coin transaction is usually stored in one of the outputs using the OP_RETURN opcode. Different colored coins protocols use different encodings for the content of the OP_RETURN data. The output containing the OP_RETURN is called the _marker output_
+The metadata that gives meaning to a colored coin transaction is usually stored in one of the outputs using the OP_RETURN opcode. Different colored coins protocols use different encodings for the content of the OP_RETURN data. The output containing the OP_RETURN is called the _marker output_.
 
 The order of the outputs and position of the marker output may have special meaning in the colored coins protocol. In Open Assets, for example, any outputs before the marker output represent asset issuance. Any outputs after the marker represent asset transfer. The marker output assigns specific values and colors to the other outputs by referencing their order in the transaction.
 
@@ -114,7 +114,7 @@ If the metadata is too long to fit in OP_RETURN, the colored coins protocol may 
 
 In order to correctly interpret the metadata in a colored coins transaction you must use a compatible wallet or block explorer. Otherwise, the transaction looks like a "normal" bitcoin transaction with an OP_RETURN output.
 
-As an example, I created and issued a MasterBTC asset using colored coins. The MasterBTC asset represents a voucher for a free copy of this book. These vouchers can be transfered, traded and redeemed using a colored coins compatible wallet.
+As an example, I created and issued a MasterBTC asset using colored coins. The MasterBTC asset represents a voucher for a free copy of this book. These vouchers can be transferred, traded and redeemed using a colored coins compatible wallet.
 
 For this particular example, I used the wallet and explorer at http://coinprism.info/[https://coinprism.info], which uses the Open Assets colored coin protocol.
 
@@ -283,11 +283,11 @@ Each subsequent commitment transaction must have a shorter timelock so that it m
 
 State channels use timelocks to establish smart contracts across a time dimension. In this example we saw how the time dimension guarantees that a fair commitment, representing the correct channel balance can be transmitted and confirmed before an unfair commitment transaction, representing a channel's prior state, can be transmitted and confirmed. This implementation, needs nothing more than absolute transaction level timelocks (nLockTime). Next we will see how script level timelocks, CHECKLOCKTIMEVERIFY and CHECKSEQUENCEVERIFY can be used to construct more flexible, useful, and sophisticated state channels.
 
-The most form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers. You can still see it at streamium.io.
+The first form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers. You can still see it at streamium.io.
 
-Timelocks are not the only way to invalidate prior commitment transactions. In the next sections we will see how a revocation key can be used to achieve the same result. Timelocks are effective but they have two distinct disadvantages. By establishing a maximum timelock when the channel is first opened, they limit the lifetime of the channel. Worse they force channel implementations to strike a balance between allowing long lived channels and forcing one of the participants to wait a very long time for a refund in case of premature closure. For example, if you allow the channel to remain open for 30 days, by setting the refund timelock to 30 days, if one of the parties disappears immediately the other party must wait 30 days for a refund. The more distant the endpoint, the more distant the refund. The second problem is that
+Timelocks are not the only way to invalidate prior commitment transactions. In the next sections we will see how a revocation key can be used to achieve the same result. Timelocks are effective but they have two distinct disadvantages. By establishing a maximum timelock when the channel is first opened, they limit the lifetime of the channel. Worse they force channel implementations to strike a balance between allowing long lived channels and forcing one of the participants to wait a very long time for a refund in case of premature closure. For example, if you allow the channel to remain open for 30 days, by setting the refund timelock to 30 days, if one of the parties disappears immediately the other party must wait 30 days for a refund. The more distant the endpoint, the more distant the refund.
 
-Since each subsequent commitment transaction must decrement the timelock there is an explicit limit on the number of commitment transactions that can be exchanged between the parties. For example, a 30 day channel, setting a timelock of 4320 blocks into the future, can only accommodate 4320 intermediate commitment transactions before it must be closed. There is a danger in setting the timelock commitment transaction interval at 1 block. By setting the timelock interval between commitment transactions to 1 block, a developer is creating a very high burden for the channel participants who have to be vigilant, remain online and watching, and be ready to transmit the right commitment transaction at anytime.
+The second problem is that since each subsequent commitment transaction must decrement the timelock, there is an explicit limit on the number of commitment transactions that can be exchanged between the parties. For example, a 30 day channel, setting a timelock of 4320 blocks into the future, can only accommodate 4320 intermediate commitment transactions before it must be closed. There is a danger in setting the timelock commitment transaction interval at 1 block. By setting the timelock interval between commitment transactions to 1 block, a developer is creating a very high burden for the channel participants who have to be vigilant, remain online and watching, and be ready to transmit the right commitment transaction at anytime.
 
 Now that we understand how timelocks can be used to invalidate prior commitments, we can see the difference between closing the channel cooperatively and closing it unilaterally by broadcasting a commitment transaction. All commitment transactions are timelocked, therefore broadcasting a commitment transaction will always involve waiting until the timelock has expired. But if the two parties agree on what the final balance is and know they both hold commitment transactions that will make eventually make that balance a reality, they can construct a settlement transaction without a timelock representing that same balance. In a cooperative close, either party takes the most recent commitment transaction, and builds a settlement transaction that is identical in every way except it omits the timelock. Both parties can sign this settlement transaction knowing there is no way to cheat and get a more favorable balance. By cooperatively signing and transmitting the settlement transaction they can close the channel and redeem their balance immediately. Worst case, one of the parties can be petty, refuse to cooperate and force the other party to do a unilateral close with the most recent commitment transaction. But if they do that, they have to wait for their funds too.
 
@@ -406,7 +406,7 @@ ELSE
 ENDIF
 ----
 
-Anyone who knows he secret +R+, which when hashed equals to +H+, can redeem this output by exercising the first clause of the +IF+ flow.
+Anyone who knows the secret +R+, which when hashed equals to +H+, can redeem this output by exercising the first clause of the +IF+ flow.
 
 If the secret is not revealed and the HTLC claimed, after a certain number of blocks the payee can claim a refund using the second clause in the +IF+ flow.
 
@@ -414,7 +414,7 @@ This is a basic implementation of an HTLC. This type of HTLC can be redeemed by 
 
 === Routed Payment Channels (Lightning Network)
 
-The Lightning Network is a proposed routed network of bi-directional payment channels connected end-to-end. A network like this can allow any participant to route a payment from channel to channel without trusting any of the intermediaries. The Lightning Network was first described by Joseph Poon and Thadeus Dryja in January 2016, building on the concept of payment channels as proposed and elaborate by many others:
+The Lightning Network is a proposed routed network of bi-directional payment channels connected end-to-end. A network like this can allow any participant to route a payment from channel to channel without trusting any of the intermediaries. The Lightning Network was first described by Joseph Poon and Thadeus Dryja in February 2015, building on the concept of payment channels as proposed and elaborated upon by many others:
 
 http://lightning.network/lightning-network-paper.pdf[lightning.network/lightning-network-paper.pdf]
 
@@ -434,7 +434,7 @@ In this example, we have 5 participants: Alice, Bob, Carol, Diana, and Eric. The
 
 Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a payment channel. Creating a payment channel requires a funding transaction, which must be committed to the bitcoin blockchain. Alice does not want to open a new payment channel and commit more of her funds. Is there a way to pay Eric, indirectly?
 
-Alice is running a Lightning Network (LN) node that is keeping track of her payment channel to Bob and has the ability to discover routes between payment channels. Alice LN node also has the ability to connect over the Internet to Eric's LN node. Eric's LN node creates a secret R using a random number generator. Eric's node does not reveal this secret to anyone. Instead, Eric's node calculates a hash +H+ of the secret +R+ and transmits this hash to Alice's node.
+Alice is running a Lightning Network (LN) node that is keeping track of her payment channel to Bob and has the ability to discover routes between payment channels. Alice's LN node also has the ability to connect over the Internet to Eric's LN node. Eric's LN node creates a secret R using a random number generator. Eric's node does not reveal this secret to anyone. Instead, Eric's node calculates a hash +H+ of the secret +R+ and transmits this hash to Alice's node.
 
 Now Alice's LN node constructs a route between Alice's LN node and Eric's LN node. The routing algorithm used will be examined in more detail later, but for now let's assume that Alice's node can find an efficient route.
 
@@ -442,7 +442,7 @@ Alice's node then constructs an HTLC, payable to the hash +H+, with a 10 block r
 
 Bob now has a commitment that if he is able to get the secret +R+ within the next 10 blocks, he can claim the 1.003 locked by Alice. With this commitment in hand, Bob's node constructs an HTLC on his payment channel with Carol. Bob's HTLC commits 1.002 bitcoin to hash +H+ for 9 blocks, which Carol can redeem if she has secret +R+. Bob knows that if Carol can claim his HTLC, she has to produce +R+. If Bob has +R+ in 9 blocks, he can use it to claim Alice's HTLC to him. He also makes 0.001 bitcoin for committing his channel balance for 9 blocks. If Carol is unable to claim his HTLC and he is unable to claim Alice's HTLC, everything reverts back to the prior channel balances and no one is at a loss. The channel balance between Bob and Carol is now: 2 to Carol, 0.998 to Bob, 1.002 committed by Bob to the HTLC.
 
-Carol now has a commitment that if she gets +R+ within the next 9 blocks, she can claim 1.002 bitcoin locked by Bob. Now she can make an HTLC commitment on her channel with Diana. She commits an HTLC of 1.001 bitcoin to hash +H+, for 8 blocks, which Diana can redeem if she has secret +R+. From Carol's perspective, if this works she is 0.001 bitcoin better off and if it doesn't she loses nothing. Her HTLC to Diana is only viable +R+ is revealed, at which point she can claim the HTLC from Bob. The channel balance between Carol and Diana is now: 2 to Diana, 0.999 to Carol, 1.001 committed by Carol to the HTLC.
+Carol now has a commitment that if she gets +R+ within the next 9 blocks, she can claim 1.002 bitcoin locked by Bob. Now she can make an HTLC commitment on her channel with Diana. She commits an HTLC of 1.001 bitcoin to hash +H+, for 8 blocks, which Diana can redeem if she has secret +R+. From Carol's perspective, if this works she is 0.001 bitcoin better off and if it doesn't she loses nothing. Her HTLC to Diana is only viable if +R+ is revealed, at which point she can claim the HTLC from Bob. The channel balance between Carol and Diana is now: 2 to Diana, 0.999 to Carol, 1.001 committed by Carol to the HTLC.
 
 Finally, Diana can offer an HTLC to Eric, committing 1 bitcoin for 7 blocks to hash +H+. The channel balance between Diana and Eric is now: 2 to Eric, 1 to Diana, 1 committed by Diana to the HTLC.
 
@@ -456,7 +456,7 @@ Alice has paid Eric 1 bitcoin without opening a channel to Eric. None of the int
 
 ==== Lightning Network Transport & Routing
 
-All communications between Lightning Network nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they use as an identifier and to authenticate each other.http://bitfury.com/content/5-white-papers-research/whitepaper_flare_an_approach_to_routing_in_lightning_network_7_7_2016.pdf
+All communications between Lightning Network nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they http://bitfury.com/content/5-white-papers-research/whitepaper_flare_an_approach_to_routing_in_lightning_network_7_7_2016.pdf[use as an identifier and to authenticate each other].
 
 Whenever a node wishes to send a payment to another node, it must first construct a _path_ through the network by connecting payment channels with sufficient capacity. Nodes advertise routing information, including what channels they have open, how much capacity each channel has and what fees they charge to route payments. The routing information can be shared in a variety of ways and different routing protocols are likely to emerge as Lightning Network technology advances. Some Lightning Network implementations use the IRC protocol as a convenient mechanism for nodes to announce routing information. Another implementation of route discovery uses a P2P model where nodes propagate channel announcements to their peers, in a "flooding" model, similar to how bitcoin propagates transactions. Future plans include a proposal called http://bitfury.com/content/5-white-papers-research/whitepaper_flare_an_approach_to_routing_in_lightning_network_7_7_2016.pdf[Flare], which is a hybrid routing model with local node "neighborhoods" and longer-range beacon nodes.
 
