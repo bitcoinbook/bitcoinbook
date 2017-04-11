@@ -6,7 +6,7 @@ This repository contains the complete [first edition](https://github.com/bitcoin
 
 # Issues, Errors, Comments, Contributions
 
-If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first. Contact forms can be found on his website https://antonopoulos.com/
+If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the **[errata branch](https://github.com/bitcoinbook/bitcoinbook/tree/errata)**. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first. Contact forms can be found on his website https://antonopoulos.com/
 
 # Published
 
@@ -40,4 +40,9 @@ It is expected that the second edition will be released under a CC-BY-SA license
 
 # Translations
 
+<<<<<<< Updated upstream
 If you are interested in translating this book, please contact the author at info@bitcoinbook.info, for coordination. In some countries, I can help you coordinate with the local offices of O'Reilly Media for local print editions.
+=======
+If you are interested in translating this book, please join a team of volunteers at https://www.transifex.com/bitcoinbook/mastering-bitcoin/
+Free copies of "Mastering Bitcoin Open Edition", translated in many languages, can be downloaded from https://bitcoinbook.info
+>>>>>>> Stashed changes
