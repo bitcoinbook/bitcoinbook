@@ -336,7 +336,7 @@ The first byte, +03+, instructs the script execution engine to push the next thr
 
 The next few hexadecimal digits (+0385840206+) are used to encode an extra _nonce_ (see <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
 
-The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string +/P2SH/+, which indicates that the mining node that mined this block supports the((("pay-to-script-hash (P2SH)","coinbase data and"))) pay-to-script-hash (P2SH) improvement defined in BIP-16. The introduction of the P2SH capability required a "vote" by miners to endorse either BIP-16 or BIP-17. Those endorsing the BIP-16 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP-17 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. The BIP-16 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
+The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string +/P2SH/+, which indicates that the mining node that mined this block supports the((("pay-to-script-hash (P2SH)","coinbase data and"))) pay-to-script-hash (P2SH) improvement defined in BIP-16. The introduction of the P2SH capability required signaling by miners to endorse either BIP-16 or BIP-17. Those endorsing the BIP-16 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP-17 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. The BIP-16 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
 
 <<satoshi_words>> uses the libbitcoin library introduced in <<alt_libraries>> to extract the coinbase data from the genesis block, displaying Satoshi's message. Note that the libbitcoin library contains a static copy of the genesis block, so the example code can retrieve the genesis block directly from the library.
 
@@ -1003,7 +1003,7 @@ Irreversible upgrades:: Because soft forks create transactions with additional c
 [[softforksignaling]]
 === Soft Fork Signaling with Block Version
 
-Since soft forks allow unmodified clients to continue to operate within consensus, the mechanism for "activating" a soft fork is through a vote by miners. A majority of miners must agree that they are ready and willing to enforce the new consensus rules. To coordinate their actions, there is a voting mechanism that allows them to signal their support for a consensus rule change. This mechanism was introduced with the activation of BIP-34 in March 2013 and replaced by the activation of BIP-9 in July 2016.
+Since soft forks allow unmodified clients to continue to operate within consensus, the mechanism for "activating" a soft fork is through miners signaling readiness: A majority of miners must agree that they are ready and willing to enforce the new consensus rules. To coordinate their actions, there is a signaling mechanism that allows them to show their support for a consensus rule change. This mechanism was introduced with the activation of BIP-34 in March 2013 and replaced by the activation of BIP-9 in July 2016.
 
 ==== BIP-34 Signaling and Activation
 
@@ -1013,7 +1013,7 @@ BIP-34 defined a consensus rule change that required the coinbase field (input) 
 
 To signal the change and activation of BIP-34, miners set the block version to "2", instead of "1". This did not immediately make version "1" blocks invalid. Once activated, version "1" blocks would become invalid and all version "2" blocks would be required to contain the block height in the coinbase to be valid.
 
-BIP-34 defined a two-step activation mechanism, based on a rolling window of 1000 blocks. A miner would signal his or her individual readiness and vote yes on BIP-34 by constructing blocks with "2" as the version number. Strictly speaking, these blocks did not yet have to comply with the new consensus rule of including the block-height in the coinbase transaction because the consensus rule had not yet activated. The consensus rules activated in two steps:
+BIP-34 defined a two-step activation mechanism, based on a rolling window of 1000 blocks. A miner would signal his or her individual readiness for BIP-34 by constructing blocks with "2" as the version number. Strictly speaking, these blocks did not yet have to comply with the new consensus rule of including the block-height in the coinbase transaction because the consensus rule had not yet activated. The consensus rules activated in two steps:
 
 * If 75% percent (750 of the most recent 1000 blocks) are marked with version "2", then version "2" blocks must contain block-height in the coinbase transaction or they are rejected as invalid. Version "1" blocks are still accepted by the network and do not need contain block-height. The old and new consensus rules coexist during this period.
 
@@ -1041,11 +1041,11 @@ The mechanism used by BIP-34, BIP-66, and BIP-65 was successful in activating th
 
 BIP-9 was proposed to overcome these challenges and improve the rate and ease of implementing future changes.
 
-BIP-9 interprets the block version as a bit field instead of an integer. Because the block version was originally used as an integer, versions 1 through 4, only 29 bits remain available to be used as a bit field. This leaves 29 bits that can be used to independently and simultaneously vote on 29 different proposals.
+BIP-9 interprets the block version as a bit field instead of an integer. Because the block version was originally used as an integer, versions 1 through 4, only 29 bits remain available to be used as a bit field. This leaves 29 bits that can be used to independently and simultaneously signal readiness on 29 different proposals.
 
-BIP-9 also sets a maximum time for signaling and activation. Thus a change is not voted on perpetually. If it is not activated within the +TIMEOUT+ period (defined in the proposal), the proposal is considered rejected.
+BIP-9 also sets a maximum time for signaling and activation. This way miners don't need to signal forever. If a proposal is not activated within the +TIMEOUT+ period (defined in the proposal), the proposal is considered rejected. The proposal may be re-submitted for signaling with a different bit, renewing the activation period.
 
-Furthermore, after the +TIMEOUT+ has passed and a feature has been activated or rejected, the signaling bit can be reused for another feature without confusion. Therefore, up to 29 changes can be voted on in parallel and after +TIMEOUT+ the bits can be "recycled" to propose new changes.
+Furthermore, after the +TIMEOUT+ has passed and a feature has been activated or rejected, the signaling bit can be reused for another feature without confusion. Therefore, up to 29 changes can be signaled in parallel and after +TIMEOUT+ the bits can be "recycled" to propose new changes.
 
 [NOTE]
 ====
@@ -1062,7 +1062,7 @@ starttime:: The time (based on Median Time Past) that signaling starts after whi
 
 endtime:: The time (based on Median Time Past) after which the change is considered rejected if it has not reached the activation threshold.
 
-Unlike BIP-34, BIP-9 counts votes in whole intervals based on the difficulty retarget period of 2016 blocks. For every retarget period, if the sum of blocks signaling for a proposal exceeds 95% (1916 of 2016), the proposal will be activated one retarget period later.
+Unlike BIP-34, BIP-9 counts activation signaling in whole intervals based on the difficulty retarget period of 2016 blocks. For every retarget period, if the sum of blocks signaling for a proposal exceeds 95% (1916 of 2016), the proposal will be activated one retarget period later.
 
 BIP-9 offers a proposal state diagram to illustrate the various stages and transitions for a proposal, as shown in <<bip9states>>.
 
