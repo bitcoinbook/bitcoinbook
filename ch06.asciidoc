@@ -5,7 +5,7 @@
 [[ch06_intro]]
 === Introduction
 
-((("transactions", id="ix_ch06-asciidoc0", range="startofrange")))Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger.
+Transactions are the most important part of the bitcoin system. Everything else in bitcoin is designed to ensure that transactions can be created, propagated on the network, validated, and finally added to the global ledger of transactions (the blockchain). Transactions are data structures that encode the transfer of value between participants in the bitcoin system. Each transaction is a public entry in bitcoin's blockchain, the global double-entry bookkeeping ledger.
 
 In this chapter we will examine all the various forms of transactions, what they contain, how to create them, how they are verified, and how they become part of the permanent record of all transactions. When we use the term "wallet" in this chapter, we are referring to the software that constructs transactions, not just the database of keys.
 
@@ -62,13 +62,13 @@ You may also notice a lot of strange and indecipherable fields and hexadecimal s
 [[tx_inputs_outputs]]
 === Transaction Outputs and Inputs
 
-((("transactions","unspent transaction output (UTXO)")))((("unspent transaction output (UTXO)")))The fundamental building block of a bitcoin transaction is a  _transaction output_. Transaction outputs are indivisible chunks of bitcoin currency, recorded on the blockchain, and recognized as valid by the entire network. Bitcoin full nodes track all available and spendable outputs, known as _unspent transaction outputs_ or _UTXO_. The collection of all UTXO is known as the _UTXO set_ and currently numbers in the millions of UTXO. The UTXO set grows as new UTXO is created and shrinks when UTXO is consumed. Every transaction represents a change (state transition) in the UTXO set.
+The fundamental building block of a bitcoin transaction is a  _transaction output_. Transaction outputs are indivisible chunks of bitcoin currency, recorded on the blockchain, and recognized as valid by the entire network. Bitcoin full nodes track all available and spendable outputs, known as _unspent transaction outputs_ or _UTXO_. The collection of all UTXO is known as the _UTXO set_ and currently numbers in the millions of UTXO. The UTXO set grows as new UTXO is created and shrinks when UTXO is consumed. Every transaction represents a change (state transition) in the UTXO set.
 
 When we say that a user's wallet has "received" bitcoin, what we mean is that the wallet has detected an unspent transaction output (UTXO) that can be spent with one of the keys controlled by that wallet. Thus, a user's bitcoin "balance" is the sum of all UTXO that user's wallet can spend and which may be scattered amongst hundreds of transactions and hundreds of blocks. The concept of a balance is created by the wallet application. The wallet calculates the user's balance by scanning the blockchain and aggregating the value of any UTXO that the wallet can spend with the keys it controls. Today, all wallets maintain a database or use a database service to store a quick reference set of all the UTXO they can spend with the keys they control.
 
-A transaction output can have an arbitrary value denominated as a multiple of((("satoshis"))) satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoin can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are _discrete_ and _indivisible_ units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
+A transaction output can have an arbitrary value denominated as a multiple of satoshis.  Just like dollars can be divided down to two decimal places as cents, bitcoin can be divided down to eight decimal places as satoshis. Although an output can have any arbitrary value, once created it is indivisible. This is an important characteristic of outputs that needs to be emphasized: outputs are _discrete_ and _indivisible_ units of value, denominated in satoshis. An unspent output can only be consumed in its entirety by a transaction.
 
-If an unspent transaction output is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. ((("change, making")))In other words, if you have a UTXO worth 20 bitcoin and want to pay only 1 bitcoin, your transaction must consume the entire 20-bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result of the indivisible nature of transaction outputs, most bitcoin transactions will have to generate change.
+If an unspent transaction output is larger than the desired value of a transaction, it must still be consumed in its entirety and change must be generated in the transaction. In other words, if you have a UTXO worth 20 bitcoin and want to pay only 1 bitcoin, your transaction must consume the entire 20-bitcoin UTXO and produce two outputs: one paying 1 bitcoin to your desired recipient and another paying 19 bitcoin in change back to your wallet. As a result of the indivisible nature of transaction outputs, most bitcoin transactions will have to generate change.
 
 Imagine a shopper buying a $1.50 beverage, reaching into her wallet and trying to find a combination of coins and bank notes to cover the $1.50 cost. The shopper will choose exact change if available (for example, a dollar bill and two quarters), or a combination of smaller denominations (six quarters), or if necessary, a larger unit such as a $5 bank note. If she hands too much money, say $5, to the shop owner, she will expect $3.50 change, which she will return to her wallet and have available for future transactions.
 
@@ -88,7 +88,7 @@ What comes first? Inputs or outputs, the chicken or the egg? Strictly speaking, 
 [[tx_outs]]
 ==== Transaction Outputs
 
-((("bitcoin ledger, outputs in", id="ix_ch06-asciidoc2", range="startofrange")))((("transactions","outputs", id="ix_ch06-asciidoc3", range="startofrange")))((("unspent transaction output (UTXO)", id="ix_ch06-asciidoc4", range="startofrange")))Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called UTXO, which are then recognized by the whole network and available for the owner to spend in a future transaction.
+Every bitcoin transaction creates outputs, which are recorded on the bitcoin ledger. Almost all of these outputs, with one exception (see <<op_return>>) create spendable chunks of bitcoin called UTXO, which are then recognized by the whole network and available for the owner to spend in a future transaction.
 
 UTXO are tracked by every full-node bitcoin client in the UTXO set. New transactions consume (spend) one or more of these outputs from the UTXO set.
 
@@ -97,7 +97,7 @@ Transaction outputs consist of two parts:
 * An amount of bitcoin, denominated in _satoshis_, the smallest bitcoin unit
 * A cryptographic puzzle that determines the conditions required to spend the output
 
-The cryptographic puzzle is also known as a ((("locking scripts"))) _locking script_, a _witness script_, or a +scriptPubKey+.
+The cryptographic puzzle is also known as a  _locking script_, a _witness script_, or a +scriptPubKey+.
 
 The transaction scripting language, used in the locking script mentioned previously, is discussed in detail in <<tx_script>>.
 
@@ -124,7 +124,7 @@ The topic of locking and unlocking UTXO will be discussed later, in <<tx_lock_un
 
 ===== Transaction serialization&#x2014;outputs
 
-When transactions are transmitted over the network or exchanged between applications, they are _serialized_. (((serialization)))Serialization is the process of converting the internal representation of a data structure into a format that can be transmitted one byte at a time, also known as a byte-stream. Serialization is most commonly used for encoding data structures for transmission over a network or for storage in a file. The serialization format of a transaction output is shown in <<tx_out_structure>>.
+When transactions are transmitted over the network or exchanged between applications, they are _serialized_. Serialization is the process of converting the internal representation of a data structure into a format that can be transmitted one byte at a time, also known as a byte-stream. Serialization is most commonly used for encoding data structures for transmission over a network or for storage in a file. The serialization format of a transaction output is shown in <<tx_out_structure>>.
 
 [[tx_out_structure]]
 .Transaction output serialization
@@ -138,7 +138,7 @@ When transactions are transmitted over the network or exchanged between applicat
 
 Most bitcoin libraries and frameworks do not store transactions internally as byte-streams, as that would require complex parsing every time you needed to access a single field. For convenience and readability, bitcoin libraries store transactions internally in data structures (usually object-oriented structures).
 
-The process of converting from the byte-stream representation of a transaction to a library's internal representation data structure is called (((deserialization)))_deserialization_ or _transaction parsing_. The process of converting back to a byte-stream for transmission over the network, for hashing or for storage on disk is called (((serialization)))_serialization_.  Most bitcoin libraries have built-in functions for transaction serialization and deserialization.
+The process of converting from the byte-stream representation of a transaction to a library's internal representation data structure is called _deserialization_ or _transaction parsing_. The process of converting back to a byte-stream for transmission over the network, for hashing or for storage on disk is called _serialization_.  Most bitcoin libraries have built-in functions for transaction serialization and deserialization.
 
 See if you can manually decode Alice's transaction from the serialized hexadecimal form, finding some of the elements we saw previously. The section containing the two outputs is highlighted to help you:
 
@@ -165,7 +165,7 @@ Here are some hints:
 [[tx_inputs]]
 ==== Transaction Inputs
 
-((("transactions","inputs", id="ix_ch06-asciidoc5", range="startofrange")))Transaction inputs identify (by reference) which UTXO will be consumed and provide proof of ownership through an unlocking script.
+Transaction inputs identify (by reference) which UTXO will be consumed and provide proof of ownership through an unlocking script.
 
 To build a transaction, a wallet selects from the UTXO it controls, UTXO with enough value to make the requested payment. Sometimes one UTXO is enough, other times more than one is needed. For each UTXO that will be consumed to make this payment, the wallet creates one input pointing to the UTXO and unlocks it with an unlocking script.
 
@@ -278,13 +278,13 @@ Hints:
 [[tx_fees]]
 ==== Transaction Fees
 
-((("fees, transaction", id="ix_ch06-asciidoc6", range="startofrange")))Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Fees also serve as a security mechanism themselves, by making it economically infeasible for attackers to flood the network with transactions. Mining and the fees and rewards collected by miners are discussed in more detail in <<bitcoin_network_ch08>>.
+Most transactions include transaction fees, which compensate the bitcoin miners for securing the network. Fees also serve as a security mechanism themselves, by making it economically infeasible for attackers to flood the network with transactions. Mining and the fees and rewards collected by miners are discussed in more detail in <<bitcoin_network_ch08>>.
 
 This section examines how transaction fees are included in a typical transaction. Most wallets calculate and include transaction fees automatically. However, if you are constructing transactions programmatically, or using a command-line interface, you must manually account for and include these fees.
 
 Transaction fees serve as an incentive to include (mine) a transaction into the next block and also as a disincentive against abuse of the system, by imposing a small cost on every transaction. Transaction fees are collected by the miner who mines the block that records the transaction on the blockchain.
 
-((("fees, transaction","calculating")))Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next block mined, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing.
+Transaction fees are calculated based on the size of the transaction in kilobytes, not the value of the transaction in bitcoin. Overall, transaction fees are set based on market forces within the bitcoin network. Miners prioritize transactions based on many different criteria, including fees, and might even process transactions for free under certain circumstances. Transaction fees affect the processing priority, meaning that a transaction with sufficient fees is likely to be included in the next block mined, whereas a transaction with insufficient or no fees might be delayed, processed on a best-effort basis after a few blocks, or not processed at all. Transaction fees are not mandatory, and transactions without fees might be processed eventually; however, including transaction fees encourages priority processing.
 
 Over time, the way transaction fees are calculated and the effect they have on transaction prioritization has been evolving. At first, transaction fees were fixed and constant across the network. Gradually, the fee structure has been relaxed so that it may be influenced by market forces, based on network capacity and transaction volume. Since at least the beginning of 2016, capacity limits in bitcoin have created competition between transactions, resulting in higher fees and effectively making free transactions a thing of the past. Zero fee or very low fee transactions rarely get mined and sometimes will not even be propagated across the network.
 
@@ -320,7 +320,7 @@ The API returns a JSON object with the current fee estimate for fastest confirma
 
 ==== Adding Fees to Transactions
 
-((("fees, transaction","adding", id="ix_ch06-asciidoc7", range="startofrange")))((("transactions","fees", id="ix_ch06-asciidoc8", range="startofrange")))The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners:
+The data structure of transactions does not have a field for fees. Instead, fees are implied as the difference between the sum of inputs and the sum of outputs. Any excess amount that remains after all outputs have been deducted from all inputs is the fee that is collected by the miners:
 
 [[tx_fee_equation]]
 .Transaction fees are implied, as the excess of inputs minus outputs:
@@ -343,12 +343,12 @@ Now let's look at a different scenario. Eugenia, our children's charity director
 
 As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps a kilobyte or several kilobytes in size. As a result, it will require a much higher fee than the median-sized transaction.
 
-Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size--the fee is independent of the transaction's bitcoin value.(((range="endofrange", startref="ix_ch06-asciidoc8")))(((range="endofrange", startref="ix_ch06-asciidoc7")))
+Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size--the fee is independent of the transaction's bitcoin value.
 
 [[tx_script]]
 === Transaction Scripts and Script Language
 
-((("scripts", id="ix_ch06-asciidoc9", range="startofrange")))((("transactions","script language for", id="ix_ch06-asciidoc10", range="startofrange")))((("transactions","validation", id="ix_ch06-asciidoc11", range="startofrange")))((("validation (transaction)", id="ix_ch06-asciidoc12", range="startofrange")))((("Script language", id="ix_ch06-asciidoc13", range="startofrange")))((("scripts","language for", id="ix_ch06-asciidoc14", range="startofrange")))The bitcoin transaction script language, called _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages, but that's ok&#x2014;we will explain it all in this chapter. Both the locking script placed on a UTXO and the unlocking script are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition.
+The bitcoin transaction script language, called _Script_, is a Forth-like reverse-polish notation stack-based execution language. If that sounds like gibberish, you probably haven't studied 1960's programming languages, but that's ok&#x2014;we will explain it all in this chapter. Both the locking script placed on a UTXO and the unlocking script are written in this scripting language. When a transaction is validated, the unlocking script in each input is executed alongside the corresponding locking script to see if it satisfies the spending condition.
 
 Script is a very simple language that was designed to be limited in scope and executable on a range of hardware, perhaps as simple as an embedded device. It requires minimal processing and cannot do many of the fancy things modern programming languages can do. For its use in validating programmable money, this is a deliberate security feature.
 
@@ -364,24 +364,24 @@ Bitcoin transaction validation is not based on a static pattern, but instead is 
 
 ==== Turing Incompleteness
 
-((("Script language","flow-control/loops in")))((("Script language","statelessness of")))((("Turing Complete")))The bitcoin transaction script language contains many operators, but is deliberately limited in one important way--there are no loops or complex flow control capabilities other than conditional flow control. This ensures that the language is not _Turing Complete_, meaning that scripts have limited complexity and predictable execution times. Script is not a general-purpose language. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a((("denial-of-service attack","Script language and"))) denial-of-service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability.
+The bitcoin transaction script language contains many operators, but is deliberately limited in one important way--there are no loops or complex flow control capabilities other than conditional flow control. This ensures that the language is not _Turing Complete_, meaning that scripts have limited complexity and predictable execution times. Script is not a general-purpose language. These limitations ensure that the language cannot be used to create an infinite loop or other form of "logic bomb" that could be embedded in a transaction in a way that causes a denial-of-service attack against the bitcoin network. Remember, every transaction is validated by every full node on the bitcoin network. A limited language prevents the transaction validation mechanism from being used as a vulnerability.
 
 ==== Stateless Verification
 
-((("stateless verification of transactions")))((("transactions","statelessness of")))The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script, you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. This predictability of outcomes is an essential benefit of the bitcoin system.(((range="endofrange", startref="ix_ch06-asciidoc12")))(((range="endofrange", startref="ix_ch06-asciidoc11")))(((range="endofrange", startref="ix_ch06-asciidoc10")))(((range="endofrange", startref="ix_ch06-asciidoc9")))
+The bitcoin transaction script language is stateless, in that there is no state prior to execution of the script, or state saved after execution of the script. Therefore, all the information needed to execute a script is contained within the script. A script will predictably execute the same way on any system. If your system verifies a script, you can be sure that every other system in the bitcoin network will also verify the script, meaning that a valid transaction is valid for everyone and everyone knows this. This predictability of outcomes is an essential benefit of the bitcoin system.
 
 [[tx_lock_unlock]]
 ==== Script Construction (Lock + Unlock)
 
-((("scripts","construction of")))((("validation (transaction)","script construction for")))Bitcoin's transaction validation engine relies on two types of scripts to validate transactions: a locking script and an unlocking script.
+Bitcoin's transaction validation engine relies on two types of scripts to validate transactions: a locking script and an unlocking script.
 
-((("locking scripts","transaction validation and")))((("validation (transaction)","locking scripts")))A locking script is a spending condition placed on an output: it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address (public key hash). In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+. You will also see the locking script referred to as a _witness script_ (see <<segwit>>) or more generally as a _cryptographic puzzle_. These terms all mean the same thing, at different levels of abstraction.
+A locking script is a spending condition placed on an output: it specifies the conditions that must be met to spend the output in the future. Historically, the locking script was called a _scriptPubKey_, because it usually contained a public key or bitcoin address (public key hash). In this book we refer to it as a "locking script" to acknowledge the much broader range of possibilities of this scripting technology. In most bitcoin applications, what we refer to as a locking script will appear in the source code as +scriptPubKey+. You will also see the locking script referred to as a _witness script_ (see <<segwit>>) or more generally as a _cryptographic puzzle_. These terms all mean the same thing, at different levels of abstraction.
 
-((("unlocking scripts","transaction validation and")))An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input. Most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. You will also see the unlocking script referred to as a _witness_ (see <<segwit>>). In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
+An unlocking script is a script that "solves," or satisfies, the conditions placed on an output by a locking script and allows the output to be spent. Unlocking scripts are part of every transaction input. Most of the time they contain a digital signature produced by the user's wallet from his or her private key. Historically, the unlocking script is called _scriptSig_, because it usually contained a digital signature. In most bitcoin applications, the source code refers to the unlocking script as +scriptSig+. You will also see the unlocking script referred to as a _witness_ (see <<segwit>>). In this book, we refer to it as an "unlocking script" to acknowledge the much broader range of locking script requirements, because not all unlocking scripts must contain signatures.
 
 Every bitcoin validating node will validate transactions by executing the locking and unlocking scripts together. Each input contains an unlocking script and refers to a previously existing UTXO. The validation software will copy the unlocking script, retrieve the UTXO referenced by the input, and copy the locking script from that UTXO. The unlocking and locking script are then executed in sequence. The input is valid if the unlocking script satisfies the locking script conditions (see <<script_exec>>). All the inputs are validated independently, as part of the overall validation of the transaction.
 
-Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the output results in the output being considered as "spent" and removed from the set of unspent transaction outputs (UTXO set)((("UTXO Set", "removing outputs")))((("UTXO", "spending"))).
+Note that the UTXO is permanently recorded in the blockchain, and therefore is invariable and is unaffected by failed attempts to spend it by reference in a new transaction. Only a valid transaction that correctly satisfies the conditions of the output results in the output being considered as "spent" and removed from the set of unspent transaction outputs (UTXO set).
 
 <<scriptSig_and_scriptPubKey>> is an example of the unlocking and locking scripts for the most common type of bitcoin transaction (a payment to a public key hash), showing the combined script resulting from the concatenation of the unlocking and locking scripts prior to script validation.
 
@@ -391,7 +391,7 @@ image::images/mbc2_0603.png["scriptSig_and_scriptPubKey"]
 
 ===== The script execution stack
 
-Bitcoin's scripting language is called a stack-based language because it uses a data structure called a((("stack, defined"))) _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. Operations on a stack can only act on the topmost item on the stack. A stack data structure is also called a Last-In-First-Out, or "LIFO" queue.
+Bitcoin's scripting language is called a stack-based language because it uses a data structure called a _stack_. A stack is a very simple data structure, which can be visualized as a stack of cards. A stack allows two operations: push and pop. Push adds an item on top of the stack. Pop removes the top item from the stack. Operations on a stack can only act on the topmost item on the stack. A stack data structure is also called a Last-In-First-Out, or "LIFO" queue.
 
 The scripting language executes the script by processing each item from left to right. Numbers (data constants) are pushed onto the stack. Operators push or pop one or more parameters from the stack, act on them, and might push a result onto the stack. For example, +OP_ADD+ will pop two items from the stack, add them, and push the resulting sum onto the stack.
 
@@ -423,7 +423,7 @@ The validation software combines the locking and unlocking scripts and the resul
 2 3 OP_ADD 5 OP_EQUAL
 ----
 
-As we saw in the step-by-step example in <<simplemath_script>>, when this script is executed, the result is +OP_TRUE+, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. (((range="endofrange", startref="ix_ch06-asciidoc14")))(((range="endofrange", startref="ix_ch06-asciidoc13")))
+As we saw in the step-by-step example in <<simplemath_script>>, when this script is executed, the result is +OP_TRUE+, making the transaction valid. Not only is this a valid transaction output locking script, but the resulting UTXO could be spent by anyone with the arithmetic skills to know that the number 2 satisfies the script. 
 
 [[simplemath_script]]
 .Bitcoin's script validation doing simple math
@@ -454,7 +454,7 @@ First, the unlocking script is executed, using the stack execution engine. If th
 [[p2pkh]]
 ==== Pay-to-Public-Key-Hash (P2PKH)
 
-((("pay-to-public-key-hash (P2PKH)", id="ix_ch06-asciidoc15", range="startofrange")))((("transactions","pay-to-public-key-hash", id="ix_ch06-asciidoc16", range="startofrange")))The vast majority of transactions processed on the bitcoin network spend outputs locked with a Pay-to-Public-Key-Hash or "P2PKH" script. These outputs contain a locking script that locks the output to a public key hash, more commonly known as a bitcoin address. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key (see <<digital_sigs>>).
+The vast majority of transactions processed on the bitcoin network spend outputs locked with a Pay-to-Public-Key-Hash or "P2PKH" script. These outputs contain a locking script that locks the output to a public key hash, more commonly known as a bitcoin address. An output locked by a P2PKH script can be unlocked (spent) by presenting a public key and a digital signature created by the corresponding private key (see <<digital_sigs>>).
 
 For example, let's look at Alice's payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to the cafe's bitcoin address. That transaction output would have a locking script of the form:
 
@@ -479,7 +479,7 @@ The two scripts together would form the following combined validation script:
 
 When executed, this combined script will evaluate to TRUE if, and only if, the unlocking script matches the conditions set by the locking script. In other words, the result will be TRUE if the unlocking script has a valid signature from the cafe's private key that corresponds to the public key hash set as an encumbrance.
 
-Figures pass:[<a data-type="xref" href="#P2PubKHash1" data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] and pass:[<a data-type="xref" href="#P2PubKHash2" data-xrefstyle="select: labelnumber">#P2PubKHash2</a>] show (in two parts) a step-by-step execution of the combined script, which will prove this is a valid transaction.(((range="endofrange", startref="ix_ch06-asciidoc16")))(((range="endofrange", startref="ix_ch06-asciidoc15")))
+Figures pass:[<a data-type="xref" href="#P2PubKHash1" data-xrefstyle="select: labelnumber">#P2PubKHash1</a>] and pass:[<a data-type="xref" href="#P2PubKHash2" data-xrefstyle="select: labelnumber">#P2PubKHash2</a>] show (in two parts) a step-by-step execution of the combined script, which will prove this is a valid transaction.
 
 [[P2PubKHash1]]
 .Evaluating a script for a P2PKH transaction (part 1 of 2)
