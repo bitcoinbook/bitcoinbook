@@ -5,9 +5,9 @@
 [[ch07_intro]]
 === Introduction
 
-In the previous chapter, we introduced the basic elements of bitcoin transactions and looked at the most common type of transaction script, the Pay-to-Public-Key-Hash script. In this chapter we will look at more advanced scripting and how we can use it to build transactions with complex conditions.
+In the previous chapter, we introduced the basic elements of bitcoin transactions and looked at the most common type of transaction script, the P2PKH script. In this chapter we will look at more advanced scripting and how we can use it to build transactions with complex conditions.
 
-First, we will look at _multisignature_ scripts. Next we will examine the second most common transaction script, _Pay-to-Script-Hash_, which opens up a whole world of complex scripts. Then, we will examine new script operators that add a time-dimension to bitcoin, through _timelocks_.
+First, we will look at _multisignature_ scripts. Next, we will examine the second most common transaction script, _Pay-to-Script-Hash_, which opens up a whole world of complex scripts. Then, we will examine new script operators that add a time dimension to bitcoin, through _timelocks_.
 
 [[multisig]]
 === Multisignature
@@ -54,9 +54,9 @@ Let's look at this in greater detail using the previous validation example:
 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
 ----
 
-First, +CHECKMULTISIG+ pops the top item which is +N+, in this example "3". Then it pops +N+ items, which are the public keys that can sign. In this example, public keys A, B, and C. Then, it pops one item which is +M+, the quorum (how many signatures are needed). Here M = 2. At this point, +CHECKMULTISIG+ should pop the final +M+ items, which are the signatures, and see if they are valid. But, unfortunately, a bug in the implementation causes +CHECKMULTISIG+ to pop one more item (M+1 total) than it should. The extra item is disregarded when checking the signatures so it has no direct effect on +CHECKMULTISIG+ itself. However, an extra value must be present because if it is not present, when +CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a stack error and script failure (marking the transaction as invalid). Because the extra item is disregarded it can be anything, but customarily +0+ is used.
+First, +CHECKMULTISIG+ pops the top item, which is +N+ (in this example "3"). Then it pops +N+ items, which are the public keys that can sign. In this example, public keys A, B, and C. Then, it pops one item, which is +M+, the quorum (how many signatures are needed). Here M = 2. At this point, +CHECKMULTISIG+ should pop the final +M+ items, which are the signatures, and see if they are valid. However, unfortunately, a bug in the implementation causes +CHECKMULTISIG+ to pop one more item (M+1 total) than it should. The extra item is disregarded when checking the signatures so it has no direct effect on +CHECKMULTISIG+ itself. However, an extra value must be present because if it is not present, when +CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a stack error and script failure (marking the transaction as invalid). Because the extra item is disregarded it can be anything, but customarily +0+ is used.
 
-Because this bug became part of the consensus rules, it must now be replicated forever. Therefore, the correct script validation would look like this:
+Because this bug became part of the consensus rules, it must now be replicated forever. Therefore the correct script validation would look like this:
 
 ----
 0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
@@ -156,15 +156,15 @@ If the redeem script hash matches, the unlocking script is executed on its own, 
 <Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG
 ----
 
-Almost all the scripts described in this chapter can only be implemented as Pay-to-Script-Hash scripts. They cannot be used directly in the locking script of a UTXO.
+Almost all the scripts described in this chapter can only be implemented as P2SH scripts. They cannot be used directly in the locking script of a UTXO.
 
 ==== Pay-to-Script-Hash Addresses
 
-((("scripting", "Pay-to-Script-Hash", "addresses")))((("Pay-to-Script-Hash (P2SH)", "addresses")))((("bitcoin improvement proposals", "Address Format for P2SH (BIP-13)")))Another important part of the P2SH feature is the ability to encode a script hash as an address, as defined in BIP-13. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5", which results in Base58Check-encoded addresses that start with a "3". For example, Mohammed's complex script, hashed and Base58Check-encoded as a P2SH address becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a bitcoin address.
+((("scripting", "Pay-to-Script-Hash", "addresses")))((("Pay-to-Script-Hash (P2SH)", "addresses")))((("bitcoin improvement proposals", "Address Format for P2SH (BIP-13)")))Another important part of the P2SH feature is the ability to encode a script hash as an address, as defined in BIP-13. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5," which results in Base58Check-encoded addresses that start with a "3." For example, Mohammed's complex script, hashed and Base58Check-encoded as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a bitcoin address.
 
 P2SH addresses hide all of the complexity, so that the person making a payment does not see the script.
 
-==== Benefits of Pay-to-Script-Hash
+==== Benefits of P2SH
 
 ((("scripting", "Pay-to-Script-Hash", "benefits of")))((("Pay-to-Script-Hash (P2SH)", "benefits of")))The P2SH feature offers the following benefits compared to the direct use of complex scripts in locking outputs:
 
@@ -213,7 +213,7 @@ Keep in mind that there is no "unlocking script" that corresponds to +RETURN+ th
 
 A standard transaction (one that conforms to the +isStandard()+ checks) can have only one +RETURN+ output. However, a single +RETURN+ output can be combined in a transaction with outputs of any other type.
 
-Two new command-line options have been added in Bitcoin Core as of version 0.10. The option +datacarrier+ controls relay and mining of +RETURN+ transactions, with the default set to "1" to allow them. The option +datacarriersize+ takes a numeric argument specifying the maximum size in bytes of the +RETURN+ script, 83 bytes by default which, allows for a maximum of 80 bytes of +RETURN+ data plus one byte of +RETURN+ opcode and two bytes of +PUSHDATA+ opcode.
+Two new command-line options have been added in Bitcoin Core as of version 0.10. The option +datacarrier+ controls relay and mining of +RETURN+ transactions, with the default set to "1" to allow them. The option +datacarriersize+ takes a numeric argument specifying the maximum size in bytes of the +RETURN+ script, 83 bytes by default, which, allows for a maximum of 80 bytes of +RETURN+ data plus one byte of +RETURN+ opcode and two bytes of +PUSHDATA+ opcode.
 
 [NOTE]
 ====
@@ -224,7 +224,7 @@ Two new command-line options have been added in Bitcoin Core as of version 0.10.
 
 ((("transactions", "advanced", "timelocks")))((("scripting", "timelocks", id="Stimelock07")))((("nLocktime field")))((("scripting", "timelocks", "uses for")))((("timelocks", "uses for")))Timelocks are restrictions on transactions or outputs that only allow spending after a point in time. Bitcoin has had a transaction-level timelock feature from the beginning. It is implemented by the +nLocktime+ field in a transaction. Two new timelock features were introduced in late 2015 and mid-2016 that offer UTXO-level timelocks. These are +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+.
 
-Timelocks are useful for post-dating transactions and locking funds to a date in the future. More importantly, timelocks extend bitcoin scripting into the dimension of time, opening the door for complex multistep smart contracts.
+Timelocks are useful for postdating transactions and locking funds to a date in the future. More importantly, timelocks extend bitcoin scripting into the dimension of time, opening the door for complex multistep smart contracts.
 
 [[transaction_locktime_nlocktime]]
 ==== Transaction Locktime (nLocktime)
@@ -250,7 +250,7 @@ It is important to understand the limitations of transaction +nLocktime+. The on
 
 ==== Check Lock Time Verify (CLTV)
 
-((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft-fork upgrade. Based on a specification in Bitcoin Improvement Proposal 65 (BIP-65), a new script operator _CHECKLOCKTIMEVERIFY_ (known also as _CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLocktime+. This allows for much greater flexibility in the way timelocks are applied.
+((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft fork upgrade. Based on a specifications in BIP-65, a new script operator called _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLocktime+. This allows for much greater flexibility in the way timelocks are applied.
 
 In simple terms, by adding the +CLTV+ opcode in the redeem script of an output it restricts the output, so that it can only be spent after the specified time has elapsed.
 
@@ -263,7 +263,7 @@ While +nLocktime+ is a transaction-level timelock, +CLTV+ is an output-based tim
 
 The +CLTV+ opcode takes one parameter as input, expressed as a number in the same format as +nLocktime+ (either a block height or Unix epoch time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode that halts execution of the script if the outcome is +FALSE+. If it results in TRUE, execution continues.
 
-In order to lock an output with +CLTV+, you insert it into the redeem script of the output, in the transaction that creates the output. For example, if Alice is paying Bob's address, the output would normally contain a P2PKH script like this:
+In order to lock an output with +CLTV+, you insert it into the redeem script of the output in the transaction that creates the output. For example, if Alice is paying Bob's address, the output would normally contain a P2PKH script like this:
 
 ----
 DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY CHECKSIG
@@ -281,24 +281,24 @@ When Bob tries to spend this UTXO, he constructs a transaction that references t
 
 Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal the spending transaction's +nLocktime+, script execution continues (acts as if a NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
 
-More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the transaction invalid, if (source: BIP-65):
+More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the transaction invalid if (source: BIP-65):
 
 1. the stack is empty; or
 1. the top item on the stack is less than 0; or
 1. the lock-time type (height vs. timestamp) of the top stack item and the +nLocktime+ field are not the same; or
 1. the top stack item is greater than the transaction's +nLocktime+ field; or
-1. the +nSequence+ field of the input is 0xffffffff;
+1. the +nSequence+ field of the input is 0xffffffff.
 
 [NOTE]
 ====
 +CLTV+ and +nLocktime+ use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of +nLocktime+ must match that of +CLTV+ in the inputs&#x2014;they must both reference either block height or time in seconds.
 ====
 
-After execution, if +CLTV+ is satisfied, the time-parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
+After execution, if +CLTV+ is satisfied, the time parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
 
 By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Because Alice locked the UTXO itself, it is now impossible for either Bob or Alice to spend it before the 3-month locktime has expired.
 
-By introducing timelock functionality directly in the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
+By introducing timelock functionality directly in to the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
 
 The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki[BIP-65 (CHECKLOCKTIMEVERIFY)].
 
@@ -310,9 +310,9 @@ Relative timelocks are useful because they allow a chain of two or more interdep
 
 Relative timelocks, like absolute timelocks, are implemented with both a transaction-level feature and a script-level opcode. The transaction-level relative timelock is implemented as a consensus rule on the value of +nSequence+, a transaction field that is set in every transaction input. Script-level relative timelocks are implemented with the +CHECKSEQUENCEVERIFY+ (CSV) opcode.
 
-((("bitcoin improvement proposals", "Relative lock-time using consensus-enforced sequence numbers (BIP-68)")))((("bitcoin improvement proposals", "CHECKSEQUENCEVERIFY (BIP-112)")))Relative timelocks are implemented according to the specifications in https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[BIP-68 Relative lock-time using consensus-enforced sequence numbers] and https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki[BIP-112 CHECKSEQUENCEVERIFY].
+((("bitcoin improvement proposals", "Relative lock-time using consensus-enforced sequence numbers (BIP-68)")))((("bitcoin improvement proposals", "CHECKSEQUENCEVERIFY (BIP-112)")))Relative timelocks are implemented according to the specifications in https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[BIP-68, Relative lock-time using consensus-enforced sequence numbers] and https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki[BIP-112, CHECKSEQUENCEVERIFY].
 
-BIP-68 and BIP-112 were activated in May 2016 as a soft-fork upgrade to the consensus rules.
+BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the consensus rules.
 
 ==== Relative Timelock with nSequence
 
@@ -324,13 +324,13 @@ The +nSequence+ field was originally intended (but never properly implemented) t
 
 The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 2^32^ in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^32^ for the timelock guards to have effect. Customarily, it is set to 2^32^ &#x2013; 1 (0xFFFFFFFE).
 
-===== nSequence as consensus-enforced relative timelock
+===== nSequence as a consensus-enforced relative timelock
 
 Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the nSequnce value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
 
-Transaction inputs with +nSequence+ values less than 2^31^ are interpreted as having a relative timelock, meaning that the transaction that includes it is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with +nSequence+ relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since +nSequence+ is a per-input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A valid transaction can include both timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative timelock (+nSequence+ >= 2^31^).
+Transaction inputs with +nSequence+ values less than 2^31^ are interpreted as having a relative timelock, meaning that the transaction that includes it is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with a +nSequence+ relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since +nSequence+ is a per-input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A valid transaction can include both timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative timelock (+nSequence+ >= 2^31^).
 
-The +nSequence+ value is specified in either blocks or seconds, but in a slightly different format than we saw used in +nLocktime+. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type-flag is set in the 23rd least significant bit (i.e., value 1<<22). If the type-flag is set, then the +nSequence+ value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the +nSequence+ value is interpreted as a number of blocks.
+The +nSequence+ value is specified in either blocks or seconds, but in a slightly different format than we saw used in +nLocktime+. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type-flag is set in the 23rd least-significant bit (i.e., value 1<<22). If the type-flag is set, then the +nSequence+ value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the +nSequence+ value is interpreted as a number of blocks.
 
 When interpreting +nSequence+ as a relative timelock, only the 16 least significant bits are considered. Once the flags (bits 32 and 23) are evaluated, the +nSequence+ value is usually "masked" with a 16-bit mask (e.g., +nSequence+ & 0x0000FFFF).
 
@@ -343,61 +343,61 @@ image::images/mbc2_0701.png["BIP-68 definition of nSequence encoding"]
 
 Relative timelocks based on consensus enforcement of the +nSequence+ value are defined in BIP-68.
 
-The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[BIP-68 Relative lock-time using consensus-enforced sequence numbers].
+The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[BIP-68, Relative lock-time using consensus-enforced sequence numbers].
 
-==== Relative Timelocks with CHECKSEQUENCEVERIFY (CSV)
+==== Relative Timelocks with CSV
 
 ((("scripting", "timelocks", "relative timelocks with CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like CLTV and +nLocktime+, there is a script opcode for relative timelocks that leverages the +nSequence+ value in scripts. That opcode is +CHECKSEQUENCEVERIFY+, commonly referred to as +CSV+ for short.
 
-The +CSV+ opcode when evaluated in a UTXO's redeem script, allows spending only in a transaction whose input +nSequence+ value is greater than or equal to the +CSV+ parameter. Essentially, this restricts spending the UTXO until a certain number of blocks or seconds have elapsed relative to the time the UTXO was mined.
+The +CSV+ opcode when evaluated in a UTXO's redeem script allows spending only in a transaction whose input +nSequence+ value is greater than or equal to the +CSV+ parameter. Essentially, this restricts spending the UTXO until a certain number of blocks or seconds have elapsed relative to the time the UTXO was mined.
 
 As with CLTV, the value in +CSV+ must match the format in the corresponding +nSequence+ value. If +CSV+ is specified in terms of blocks, then so must +nSequence+. If +CSV+ is specified in terms of seconds, then so must +nSequence+.
 
-Relative timelocks with +CSV+ are especially useful when several (chained) transactions are created and signed, but not propagated, when they're kept "off-chain". A child transaction cannot be used until the parent transaction has been propagated, mined, and aged by the time specified in the relative timelock. One application of this use case can be seen in <<state_channels>> and <<lightning_network>>.((("", startref="relativetime07")))((("", startref="Trelative07")))
+Relative timelocks with +CSV+ are especially useful when several (chained) transactions are created and signed, but not propagated, when they're kept "off-chain." A child transaction cannot be used until the parent transaction has been propagated, mined, and aged by the time specified in the relative timelock. One application of this use case can be seen in <<state_channels>> and <<lightning_network>>.((("", startref="relativetime07")))((("", startref="Trelative07")))
 
-+CSV+ is defined in detail in BIP-112 https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki[CHECKSEQUENCEVERIFY].
++CSV+ is defined in detail in https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki[BIP-112, CHECKSEQUENCEVERIFY].
 
 
 ==== Median-Time-Past
 
 ((("scripting", "timelocks", "Median-Tme-Past")))((("Median-Tme-Past")))((("timelocks", "Median-Tme-Past")))As part of the activation of relative timelocks, there was also a change in the way "time" is calculated for timelocks (both absolute and relative). In bitcoin there is a subtle, but very significant, difference between wall time and consensus time. Bitcoin is a decentralized network, which means that each participant has his or her own perspective of time. Events on the network do not occur instantaneously everywhere. Network latency must be factored into the perspective of each node. Eventually everything is synchronized to create a common ledger. Bitcoin reaches consensus every 10 minutes about the state of the ledger as it existed in the _past_.
 
-The timestamps set in block headers are set by the miners. There is a certain degree of latitude allowed by the consensus rules to account for differences in clock accuracy between decentralized nodes. However, this creates an unfortunate incentive for miners to lie about the time in a block so as to earn extra fees by including timelocked transactions that are not yet mature. See <<fee_sniping>>.
+The timestamps set in block headers are set by the miners. There is a certain degree of latitude allowed by the consensus rules to account for differences in clock accuracy between decentralized nodes. However, this creates an unfortunate incentive for miners to lie about the time in a block so as to earn extra fees by including timelocked transactions that are not yet mature. See the following section for more information.
 
-To remove the incentive to lie and strengthen the security of timelocks, a Bitcoin Improvement Proposal was proposed and activated at the same time as the BIPs for relative timelocks. This is BIP-113, which defines a new consensus measurement of time called _Median Time Past_.
+To remove the incentive to lie and strengthen the security of timelocks, a BIP was proposed and activated at the same time as the BIPs for relative timelocks. This is BIP-113, which defines a new consensus measurement of time called _Median-Time-Past_.
 
-Median-Time-Past is calculated by taking the timestamps of the last 11 blocks and finding the median. That median time then becomes consensus time and it is used for all timelock calculations. By taking the midpoint from approximately two hours in the past, the influence of any one block's timestamp is reduced. By incorporating 11 blocks, no single miner can influence the timestamps in such a way as to gain fees from transactions with a timelock that hasn't yet matured.
+Median-Time-Past is calculated by taking the timestamps of the last 11 blocks and finding the median. That median time then becomes consensus time and is used for all timelock calculations. By taking the midpoint from approximately two hours in the past, the influence of any one block's timestamp is reduced. By incorporating 11 blocks, no single miner can influence the timestamps in order to gain fees from transactions with a timelock that hasn't yet matured.
 
 Median-Time-Past changes the implementation of time calculations for +nLocktime+, +CLTV+, +nSequence+, and +CSV+. The consensus time calculated by Median-Time-Past is always approximately one hour behind wall clock time. If you create timelock transactions, you should account for it when estimating the desired value to encode in +nLocktime+, +nSequence+, +CLTV+, and +CSV+.
 
 Median-Time-Past is specified in https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki[BIP-113].
 
 [[fee_sniping]]
-==== Timelock Defense Against Fee-Sniping
+==== Timelock Defense Against Fee Sniping
 
 ((("scripting", "timelocks", "defense against fee-sniping")))((("timelocks", "defense against fee-sniping")))((("fees", "fee sniping")))((("security", "defense against fee-sniping")))((("sniping")))Fee-sniping is a theoretical attack scenario, where miners attempting to rewrite past blocks "snipe" higher-fee transactions from future blocks to maximize their profitability.
 
-For example, let's say the highest block in existence is block  #100,000. If instead of attempting to mine block #100,001 to extend the chain, some miners are attempting to re-mine  #100,000. These miners can choose to include any valid transaction (that hasn't been mined yet) in their candidate block  #100,000. They don't have to re-mine the block with the same transactions. In fact, they have the incentive to select the most profitable (highest fee per kB) transactions to include in their block. They can include any transactions that were in the "old" block  #100,000, as well as any transactions from the current mempool. Essentially they have the option to pull transactions from the "present," into the rewritten "past" when they re-create block  #100,000.
+For example, let's say the highest block in existence is block  #100,000. If instead of attempting to mine block #100,001 to extend the chain, some miners attempt to remine  #100,000. These miners can choose to include any valid transaction (that hasn't been mined yet) in their candidate block  #100,000. They don't have to remine the block with the same transactions. In fact, they have the incentive to select the most profitable (highest fee per kB) transactions to include in their block. They can include any transactions that were in the "old" block  #100,000, as well as any transactions from the current mempool. Essentially they have the option to pull transactions from the "present" into the rewritten "past" when they re-create block  #100,000.
 
 Today, this attack is not very lucrative, because block reward is much higher than total fees per block. But at some point in the future, transaction fees will be the majority of the reward (or even the entirety of the reward). At that time, this scenario becomes inevitable.
 
-To prevent "fee sniping," when Bitcoin Core creates transactions, it uses +nLocktime+ to limit them to the "next block", by default. In our scenario, Bitcoin Core would set +nLocktime+ to 100,001 on any transaction it created. Under normal circumstances, this +nLocktime+ has no effect&#x2014;the transactions could only be included in block #100,001 anyway; it's the next block.
+To prevent "fee sniping," when Bitcoin Core creates transactions, it uses +nLocktime+ to limit them to the "next block," by default. In our scenario, Bitcoin Core would set +nLocktime+ to 100,001 on any transaction it created. Under normal circumstances, this +nLocktime+ has no effect&#x2014;the transactions could only be included in block #100,001 anyway; it's the next block.
 
-But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only re-mine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
+But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only remine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
 
-To achieve this, Bitcoin Core sets the +nLocktime+ on all new transactions to <current block # + 1> and sets the +nSequence+ on all the inputs to 0xFFFFFFFE, to enable +nLocktime+.((("", startref="Stimelock07")))
+To achieve this, Bitcoin Core sets the +nLocktime+ on all new transactions to <current block # + 1> and sets the +nSequence+ on all the inputs to 0xFFFFFFFE to enable +nLocktime+.((("", startref="Stimelock07")))
 
 === Scripts with Flow Control (Conditional Clauses)
 
 ((("transactions", "advanced", "flow control scripts")))((("scripting", "flow control scripts", id="Sflow07")))((("conditional clauses", id="condition07")))((("flow control", id="flow07")))One of the more powerful features of Bitcoin Script is flow control, also known as conditional clauses. You are probably familiar with flow control in various programming languages that use the construct +IF...THEN...ELSE+. Bitcoin conditional clauses look a bit different, but are essentially the same construct.
 
-At a basic level, bitcoin conditional opcodes allow us to construct a redeem script that has two ways of being unlocked, depending on a +TRUE+/+FALSE+ outcome of evaluating a logical condition. For example, if x is +TRUE+, redeem script is A, ELSE redeem script is B.
+At a basic level, bitcoin conditional opcodes allow us to construct a redeem script that has two ways of being unlocked, depending on a +TRUE+/+FALSE+ outcome of evaluating a logical condition. For example, if x is +TRUE+, the redeem script is A and the ELSE redeem script is B.
 
 Additionally, bitcoin conditional expressions can be "nested" indefinitely, meaning that a conditional clause can contain another within it, which contains another, etc. Bitcoin Script flow control can be used to construct very complex scripts with hundreds or even thousands of possible execution paths. There is no limit to nesting, but consensus rules impose a limit on the maximum size, in bytes, of a script.
 
 Bitcoin implements flow control using the +IF+, +ELSE+, +ENDIF+, and +NOTIF+ opcodes. Additionally, conditional expressions can contain boolean operators such as +BOOLAND+, +BOOLOR+, and +NOT+.
 
-At first glance, you may find the bitcoin's flow control scripts confusing. That is because Bitcoin Script is a stack language. The same way that +1 {plus} 1+ looks "backwards" when expressed as +1 1 ADD+, flow control clauses in bitcoin also look "backward."
+At first glance, you may find the bitcoin's flow control scripts confusing. That is because Bitcoin Script is a stack language. The same way that +1 {plus} 1+ looks "backward" when expressed as +1 1 ADD+, flow control clauses in bitcoin also look "backward."
 
 In most traditional (procedural) programming languages, flow control looks like this:
 
@@ -431,7 +431,7 @@ When reading Bitcoin Script, remember that the condition being evaluated comes _
 
 ((("guard clauses")))Unlike an +IF+ clause, which offers alternative execution paths, the +VERIFY+ suffix acts as a _guard clause_, continuing only if a precondition is met.
 
-For example, the following script requires Bob's signature and a pre-image (secret) that produces a specific hash. Both conditions must be satisfied to unlock:
+For example, the following script requires Bob's signature and a preimage (secret) that produces a specific hash. Both conditions must be satisfied to unlock:
 
 .A redeem script with an +EQUALVERIFY+  guard clause.
 ----
@@ -466,7 +466,7 @@ Bob's unlocking script is identical:
 
 The script with +IF+ does the same thing as using an opcode with a +VERIFY+ suffix; they both operate as guard clauses. However, the +VERIFY+ construction is more efficient, using one fewer opcode.
 
-So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do is to attach a pre-condition (guard clause), then +VERIFY+ is better. If however, we want to have more than one execution path (flow control), then we need an +IF...ELSE+ flow control clause.
+So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do is to attach a precondition (guard clause), then +VERIFY+ is better. If, however, we want to have more than one execution path (flow control), then we need an +IF...ELSE+ flow control clause.
 
 [TIP]
 ====
@@ -477,7 +477,7 @@ So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do 
 
 A very common use for flow control in Bitcoin Script is to construct a redeem script that offers multiple execution paths, each a different way of redeeming the UTXO.
 
-Let's look at a simple example, where we have two signers, Alice and Bob and either one is able to redeem. With multisig, this would be expressed as a 1-of-2 multisig script. For the sake of demonstration, we will do the same thing with an +IF+ clause:
+Let's look at a simple example, where we have two signers, Alice and Bob, and either one is able to redeem. With multisig, this would be expressed as a 1-of-2 multisig script. For the sake of demonstration, we will do the same thing with an +IF+ clause:
 
 ----
 IF
@@ -496,9 +496,9 @@ Alice redeems this with the unlocking script:
 <Alice's Sig> 1
 ----
 
-The +1+ at the end serves as the condition (+TRUE+), that will make the +IF+ clause execute the first redemption path, for which Alice has a signature.
+The +1+ at the end serves as the condition (+TRUE+) that will make the +IF+ clause execute the first redemption path for which Alice has a signature.
 
-For Bob to redeem this, he would have to choose the second execution path, by giving a +FALSE+ value to the +IF+ clause:
+For Bob to redeem this, he would have to choose the second execution path by giving a +FALSE+ value to the +IF+ clause:
 
 ----
 <Bob's Sig> 0
@@ -530,7 +530,7 @@ Using this construct, we can build redeem scripts with tens or hundreds of execu
 
 ((("import/export use case")))((("use cases", "import/export")))Our example uses the story of Mohammed, the company owner in Dubai who is operating an import/export business.
 
-((("transactions", "advanced", "multisignature scripts")))((("scripting", "multisignature scripts", "import/export example")))((("multisignature scripts")))In this example, Mohammed wishes to construct a company capital account with flexible rules. The scheme he creates requires different levels of authorization depending on timelocks. The participants in the multisig scheme are Mohammed, his two partners Saeed and Zaira, and their company lawyer Abdul. The three partners make decisions based on a majority rule, so two of three must agree. However, in the case of a problem with their keys, they want their lawyer to be able to recover the funds with one of the three partner signatures. Finally, if all partners are unavailable or incapacitated for a while, they want the lawyer to be able to manage the account directly.
+((("transactions", "advanced", "multisignature scripts")))((("scripting", "multisignature scripts", "import/export example")))((("multisignature scripts")))In this example, Mohammed wishes to construct a company capital account with flexible rules. The scheme he creates requires different levels of authorization depending on timelocks. The participants in the multisig scheme are Mohammed, his two partners Saeed and Zaira, and their company lawyer Abdul. The three partners make decisions based on a majority rule, so two of the three must agree. However, in the case of a problem with their keys, they want their lawyer to be able to recover the funds with one of the three partner signatures. Finally, if all partners are unavailable or incapacitated for a while, they want the lawyer to be able to manage the account directly.
 
 Here's the script that Mohammed designs to achieve this:
 
@@ -551,7 +551,7 @@ ELSE
 ENDIF
 ----
 
-Mohammed's script implements three execution paths, using nested +IF...ELSE+ flow control clauses.
+Mohammed's script implements three execution paths using nested +IF...ELSE+ flow control clauses.
 
 In the first execution path, this script operates as a simple 2-of-3 multisig with the three partners. This execution path consists of lines 3 and 9. Line 3 sets the quorum of the multisig to +2+ (2-of-3). This execution path can be selected by putting +TRUE TRUE+ at the end of the unlocking script:
 
@@ -563,7 +563,7 @@ In the first execution path, this script operates as a simple 2-of-3 multisig wi
 
 [TIP]
 ====
-The +0+ at the beginning of this unlocking script is because of a bug in +CHECKMULTISIG+ that pops an extra value from the stack. The extra value is disregarded by the +CHECKMULTISIG+, but it must be present or the script fails. Pushing +0+ (customarily) is a workaround to the bug, as described in <<multisig_bug>>
+The +0+ at the beginning of this unlocking script is because of a bug in +CHECKMULTISIG+ that pops an extra value from the stack. The extra value is disregarded by the +CHECKMULTISIG+, but it must be present or the script fails. Pushing +0+ (customarily) is a workaround to the bug, as described in <<multisig_bug>>.
 ====
 
 The second execution path can only be used after 30 days have elapsed from the creation of the UTXO. At that time, it requires the signature of Abdul the lawyer and one of the three partners (a 1-of-3 multisig). This is achieved by line 7, which sets the quorum for the multisig to +1+. To select this execution path, the unlocking script would end in +FALSE TRUE+:
@@ -575,7 +575,7 @@ The second execution path can only be used after 30 days have elapsed from the c
 
 [TIP]
 ====
-Why +FALSE TRUE+? Isn't that backwards? Because the two values are pushed on to the stack, with +FALSE+ pushed first, then +TRUE+ pushed second. +TRUE+ is therefore popped _first_ by the first +IF+ opcode.
+Why +FALSE TRUE+? Isn't that backward? Because the two values are pushed on to the stack, with +FALSE+ pushed first, then +TRUE+ pushed second. +TRUE+ is therefore popped _first_ by the first +IF+ opcode.
 ====
 
 Finally, the third execution path allows Abdul the lawyer to spend the funds alone, but only after 90 days. To select this execution path, the unlocking script has to end in +FALSE+:
@@ -589,7 +589,7 @@ Try running the script on paper to see how it behaves on the stack.
 
 A few more things to consider when reading this example. See if you can find the answers:
 
-* Why can't the lawyer redeem the third execution path at any time, by selecting it with +FALSE+ on the unlocking script?
+* Why can't the lawyer redeem the third execution path at any time by selecting it with +FALSE+ on the unlocking script?
 
 * How many execution paths can be used 5, 35, and 105 days, respectively, after the UTXO is mined?
 
