@@ -47,7 +47,7 @@ One way to think about the blockchain is like layers in a geological formation, 
 | 4 bytes | Nonce | A counter used for the Proof-of-Work algorithm
 |=======
 
-The nonce, difficulty target, and timestamp are used in the mining process and will be discussed in more detail in <<ch10>>.
+The nonce, difficulty target, and timestamp are used in the mining process and will be discussed in more detail in <<mining>>.
 
 [[block_hash]]
 === Block Identifiers: Block Header Hash and Block Height
@@ -56,7 +56,7 @@ The nonce, difficulty target, and timestamp are used in the mining process and w
 
 Note that the block hash is not actually included inside the block's data structure, neither when the block is transmitted on the network, nor when it is stored on a node's persistence storage as part of the blockchain. Instead, the block's hash is computed by each node as the block is received from the network. The block hash might be stored in a separate database table as part of the block's metadata, to facilitate indexing and faster retrieval of blocks from disk.
 
-A second way to identify a block is by its position in the blockchain, called the pass:[<span role="keep-together"><em>block height</em>. The first block ever created is at block height 0 (zero) and is the</span>] pass:[<span role="keep-together">same block that was previously referenced by the following block hash</span>] +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. A block can thus be identified two ways: by referencing the block hash or by referencing the block height. Each subsequent block added "on top" of that first block is one position "higher" in the blockchain, like boxes stacked one on top of the other. The block height on January 1, 2014 was approximately 278,000, meaning there were 278,000 blocks stacked on top of the first block created in January 2009.
+A second way to identify a block is by its position in the blockchain, called the pass:[<span role="keep-together"><em>block height</em>. The first block ever created is at block height 0 (zero) and is the</span>] pass:[<span role="keep-together">same block that was previously referenced by the following block hash</span>] +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+. A block can thus be identified two ways: by referencing the block hash or by referencing the block height. Each subsequent block added "on top" of that first block is one position "higher" in the blockchain, like boxes stacked one on top of the other. The block height on January 1, 2017 was approximately 446,000, meaning there were 446,000 blocks stacked on top of the first block created in January 2009.
 
 Unlike the block hash, the block height is not a unique identifier. Although a single block will always have a specific and invariant block height, the reverse is not true—the block height does not always identify a single block. Two or more blocks might have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section <<forks>>. The block height is also not a part of the block's data structure; it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the bitcoin network. The block height might also be stored as metadata in an indexed database table for faster retrieval.
 
@@ -167,15 +167,19 @@ When N data elements are hashed and summarized in a merkle tree, you can check t
 
 The merkle tree is constructed bottom-up. In the following example, we start with four transactions, A, B, C, and D, which form the _leaves_ of the merkle tree, as shown in <<simple_merkle>>. The transactions are not stored in the merkle tree; rather, their data is hashed and the resulting hash is stored in each leaf node as H~A~, H~B~, H~C~, and H~D~:
 
-----
-H~A~ = SHA256(SHA256(Transaction A))
-----
+++++
+<pre data-type="codelisting">
+H<sub>A</sub> = SHA256(SHA256(Transaction A))
+</pre>
+++++
 
 Consecutive pairs of leaf nodes are then summarized in a parent node, by concatenating the two hashes and hashing them together. For example, to construct the parent node H~AB~, the two 32-byte hashes of the children are concatenated to create a 64-byte string. That string is then double-hashed to produce the parent node's hash:
 
-----
-H~AB~ = SHA256(SHA256(H~A~ + H~B~))
-----
+++++
+<pre data-type="codelisting">
+H<sub>AB</sub> = SHA256(SHA256(H<sub>A</sub> + H<sub>B</sub>))
+</pre>
+++++
 
 The process continues until there is only one node at the top, the node known as the merkle root. That 32-byte hash is stored in the block header and summarizes all the data in all four transactions. <<simple_merkle>> shows how the root is calculated by pair-wise hashes of the nodes.
 
@@ -338,7 +342,7 @@ You can also run on testnet3 with other full-node implementations, such as +btcd
 
 In early 2017, testnet3 supports all the features of mainnet, in addition to Segregated Witness (see <<segwit>>), which has yet to activate on mainnet. Therefore, testnet3 can also be used to test Segregated Witness features.((("", startref="testnet09")))
 
-=== Segnet&#x2014;The Segregated Witness Testnet
+==== Segnet&#x2014;The Segregated Witness Testnet
 
 
 ((("segnet")))In 2016, a special-purpose testnet was launched to aid in development and testing of Segregated Witness (aka segwit; see <<segwit>>). This test blockchain is called +segnet+ and can be joined by running a special version (branch) of Bitcoin Core.
@@ -347,7 +351,7 @@ In early 2017, testnet3 supports all the features of mainnet, in addition to Seg
 
 In the future it is likely we will see other testnet blockchains that are specifically designed to test a single feature or major architectural change, like segnet.
 
-=== Regtest&#x2014;The Local Blockchain
+==== Regtest&#x2014;The Local Blockchain
 
 ((("regtest (Regression Testing)")))Regtest, which stands for "Regression Testing," is a Bitcoin Core feature that allows you to create a local blockchain for testing purposes. Unlike testnet3, which is a public and shared test blockchain, the regtest blockchains are intended to be run as closed systems for local testing. You launch a regtest blockchain from scratch, creating a local genesis block. You may add other nodes to the network, or run it with a single node only to test the Bitcoin Core software.
 
