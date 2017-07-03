@@ -1,67 +1,60 @@
 [[appdx_bitcore]]
 [appendix]
 
-=== Bitcore
+== Bitcore
 
 
-Bitcore is a suite of tools provided by BitPay. Its goal is to provide easy-to-use tools for Bitcoin developers. Almost all of Bitcore's code is written in Javascript. There are some modules written specifically for NodeJS. Finally, the "node" module of Bitcore includes Bitcoin Core's C++ code. Please see https://bitcore.io for more information.
+((("Bitcore", id="bitcore17")))Bitcore is a suite of tools provided by BitPay. Its goal is to provide easy-to-use tools for Bitcoin developers. Almost all of Bitcore's code is written in JavaScript. There are some modules written specifically for NodeJS. Finally, the "node" module of Bitcore includes Bitcoin Core's C++ code. Please see https://bitcore.io for more information.
 
 === Bitcore's Feature List
 
 * Bitcoin full node (bitcore-node)
-* Block Explorer (insight)
-* Block, Transaction and Wallet Utilities (bitcore-lib)
+* Block explorer (insight)
+* Block, transaction, and wallet utilities (bitcore-lib)
 * Communicating directly with Bitcoin's P2P network (bitcore-p2p)
 * Seed entropy mnemonic generation (bitcore-mnemonic)
-* Payment Protocol (bitcore-payment-protocol)
+* Payment protocol (bitcore-payment-protocol)
 * Message verification and signing (bitcore-message)
-* Elliptic Curve Integrated Encryption Scheme (bitcore-ecies)
-* Wallet Service (bitcore-wallet-service)
-* Wallet Client (bitcore-wallet-client)
+* Elliptic curve Integrated Encryption Scheme (bitcore-ecies)
+* Wallet service (bitcore-wallet-service)
+* Wallet client (bitcore-wallet-client)
 * Playground (bitcore-playground)
-* Integrating Services directly with Bitcoin Core (bitcore-node)
+* Integrating services directly with Bitcoin Core (bitcore-node)
 
 === Bitcore Library Examples
 
 ==== Prerequisities
 
-* NodeJS >= 4.x or use our hosted online playground (https://bitcore.io/playground)
+* NodeJS >= 4.x or use our https://bitcore.io/playground[hosted online playground]
 
 If using NodeJS and the node REPL:
 
-====
 [source,bash]
 ----
 $ npm install -g bitcore-lib bitcore-p2p
 $ NODE_PATH=$(npm list -g | head -1)/node_modules node
 ----
-====
 
 ==== Wallet Examples using bitcore-lib
 
-Creating a new bitcoin address with associated private key
+Creating a new bitcoin address with associated private key:
 
-====
 ----
 > bitcore = require('bitcore-lib')
 > privateKey = new bitcore.PrivateKey()
 > address = privateKey.toAddress().toString()
 ----
-====
 
-Creating a Hierarchical Deterministic private key and address
+Creating a hierarchical deterministic private key and address:
 
-====
 ----
 > hdPrivateKey = bitcore.HDPrivateKey()
 > hdPublicKey = bitcore.HDPublicKey(hdPrivateKey)
 > hdAddress = new bitcore.Address(hdPublicKey.publicKey).toString()
 ----
-====
 
-Creating and signing a transaction from a UTXO
+Creating and signing a transaction from a UTXO:
 
-====
 ----
 > utxo = {
   txId: transaction id containing an unspent output,
@@ -78,12 +71,10 @@ Creating and signing a transaction from a UTXO
         .enableRBF()
         .sign(privateKeyOfUtxo)
 ----
-====
 
-Replace the last transaction in the mempool (replace-by-fee)
+Replace the last transaction in the mempool (replace-by-fee):
 
-====
----
+----
 > rbfTx = new Transaction()
            .from(utxo)
            .to(address, 35000)
@@ -92,19 +83,17 @@ Replace the last transaction in the mempool (replace-by-fee)
            .sign(privateKeyOfUtxo);
 > tx.serialize();
 > rbfTx.serialize();
----
-====
+----
 
 Broadcasting a transaction to the Bitcoin network
-Note: Broadcast valid transactions only, refer to https://bitnodes.21.co/nodes for peer hosts
+(note: broadcast valid transactions only; refer to https://bitnodes.21.co/nodes[] for peer hosts):
 
-1. Copy the code below into a file called "broadcast.js"
-2. The "tx" and "rbfTx" variables are the output of tx.serialize() and rbfTx.serialize(), respectively
-3. In order to replace-by-fee, the peer must support bitcoind option "mempoolreplace" and have it set to "1"
-4. Run the file: node broadcast.js
+1. Copy the code below into a file called _broadcast.js_.
+2. The +tx+ and +rbfTx+ variables are the output of +tx.serialize()+ and +rbfTx.serialize()+, respectively.
+3. In order to replace-by-fee, the peer must support bitcoind option +mempoolreplace+ and have it set to +1+.
+4. Run the file node _broadcast.js_((("", startref="bitcore17"))):
 
-====
----
+----
 var p2p = require('bitcore-p2p');
 var bitcore = require('bitcore-lib');
 var tx = new bitcore.Transaction('output from serialize function');
@@ -126,5 +115,4 @@ peer.on('ready', function() {
   }, 2000);
 });
 peer.connect();
----
-====
+----

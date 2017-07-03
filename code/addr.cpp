@@ -32,7 +32,7 @@ int main()
     bc::extend_data(unencoded_address, hash);
     // Checksum is computed by hashing data, and adding 4 bytes from hash.
     bc::append_checksum(unencoded_address);
-    // Finally we must encode the result in Bitcoin's base58 encoding
+    // Finally we must encode the result in Bitcoin's base58 encoding.
     assert(unencoded_address.size() == 25);
     const std::string address = bc::encode_base58(unencoded_address);
 
