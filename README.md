@@ -12,7 +12,7 @@ If you know how to make a pull request to contribute a fix, please write the cor
 
 "Mastering Bitcoin (Second Edition): Programming the Open Blockchain" is now available in paperback and e-book formats by many book sellers, worldwide:
 
-* [Amazon](https://www.amazon.com/Mastering-Bitcoin-Programming-Open-Blockchain/dp/1491954388))
+* [Amazon](https://www.amazon.com/Mastering-Bitcoin-Programming-Open-Blockchain/dp/1491954388)
 
 Mastering Bitcoin (First Edition) is also published in Japanese, Korean and Chinese (Simplified) by publishers in the respective countries.
 
@@ -34,7 +34,7 @@ Thank you O'Reilly Media!
 
 ## Mastering Bitcoin - Second Edition
 
-The [second_edition branch](https://github.com/bitcoinbook/bitcoinbook/tree/second_edition), is the source for the published versions of Mastering Bitcoin (Second Edition).
+The [second_edition](https://github.com/bitcoinbook/bitcoinbook/tree/second_edition) branch, is the source for the published versions of Mastering Bitcoin (Second Edition).
 
 The tag [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print_1), corresponds to the first print of the second edition.
 
