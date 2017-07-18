@@ -2,26 +2,29 @@
 
 int main()
 {
-    // Private secret key.
-    bc::ec_secret secret;
-    bool success = bc::decode_base16(secret,
+    // Private secret key string as base16
+    bc::ec_secret decoded;
+    bc::decode_base16(decoded,
         "038109007313a5807b2eccc082c8c3fbb988a973cacf1a7df9ce725c31b14776");
-    assert(success);
-   
+
+    bc::wallet::ec_private secret(
+        decoded, bc::wallet::ec_private::mainnet_p2kh);
+
     // Get public key.
-    bc::ec_compressed public_key;
-    success = bc::secret_to_public(public_key, secret);
-    assert(success);
-    std::cout << "Public key: " << bc::encode_base16(public_key) << std::endl;
-    
+    bc::wallet::ec_public public_key(secret);
+    std::cout << "Public key: " << public_key.encoded() << std::endl;
+
     // Create Bitcoin address.
     // Normally you can use:
-    //   bc::payment_address payaddr;
-    //   bc::set_public_key(payaddr, public_key);
-    //   const std::string address = payaddr.encoded();
+    //    bc::wallet::payment_address payaddr =
+    //        public_key.to_payment_address(
+    //            bc::wallet::ec_public::mainnet_p2kh);
+    //  const std::string address = payaddr.encoded();
 
     // Compute hash of public key for P2PKH address.
-    const bc::short_hash hash = bc::bitcoin_short_hash(public_key);
+    bc::data_chunk public_key_data;
+    public_key.to_data(public_key_data);
+    const auto hash = bc::bitcoin_short_hash(public_key_data);
 
     bc::data_chunk unencoded_address;
     // Reserve 25 bytes
