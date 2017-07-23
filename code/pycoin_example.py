@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 from pycoin.key import Key
 
 from pycoin.key.validate import is_address_valid, is_wif_valid
