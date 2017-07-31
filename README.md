@@ -6,7 +6,7 @@ This repository contains the complete [first edition](https://github.com/bitcoin
 
 # Issues, Errors, Comments, Contributions
 
-If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first. Contact forms can be found on his website https://antonopoulos.com/
+If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the [errata branch](https://github.com/bitcoinbook/bitcoinbook/tree/errata). Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first. Contact forms can be found on his website https://antonopoulos.com/
 
 # Published
 
