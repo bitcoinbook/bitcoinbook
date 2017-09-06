@@ -1,3 +1,4 @@
+from __future__ import print_function
 import bitcoin
 
 # Generate a random private key
