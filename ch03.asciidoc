@@ -25,7 +25,7 @@ image::images/mbc2_0301.png["Bitcoin Core Architecture"]
 [[compiling_core]]
 === Compiling Bitcoin Core from the Source Code
 
-((("Bitcoin Core", "compiling from source code", id="BCsource03")))((("Bitcoin Core", "compiling from source code", "downloading")))((("code examples, obtaining and using")))Bitcoin Core's source code can be downloaded as a ZIP archive or by cloning the authoritative source repository from GitHub.  ((("GitHub bitcoin page")))On the https://github.com/bitcoin/bitcoin[GitHub bitcoin page], select Download ZIP from the sidebar. Alternatively, use the git command line to create a local copy of the source code on your system.
+((("Bitcoin Core", "compiling from source code", id="BCsource03")))((("Bitcoin Core", "compiling from source code", "downloading")))((("code examples, obtaining and using")))Bitcoin Core's source code can be downloaded as a archive or by cloning the authoritative source repository from GitHub.  ((("Bitcoin Core downloads")))On the https://bitcoincore.org/bin/[Bitcoin Core download page], select the most recent version and download the compressed archive of the source code, e.g. +bitcoin-0.15.0.2.tar.gz+. ((("GitHub bitcoin page")))Alternatively, use the git command line to create a local copy of the source code from the https://github.com/bitcoin/bitcoin[GitHub bitcoin page].
 
 [TIP]
 ====
@@ -37,10 +37,11 @@ image::images/mbc2_0301.png["Bitcoin Core Architecture"]
 ----
 $ git clone https://github.com/bitcoin/bitcoin.git
 Cloning into 'bitcoin'...
-remote: Counting objects: 66193, done.
-remote: Total 66193 (delta 0), reused 0 (delta 0), pack-reused 66193
-Receiving objects: 100% (66193/66193), 63.39 MiB | 574.00 KiB/s, done.
-Resolving deltas: 100% (48395/48395), done.
+remote: Counting objects: 102071, done.
+remote: Compressing objects: 100% (10/10), done.
+Receiving objects: 100% (102071/102071), 86.38 MiB | 730.00 KiB/s, done.
+remote: Total 102071 (delta 4), reused 5 (delta 1), pack-reused 102060
+Resolving deltas: 100% (76168/76168), done.
 Checking connectivity... done.
 $
 ----
@@ -72,18 +73,18 @@ v0.12.0rc2
 ...
 ----
 
-The list of tags shows all the released versions of bitcoin. By convention, _release candidates_, which are intended for testing, have the suffix "rc." Stable releases that can be run on production systems have no suffix. From the preceding list, select the highest version release, which at the time of writing was v0.11.2. To synchronize the local code with this version, use the +git checkout+ command:
+The list of tags shows all the released versions of bitcoin. By convention, _release candidates_, which are intended for testing, have the suffix "rc." Stable releases that can be run on production systems have no suffix. From the preceding list, select the highest version release, which at the time of writing was v0.15.0. To synchronize the local code with this version, use the +git checkout+ command:
 
 ----
-$ git checkout v0.11.2
-HEAD is now at 7e27892... Merge pull request #6975
+$ git checkout v0.15.0
+HEAD is now at 3751912... Merge #11295: doc: Old fee_estimates.dat are discarded by 0.15.0
 ----
 
 You can confirm you have the desired version "checked out" by issuing the command +git status+:
 
 ----
 $ git status
-HEAD detached at v0.11.2
+HEAD detached at v0.15.0
 nothing to commit, working directory clean
 ----
 
@@ -92,11 +93,6 @@ nothing to commit, working directory clean
 ((("Bitcoin Core", "compiling from source code", "build configuration")))((("documentation")))((("build documentation", seealso="Bitcoin Core")))The source code includes documentation, which can be found in a number of files. Review the main documentation located in _README.md_ in the _bitcoin_ directory by typing ++**more README.md**++ at the prompt and using the spacebar to progress to the next page. In this chapter, we will build the command-line bitcoin client, also known as +bitcoind+ on Linux. Review the instructions for compiling the +bitcoind+ command-line client on your platform by typing ++**more doc/build-unix.md**++. Alternative instructions for macOS and Windows can be found in the _doc_ directory, as _build-osx.md_ or _build-windows.md_, respectively.
 
 Carefully review the build prerequisites, which are in the first part of the build documentation. These are libraries that must be present on your system before you can begin to compile bitcoin. If these prerequisites are missing, the build process will fail with an error. If this happens because you missed a prerequisite, you can install it and then resume the build process from where you left off. Assuming the prerequisites are installed, you start the build process by generating a set of build scripts using the _autogen.sh_ script.
-
-[NOTE]
-====
-((("autogen/configure/make system", seealso="Bitcoin Core")))The Bitcoin Core build process was changed to use the autogen/configure/make system starting with version 0.9. Older versions use a simple Makefile and work slightly differently from the following example. Follow the instructions for the version you want to compile. The autogen/configure/make introduced in 0.9 is likely to be the build system used for all future versions of the code and is the system demonstrated in the following examples.
-====
 
 ----
 $ ./autogen.sh
@@ -119,7 +115,7 @@ The _autogen.sh_ script creates a set of automatic configuration scripts that wi
 
 ----
 $ ./configure --help
-`configure' configures Bitcoin Core 0.11.2 to adapt to many kinds of systems.
+`configure' configures Bitcoin Core 0.15.0 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -198,10 +194,10 @@ Making all in src
 $
 ----
 
-If all goes well, Bitcoin Core is now compiled. The final step is to install the various executables on your system using the +sudo make install+ command. You may be prompted for your user password, because this step requires administrative privileges:
+On a fast system with more than one CPU, you might want to set the number of parallel compile jobs. For instance, +make -j 2+ will use two cores if they are available. If all goes well, Bitcoin Core is now compiled. You should run the unit test suite with +make check+ to ensure the linked libraries are not broken in obvious ways. The final step is to install the various executables on your system using the +make install+ command. You may be prompted for your user password, because this step requires administrative privileges:
 
 ----
-$ sudo make install
+$ make check && sudo make install
 Password:
 Making install in src
  ../build-aux/install-sh -c -d '/usr/local/lib'
@@ -247,43 +243,28 @@ Why would you want to run a node? Here are some of the most common reasons:
 
 If you're reading this book and interested in developing bitcoin software, you should be running your own node.
 
-==== Running Bitcoin Core for the First Time
-
-((("security", see="also warnings and cautions")))((("passwords", "core node first run")))((("Bitcoin Core", "running core nodes", "first run")))When you first run +bitcoind+, it will remind you to create a configuration file with a strong password for the JSON-RPC interface. This password controls access to the application programming interface (API) offered by Bitcoin Core.
-
-Run +bitcoind+ by typing ++**bitcoind**++ into the terminal:
-
-----
-$ bitcoind
-Error: To use the "-server" option, you must set a rpcpassword in the configuration file:
-/home/ubuntu/.bitcoin/bitcoin.conf
-It is recommended you use the following random password:
-rpcuser=bitcoinrpc
-rpcpassword=2XA4DuKNCbtZXsBQRRNDEwEY2nM6M4H9Tx5dFjoAVVbK
-(you do not need to remember this password)
-The username and password MUST NOT be the same.
-If the file does not exist, create it with owner-readable-only file permissions.
-It is also recommended to set alertnotify so you are notified of problems;
-for example: alertnotify=echo %s | mail -s "Bitcoin Alert" admin@foo.com
-----
-
-As you can see, the first time you run +bitcoind+ it tells you that you need to build a configuration file, with at least an +rpcuser+ and +rpcpassword+ entry. Additionally, it is recommended that you set up the alerting mechanism. In the next section we will examine the various configuration options and set up a configuration file.
-
 ==== Configuring the Bitcoin Core Node
 
-((("Bitcoin Core", "running core nodes", "configuring")))((("warnings and cautions", "password creation")))((("passwords", "creating")))((("security", "passwords")))Edit the configuration file in your preferred editor and set the parameters, replacing the password with a strong password as recommended by +bitcoind+. Do _not_ use the password shown in the book. Create a file inside the _.bitcoin_ directory (under your user's home directory) so that it is named _.bitcoin/bitcoin.conf_ and provide a username and password:
-
-[source,ini]
-----
-rpcuser=bitcoinrpc
-rpcpassword=CHANGE_THIS
-----
-
-In addition to the +rpcuser+ and +rpcpassword+ options, Bitcoin Core offers more than 100 configuration options that modify the behavior of the network node, the storage of the blockchain, and many other aspects of its operation. To see a listing of these options, run +bitcoind  --help+:
+((("Bitcoin Core", "running core nodes", "configuring")))((("warnings and cautions", "password creation")))((("passwords", "creating")))((("security", "passwords")))Bitcoin Core will look for a configuration file in its data directory on every start. In this section we will examine the various configuration options and set up a configuration file. To locate the configuration file, run +bitcoind -printtoconsole+ in your terminal and look for the first couple of lines.
 
 ----
- bitcoind --help
-Bitcoin Core Daemon version v0.11.2
+$ bitcoind -printtoconsole
+Bitcoin version v0.15.0
+Using the 'standard' SHA256 implementation
+Using data directory /home/ubuntu/.bitcoin/
+Using config file /home/ubuntu/.bitcoin/bitcoin.conf
+...
+[a lot more debug output]
+...
+----
+
+You can hit Ctrl-C to shutdown the node once you determined the location of the config file. Usually the configuration file is inside the _.bitcoin_ data directory under your user's home directory. Open the configuration file in your preferred editor.
+
+Bitcoin Core offers more than 100 configuration options that modify the behavior of the network node, the storage of the blockchain, and many other aspects of its operation. To see a listing of these options, run +bitcoind  --help+:
+
+----
+$ bitcoind --help
+Bitcoin Core Daemon version v0.15.0
 
 Usage:
   bitcoind [options]                     Start Bitcoin Core Daemon
@@ -291,10 +272,10 @@ Usage:
 Options:
 
   -?
-       This help message
+       Print this help message and exit
 
-  -alerts
-       Receive and display P2P network alerts (default: 1)
+  -version
+       Print version and exit
 
   -alertnotify=<cmd>
        Execute command when a relevant alert is received or we see a really
@@ -303,9 +284,8 @@ Options:
 [many more options]
 ...
 
-  -rpcsslciphers=<ciphers>
-       Acceptable ciphers (default:
-       TLSv1.2+HIGH:TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!3DES:@STRENGTH)
+  -rpcthreads=<n>
+       Set the number of threads to service RPC calls (default: 4)
 ----
 
 ((("configuration options", seealso="Bitcoin Core")))Here are some of the most important options that you can set in the configuration file, or as command-line parameters to +bitcoind+:
@@ -320,13 +300,15 @@ prune:: Reduce the disk space requirements to this many megabytes, by deleting o
 
 txindex:: Maintain an index of all transactions. This means a complete copy of the blockchain that allows you to programmatically retrieve any transaction by ID.
 
+dbcache:: The size of the UTXO cache. The default is 300 MiB. Increase this on high-end hardware and reduce the size on low-end hardware to save memory at the expense of slow disk IO.
+
 maxconnections:: Set the maximum number of nodes from which to accept connections. Reducing this from the default will reduce your bandwidth consumption. Use if you have a data cap or pay by the gigabyte.
 
-maxmempool:: Limit the transaction memory pool to this many megabytes. Use it to reduce memory use of the node.
+maxmempool:: Limit the transaction memory pool to this many megabytes. Use it to reduce memory use on memory-constrained nodes.
 
 maxreceivebuffer/maxsendbuffer:: Limit per-connection memory buffer to this many multiples of 1000 bytes. Use on memory-constrained nodes.
 
-minrelaytxfee:: Set the minimum fee transaction you will relay. Below this value, the transaction is treated as zero fee. Use this on memory-constrained nodes to reduce the size of the in-memory transaction pool.
+minrelaytxfee:: Set the minimum fee rate for transaction you will relay. Below this value, the transaction is treated nonstandard, rejected from the transaction pool and not relayed.
 
 
 [[txindex]]
@@ -344,8 +326,6 @@ minrelaytxfee:: Set the minimum fee transaction you will relay. Below this value
 alertnotify=myemailscript.sh "Alert: %s"
 datadir=/lotsofspace/bitcoin
 txindex=1
-rpcuser=bitcoinrpc
-rpcpassword=CHANGE_THIS
 ----
 ====
 
@@ -358,12 +338,10 @@ rpcpassword=CHANGE_THIS
 alertnotify=myemailscript.sh "Alert: %s"
 maxconnections=15
 prune=5000
-minrelaytxfee=0.0001
-maxmempool=200
+dbcache=150
+maxmempool=150
 maxreceivebuffer=2500
 maxsendbuffer=500
-rpcuser=bitcoinrpc
-rpcpassword=CHANGE_THIS
 ----
 ====
 
@@ -372,26 +350,32 @@ Once you've edited the configuration file and set the options that best represen
 ----
 $ bitcoind -printtoconsole
 
-Bitcoin version v0.11.20.0
-Using OpenSSL version OpenSSL 1.0.2e 3 Dec 2015
-Startup time: 2015-01-02 19:56:17
-Using data directory /tmp/bitcoin
-Using config file /tmp/bitcoin/bitcoin.conf
-Using at most 125 connections (275 file descriptors available)
+Bitcoin version v0.15.0
+InitParameterInteraction: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1
+Assuming ancestors of block 0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a have valid signatures.
+Using the 'standard' SHA256 implementation
+Default data directory /home/ubuntu/.bitcoin
+Using data directory /lotsofspace/.bitcoin
+Using config file /home/ubuntu/.bitcoin/bitcoin.conf
+Using at most 125 automatic connections (1048576 file descriptors available)
+Using 16 MiB out of 32/2 requested for signature cache, able to store 524288 elements
+Using 16 MiB out of 32/2 requested for script execution cache, able to store 524288 elements
 Using 2 threads for script verification
-scheduler thread start
 HTTP: creating work queue of depth 16
 No rpcpassword set - using random cookie authentication
-Generated RPC authentication cookie /tmp/bitcoin/.cookie
+Generated RPC authentication cookie /lotsofspace/.bitcoin/.cookie
 HTTP: starting 4 worker threads
-Bound to [::]:8333
-Bound to 0.0.0.0:8333
+init message: Verifying wallet(s)...
+Using BerkeleyDB version Berkeley DB 4.8.30: (April  9, 2010)
+Using wallet wallet.dat
+CDBEnv::Open: LogDir=/lotsofspace/.bitcoin/database ErrorFile=/lotsofspace/.bitcoin/db.log
+scheduler thread start
 Cache configuration:
-* Using 2.0MiB for block index database
-* Using 32.5MiB for chain state database
-* Using 65.5MiB for in-memory UTXO set
+* Using 250.0MiB for block index database
+* Using 8.0MiB for chain state database
+* Using 1742.0MiB for in-memory UTXO set (plus up to 286.1MiB of unused mempool space)
 init message: Loading block index...
-Opening LevelDB in /tmp/bitcoin/blocks/index
+Opening LevelDB in /lotsofspace/.bitcoin/blocks/index
 Opened LevelDB successfully
 
 [... more startup messages ...]
@@ -401,29 +385,29 @@ You can hit Ctrl-C to interrupt the process once you are satisfied that it is lo
 
 To run Bitcoin Core in the background as a process, start it with the +daemon+ option, as +bitcoind -daemon+.
 
-To monitor the progress and runtime status of your bitcoin node, use the command +bitcoin-cli getinfo+:
+To monitor the progress and runtime status of your bitcoin node, use the command +bitcoin-cli getblockchaininfo+:
 
 ----
-$ bitcoin-cli getinfo
+$ bitcoin-cli getblockchaininfo
 ----
 
 [source,json]
 ----
 {
-    "version" : 110200,
-    "protocolversion" : 70002,
-    "blocks" : 396328,
-    "timeoffset" : 0,
-    "connections" : 15,
-    "proxy" : "",
-    "difficulty" : 120033340651.23696899,
-    "testnet" : false,
-    "relayfee" : 0.00010000,
-    "errors" : ""
+  "chain": "main",
+  "blocks": 0,
+  "headers": 83999,
+  "bestblockhash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+  "difficulty": 1,
+  "mediantime": 1231006505,
+  "verificationprogress": 3.783041623201835e-09,
+  "chainwork": "0000000000000000000000000000000000000000000000000000000100010001",
+  "pruned": false,
+  [...]
 }
 ----
 
-This shows a node running Bitcoin Core version 0.11.2, with a blockchain height of 396328 blocks and 15 active network connections.
+This shows a node with a blockchain height of 0 blocks and 83999 headers. The node currently fetches the block headers of the best chain and afterward continues to download the full blocks.
 
 Once you are happy with the configuration options you have selected, you should add bitcoin to the startup scripts in your operating system, so that it runs continuously and restarts when the operating system restarts. You will find a number of example startup scripts for various operating systems in bitcoin's source directory under _contrib/init_ and a _README.md_ file showing which system uses which script.((("", startref="BCnode03")))((("", startref="BNcore03")))
 
@@ -453,12 +437,12 @@ Each of these commands may take a number of parameters. To get additional help, 
 
 ----
 $ bitcoin-cli help getblockhash
-getblockhash index
+getblockhash height
 
-Returns hash of block in best-block-chain at index provided.
+Returns hash of block in best-block-chain at height provided.
 
 Arguments:
-1. index         (numeric, required) The block index
+1. height         (numeric, required) The height index
 
 Result:
 "hash"         (string) The block hash
@@ -481,35 +465,42 @@ In the next sections we will demonstrate some very useful RPC commands and their
 
 ==== Getting Information on the Bitcoin Core Client Status
 
-((("Bitcoin Core", "Bitcoin Core API", "status information")))Command: +getinfo+
+((("Bitcoin Core", "Bitcoin Core API", "status information")))Bitcoin Core provides status reports on diffent modules through the JSON-RPC interface. The most important commands include +getblockchaininfo+, +getmempoolinfo+, +getnetworkinfo+ and +getwalletinfo+.
 
-Bitcoin's +getinfo+ RPC command displays basic information about the status of the bitcoin network node, the wallet, and the blockchain database. Use +bitcoin-cli+ to run it:
+Bitcoin's +getblockchaininfo+ RPC command was introduced earlier. The +getnetworkinfo+ command displays basic information about the status of the bitcoin network node. Use +bitcoin-cli+ to run it:
 
 ----
-$ bitcoin-cli getinfo
+$ bitcoin-cli getnetworkinfo
 ----
 [source,json]
 ----
-{
-    "version" : 110200,
-    "protocolversion" : 70002,
-    "blocks" : 396367,
-    "timeoffset" : 0,
-    "connections" : 15,
-    "proxy" : "",
-    "difficulty" : 120033340651.23696899,
-    "testnet" : false,
-    "relayfee" : 0.00010000,
-    "errors" : ""
+  "version": 150000,
+  "subversion": "/Satoshi:0.15.0/",
+  "protocolversion": 70015,
+  "localservices": "000000000000000d",
+  "localrelay": true,
+  "timeoffset": 0,
+  "networkactive": true,
+  "connections": 8,
+  "networks": [
+    ...
+    detailed information about all networks (ipv4, ipv6 or onion)
+    ...
+  ],
+  "relayfee": 0.00001000,
+  "incrementalfee": 0.00001000,
+  "localaddresses": [
+  ],
+  "warnings": ""
 }
 
 ----
 
-The data is returned in JavaScript Object Notation (JSON), a format that can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version numbers for the bitcoin software client (110200) and bitcoin protocol (70002).  We see the current block height, showing us how many blocks are known to this client (396367). We also see various statistics about the bitcoin network and the settings related to this client.
+The data is returned in JavaScript Object Notation (JSON), a format that can easily be "consumed" by all programming languages but is also quite human-readable. Among this data we see the version numbers for the bitcoin software client (150000) and bitcoin protocol (70015).  We see the current number of connections (8) and various information about the bitcoin network and the settings related to this client.
 
 [TIP]
 ====
-It will take some time, perhaps more than a day, for the +bitcoind+ client to "catch up" to the current blockchain height as it downloads blocks from other bitcoin clients. You can check its progress using +getinfo+ to see the number of known blocks.
+It will take some time, perhaps more than a day, for the +bitcoind+ client to "catch up" to the current blockchain height as it downloads blocks from other bitcoin clients. You can check its progress using +getblockchaininfo+ to see the number of known blocks.
 ====
 
 [[exploring_and_decoding_transanctions]]
@@ -688,19 +679,21 @@ Bitcoin Core's API is a JSON-RPC interface. JSON stands for JavaScript Object No
 When we used the +bitcoin-cli+ command to get help on a command, it showed us an example of using +curl+, the versatile command-line HTTP client to construct one of these JSON-RPC calls:
 
 ----
-$ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+$ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockchaininfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 ----
 
-This command shows that +curl+ submits an HTTP request to the local host (127.0.0.1), connecting to the default bitcoin port (8332), and submitting a  +jsonrpc+ request for the +getinfo+ method using +text/plain+ encoding.
+This command shows that +curl+ submits an HTTP request to the local host (127.0.0.1), connecting to the default bitcoin port (8332), and submitting a  +jsonrpc+ request for the +getblockchaininfo+ method using +text/plain+ encoding.
+
+You might notice that curl will ask for credentials to be sent along with the request. Bitcoin Core will create a random password on each start and place it in the data directory under the name +.cookie+. The +bitcoin-cli+ helper can read this password file given the data directory. Similarly, you can copy the password and pass it to curl (or any higher level Bitcoin Core RPC wrappers). Alternatively, you can create a static password with the helper script provided in _./share/rpcuser/rpcuser.py_ in Bitcoin Core's source directory.
 
 If you're implementing a JSON-RPC call in your own program, you can use a generic HTTP library to construct the call, similar to what is shown in the preceding +curl+ example.
 
 However, there are libraries in most every programming language that "wrap" the Bitcoin Core API in a way that makes this a lot simpler. We will use the +python-bitcoinlib+ library to simplify API access. Remember, this requires you to have a running Bitcoin Core instance, which will be used to make JSON-RPC calls.
 
-The Python script in <<rpc_example>> makes a simple +getinfo+ call and prints the +block+ parameter from the data returned by Bitcoin Core.
+The Python script in <<rpc_example>> makes a simple +getblockchaininfo+ call and prints the +block+ parameter from the data returned by Bitcoin Core.
 
 [[rpc_example]]
-.Running getinfo via Bitcoin Core's JSON-RPC API
+.Running getblockchaininfo via Bitcoin Core's JSON-RPC API
 ====
 [source,python]
 ----
