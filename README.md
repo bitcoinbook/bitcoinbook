@@ -8,6 +8,16 @@ This repository contains the complete [first edition](https://github.com/bitcoin
 
 If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the [develop branch](https://github.com/bitcoinbook/bitcoinbook/tree/develop). Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first. Contact forms can be found on his website https://antonopoulos.com/
 
+# Reading this book (Where is the PDF?)
+
+To read this book, see book.asciidoc. Click on each of the chapters to read in your browser. This is not as convenient as reading a PDF or an ebook on your e-reader. Convenience costs money (see below).
+
+The 2nd edition of "Mastering Bitcoin" is available under a CC-BY-NC-ND license, not a CC-BY-SA license.
+
+It is deliberately not available as a PDF. Why? Because a PDF is a "derivative" product, which is what the ND prohibits. That's because the publisher (O'Reilly Media) is a for-profit publisher and puts considerable resources behind distributing the book. The book will eventually (within a year of publication) be released under a CC-BY-SA license, at which point PDF and translations will be allowed. Until then, making PDF copies violates the license and hurts the publisher's (and the author's) ability to make a living. Furthermore, if you make it so the publisher can't recoup their investment, they will delay the release into CC-BY-SA.
+
+Please don't create or distribute PDFs until the license is changed to CC-BY-SA. It is rare for a publisher to agree to even a CC-BY-NC-ND license. Don't make it harder for free culture by violating even that, already generous, license. 
+
 # Published
 
 "Mastering Bitcoin (Second Edition): Programming the Open Blockchain" is now available in paperback and e-book formats by many book sellers, worldwide:
