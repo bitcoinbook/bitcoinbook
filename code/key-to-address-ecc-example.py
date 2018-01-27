@@ -37,7 +37,7 @@ if (public_key_y % 2) == 0:
     compressed_prefix = '02'
 else:
     compressed_prefix = '03'
-hex_compressed_public_key = compressed_prefix + bitcoin.encode(public_key_x, 16)
+hex_compressed_public_key = compressed_prefix + (bitcoin.encode(public_key_x, 16).zfill(64))
 print "Compressed Public Key (hex) is:", hex_compressed_public_key
 
 # Generate bitcoin address from public key
