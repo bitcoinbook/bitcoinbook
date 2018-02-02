@@ -172,7 +172,7 @@ P2SH addresses hide all of the complexity, so that the person making a payment d
 * Complex scripts are replaced by shorter fingerprints in the transaction output, making the transaction smaller.
 * Scripts can be coded as an address, so the sender and the sender's wallet don't need complex engineering to implement P2SH.
 * P2SH shifts the burden of constructing the script to the recipient, not the sender.
-* P2SH shifts the burden in data storage for the long script from the output (which is in the UTXO set) to the input (stored on the blockchain).
+* P2SH shifts the burden in data storage for the long script from the output (which additionally to being stored on the blockchain is in the UTXO set) to the input (only stored on the blockchain).
 * P2SH shifts the burden in data storage for the long script from the present time (payment) to a future time (when it is spent).
 * P2SH shifts the transaction fee cost of a long script from the sender to the recipient, who has to include the long redeem script to spend it.
 
@@ -251,7 +251,7 @@ It is important to understand the limitations of transaction +nLocktime+. The on
 
 ==== Check Lock Time Verify (CLTV)
 
-((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft fork upgrade. Based on a specifications in BIP-65, a new script operator called _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLocktime+. This allows for much greater flexibility in the way timelocks are applied.
+((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft fork upgrade. Based on a specification in BIP-65, a new script operator called _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLocktime+. This allows for much greater flexibility in the way timelocks are applied.
 
 In simple terms, by adding the +CLTV+ opcode in the redeem script of an output it restricts the output, so that it can only be spent after the specified time has elapsed.
 
@@ -321,9 +321,9 @@ BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the cons
 
 ===== Original meaning of nSequence
 
-The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 2^32^ it would be considered "finalized" and mined.
+The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 0xFFFFFFFF it would be considered "finalized" and mined.
 
-The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 2^32^ in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^32^ for the timelock guards to have effect. Customarily, it is set to pass:[<span class="keep-together">2<sup>32</sup> &#x2013; 1</span>] (0xFFFFFFFE).
+The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have effect, as explained below.
 
 ===== nSequence as a consensus-enforced relative timelock
 
