@@ -1,3 +1,5 @@
+Code Examples: ![travis_ci](https://travis-ci.org/bitcoinbook/bitcoinbook.svg?branch=develop)
+
 # Mastering Bitcoin
 
 Mastering Bitcoin is a book for developers, but the first two chapters cover bitcoin at a level that is approachable to non-programmers. Anyone with a basic understanding of technology can read the first two chapters and get a great understanding of bitcoin.
