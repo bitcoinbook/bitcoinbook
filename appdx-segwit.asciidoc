@@ -24,6 +24,9 @@ https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki[BIP-144] :: Peer 
 
 https://github.com/bitcoin/bips/blob/master/bip-0145.mediawiki[BIP-145] :: getblocktemplate Updates for Segregated Witness (for mining)
 
+https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]
+:: Base32 address format for native v0-16 witness outputs
+
 
 ==== Why Segregated Witness?
 
@@ -274,9 +277,37 @@ Now, Mohammed's clients can make payments to this address without any need to su
 
 ===== Segregated Witness addresses
 
-After segwit is deployed on the bitcoin network, it will take some time until wallets are upgraded. It is quite likely therefore that segwit will mostly be used embedded in P2SH, as we saw in the previous section, at least for several months.
+Even after segwit activation, it will take some time until most wallets are upgraded. At first, segwit will be embedded in P2SH, as we saw in the previous section, to ease compatibility between segit-aware and unaware wallets.
 
-Eventually, however, almost all wallets will be able to support segwit payments. At that time it will no longer be necessary to embed segwit in P2SH. It is therefore likely that a new form of bitcoin address will be created, one that indicates the recipient is segwit-aware and that directly encodes a witness program. There have been a number of proposals for a Segregated Witness address scheme, but none have been actively pursued.
+However, once wallets are broadly supporting segwit, it makes sense to encode witness scripts directly in a native address format designed for segwit, rather than embed it in P2SH.
+
+The native segwit address format is defined in BIP-173:
+
+https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]
+:: Base32 address format for native v0-16 witness outputs
+
+BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addesses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
+
+BIP-173 addresses use 32 lower-case-only alphanumeric character set, carefully selected to reduce errors from misreading or mistyping. By choosing a lower-case-only character set, bech32 is easier to read, speak, and 45% more efficient to encode in QR codes.
+
+The BCH error detection algorithm is a vast improvement over the previous checksum algorithm (from Base58Check), allowing not only detection but also _correction_ of errors. Address-input interfaces (such as text-fields in forms) can detect and highlight which character was most likely mistyped when they detect an error.
+
+From the BIP-173 specification, here are some examples of bech32 addresses:
+
+Mainnet P2WPKH:: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+Testnet P2WPKH:: tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx
+Mainnet P2WSH:: bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3
+Testnet P2WSH:: tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7
+
+As you can see in these examples, a segwit bech32 string is up to 90 characters long and consists of three parts:
+
+The human readable part:: This prefix "bc" or "tb" identifying mainnet or testnet.
+
+The separator:: The digit "1", which is not part of the 32-character encoding set and can only appear in this position as a separator
+
+The data part:: A minimum of 6 alphanumeric characters, the checksum encoded witness script
+
+At this time, only a few wallets accept or produce native segwit bech32 addresses, but as segwit adoption increases, you will see these more and more often.
 
 [[segwit_txid]]
 ===== Transaction identifiers
