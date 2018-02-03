@@ -27,11 +27,8 @@ for txid in transactions:
     for output in decoded_tx['vout']:
         # Add up the value of each output
         tx_value = tx_value + output['value']
-        
-    # Add the value of this transaction to the total 
+
+    # Add the value of this transaction to the total
     block_value = block_value + tx_value
 
 print("Total value in block: ", block_value)
-    
-
-
