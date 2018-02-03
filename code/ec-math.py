@@ -30,7 +30,10 @@ def random_secret():
 
 
 def get_point_pubkey(point):
-    key = ('03' if point.y() & 1 else '02') + '%064x' % point.x()
+    if (point.y() % 2) == 1:
+        key = '03' + '%064x' % point.x()
+    else:
+        key = '02' + '%064x' % point.x()
     return key.decode('hex')
 
 

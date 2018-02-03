@@ -9,10 +9,10 @@ text = "I am Satoshi Nakamoto"
 for nonce in range(20):
 
     # add the nonce to the end of the text
-    input = text + str(nonce)
+    input_data = text + str(nonce)
 
     # calculate the SHA-256 hash of the input (text+nonce)
-    hash = hashlib.sha256(input).hexdigest()
+    hash_data = hashlib.sha256(input_data).hexdigest()
 
     # show the input and hash result
-    print(input, '=>',  hash)
+    print(input_data, '=>', hash_data)

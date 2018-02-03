@@ -171,7 +171,7 @@ Here are some hints:
 
 To build a transaction, a wallet selects from the UTXO it controls, UTXO with enough value to make the requested payment. Sometimes one UTXO is enough, other times more than one is needed. For each UTXO that will be consumed to make this payment, the wallet creates one input pointing to the UTXO and unlocks it with an unlocking script.
 
-Let's look at the components of an input in greater detail. The first part of an input is a pointer to an UTXO by reference to the transaction hash and sequence number where the UTXO is recorded in the blockchain. The second part is an unlocking script, which the wallet constructs in order to satisfy the spending conditions set in the UTXO. Most often, the unlocking script is a digital signature and public key proving ownership of the bitcoin. However, not all unlocking scripts contain signatures. The third part is a sequence number, which will be discussed later.
+Let's look at the components of an input in greater detail. The first part of an input is a pointer to an UTXO by reference to the transaction hash and an output index, which identifies the specific UTXO in that transaction. The second part is an unlocking script, which the wallet constructs in order to satisfy the spending conditions set in the UTXO. Most often, the unlocking script is a digital signature and public key proving ownership of the bitcoin. However, not all unlocking scripts contain signatures. The third part is a sequence number, which will be discussed later.
 
 Consider our example in <<transactions_behind_the_scenes>>. The transaction inputs are an array (list) called +vin+:
 
@@ -351,7 +351,7 @@ For example, if you consume a 20-bitcoin UTXO to make a 1-bitcoin payment, you m
 
 ((("use cases", "charitable donations")))((("charitable donations")))Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines, has completed a fundraiser to purchase schoolbooks for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin, so her wallet is full of very small payments (UTXO). Now she wants to purchase hundreds of schoolbooks from a local publisher, paying in bitcoin.
 
-As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps a kilobyte or several kilobytes in size. As a result, it will require a much higher fee than the median-sized transaction.
+As Eugenia's wallet application tries to construct a single larger payment transaction, it must source from the available UTXO set, which is composed of many smaller amounts. That means that the resulting transaction will source from more than a hundred small-value UTXO as inputs and only one output, paying the book publisher. A transaction with that many inputs will be larger than one kilobyte, perhaps several kilobytes in size. As a result, it will require a much higher fee than the median-sized transaction.
 
 Eugenia's wallet application will calculate the appropriate fee by measuring the size of the transaction and multiplying that by the per-kilobyte fee. Many wallets will overpay fees for larger transactions to ensure the transaction is processed promptly. The higher fee is not because Eugenia is spending more money, but because her transaction is more complex and larger in size--the fee is independent of the transaction's bitcoin value.((("", startref="Tout06")))
 
@@ -610,8 +610,8 @@ In addition, there is a modifier flag +SIGHASH_ANYONECANPAY+, which can be combi
 [options="header"]
 |=======================
 |SIGHASH flag| Value | Description
-| ALL\|ANYONECANPAY | 0x81 | Signature applies to one inputs and all outputs
-| NONE\|ANYONECANPAY | 0x82 | Signature applies to one inputs, none of the outputs
+| ALL\|ANYONECANPAY | 0x81 | Signature applies to one input and all outputs
+| NONE\|ANYONECANPAY | 0x82 | Signature applies to one input, none of the outputs
 | SINGLE\|ANYONECANPAY | 0x83 | Signature applies to one input and the output with the same index number
 |=======================
 

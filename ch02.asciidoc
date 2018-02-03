@@ -73,11 +73,11 @@ A description for the payment: "Purchase at Bob's Cafe"
 
 Alice uses her smartphone to scan the barcode on display. Her smartphone shows a payment of +0.0150 BTC+ to +Bob's Cafe+ and she selects Send to authorize the payment. Within a few seconds (about the same amount of time as a credit card authorization), Bob sees the transaction on the register, completing the transaction.
 
-In the following sections we will examine this transaction in more detail. We'll see how Alice's wallet constructed it, how it was propagated across the network, how it was verified, and finally, how Bob can spend that amount in subsequent transactions.
+In the following sections, we will examine this transaction in more detail. We'll see how Alice's wallet constructed it, how it was propagated across the network, how it was verified, and finally, how Bob can spend that amount in subsequent transactions.
 
 [NOTE]
 ====
-((("fractional values")))((("milli-bitcoin")))((("satoshis")))The bitcoin network can transact in fractional values, e.g., from millibitcoin (1/1000th of a bitcoin) down to 1/100,000,000th of a bitcoin, which is known as a satoshi.  Throughout this book we’ll use the term “bitcoin” to refer to any quantity of bitcoin currency, from the smallest unit (1 satoshi) to the total number (21,000,000) of all bitcoin that will ever be mined. 
+((("fractional values")))((("milli-bitcoin")))((("satoshis")))The bitcoin network can transact in fractional values, e.g., from millibitcoin (1/1000th of a bitcoin) down to 1/100,000,000th of a bitcoin, which is known as a satoshi.  Throughout this book, we’ll use the term “bitcoin” to refer to any quantity of bitcoin currency, from the smallest unit (1 satoshi) to the total number (21,000,000) of all bitcoin that will ever be mined. 
 ====
 
 You can examine Alice's transaction to Bob's Cafe on the blockchain using a block explorer site (<<view_alice_transaction>>):
@@ -92,7 +92,7 @@ https://blockexplorer.com/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a
 
 === Bitcoin Transactions
 
-((("transactions", "defined")))In simple terms, a transaction tells the network that the owner of some bitcoin value has authorized the transfer of that value to another owner. The new owner can now spend the bitcoin by creating another transaction that authorizes transfer to another owner, and so on, in a chain of ownership. 
+((("transactions", "defined")))In simple terms, a transaction tells the network that the owner of some bitcoin value has authorized the transfer of that value to another owner. The new owner can now spend the bitcoin by creating another transaction that authorizes the transfer to another owner, and so on, in a chain of ownership. 
 
 ==== Transaction Inputs and Outputs
 
@@ -114,7 +114,7 @@ image::images/mbc2_0204.png["Transaction chain"]
 
 ==== Making Change
 
-((("change, making")))((("change addresses")))((("addresses", "change addresses")))Many bitcoin transactions will include outputs that reference both an address of the new owner and an address of the current owner, called the _change_ address. This is because transaction inputs, like currency notes, cannot be divided. If you purchase a $5 US dollar item in a store but use a $20 US dollar bill to pay for the item, you expect to receive $15 US dollars in change. The same concept applies with bitcoin transaction inputs. If you purchased an item that costs 5 bitcoin but only had a 20 bitcoin input to use, you would send one output of 5 bitcoin to the store owner and one output of 15 bitcoin back to yourself as change (less any applicable transaction fee). Importantly, the change address does not have to be the same address as that of the input and for privacy reasons is often a new address from the owner's wallet. 
+((("change, making")))((("change addresses")))((("addresses", "change addresses")))Many bitcoin transactions will include outputs that reference both an address of the new owner and an address of the current owner, called the _change_ address. This is because transaction inputs, like currency notes, cannot be divided. If you purchase a $5 US dollar item in a store but use a $20 US dollar bill to pay for the item, you expect to receive $15 US dollars in change. The same concept applies to bitcoin transaction inputs. If you purchased an item that costs 5 bitcoin but only had a 20 bitcoin input to use, you would send one output of 5 bitcoin to the store owner and one output of 15 bitcoin back to yourself as change (less any applicable transaction fee). Importantly, the change address does not have to be the same address as that of the input and for privacy reasons is often a new address from the owner's wallet. 
 
 Different wallets may use different strategies when aggregating inputs to make a payment requested by the user. They might aggregate many small inputs, or use one that is equal to or larger than the desired payment. Unless the wallet can aggregate inputs in such a way to exactly match the desired payment plus transaction fees, the wallet will need to generate some change. This is very similar to how people handle cash. If you always use the largest bill in your pocket, you will end up with a pocket full of loose change. If you only use the loose change, you'll always have only big bills. People subconsciously find a balance between these two extremes, and bitcoin wallet developers strive to program this balance.
 
@@ -146,7 +146,7 @@ image::images/mbc2_0207.png["Distributing Transaction"]
 
 ==== Getting the Right Inputs
 
-((("outputs and inputs", "locating and tracking inputs")))Alice's wallet application will first have to find inputs that can pay for the amount she wants to send to Bob. Most wallets keep track of all the available outputs belonging to addresses in the wallet. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction, which was created in exchange for cash (see <<getting_first_bitcoin>>). A bitcoin wallet application that runs as a full-node client actually contains a copy of every unspent output from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as quickly verify incoming transactions as having correct inputs. However, because a full-node client takes up a lot of disk space, most user wallets run "lightweight" clients that track only the user's own unspent outputs. 
+((("outputs and inputs", "locating and tracking inputs")))Alice's wallet application will first have to find inputs that can pay the amount she wants to send to Bob. Most wallets keep track of all the available outputs belonging to addresses in the wallet. Therefore, Alice's wallet would contain a copy of the transaction output from Joe's transaction, which was created in exchange for cash (see <<getting_first_bitcoin>>). A bitcoin wallet application that runs as a full-node client actually contains a copy of every unspent output from every transaction in the blockchain. This allows a wallet to construct transaction inputs as well as quickly verify incoming transactions as having correct inputs. However, because a full-node client takes up a lot of disk space, most user wallets run "lightweight" clients that track only the user's own unspent outputs. 
 	
 If the wallet application does not maintain a copy of unspent transaction outputs, it can query the bitcoin network to retrieve this information using a variety of APIs available by different providers or by asking a full-node using an application programming interface (API) call. <<example_2-2>> shows a API request, constructed as an HTTP GET command to a specific URL. This URL will return all the unspent transaction outputs for an address, giving any application the information it needs to construct transaction inputs for spending. We use the simple command-line HTTP client _cURL_ to retrieve the response.
 
@@ -285,4 +285,4 @@ As Bob spends the payments received from Alice and other customers, he extends t
 .Alice's transaction as part of a transaction chain from Joe to Gopesh
 image::images/mbc2_0210.png["Alice's transaction as part of a transaction chain"]
 
-In this chapter, we saw how transactions build a chain that moves value from owner to owner. We also tracked Alice's transaction, from the moment it was created in her wallet, through the bitcoin network and to the miners who recorded it on the blockchain. In the rest of this book we will examine the specific technologies behind wallets, addresses, signatures, transactions, the network, and finally mining.((("", startref="BCover02")))((("", startref="DCSover02"))) ((("", startref="UCcoffee02")))
+In this chapter, we saw how transactions build a chain that moves value from owner to owner. We also tracked Alice's transaction, from the moment it was created in her wallet, through the bitcoin network and to the miners who recorded it on the blockchain. In the rest of this book, we will examine the specific technologies behind wallets, addresses, signatures, transactions, the network, and finally mining.((("", startref="BCover02")))((("", startref="DCSover02"))) ((("", startref="UCcoffee02")))
