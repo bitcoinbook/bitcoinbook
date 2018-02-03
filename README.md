@@ -12,7 +12,7 @@ If you know how to make a pull request to contribute a fix, please write the cor
 
 # Reading this book (Where is the PDF?)
 
-To read this book, see book.asciidoc. Click on each of the chapters to read in your browser. This is not as convenient as reading a PDF or an ebook on your e-reader. Convenience costs money (see below).
+To read this book, see chxx.asciidoc. This is not as convenient as reading a PDF or an ebook on your e-reader. Convenience costs money (see below).
 
 The 2nd edition of "Mastering Bitcoin" is available under a CC-BY-NC-ND license, not a CC-BY-SA license.
 
