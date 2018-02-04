@@ -326,35 +326,6 @@ In bitcoin, most of the data presented to the user is Base58Check-encoded to mak
 | BIP-32 Extended Public Key | 0x0488B21E | xpub
 |=======
 
-
-Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address, and finally, the Base58Check encoding. The C++ code in <<addr_example>> shows the complete step-by-step process, from private key to Base58Check-encoded bitcoin address. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions.
-
-[[addr_example]]
-.Creating a Base58Check-encoded bitcoin address from a private key
-====
-[role="c_less_space"]
-[source, cpp]
-----
-include::code/addr.cpp[]
-----
-====
-
-The code uses a predefined private key to produce the same bitcoin address every time it is run, as shown in <<addr_example_run>>.((("", startref="base5804")))((("", startref="Abase5804")))
-
-[[addr_example_run]]
-.Compiling and running the addr code
-====
-[source,bash]
-----
-# Compile the addr.cpp code
-$ g++ -o addr addr.cpp $(pkg-config --cflags --libs libbitcoin)
-# Run the addr executable
-$ ./addr
-Public key: 0202a406624211f2abbdc68da3df929f938c3399dd79fac1b51b0e4ad1d26a47aa
-Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
-----
-====
-
 ==== Key Formats
 
 ((("keys and addresses", "bitcoin addresses", "key formats")))Both private and public keys can be represented in a number of different formats. These representations all encode the same number, even though they look different. These formats are primarily used to make it easy for people to read and transcribe keys without introducing errors.
@@ -526,6 +497,41 @@ If a bitcoin wallet is able to implement compressed public keys, it will use tho
 [TIP]
 ====
 "Compressed private keys" is a misnomer! They are not compressed; rather, WIF-compressed signifies that the keys should only be used to derive compressed public keys and their corresponding bitcoin addresses. Ironically, a "WIF-compressed" encoded private key is one byte longer because it has the added +01+ suffix to distinguish it from an "uncompressed" one.((("", startref="KAaddress04")))
+====
+
+=== Implementing Keys and Addresses in Cpass:[++]
+
+Let's look at the complete process of creating a bitcoin address, from a private key, to a public key (a point on the elliptic curve), to a double-hashed address, and finally, the Base58Check encoding. The C++ code in <<addr_example>> shows the complete step-by-step process, from private key to Base58Check-encoded bitcoin address. The code example uses the libbitcoin library introduced in <<alt_libraries>> for some helper functions.
+
+[[addr_example]]
+.Creating a Base58Check-encoded bitcoin address from a private key
+====
+[role="c_less_space"]
+[source, cpp]
+----
+include::code/addr.cpp[]
+----
+====
+
+The code uses a predefined private key to produce the same bitcoin address every time it is run, as shown in <<addr_example_run>>.((("", startref="base5804")))((("", startref="Abase5804")))
+
+[[addr_example_run]]
+.Compiling and running the addr code
+====
+[source,bash]
+----
+# Compile the addr.cpp code
+$ g++ -o addr addr.cpp $(pkg-config --cflags --libs libbitcoin)
+# Run the addr executable
+$ ./addr
+Public key: 0202a406624211f2abbdc68da3df929f938c3399dd79fac1b51b0e4ad1d26a47aa
+Address: 1PRTTaJesdNovgne6Ehcdu1fpEdX7913CK
+----
+====
+
+[TIP]
+====
+The example in <<addr_example_run>>, produces a bitcoin address (+1PRTT...+) from a _compressed_ public key (see <<comp_pub>>). If you used the uncompressed public key instead, it would produce a different bitcoin address (+14K1y...+).
 ====
 
 === Implementing Keys and Addresses in Python
@@ -829,7 +835,3 @@ Other designs feature additional copies of the key and address, in the form of d
 [[paper_wallet_spw]]
 .An example of a paper wallet with additional copies of the keys on a backup "stub"
 image::images/mbc2_0412.png[]
-
-
-
-
