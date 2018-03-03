@@ -12,7 +12,7 @@ First, we will look at _multisignature_ scripts. Next, we will examine the secon
 [[multisig]]
 === Multisignature
 
-((("transactions", "advanced", "multisignature scripts")))((("transactions", "advanced", id="Tadv07")))((("scripting", "multisignature scripts", id="Smulti07")))((("multisignature scripts")))Multisignature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to unlock the funds. This is also known as an M-of-N scheme, where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multisignature is one where three public keys are listed as potential signers and at least two of those must be used to create signatures for a valid transaction to spend the funds. 
+((("transactions", "advanced", "multisignature scripts")))((("transactions", "advanced", id="Tadv07")))((("scripting", "multisignature scripts", id="Smulti07")))((("multisignature scripts")))Multisignature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to unlock the funds. This is also known as an M-of-N scheme, where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multisignature is one where three public keys are listed as potential signers and at least two of those must be used to create signatures for a valid transaction to spend the funds.
 
 At this time, _standard_ multisignature scripts are limited to at most 3 listed public keys, meaning you can do anything from a 1-of-1 to a 3-of-3 multisignature or any combination within that range. The limitation to 3 listed keys might be lifted by the time this book is published, so check the +IsStandard()+ function to see what is currently accepted by the network. Note that the limit of 3 keys applies only to standard (also known as "bare") multisignature scripts, not to multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script. P2SH multisignature scripts are limited to 15 keys, allowing for up to 15-of-15 multisignature. We will learn about P2SH in <<p2sh>>.
 
@@ -211,11 +211,11 @@ P2SH addresses hide all of the complexity, so that the person making a payment d
 
 ==== Redeem Script and Validation
 
-((("scripting", "Pay-to-Script-Hash", "redeem scripts and validation")))((("Pay-to-Script-Hash (P2SH)", "redeem scripts and validation")))((("redeem scripts")))((("validation")))Prior to version 0.9.2 of the Bitcoin Core client, Pay-to-Script-Hash was limited to the standard types of bitcoin transaction scripts, by the +IsStandard()+ function. That means that the redeem script presented in the spending transaction could only be one of the standard types: P2PK, P2PKH, or multisig, excluding +RETURN+ and P2SH itself.
+((("scripting", "Pay-to-Script-Hash", "redeem scripts and validation")))((("Pay-to-Script-Hash (P2SH)", "redeem scripts and validation")))((("redeem scripts")))((("validation")))Prior to version 0.9.2 of the Bitcoin Core client, Pay-to-Script-Hash was limited to the standard types of bitcoin transaction scripts, by the +IsStandard()+ function. That means that the redeem script presented in the spending transaction could only be one of the standard types: P2PK, P2PKH, or multisig.
 
 As of version 0.9.2 of the Bitcoin Core client, P2SH transactions can contain any valid script, making the P2SH standard much more flexible and allowing for experimentation with many novel and complex types of transactions.
 
-Note that you are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. While it is technically possible to include +RETURN+ in a redeem script, as nothing in the rules prevents you from doing so, it is of no practical use because executing +RETURN+ during validation will cause the transaction to be marked invalid.
+You are not able to put a P2SH inside a P2SH redeem script, because the P2SH specification is not recursive. Also, while it is technically possible to include +RETURN+ (see <<op_return>>) in a redeem script, as nothing in the rules prevents you from doing so, it is of no practical use because executing +RETURN+ during validation will cause the transaction to be marked invalid.
 
 Note that because the redeem script is not presented to the network until you attempt to spend a P2SH output, if you lock an output with the hash of an invalid redeem script it will be processed regardless. The UTXO will be successfully locked. However, you will not be able to spend it because the spending transaction, which includes the redeem script, will not be accepted because it is an invalid script. This creates a risk, because you can lock bitcoin in a P2SH that cannot be spent later. The network will accept the P2SH locking script even if it corresponds to an invalid redeem script, because the script hash gives no indication of the script it represents.((("", startref="Spay07")))
 
@@ -325,12 +325,12 @@ More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the tra
 
 [NOTE]
 ====
-+CLTV+ and +nLocktime+ use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of +nLocktime+ must match that of +CLTV+ in the inputs&#x2014;they must both reference either block height or time in seconds.
++CLTV+ and +nLocktime+ use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of +nLocktime+ must match that of +CLTV+ in the outputs&#x2014;they must both reference either block height or time in seconds.
 ====
 
 After execution, if +CLTV+ is satisfied, the time parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
 
-By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Because Alice locked the UTXO itself, it is now impossible for either Bob or Alice to spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
+By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
 
 By introducing timelock functionality directly into the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
 
@@ -498,7 +498,7 @@ Bob's unlocking script is identical:
 <Bob's Sig> <hash pre-image>
 ----
 
-The script with +IF+ does the same thing as using an opcode with a +VERIFY+ suffix; they both operate as guard clauses. However, the +VERIFY+ construction is more efficient, using one fewer opcode.
+The script with +IF+ does the same thing as using an opcode with a +VERIFY+ suffix; they both operate as guard clauses. However, the +VERIFY+ construction is more efficient, using two fewer opcodes.
 
 So, when do we use +VERIFY+ and when do we use +IF+? If all we are trying to do is to attach a precondition (guard clause), then +VERIFY+ is better. If, however, we want to have more than one execution path (flow control), then we need an +IF...ELSE+ flow control clause.
 

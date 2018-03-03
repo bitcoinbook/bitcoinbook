@@ -21,7 +21,7 @@ print("Private Key Compressed (hex) is: ", compressed_private_key)
 
 # Generate a WIF format from the compressed private key (WIF-compressed)
 wif_compressed_private_key = bitcoin.encode_privkey(
-    bitcoin.decode_privkey(compressed_private_key, 'hex'), 'wif')
+    bitcoin.decode_privkey(compressed_private_key, 'hex'), 'wif_compressed')
 print("Private Key (WIF-Compressed) is: ", wif_compressed_private_key)
 
 # Multiply the EC generator point G with the private key to get a public key point
