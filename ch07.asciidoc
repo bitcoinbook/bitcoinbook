@@ -124,7 +124,6 @@ First, the multisignature script that Mohammed's company uses for all incoming p
 
 If the placeholders are replaced by actual public keys (shown here as 520-bit numbers starting with 04) you can see that this script becomes very long:
 
-[role="pagebreak-before"]
 ----
 2
 04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C58704A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D99779650421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800 5 CHECKMULTISIG
@@ -178,7 +177,7 @@ If the redeem script hash matches, the unlocking script is executed on its own, 
 <Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG
 ----
 
-Almost all the scripts described in this chapter can only be implemented as P2SH scripts. They cannot be used directly in the locking script of a UTXO.((("", startref="mohamseven")))
+Almost all the scripts described in this chapter can only be implemented as P2SH scripts. They cannot be used directly in the locking script of an UTXO.((("", startref="mohamseven")))
 
 ==== P2SH Addresses
 
@@ -356,7 +355,7 @@ BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the cons
 
 The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 0xFFFFFFFF it would be considered "finalized" and mined.
 
-The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have effect, as explained below.
+The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
 
 ===== nSequence as a consensus-enforced relative timelock
 
@@ -383,7 +382,7 @@ The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0068.
 
 ((("scripting", "timelocks", "relative timelocks with CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like CLTV and +nLocktime+, there is a script opcode for relative timelocks that leverages the +nSequence+ value in scripts. That opcode is +CHECKSEQUENCEVERIFY+, commonly referred to as +CSV+ for short.
 
-The +CSV+ opcode when evaluated in a UTXO's redeem script allows spending only in a transaction whose input +nSequence+ value is greater than or equal to the +CSV+ parameter. Essentially, this restricts spending the UTXO until a certain number of blocks or seconds have elapsed relative to the time the UTXO was mined.
+The +CSV+ opcode when evaluated in an UTXO's redeem script allows spending only in a transaction whose input +nSequence+ value is greater than or equal to the +CSV+ parameter. Essentially, this restricts spending the UTXO until a certain number of blocks or seconds have elapsed relative to the time the UTXO was mined.
 
 As with CLTV, the value in +CSV+ must match the format in the corresponding +nSequence+ value. If +CSV+ is specified in terms of blocks, then so must +nSequence+. If +CSV+ is specified in terms of seconds, then so must +nSequence+.
 
