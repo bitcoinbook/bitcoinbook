@@ -565,24 +565,24 @@ Using this construct, we can build redeem scripts with tens or hundreds of execu
 
 ((("transactions", "advanced", "multisignature scripts")))((("scripting", "multisignature scripts", "import/export example")))((("multisignature scripts")))In this example, Mohammed wishes to construct a company capital account with flexible rules. The scheme he creates requires different levels of authorization depending on timelocks. The participants in the multisig scheme are Mohammed, his two partners Saeed and Zaira, and their company lawyer Abdul. The three partners make decisions based on a majority rule, so two of the three must agree. However, in the case of a problem with their keys, they want their lawyer to be able to recover the funds with one of the three partner signatures. Finally, if all partners are unavailable or incapacitated for a while, they want the lawyer to be able to manage the account directly.
 
-Here's the redeem script that Mohammed designs to achieve this:
+Here's the redeem script that Mohammed designs to achieve this (line number prefix as XX):
 
 .Variable Multi-Signature with Timelock
 [source,linenum]
 ----
-IF
-  IF
-    2
-  ELSE
-    <30 days> CHECKSEQUENCEVERIFY DROP
-    <Abdul the Lawyer's Pubkey> CHECKSIGVERIFY
-    1
-  ENDIF
-  <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 CHECKMULTISIG
-ELSE
-  <90 days> CHECKSEQUENCEVERIFY DROP
-  <Abdul the Lawyer's Pubkey> CHECKSIG
-ENDIF
+01  IF
+02    IF
+03      2
+04    ELSE
+05      <30 days> CHECKSEQUENCEVERIFY DROP
+06      <Abdul the Lawyer's Pubkey> CHECKSIGVERIFY
+07      1
+08    ENDIF
+09    <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 CHECKMULTISIG
+10  ELSE
+11    <90 days> CHECKSEQUENCEVERIFY DROP
+12    <Abdul the Lawyer's Pubkey> CHECKSIG
+13  ENDIF
 ----
 
 Mohammed's script implements three execution paths using nested +IF...ELSE+ flow control clauses.
