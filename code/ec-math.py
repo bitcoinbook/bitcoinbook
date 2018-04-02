@@ -23,7 +23,7 @@ def random_secret():
     convert_to_int = lambda array: int("".join(array).encode("hex"), 16)
 
     # Collect 256 bits of random data from the OS's cryptographically secure
-    # random generator
+    # random number generator
     byte_array = os.urandom(32)
 
     return convert_to_int(byte_array)
