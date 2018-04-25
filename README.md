@@ -1,16 +1,16 @@
-Code Examples: ![travis_ci](https://travis-ci.org/bitcoinbook/bitcoinbook.svg?branch=develop)
-
 # Mastering Bitcoin
+
+[![Code Examples Build Status](https://travis-ci.org/bitcoinbook/bitcoinbook.svg?branch=develop)](https://travis-ci.org/bitcoinbook/bitcoinbook)
 
 Mastering Bitcoin is a book for developers, although the first two chapters cover bitcoin at a level that is also approachable to non-programmers. Anyone with a basic understanding of technology can read the first two chapters to get a great understanding of bitcoin.
 
 This repository contains the complete [first edition, second print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/Edition1Print2), published in December 2014, and the complete [second edition, second print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print2), published in July 2017, as published by O'Reilly Media in paperback and ebook formats.
 
-# Issues, Errors, Comments, Contributions
+## Issues, Errors, Comments, Contributions
 
 If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the [develop branch](https://github.com/bitcoinbook/bitcoinbook/tree/develop). If you are making several changes, please use a separate commit for each to make it easier to cherry-pick or resolve conflicts. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first; contact information can be found on his website: [antonopoulos.com](https://antonopoulos.com/).
 
-# Reading this book (Where is the PDF?)
+## Reading this book (Where is the PDF?)
 
 To read this book, see [book.asciidoc](https://github.com/bitcoinbook/bitcoinbook/blob/develop/book.asciidoc). Click on each of the chapters to read in your browser. This is not as convenient as reading a PDF or an ebook on your e-reader, for which there is a cost (see below).
 
@@ -20,7 +20,7 @@ It is deliberately not available as a PDF. Why? Because a PDF is a "derivative" 
 
 Please don't create or distribute PDFs until the license is changed to CC-BY-SA. It is rare for a publisher to even agree to a CC-BY-NC-ND license. Don't make it harder for free culture by violating even that, already generous, license.
 
-# Published
+## Published
 
 "Mastering Bitcoin (Second Edition, Second Print): Programming the Open Blockchain" is now available in paperback and ebook formats by many book sellers worldwide:
 
@@ -30,11 +30,11 @@ Mastering Bitcoin (First Edition Second Print) is also published in Japanese, Ko
 
 Mastering Bitcoin (Open Edition), based on the First Edition, has been translated by volunteers into more than a dozen languages. Translations are available for free under CC-BY-SA license at [bitcoinbook.info](https://bitcoinbook.info).
 
-# Source
+## Source
 
 The book's source code, found in this repository, is kept synchronized with the print and ebook editions.
 
-## Mastering Bitcoin - First Edition
+### Mastering Bitcoin - First Edition
 
 The tags [Edition1Print1](https://github.com/bitcoinbook/bitcoinbook/releases/tag/Edition1Print1), [Edition1Print2](https://github.com/bitcoinbook/bitcoinbook/releases/tag/Edition1Print2) correspond to the two existing prints of Mastering Bitcoin (First Edition) as published by O'Reilly Media.
 
@@ -44,7 +44,7 @@ This "Free Culture" compliant license was approved by my publisher, [O'Reilly Me
 
 Thank you O'Reilly Media!
 
-## Mastering Bitcoin - Second Edition
+### Mastering Bitcoin - Second Edition
 
 The tags, [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print_1) and  [second_edition_print2](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print2), correspond to the first (June 8th 2017) and second (July 20th 2017) print of Mastering Bitcoin (Second Edition), as published by O'Reilly Media.
 
@@ -52,7 +52,7 @@ The tags, [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/re
 
 It is expected that the second edition will be released under a CC-BY-SA license within a year of publication.
 
-# Translations
+## Translations
 
 If you are interested in translating this book, please join our team of volunteers at: <https://www.transifex.com/bitcoinbook/mastering-bitcoin/>.
 
