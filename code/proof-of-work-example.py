@@ -3,6 +3,7 @@
 
 import hashlib
 import time
+import math
 
 try:
     long        # Python 2
@@ -12,7 +13,12 @@ except NameError:
     xrange = range
 
 max_nonce = 2 ** 32  # 4 billion
+max_difficulty = 5
 
+def print_binary(my_hexdata):
+    scale = 16
+    num_of_bits = int(len(my_hexdata) * math.log(scale,2))
+    return bin(int(my_hexdata, scale))[2:].zfill(num_of_bits)
 
 def proof_of_work(header, difficulty_bits):
     # calculate the difficulty target
@@ -25,6 +31,7 @@ def proof_of_work(header, difficulty_bits):
         if long(hash_result, 16) < target:
             print("Success with nonce %d" % nonce)
             print("Hash is %s" % hash_result)
+            print("Binary: %b", print_binary(hash_result))
             return (hash_result, nonce)
 
     print("Failed after %d (max_nonce) tries" % nonce)
@@ -35,8 +42,8 @@ if __name__ == '__main__':
     nonce = 0
     hash_result = ''
 
-    # difficulty from 0 to 31 bits
-    for difficulty_bits in xrange(32):
+    # difficulty from 0 to max_difficulty bits
+    for difficulty_bits in xrange(max_difficulty):
         difficulty = 2 ** difficulty_bits
         print("Difficulty: %ld (%d bits)" % (difficulty, difficulty_bits))
         print("Starting search...")
