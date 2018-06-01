@@ -73,7 +73,7 @@ Payment Channels:: ((("payment (state) channels", "building blocks (primitives) 
 
 More recent implementations of colored coins use the +OP_RETURN+ script opcode to store metadata in a transaction, in conjunction with external data stores that associate the metadata to specific assets.
 
-((("Open Assets")))The two most prominent implementations of colored coins today are http://www.openassets.org/[_Open Assets_] and http://coloredcoins.org[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
+((("Open Assets")))The two most prominent implementations of colored coins today are https://github.com/OpenAssets[_Open Assets_] and https://coloredcoins.org/[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
 
 ==== Using Colored Coins
 
@@ -83,9 +83,9 @@ Colored coins are also not visible to most general-purpose blockchain explorers.
 
 An Open Assets-compatible wallet application and blockchain explorer can be found at https://www.coinprism.info[coinprism].
 
-A Colu Colored Coins-compatible wallet application and blockchain explorer can be found at http://coloredcoins.org/explorer/[Blockchain Explorer].
+A Colu Colored Coins-compatible wallet application and blockchain explorer can be found at https://coloredcoins.org/explorer/[Colored Coins Block Explorer].
 
-A Copay wallet plug-in can be found at  http://coloredcoins.org/colored-coins-copay-addon/[Colored Coins Copay Addon].
+A Copay wallet plug-in can be found at https://coloredcoins.org/colored-coins-copay-addon/[Colored Coins Copay Addon].
 
 ==== Issuing Colored Coins
 
@@ -102,7 +102,7 @@ The metadata that gives meaning to a colored coin transaction is usually stored 
 The order of the outputs and position of the marker output may have special meaning in the colored coins protocol. In Open Assets, for example, any outputs before the marker output represent asset issuance. Any outputs after the marker represent asset transfer. The marker output assigns specific values and colors to the other outputs by referencing their order in the transaction.
 
 In Colored Coins (Colu), by comparison, the marker output encodes an opcode that determines how the metadata is interpreted. Opcodes 0x01 through 0x0F indicate an issuance transaction. An issuance opcode is usually followed by an asset ID or other identifier that can be used to retrieve the asset information from an external source (e.g., bittorrent).
-Opcodes 0x10 through 0x1F represent a transfer transaction.  Transfer transaction metadata contain simple scripts that transfer specific amounts of assets from inputs to outputs, by reference to their index. Ordering of inputs and outputs is therefore important in the interpretation of the script.
+Opcodes 0x10 through 0x1F represent a transfer transaction. Transfer transaction metadata contain simple scripts that transfer specific amounts of assets from inputs to outputs, by reference to their index. Ordering of inputs and outputs is therefore important in the interpretation of the script.
 
 If the metadata is too long to fit in +OP_RETURN+, the colored coins protocol may use other "tricks" to store metadata in a transaction. Examples include putting metadata in a redeem script, followed by +OP_DROP+ opcodes to ensure the script ignores the metadata. Another mechanism used is a 1-of-N multisig script where only the first public key is a real public key that can spend the output and subsequent "keys" are replaced by encoded metadata.
 
@@ -409,7 +409,7 @@ As before, these commitment transactions are asymmetric so that the commitment t
 
 Importantly, the revocation doesn't happen automatically. While Hitesh has the ability to punish Irene for cheating, he has to watch the blockchain diligently for signs of cheating. If he sees a prior commitment transaction broadcast, he has 1000 blocks to take action and use the revocation key to thwart Irene's cheating and punish her by taking the entire balance, all 10 bitcoin.
 
-Asymmetric revocable commitments with relative time locks (+CSV+) are a much better way to implement payment channels and a very significant innovation in this technology.  With this construct, the channel can remain open indefinitely and can have billions of intermediate commitment transactions. In prototype implementations of Lightning Network, the commitment state is identified by a 48-bit index, allowing more than 281 trillion (2.8 x 10^14^) state transitions in any single channel!((("", startref="PSCaymetric12")))
+Asymmetric revocable commitments with relative time locks (+CSV+) are a much better way to implement payment channels and a very significant innovation in this technology. With this construct, the channel can remain open indefinitely and can have billions of intermediate commitment transactions. In prototype implementations of Lightning Network, the commitment state is identified by a 48-bit index, allowing more than 281 trillion (2.8 x 10^14^) state transitions in any single channel!((("", startref="PSCaymetric12")))
 
 ==== Hash Time Lock Contracts (HTLC)
 
@@ -449,7 +449,7 @@ This is a basic implementation of an HTLC. This type of HTLC can be redeemed by 
 
 ((("blockchain applications", "routed payment channels", seealso="Lightning Network", id="BCAlightning12")))((("routed payment channels", see="Lightning Network")))((("Lightning Network", "defined")))The Lightning Network is a proposed routed network of bidirectional payment channels connected end-to-end. A network like this can allow any participant to route a payment from channel to channel without trusting any of the intermediaries. The Lightning Network was https://lightning.network/lightning-network-paper.pdf[first described by Joseph Poon and Thadeus Dryja in February 2015], building on the concept of payment channels as proposed and elaborated upon by many others.
 
-"Lightning Network" refers to a specific design for a routed payment channel network, which has now been implemented by at least five different open source teams. ((("Basics of Lightning Technology (BOLT)")))The independent implementations are coordinated by a set of interoperability standards described in the http://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ paper].
+"Lightning Network" refers to a specific design for a routed payment channel network, which has now been implemented by at least five different open source teams. ((("Basics of Lightning Technology (BOLT)")))The independent implementations are coordinated by a set of interoperability standards described in the https://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ paper].
 
 Prototype implementations of the Lightning Network have been released by several teams. For now, these implementations can only be run on testnet because they use segwit, which is not activated on the main bitcoin blockchain (mainnet).
 
@@ -497,7 +497,7 @@ Alice has paid Eric 1 bitcoin without opening a channel to Eric. None of the int
 
 ==== Lightning Network Transport and Routing
 
-((("Lightning Network", "transport and routing")))All communications between LN nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they http://bit.ly/2r5TACm[use as an identifier and to authenticate each other].
+((("Lightning Network", "transport and routing")))All communications between LN nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they use as an identifier and to authenticate each other.
 
 Whenever a node wishes to send a payment to another node, it must first construct a _path_ through the network by connecting payment channels with sufficient capacity. Nodes advertise routing information, including what channels they have open, how much capacity each channel has, and what fees they charge to route payments. The routing information can be shared in a variety of ways and different routing protocols are likely to emerge as Lightning Network technology advances. Some Lightning Network implementations use the IRC protocol as a convenient mechanism for nodes to announce routing information. Another implementation of route discovery uses a P2P model where nodes propagate channel announcements to their peers, in a "flooding" model, similar to how bitcoin propagates transactions. Future plans include a proposal called http://bit.ly/2r5TACm[Flare], which is a hybrid routing model with local node "neighborhoods" and longer-range beacon nodes.
 
@@ -507,7 +507,7 @@ Importantly, this path is only known to Alice's node. All other participants in 
 
 This is a critical feature of the Lightning Network, because it ensures privacy of payments and makes it very difficult to apply surveillance, censorship, or blacklists. But how does Alice establish this payment path, without revealing anything to the intermediary nodes?
 
-The Lightning Network implements an onion-routed protocol based on a scheme called http://bit.ly/2q6ZDrP[Sphinx]. This routing protocol ensures that a payment sender can construct and communicate a path through the Lightning Network such that:
+The Lightning Network implements an onion-routed protocol based on a scheme called https://bit.ly/2q6ZDrP[Sphinx]. This routing protocol ensures that a payment sender can construct and communicate a path through the Lightning Network such that:
 
 * Intermediate nodes can verify and decrypt their portion of route information and find the next hop.
 
