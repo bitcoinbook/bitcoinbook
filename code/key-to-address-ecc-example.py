@@ -1,5 +1,5 @@
 from __future__ import print_function
-import bitcoin
+import pybitcointools as bitcoin
 
 # Generate a random private key
 valid_private_key = False
