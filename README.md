@@ -58,6 +58,6 @@ It is expected that the second edition will be released under a CC-BY-SA license
 
 ## Translations
 
-If you are interested in translating this book, please join our team of volunteers at: <https://www.transifex.com/bitcoinbook/mastering-bitcoin/>.
+If you are interested in translating this book, please join our team of volunteers at: <https://www.transifex.com/aantonop/mastering-bitcoin/>.
 
 Free copies of "Mastering Bitcoin Open Edition," translated in many languages, can be downloaded from [bitcoinbook.info](https://bitcoinbook.info).
