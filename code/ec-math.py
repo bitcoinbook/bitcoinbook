@@ -1,5 +1,6 @@
 import ecdsa
 import os
+import codecs
 
 # secp256k1, http://www.oid-info.com/get/1.3.132.0.10
 _p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
@@ -20,13 +21,11 @@ generator = generator_secp256k1
 
 
 def random_secret():
-    convert_to_int = lambda array: int("".join(array).encode("hex"), 16)
-
     # Collect 256 bits of random data from the OS's cryptographically secure
     # random number generator
     byte_array = os.urandom(32)
 
-    return convert_to_int(byte_array)
+    return int(codecs.encode(byte_array, 'hex').decode(), 16)
 
 
 def get_point_pubkey(point):
@@ -34,14 +33,14 @@ def get_point_pubkey(point):
         key = '03' + '%064x' % point.x()
     else:
         key = '02' + '%064x' % point.x()
-    return key.decode('hex')
+    return codecs.decode(key, 'hex')
 
 
 def get_point_pubkey_uncompressed(point):
     key = ('04' +
            '%064x' % point.x() +
            '%064x' % point.y())
-    return key.decode('hex')
+    return codecs.decode(key, 'hex')
 
 
 # Generate a new private key.
@@ -52,7 +51,7 @@ print("Secret: ", secret)
 point = secret * generator
 print("EC point:", point)
 
-print("BTC public key:", get_point_pubkey(point).encode("hex"))
+print("BTC public key:", codecs.encode(get_point_pubkey(point), 'hex').decode())
 
 # Given the point (x, y) we can create the object using:
 point1 = ecdsa.ellipticcurve.Point(curve, point.x(), point.y(), ec_order)
