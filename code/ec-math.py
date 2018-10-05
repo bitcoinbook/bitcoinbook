@@ -11,8 +11,10 @@ _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 curve_secp256k1 = ecdsa.ellipticcurve.CurveFp(_p, _a, _b)
 generator_secp256k1 = ecdsa.ellipticcurve.Point(curve_secp256k1, _Gx, _Gy, _r)
 oid_secp256k1 = (1, 3, 132, 0, 10)
-SECP256k1 = ecdsa.curves.Curve("SECP256k1", curve_secp256k1,
-                               generator_secp256k1, oid_secp256k1)
+SECP256k1 = ecdsa.curves.Curve(
+    "SECP256k1", curve_secp256k1,
+    generator_secp256k1, oid_secp256k1
+)
 ec_order = _r
 
 curve = curve_secp256k1
