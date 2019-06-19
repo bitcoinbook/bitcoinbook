@@ -8,7 +8,7 @@ This repository contains the complete [first edition, second print](https://gith
 
 # Issues, Errors, Comments, Contributions
 
-If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the [develop branch](https://github.com/bitcoinbook/bitcoinbook/tree/develop). If you are making several changes, please use a separate commit for each to make it easier to cherry-pick or resolve conflicts. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first; contact information can be found on his web site: https://antonopoulos.com/
+If you know how to make a pull request to contribute a fix, please write the correction and use a pull request to submit it for consideration against the [develop branch](https://github.com/bitcoinbook/bitcoinbook/tree/develop). If you are making several changes, please use a separate commit for each to make it easier to cherry-pick or resolve conflicts. Otherwise, please submit an issue, explaining the error or comment. If you would like to contribute extensive changes or new material, please coordinate with the author first; contact information can be found on his website: https://antonopoulos.com/
 
 # Reading this book
 
@@ -31,7 +31,7 @@ To read this book, see [book.asciidoc](https://github.com/bitcoinbook/bitcoinboo
 
 # Published
 
-"Mastering Bitcoin (Second Edition, Second Print): Programming the Open Blockchain" is now available in paperback and ebook formats by many book sellers worldwide:
+"Mastering Bitcoin (Second Edition, Second Print): Programming the Open Blockchain" is now available in paperback and ebook formats by many booksellers worldwide:
 
 * [Amazon](https://www.amazon.com/Mastering-Bitcoin-Programming-Open-Blockchain/dp/1491954388)
 
@@ -55,7 +55,7 @@ Thank you O'Reilly Media!
 
 ## Mastering Bitcoin - Second Edition
 
-The tags, [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print_1) and  [second_edition_print2](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print2), correspond to the first (June 8th 2017) and second (July 20th 2017) print of Mastering Bitcoin (Second Edition), as published by O'Reilly Media.
+The tags, [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print_1) and  [second_edition_print2](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print2), correspond to the first (June 8th, 2017) and second (July 20th, 2017) print of Mastering Bitcoin (Second Edition), as published by O'Reilly Media.
 
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">Mastering Bitcoin - Second Edition</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://antonopoulos.com/" property="cc:attributionName" rel="cc:attributionURL">Andreas M. Antonopoulos LLC</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
