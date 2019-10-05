@@ -75,7 +75,7 @@ The incentive may help encourage nodes to stay honest. If a greedy attacker is a
 
 image::images/mbc2_abin04.png["disk"]
 
-A block header with no transactions would be about 80 bytes. If we suppose blocks are generated every 10 minutes, +80 bytes * 6 * 24 * 365 == 4.2MB+ per year. With computer systems typically selling with 2GB of RAM as of 2008, and Moore's Law predicting current growth of 1.2GB per year, storage should not be a problem even if the block headers must be kept in memory.
+A block header with no transactions would be about 80 bytes. If we suppose blocks are generated every 10 minutes, +80 bytes * 6 * 24 * 365 = 4.2MB+ per year. With computer systems typically selling with 2GB of RAM as of 2008, and Moore's Law predicting current growth of 1.2GB per year, storage should not be a problem even if the block headers must be kept in memory.
 
 ==== Simplified Payment Verification
 It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain, which he can get by querying network nodes until he's convinced he has the longest chain, and obtain the Merkle branch linking the transaction to the block it's timestamped in. He can't check the transaction for himself, but by linking it to a place in the chain, he can see that a network node has accepted it, and blocks added after it further confirm the network has accepted it.
@@ -107,11 +107,11 @@ The race between the honest chain and an attacker chain can be characterized as 
 <p>The probability of an attacker catching up from a given deficit is analogous to a Gambler's Ruin problem. Suppose a gambler with unlimited credit starts at a deficit and plays potentially an infinite number of trials to try to reach breakeven. We can calculate the probability he ever reaches breakeven, or that an attacker ever catches up with the honest chain, as follows <a href="#ref_eight">[8]</a>:</p>
 ++++
 
-p == probability an honest node finds the next block
+p = probability an honest node finds the next block
 
-q == probability the attacker finds the next block
+q = probability the attacker finds the next block
 
-q~z~ == probability the attacker will ever catch up from z blocks behind
+q~z~ = probability the attacker will ever catch up from z blocks behind
 
 image::images/mbc2_abin08.png["eq1"]
 
@@ -140,16 +140,16 @@ Converting to C code...
 #include <math.h>
 double AttackerSuccessProbability(double q, int z)
 {
-    double p == 1.0 - q;
-    double lambda == z * (q / p);
-    double sum == 1.0;
+    double p = 1.0 - q;
+    double lambda = z * (q / p);
+    double sum = 1.0;
     int i, k;
-    for (k == 0; k <== z; k++)
+    for (k = 0; k <= z; k++)
     {
-        double poisson == exp(-lambda);
-        for (i == 1; i <== k; i++)
-            poisson *== lambda / i;
-        sum -== poisson * (1 - pow(q / p, z - k));
+        double poisson = exp(-lambda);
+        for (i = 1; i <= k; i++)
+            poisson *= lambda / i;
+        sum -= poisson * (1 - pow(q / p, z - k));
     }
     return sum;
 }

@@ -451,11 +451,6 @@ As we saw in the section <<pubkey>>, a public key is a point (x,y) on an ellipti
 
 Whereas uncompressed public keys have a prefix of +04+, compressed public keys start with either a +02+ or a +03+ prefix. Let's look at why there are two possible prefixes: because the left side of the equation is __y__^2^, the solution for _y_ is a square root, which can have a positive or negative value. Visually, this means that the resulting _y_ coordinate can be above or below the x-axis. As you can see from the graph of the elliptic curve in <<ecc-curve>>, the curve is symmetric, meaning it is reflected like a mirror by the x-axis. So, while we can omit the _y_ coordinate we have to store the _sign_ of _y_ (positive or negative); or in other words, we have to remember if it was above or below the x-axis because each of those options represents a different point and a different public key. When calculating the elliptic curve in binary arithmetic on the finite field of prime order p, the _y_ coordinate is either even or odd, which corresponds to the positive/negative sign as explained earlier. Therefore, to distinguish between the two possible values of _y_, we store a compressed public key with the prefix +02+ if the _y_ is even, and +03+ if it is odd, allowing the software to correctly deduce the _y_ coordinate from the _x_ coordinate and uncompress the public key to the full coordinates of the point. Public key compression is illustrated in <<pubkey_compression>>.
 
-[[pubkey_compression]]
-[role="smallerseventy"]
-.Public key compression
-image::images/mbc2_0407.png["pubkey_compression"]
-
 Here's the same public key generated previously, shown as a compressed public key stored in 264 bits (66 hex digits) with the prefix +03+ indicating the _y_ coordinate is odd:
 
 ----
@@ -463,6 +458,11 @@ K = 03F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
 ----
 
 This compressed public key corresponds to the same private key, meaning it is generated from the same private key. However, it looks different from the uncompressed public key. More importantly, if we convert this compressed public key to a bitcoin address using the double-hash function (+RIPEMD160(SHA256(K))+) it will produce a _different_ bitcoin address. This can be confusing, because it means that a single private key can produce a public key expressed in two different formats (compressed and uncompressed) that produce two different bitcoin addresses. However, the private key is identical for both bitcoin addresses.
+
+[[pubkey_compression]]
+[role="smallerseventy"]
+.Public key compression
+image::images/mbc2_0407.png["pubkey_compression"]
 
 Compressed public keys are gradually becoming the default across bitcoin clients, which is having a significant impact on reducing the size of transactions and therefore the blockchain. However, not all clients support compressed public keys yet. Newer clients that support compressed public keys have to account for transactions from older clients that do not support compressed public keys. This is especially important when a wallet application is importing private keys from another bitcoin wallet application, because the new wallet needs to scan the blockchain to find transactions corresponding to these imported keys. Which bitcoin addresses should the bitcoin wallet scan for? The bitcoin addresses produced by uncompressed public keys, or the bitcoin addresses produced by compressed public keys? Both are valid bitcoin addresses, and can be signed for by the private key, but they are different addresses!
 
@@ -594,7 +594,7 @@ include::code/ec-math.py[]
 
 <<ec_math_run>> shows the output produced by running this script.
 
-[NOTE]
+[WARNING]
 ====
 <<ec_math>> ((("random numbers", "os.urandom", see="entropy")))((("entropy", "os.urandom", see="random numbers")))((("random numbers", "random number generation")))((("entropy", "random number generation")))uses +os.urandom+, which reflects a cryptographically secure random number generator (CSRNG) provided by the underlying operating system. Caution: Depending on the OS, +os.urandom+ may _not_ be implemented with sufficient security or seeded properly and may _not_ be appropriate for generating production-quality bitcoin keys.((("", startref="KApython04")))
 ====
@@ -816,7 +816,7 @@ image::images/mbc2_0409.png[]
 
 [WARNING]
 ====
-Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds some wallets might generate a change address if you spend less than the whole amount. Additionally, if the computer you use to sign the transaction is compromised, you risk exposing the private key. By spending the entire balance of a paper wallet only once, you reduce the risk of key compromise. If you need only a small amount, send any remaining funds to a new paper wallet in the same transaction.
+Although you can deposit funds into a paper wallet several times, you should withdraw all funds only once, spending everything. This is because in the process of unlocking and spending funds some wallets might generate a change address if you spend less than the whole amount. If the computer you use to sign the transaction is then compromised, you risk exposing the private key, giving access to the funds in the change address. By spending the entire balance of a paper wallet only once, you reduce the risk of key compromise. If you need only a small amount, send any remaining funds to a new paper wallet in the same transaction.
 ====
 
 Paper wallets come in many designs and sizes, with many different features. Some are intended to be given as gifts and have seasonal themes, such as Christmas and New Year's themes. Others are designed for storage in a bank vault or safe with the private key hidden in some way, either with opaque scratch-off stickers, or folded and sealed with tamper-proof adhesive foil. Figures pass:[<a data-type="xref" href="#paper_wallet_bpw" data-xrefstyle="select: labelnumber">#paper_wallet_bpw</a>] through pass:[<a data-type="xref" href="#paper_wallet_spw" data-xrefstyle="select: labelnumber">#paper_wallet_spw</a>] show various examples of paper wallets with security and backup features.

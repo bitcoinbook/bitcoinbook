@@ -12,7 +12,7 @@ for nonce in range(20):
     input_data = text + str(nonce)
 
     # calculate the SHA-256 hash of the input (text+nonce)
-    hash_data = hashlib.sha256(input_data).hexdigest()
+    hash_data = hashlib.sha256(input_data.encode()).hexdigest()
 
     # show the input and hash result
     print(input_data, '=>', hash_data)

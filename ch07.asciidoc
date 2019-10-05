@@ -262,7 +262,7 @@ Timelocks are useful for postdating transactions and locking funds to a date in 
 [[transaction_locktime_nlocktime]]
 ==== Transaction Locktime (nLocktime)
 
-((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
+((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
 
 [[locktime_limitations]]
 ===== Transaction locktime limitations
@@ -480,6 +480,7 @@ To redeem this, Bob must construct an unlocking script that presents a valid pre
 
 Without presenting the pre-image, Bob can't get to the part of the script that checks for his signature.
 
+[role="pagebreak-after"]
 This script can be written with an +IF+ instead:
 
 .A redeem script with an +IF+ guard clause
@@ -568,7 +569,6 @@ Using this construct, we can build redeem scripts with tens or hundreds of execu
 Here's the redeem script that Mohammed designs to achieve this (line number prefix as XX):
 
 .Variable Multi-Signature with Timelock
-[source,linenum]
 ----
 01  IF
 02    IF
@@ -940,7 +940,7 @@ Mohammed's company can then construct segwit transactions to spend these payment
 
 ===== Segregated Witness addresses
 
-Even after segwit activation, it will take some time until most wallets are upgraded. At first, segwit will be embedded in P2SH, as we saw in the previous section, to ease compatibility between segit-aware and unaware wallets.
+Even after segwit activation, it will take some time until most wallets are upgraded. At first, segwit will be embedded in P2SH, as we saw in the previous section, to ease compatibility between segwit-aware and unaware wallets.
 
 However, once wallets are broadly supporting segwit, it makes sense to encode witness scripts directly in a native address format designed for segwit, rather than embed it in P2SH.
 
@@ -948,7 +948,7 @@ The native segwit address format is defined in BIP-173:
 
 https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32 address format for native v0-16 witness outputs
 
-BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addesses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
+BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addresses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
 
 BIP-173 addresses use 32 lower-case-only alphanumeric character set, carefully selected to reduce errors from misreading or mistyping. By choosing a lower-case-only character set, bech32 is easier to read, speak, and 45% more efficient to encode in QR codes.
 
@@ -982,7 +982,7 @@ With the introduction of Segregated Witness, transactions have two identifiers, 
 
 The traditional +txid+ is calculated in exactly the same way as with a nonsegwit transaction. However, since the segwit transaction has empty ++scriptSig++s in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a segwit transaction, the +txid+ is immutable by a third party, even when the transaction is unconfirmed.
 
-The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable by third parties and only if _all_ the inputs of the transaction are segwit inputs.
+The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note that since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable by third parties and only if _all_ the inputs of the transaction are segwit inputs.
 
 [TIP]
 ====

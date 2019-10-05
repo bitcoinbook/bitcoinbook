@@ -307,7 +307,7 @@ As you can see in <<generation_tx_example>>, the coinbase transaction has a spec
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
 | 1&#x2013;9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
 | Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script
-| 4 bytes | Sequence Number | Currently disabled Tx-replacement feature, set to 0xFFFFFFFF
+| 4 bytes | Sequence Number | Usually set to 0xFFFFFFFF to opt out of BIP 125 and BIP 68
 |=======
 
 [[table_8-2]]
@@ -402,7 +402,7 @@ By selecting the specific _parent_ block, indicated by the Previous Block Hash f
 c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e
 ----
 
-Jing's mining node will then add a 4-byte timestamp, encoded as a Unix "epoch" timestamp, which is based on the number of seconds elapsed from January 1, 1970, midnight UTC/GMT. The time +1388185914+ is equal to Friday, 27 Dec 2013, 23:11:54 UTC/GMT.
+Jing's mining node will then add a 4-byte timestamp, encoded as a Unix "epoch" timestamp, which is based on the number of seconds elapsed since midnight UTC, Thursday, January 1, 1970. The time +1388185914+ is equal to Friday, December 27, 2013, 23:11:54 UTC.
 
 Jing's node then fills in the target, which defines the required Proof-of-Work to make this a valid block. The target is stored in the block as a "target bits" metric, which is a mantissa-exponent encoding of the target. The encoding has a 1-byte exponent, followed by a 3-byte mantissa (coefficient). In block 277,316, for example, the target bits value is +0x1903a30c+. The first part +0x19+ is a hexadecimal exponent, while the next part, +0x03a30c+, is the coefficient. The concept of a target is explained in <<target>> and the "target bits" representation is explained in <<target_bits>>.
 
@@ -494,7 +494,7 @@ To make a challenge out of this algorithm, let's set a target: find a phrase tha
 
 To give a simple analogy, imagine a game where players throw a pair of dice repeatedly, trying to throw less than a specified target. In the first round, the target is 12. Unless you throw double-six, you win. In the next round the target is 11. Players must throw 10 or less to win, again an easy task. Let's say a few rounds later the target is down to 5. Now, more than half the dice throws will exceed the target and therefore be invalid. It takes exponentially more dice throws to win, the lower the target gets. Eventually, when the target is 2 (the minimum possible), only one throw out of every 36, or 2% of them, will produce a winning result.
 
-From the perspective of an observer who knows that the target of the dice game is 2, if someone has succeeded in casting a winning throw it can be assumed that they attempted, on average, 36 throws. In other words, one can estimate the amount of work it takes to succeed from the difficulty imposed by the target. When the algorithm is a based on a deterministic function such as SHA256, the input itself constitutes _proof_ that a certain amount of _work_ was done to produce a result below the target. Hence, _Proof-of-Work_.
+From the perspective of an observer who knows that the target of the dice game is 2, if someone has succeeded in casting a winning throw it can be assumed that they attempted, on average, 36 throws. In other words, one can estimate the amount of work it takes to succeed from the difficulty imposed by the target. When the algorithm is based on a deterministic function such as SHA256, the input itself constitutes _proof_ that a certain amount of _work_ was done to produce a result below the target. Hence, _Proof-of-Work_.
 
 [TIP]
 ====
@@ -971,7 +971,7 @@ The two chains continue to diverge from this point. Miners on the "b" chain will
 
 Examples of software forks that have attempted to change consensus rules include Bitcoin XT, Bitcoin Classic, and most recently Bitcoin Unlimited. However, none of these software forks have resulted in a hard fork. While a software fork is a necessary precondition, it is not in itself sufficient for a hard fork to occur. For a hard fork to occur, the competing implementation must be adopted and the new rules activated, by miners, wallets, and intermediary nodes. Conversely, there are numerous alternative implementations of Bitcoin Core, and even software forks, that do not change the consensus rules and barring a bug, can coexist on the network and interoperate without causing a hard fork.
 
-Consensus rules may differ in obvious and explicit ways, in the validation of transactions or blocks. The rules may also differ in more subtle ways, in the implementation of the consensus rules as they apply to bitcoin scripts or cryptographic primitives such as digital signatures. Finally, the consensus rules may differ in unanticipated ways because of implicit consensus constraints imposed by system limitations or implementation details. An example of the latter was seen in the unanticipated hard fork during the upgrade of Bitcoin Core 0.7 to 0.8, which was caused by a limitation in the Berkley DB implementation used to store blocks.
+Consensus rules may differ in obvious and explicit ways, in the validation of transactions or blocks. The rules may also differ in more subtle ways, in the implementation of the consensus rules as they apply to bitcoin scripts or cryptographic primitives such as digital signatures. Finally, the consensus rules may differ in unanticipated ways because of implicit consensus constraints imposed by system limitations or implementation details. An example of the latter was seen in the unanticipated hard fork during the upgrade of Bitcoin Core 0.7 to 0.8, which was caused by a limitation in the Berkeley DB implementation used to store blocks.
 
 Conceptually, we can think of a hard fork as developing in four stages: a software fork, a network fork, a mining fork, and a chain fork.
 
