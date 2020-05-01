@@ -329,7 +329,7 @@ More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the tra
 
 After execution, if +CLTV+ is satisfied, the time parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
 
-By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
+By using +nLocktime+ in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
 
 By introducing timelock functionality directly into the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
 
@@ -355,7 +355,7 @@ BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the cons
 
 The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 0xFFFFFFFF it would be considered "finalized" and mined.
 
-The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
+The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with +nLocktime+ or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
 
 ===== nSequence as a consensus-enforced relative timelock
 
@@ -788,7 +788,7 @@ While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness 
 
 ====
 
-Mohammed's company can spend outputs the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
+Mohammed's company can spend the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
 
 .Decoded transaction showing a P2WSH output being spent with separate witness data
 ----
@@ -886,7 +886,7 @@ Even though Alice's wallet has no support for segwit, the payment it creates can
 
 Similarly, a P2WSH witness program for a multisig script or other complicated script can be embedded inside a P2SH script and address, making it possible for any wallet to make payments that are segwit compatible.
 
-As we saw in <<p2wsh>>, Mohammed's ((("use cases", "import/export")))company is using Segregated Witness payments to multisignature scripts. To make it possible for any client to pay his company, regardless of whether their wallets are upgraded for segwit, Mohammed's wallet can embed the P2WSH witness program inside a P2SH script.
+As we saw in <<p2wsh>>, Mohammed's ((("use cases", "import/export")))company is using Segregated Witness payments with multisignature scripts. To make it possible for any client to pay his company, regardless of whether their wallets are upgraded for segwit, Mohammed's wallet can embed the P2WSH witness program inside a P2SH script.
 
 First, Mohammed's wallet hashes the redeem script with SHA256 (just once). Let's use +bx+ to do that on the command-line:
 
