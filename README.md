@@ -4,7 +4,7 @@ Code Examples: ![travis_ci](https://travis-ci.org/bitcoinbook/bitcoinbook.svg?br
 
 Mastering Bitcoin is a book for developers, although the first two chapters cover bitcoin at a level that is also approachable to non-programmers. Anyone with a basic understanding of technology can read the first two chapters to get a great understanding of bitcoin.
 
-This repository contains the complete [first edition, second print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/Edition1Print2), published in December 2014, and the complete [second edition, second print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print2), published in July 2017, as published by O'Reilly Media in paperback and ebook formats.
+This repository contains the complete [first edition, second print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/Edition1Print2), published in December 2014, and the complete [second edition, third print](https://github.com/bitcoinbook/bitcoinbook/releases/tag/second_edition_print3_rc1), published in March 2018, as published by O'Reilly Media in paperback and ebook formats.
 
 # Issues, Errors, Comments, Contributions
 
