@@ -310,9 +310,9 @@ To lock it to a time, say 3 months from now, the transaction would be a P2SH tra
 
 where +<now {plus} 3 months>+ is a block height or time value estimated 3 months from the time the transaction is mined: current block height {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000 (seconds). For now, don't worry about the +DROP+ opcode that follows +CHECKLOCKTIMEVERIFY+; it will be explained shortly.
 
-When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal or greater to the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
+When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
 
-Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
+Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal to the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
 
 More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the transaction invalid if (source: BIP-65):
 
@@ -359,7 +359,7 @@ The original meaning of +nSequence+ was never properly implemented and the value
 
 ===== nSequence as a consensus-enforced relative timelock
 
-Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
+Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
 
 Transaction inputs with +nSequence+ values less than 2^31^ are interpreted as having a relative timelock. Such a transaction is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with an +nSequence+ relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since +nSequence+ is a per-input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A transaction can include both timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative timelock (+nSequence+ >= 2^31^).
 
@@ -761,7 +761,7 @@ The ((("use cases", "import/export", id="mohamappd")))second type of witness pro
 HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
 ----
 
-This P2SH script references the hash of a _redeem script_ that defines a 2-of-3 multisignature requirement to spend funds. To spend this output, Mohammed's company would present the redeem script (whose hash matches the script hash in the P2SH output) and the signatures necessary to satisfy that redeem script, all inside the transaction input:
+This P2SH script references the hash of a _redeem script_ that defines a 2-of-5 multisignature requirement to spend funds. To spend this output, Mohammed's company would present the redeem script (whose hash matches the script hash in the P2SH output) and the signatures necessary to satisfy that redeem script, all inside the transaction input:
 
 .Decoded transaction showing a P2SH output being spent
 ----
