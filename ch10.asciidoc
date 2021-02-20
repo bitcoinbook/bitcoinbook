@@ -116,10 +116,10 @@ Each node verifies every transaction against a long checklist of criteria:
 * The unlocking script (+scriptSig+) can only push numbers on the stack, and the locking script (+scriptPubkey+) must match +IsStandard+ forms (this rejects "nonstandard" transactions).
 * A matching transaction in the pool, or in a block in the main branch, must exist.
 * For each input, if the referenced output exists in any other transaction in the pool, the transaction must be rejected.
-* For each input, look in the main branch and the transaction pool to find the referenced transaction output. If the transaction output is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool.
-* For each input, if the referenced output transaction is a coinbase output, it must have at least +COINBASE_MATURITY+ (100) confirmations.
+* For each input, look in the main branch and the transaction pool to find its parent transaction. If the parent transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool.
+* For each input, if its parent transaction is a coinbase transaction, it must have at least +COINBASE_MATURITY+ (100) confirmations.
 * For each input, the referenced output must exist and cannot already be spent.
-* Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0).
+* Using the parent transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0).
 * Reject if the sum of input values is less than sum of output values.
 * Reject if transaction fee would be too low (+minRelayTxFee+) to get into an empty block.
 * The unlocking scripts for each input must validate against the corresponding output locking scripts.
