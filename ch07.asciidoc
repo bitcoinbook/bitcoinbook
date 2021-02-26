@@ -665,11 +665,11 @@ https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32
 
 Segregated Witness is an architectural change that has several effects on the scalability, security, economic incentives, and performance of bitcoin:
 
-Transaction Malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With Segregated Witness, transaction hashes become immutable by anyone other than the creator of the transaction, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions, and lightning networks.
+Transaction Malleability :: By moving the witness outside the transaction data, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With Segregated Witness, transaction hashes become immutable by anyone other than the creator of the transaction, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions, and lightning networks.
 
 Script Versioning :: With the introduction of Segregated Witness scripts, every locking script is preceded by a _script version_ number, similar to how transactions and blocks have version numbers. The addition of a script version number allows the scripting language to be upgraded in a backward-compatible way (i.e., using soft fork upgrades) to introduce new script operands, syntax, or semantics. The ability to upgrade the scripting language in a nondisruptive way will greatly accelerate the rate of innovation in bitcoin.
 
-Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multisig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction, Segregated Witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
+Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multisig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction data, Segregated Witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
 
 Signature Verification Optimization :: Segregated Witness upgrades the signature functions (+CHECKSIG+, +CHECKMULTISIG+, etc.) to reduce the algorithm's computational complexity. Before segwit, the algorithm used to produce a signature required a number of hash operations that was proportional to the size of the transaction. Data-hashing computations increased in O(n^2^) with respect to the number of signature operations, introducing a substantial computational burden on all nodes verifying the signature. With segwit, the algorithm is changed to reduce the complexity to O(n).
 
@@ -725,7 +725,7 @@ Now, let’s look at the corresponding transaction that Bob uses to spend this o
 [...]
 ----
 
-However, to spend the Segregated Witness output, the transaction has no signature on that input. Instead, Bob’s transaction has an empty +scriptSig+ and includes a Segregated Witness, outside the transaction itself:
+However, to spend the Segregated Witness output, the transaction has no signature in the input part. Instead, Bob’s transaction has an empty +scriptSig+ in the transaction data (the first part of a transaction, which includes the input part) and includes his signature in the witness data (the second part of a transaction, which is separated from the transaction data):
 
 .Decoded transaction showing a P2WPKH output being spent with separate witness data
 ----
@@ -788,7 +788,7 @@ While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness 
 
 ====
 
-Mohammed's company can spend the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
+Mohammed's company can spend the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction data as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
 
 .Decoded transaction showing a P2WSH output being spent with separate witness data
 ----
