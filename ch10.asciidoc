@@ -116,10 +116,10 @@ Each node verifies every transaction against a long checklist of criteria:
 * The unlocking script (+scriptSig+) can only push numbers on the stack, and the locking script (+scriptPubkey+) must match +IsStandard+ forms (this rejects "nonstandard" transactions).
 * A matching transaction in the pool, or in a block in the main branch, must exist.
 * For each input, if the referenced output exists in any other transaction in the pool, the transaction must be rejected.
-* For each input, look in the main branch and the transaction pool to find the referenced output transaction. If the output transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool.
-* For each input, if the referenced output transaction is a coinbase output, it must have at least +COINBASE_MATURITY+ (100) confirmations.
+* For each input, look in the main branch and the transaction pool to find its parent transaction. If the parent transaction is missing for any input, this will be an orphan transaction. Add to the orphan transactions pool, if a matching transaction is not already in the pool.
+* For each input, if its parent transaction is a coinbase transaction, it must have at least +COINBASE_MATURITY+ (100) confirmations.
 * For each input, the referenced output must exist and cannot already be spent.
-* Using the referenced output transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0).
+* Using the parent transactions to get input values, check that each input value, as well as the sum, are in the allowed range of values (less than 21m coins, more than 0).
 * Reject if the sum of input values is less than sum of output values.
 * Reject if transaction fee would be too low (+minRelayTxFee+) to get into an empty block.
 * The unlocking scripts for each input must validate against the corresponding output locking scripts.
@@ -247,7 +247,7 @@ Unlike regular transactions, the coinbase transaction does not consume (spend) U
 ((("coinbase transactions", "rewards and fees")))((("fees", "transaction fees")))((("mining and consensus", "rewards and fees")))To construct the coinbase transaction, Jing's node first calculates the total amount of transaction fees by adding all the inputs and outputs of the 418 transactions that were added to the block. The fees are calculated as:
 
 ----
-Total Fees = Sum(Inputs) - Sum(Outputs)
+Total Fees = Sum(Inputs) – Sum(Outputs)
 ----
 
 In block 277,316, the total transaction fees are 0.09094928 bitcoin.
@@ -296,7 +296,7 @@ If Jing's mining node writes the coinbase transaction, what stops Jing from "rew
 
 ((("coinbase transactions", "structure of")))With these calculations, Jing's node then constructs the coinbase transaction to pay himself 25.09094928 bitcoin.
 
-As you can see in <<generation_tx_example>>, the coinbase transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. Let's compare a regular transaction input with a coinbase transaction input. <<table_8-1>> shows the structure of a regular transaction's input, while <<table_8-2>> shows the structure of the coinbase transaction's input.
+As you can see in <<generation_tx_example>>, the coinbase transaction has a special format. Instead of a transaction input specifying a previous UTXO to spend, it has a "coinbase" input. We examined transaction inputs in <<tx_in_structure>>. Let's compare a regular transaction input with a coinbase transaction input. <<table_8-1>> shows the structure of a regular transaction input, while <<table_8-2>> shows the structure of the coinbase transaction's input.
 
 [[table_8-1]]
 .The structure of a "normal" transaction input
@@ -338,7 +338,7 @@ The first byte, +03+, instructs the script execution engine to push the next thr
 
 The next few hexadecimal digits (+0385840206+) are used to encode an extra _nonce_ (see <<extra_nonce>>), or random value, used to find a suitable Proof-of-Work solution.
 
-((("bitcoin improvement proposals", "Pay to Script Hash (BIP-16)")))((("bitcoin improvement proposals", "CHECKHASHVERIFY (BIP-17)")))((("CHECKHASHVERIFY (CHV)")))((("Pay-to-Script-Hash (P2SH)", "coinbase data")))The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string pass:[<span class="keep-together"><code>/P2SH/</code></span>], which indicates that the mining node that mined this block supports the P2SH improvement defined in BIP-16. The introduction of the P2SH capability required signaling by miners to endorse either BIP-16 or BIP-17. Those endorsing the BIP-16 implementation were to include +/P2SH/+ in their coinbase data. Those endorsing the BIP-17 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. The BIP-16 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate support for this feature.
+((("bitcoin improvement proposals", "Pay to Script Hash (BIP-16)")))((("bitcoin improvement proposals", "CHECKHASHVERIFY (BIP-17)")))((("CHECKHASHVERIFY (CHV)")))((("Pay-to-Script-Hash (P2SH)", "coinbase data")))The final part of the coinbase data (+2f503253482f+) is the ASCII-encoded string pass:[<span class="keep-together"><code>/P2SH/</code></span>], which indicates that the mining node that mined this block provides support for the P2SH improvement defined in BIP-16. The introduction of the P2SH capability required signaling by miners to endorse either BIP-16 or BIP-17. Those endorsing the BIP-16 implementation were to include the string +/P2SH/+ in their coinbase data. Those endorsing the BIP-17 implementation of P2SH were to include the string +p2sh/CHV+ in their coinbase data. Finally, the BIP-16 was elected as the winner, and many miners continued including the string +/P2SH/+ in their coinbase to indicate that they provide support for this feature.
 
 <<satoshi_words>> uses the libbitcoin library introduced in <<alt_libraries>> to extract the coinbase data from the genesis block, displaying Satoshi's message. Note that the libbitcoin library contains a static copy of the genesis block, so the example code can retrieve the genesis block directly from the library.
 
@@ -358,9 +358,9 @@ We compile the code with the GNU C++ compiler and run the resulting executable, 
 ====
 [source,bash]
 ----
-$ # Compile the code
+# Compile the code
 $  g++ -o satoshi-words satoshi-words.cpp $(pkg-config --cflags --libs libbitcoin)
-$ # Run the executable
+# Run the executable
 $ ./satoshi-words
 ^D��<GS>^A^DEThe Times 03/Jan/2009 Chancellor on brink of second bailout for banks
 ----
@@ -812,7 +812,7 @@ Any mining node whose perspective resembles Node Y will start building a candida
 Forks are almost always resolved within one block. While part of the network's hashing power is dedicated to building on top of "triangle" as the parent, another part of the hashing power is focused on building on top of "upside-down triangle." Even if the hashing power is almost evenly split, it is likely that one set of miners will find a solution and propagate it before the other set of miners have found any solutions. Let's say, for example, that the miners building on top of "triangle" find a new block "rhombus" that extends the chain (e.g., star-triangle-rhombus). They immediately propagate this new block and the entire network sees it as a valid solution as shown in <<fork4>>.
 
 
-All nodes that had chosen "triangle" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "upside-down triangle" as the winner, however, will now see two chains: star-triangle-rhombus and star-upside-down-triangle. The chain star-triangle-rhombus is now longer (more cumulative work) than the other chain. As a result, those nodes will set the chain star-triangle-rhombus as the main chain and change the star-upside-down-triangle chain to a secondary chain, as shown in <<fork5>>. This is a chain reconvergence, because those nodes are forced to revise their view of the blockchain to incorporate the new evidence of a longer chain. Any miners working on extending the chain star-upside-down-triangle will now stop that work because their candidate block is an "orphan," as its parent "upside-down-triangle" is no longer on the longest chain. The transactions within "upside-down-triangle" that are not within "triangle" are re-inserted in the mempool for inclusion in the next block to become a part of the main chain. The entire network reconverges on a single blockchain star-triangle-rhombus, with "rhombus" as the last block in the chain. All miners immediately start working on candidate blocks that reference "rhombus" as their parent to extend the star-triangle-rhombus chain.
+All nodes that had chosen "triangle" as the winner in the previous round will simply extend the chain one more block. The nodes that chose "upside-down triangle" as the winner, however, will now see two chains: star-triangle-rhombus and star-upside-down-triangle. The chain star-triangle-rhombus is now longer (more cumulative work) than the other chain. As a result, those nodes will set the chain star-triangle-rhombus as the main chain and change the star-upside-down-triangle chain to a secondary chain, as shown in <<fork5>>. This is a chain reconvergence, because those nodes are forced to revise their view of the blockchain to incorporate the new evidence of a longer chain. Any miners working on extending the chain star-upside-down-triangle will now stop that work because their candidate block is now considered a stale block, as its parent "upside-down-triangle" is no longer on the longest chain. The transactions within "upside-down-triangle" that are not within "triangle" are re-inserted in the mempool for inclusion in the next block to become a part of the main chain. The entire network reconverges on a single blockchain star-triangle-rhombus, with "rhombus" as the last block in the chain. All miners immediately start working on candidate blocks that reference "rhombus" as their parent to extend the star-triangle-rhombus chain.
 
 [[fork4]]
 [role="smallereighty"]
@@ -1035,7 +1035,7 @@ Technical debt:: Because soft forks are more technically complex than a hard for
 
 Validation relaxation:: Unmodified clients see transactions as valid, without evaluating the modified consensus rules. In effect, the unmodified clients are not validating using the full range of consensus rules, as they are blind to the new rules. This applies to NOP-based upgrades, as well as other soft fork upgrades.
 
-Irreversible upgrades:: Because soft forks create transactions with additional consensus constraints, they become irreversible upgrades in practice. If a soft fork upgrade were to be reversed after beings activated, any transactions created under the new rules could result in a loss of funds under the old rules. For example, if a CLTV transaction is evaluated under the old rules, there is no timelock constraint and it can be spent at any time. Therefore, critics contend that a failed soft fork that had to be reversed because of a bug would almost certainly lead to loss of funds.((("", startref="Crule10")))
+Irreversible upgrades:: Because soft forks create transactions with additional consensus constraints, they become irreversible upgrades in practice. If a soft fork upgrade were to be reversed after being activated, any transactions created under the new rules could result in a loss of funds under the old rules. For example, if a CLTV transaction is evaluated under the old rules, there is no timelock constraint and it can be spent at any time. Therefore, critics contend that a failed soft fork that had to be reversed because of a bug would almost certainly lead to loss of funds.((("", startref="Crule10")))
 
 [[softforksignaling]]
 === Soft Fork Signaling with Block Version
