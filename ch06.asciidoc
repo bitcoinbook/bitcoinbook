@@ -204,16 +204,16 @@ In Alice's transaction, the input points to the transaction ID:
 
 and output index +0+ (i.e., the first UTXO created by that transaction). The unlocking script is constructed by Alice's wallet by first retrieving the referenced UTXO, examining its locking script, and then using it to build the necessary unlocking script to satisfy it.
 
-Looking just at the input you may have noticed that we don't know anything about this UTXO, other than a reference to the transaction containing it. We don't know its value (amount in satoshi), and we don't know the locking script that sets the conditions for spending it. To find this information, we must retrieve the referenced UTXO by retrieving the underlying transaction. Notice that because the value of the input is not explicitly stated, we must also use the referenced UTXO in order to calculate the fees that will be paid in this transaction (see <<tx_fees>>).
+Looking just at the input you may have noticed that we don't know anything about this UTXO, other than a reference to the parent transaction containing it. We don't know its value (amount in satoshi), and we don't know the locking script that sets the conditions for spending it. To find this information, we must retrieve the referenced UTXO by retrieving the parent transaction that contains it. Notice that because the value of the input is not explicitly stated, we must also use the referenced UTXO in order to calculate the fees that will be paid in this transaction (see <<tx_fees>>).
 
 It's not just Alice's wallet that needs to retrieve UTXO referenced in the inputs. Once this transaction is broadcast to the network, every validating node will also need to retrieve the UTXO referenced in the transaction inputs in order to validate the transaction.
 
 Transactions on their own seem incomplete because they lack context. They reference UTXO in their inputs but without retrieving that UTXO we cannot know the value of the inputs or their locking conditions. When writing bitcoin software, anytime you decode a transaction with the intent of validating it or counting the fees or checking the unlocking script, your code will first have to retrieve the referenced UTXO from the blockchain in order to build the context implied but not present in the UTXO references of the inputs. For example, to calculate the amount paid in fees, you must know the sum of the values of inputs and outputs. But without retrieving the UTXO referenced in the inputs, you do not know their value. So a seemingly simple operation like counting fees in a single transaction in fact involves multiple steps and data from multiple transactions.
 
-We can use the same sequence of commands with Bitcoin Core as we used when retrieving Alice's transaction (+getrawtransaction+ and +decoderawtransaction+). With that we can get the UTXO referenced in the preceding input and take a look:
+We can use the same sequence of commands with Bitcoin Core as we used when retrieving Alice's transaction (+getrawtransaction+ and +decoderawtransaction+). With that we can get the UTXO referenced in the input from Alice's transaction and take a look:
 
 [[alice_input_tx]]
-.Alice's UTXO from the previous transaction, referenced in the input
+.UTXO from the previous transaction, referenced in the input from Alice's transaction
 [source,json]
 ----
 "vout": [
@@ -228,7 +228,7 @@ We see that this UTXO has a value of 0.1 BTC and that it has a locking script (+
 
 [TIP]
 ====
-To fully understand Alice's transaction we had to retrieve the previous transaction(s) referenced as inputs. A function that retrieves previous transactions and unspent transaction outputs is very common and exists in almost every bitcoin library and API.
+To fully understand Alice's transaction we had to retrieve the previous transaction referenced as input. A function that retrieves previous transactions and unspent transaction outputs is very common and exists in almost every bitcoin library and API.
 ====
 
 ===== Transaction serialization&#x2014;inputs
@@ -347,7 +347,7 @@ For example, if you consume a 20-bitcoin UTXO to make a 1-bitcoin payment, you m
 ((("warnings and cautions", "change outputs")))If you forget to add a change output in a manually constructed transaction, you will be paying the change as a transaction fee. Saying "Keep the change!" to the miner might not be what you really intended.
 ====
 
-((("use cases", "buying coffee")))Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.001. That will mean that the total cost of the transaction will be 0.016. Her wallet must therefore source a set of UTXO that adds up to 0.016 bitcoin or more and, if necessary, create change. Let's say her wallet has a 0.2-bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.184 bitcoin in change back to her own wallet, leaving 0.001 bitcoin unallocated, as an implicit fee for the transaction.
+((("use cases", "buying coffee")))Let's see how this works in practice, by looking at Alice's coffee purchase again. Alice wants to spend 0.015 bitcoin to pay for coffee. To ensure this transaction is processed promptly, she will want to include a transaction fee, say 0.005. That will mean that the total cost of the transaction will be 0.0155. Her wallet must therefore source a set of UTXO that adds up to 0.0155 bitcoin or more and, if necessary, create change. Let's say her wallet has a 0.1-bitcoin UTXO available. It will therefore need to consume this UTXO, create one output to Bob's Cafe for 0.015, and a second output with 0.0845 bitcoin in change back to her own wallet, leaving 0.0005 bitcoin unallocated, as an implicit fee for the transaction.
 
 ((("use cases", "charitable donations")))((("charitable donations")))Now let's look at a different scenario. Eugenia, our children's charity director in the Philippines, has completed a fundraiser to purchase schoolbooks for the children. She received several thousand small donations from people all around the world, totaling 50 bitcoin, so her wallet is full of very small payments (UTXO). Now she wants to purchase hundreds of schoolbooks from a local publisher, paying in bitcoin.
 
@@ -507,7 +507,7 @@ image::images/mbc2_0606.png["Tx_Script_P2PubKeyHash_2"]
 
 ((("digital signatures", "algorithm used")))((("Elliptic Curve Digital Signature Algorithm (ECDSA)")))The digital signature algorithm used in bitcoin is the _Elliptic Curve Digital Signature Algorithm_, or _ECDSA_. ECDSA is the algorithm used for digital signatures based on elliptic curve private/public key pairs, as described in <<elliptic_curve>>. ECDSA is used by the script functions +OP_CHECKSIG+, +OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+, and +OP_CHECKMULTISIGVERIFY+. Any time you see those in a locking script, the unlocking script must contain an ECDSA signature.
 
-((("digital signatures", "purposes of")))A digital signature serves three purposes in bitcoin (see the following sidebar). First, the signature proves that the owner of the private key, who is by implication the owner of the funds, has _authorized_ the spending of those funds. Secondly, the proof of authorization is _undeniable_ (nonrepudiation). Thirdly, the signature proves that the transaction (or specific parts of the transaction) have not and _cannot be modified_ by anyone after it has been signed.
+((("digital signatures", "purposes of")))A digital signature serves three purposes in bitcoin. First, the signature proves that the owner of the private key, who is by implication the owner of the funds, has _authorized_ the spending of those funds. Secondly, the proof of authorization is _undeniable_ (nonrepudiation). Thirdly, the signature proves that the transaction (or specific parts of the transaction) have not and _cannot be modified_ by anyone after it has been signed.
 
 Note that each transaction input is signed independently. This is critical, as neither the signatures nor the inputs have to belong to or be applied by the same "owners." In fact, a specific transaction scheme called "CoinJoin" uses this fact to create multi-party transactions for privacy.
 
@@ -636,7 +636,7 @@ Let's look at some of the other +SIGHASH+ types and how they can be used in prac
 
 +NONE+ :: This construction can be used to create a "bearer check" or "blank check" of a specific amount. It commits to the input, but allows the output locking script to be changed. Anyone can write their own bitcoin address into the output locking script and redeem the transaction. However, the output value itself is locked by the signature.
 
-+NONE|ANYONECANPAY+ :: This construction can be used to build a "dust collector." Users who have tiny UTXO in their wallets can't spend these without the cost in fees exceeding the value of the dust. With this type of signature, the dust UTXO can be donated for anyone to aggregate and spend whenever they want.
++NONE|ANYONECANPAY+ :: This construction can be used to build a "dust collector." Users who have tiny UTXO in their wallets can't spend these because the cost in fees exceeds the value of the dust. With this type of signature, the dust UTXO can be donated for anyone to aggregate and spend whenever they want.
 
 ((("Bitmask Sighash Modes")))There are some proposals to modify or expand the +SIGHASH+ system. One such proposal is _Bitmask Sighash Modes_ by Blockstream's Glenn Willen, as part of the Elements project. This aims to create a flexible replacement for +SIGHASH+ types that allows "arbitrary, miner-rewritable bitmasks of inputs and outputs" that can express "more complex contractual precommitment schemes, such as signed offers with change in a distributed asset exchange."
 
