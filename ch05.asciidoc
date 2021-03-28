@@ -485,15 +485,9 @@ Gabriel copies the xpub to his web store's bitcoin shop software. He uses _BTCPa
 
 Gabriel's business is flourishing. He has provided his extended public key (xpub) to BTCPay Server, which is generating unique addresses for customers to his website. Every time a customer to Gabriel's website clicks on the "Checkout" button with a specified payment modality (in this case, bitcoin), BTCPay Server generates a new address for that customer.  More specifically, BTCPay Server iterates on the _address_index_ tree to create a new address to display to the customer, as defined by BIP-44. If the customer decides to switch payment methods or abandon the transaction entirely, this bitcoin address goes unused and will not be used for another customer right away. At a single moment in time, Gabriel's website may have a large volume of outstanding addresses for customers making purhcases, some of which may go unused and eventually expire. Once these addresses expire, BTCPay Server will go back to reuse these addresses to fill the gap in _address_index_, but it becomes clear how there can be gaps between these leaves of where the money is actually located.  
 
-
-Let's say that Gabriel is and he is interested in viewing his total amount of bitcoin earned on a watch-only wallet (a wallet that allows you to view transaction history, but not spend funds) device that is separate from BTCPay Server but also conforms to the BIP-44 standard. How should this separate wallet go about searching for funds in this vast heirarchial tree, and when should it stop looking? Most wallets will typically follow the process that is described in [[bip-44]]https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki[BIP-44]:
-
-
+Let's say that Gabriel is and he is interested in viewing his total amount of bitcoin earned on a watch-only wallet (one that allows you to view transaction history, but not spend funds) that is separate from BTCPay Server but also conforms to the BIP-44 standard. How should this separate wallet go about searching for funds in this vast heirarchial tree, and when should it stop looking? Most wallets will typically follow an iterative process that utilizes the _gap limit_, a predefined limit whereby if there are no used addresses in a row beyond this limit number the wallet will stop searching the address chain. The default gap limit is typically set to 20. This is detailed in [[bip-44]]https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki[BIP-44]. 
 
 [TIP]
 ====
 Gap limits explain the phenomenon whereby the the importing of a wallet may show an incorrect or zero balance. Many wallets allow this default gap limit to be changed, and Gabriel may need to increase this limit to allow his wallet to fully import his transaction history. 
 ====
-
-
-
