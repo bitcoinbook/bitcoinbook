@@ -26,7 +26,7 @@ Bitcoin wallets contain keys, not coins. Each user has a wallet containing keys.
 
 ((("deterministic wallets", seealso="wallets")))The second type of wallet is a _deterministic wallet_, where all the keys are derived from a single master key, known as the _seed_. All the keys in this type of wallet are related to each other and can be generated again if one has the original seed. ((("key derivation methods")))There are a number of different _key derivation_ methods used in deterministic wallets. ((("hierarchical deterministic (HD) wallets", seealso="wallets")))The most commonly used derivation method uses a tree-like structure and is known as a _hierarchical deterministic_ or _HD_ wallet.
 
-((("mnemonic code words")))Deterministic wallets are initialized from a seed. To make these easier to use, seeds are encoded as English words, also known as _mnemonic code words_.
+((("mnemonic code words")))Deterministic wallets are initialized from a random sequence (entropy). To make these easier to use, random sequences are encoded as English words, also known as _mnemonic code words_.
 
 The next few sections introduce each of these technologies at a high level.
 
@@ -37,7 +37,7 @@ The next few sections introduce each of these technologies at a high level.
 
 [TIP]
 ====
-The use of nondeterministic wallets is discouraged for anything other than simple tests. They are simply too cumbersome to back up and use. Instead, use an industry-standard&#x2013;based _HD wallet_ with a _mnemonic_ seed for backup.
+The use of nondeterministic wallets is discouraged for anything other than simple tests. They are simply too cumbersome to back up and use. Instead, use an industry-standard&#x2013;based _HD wallet_ with a _mnemonic_ random sequence (entropy, or "initial seed") for backup.
 ====
 
 [[Type0_wallet]]
@@ -57,7 +57,7 @@ image::images/mbc2_0502.png["Deterministic Wallet"]
 [[hd_wallets]]
 ==== HD Wallets (BIP-32/BIP-44)
 
-((("wallets", "types of", "hierarchical deterministic (HD) wallets")))((("hierarchical deterministic (HD) wallets")))((("bitcoin improvement proposals", "Hierarchical Deterministic Wallets (BIP-32/BIP-44)")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed." The most advanced form of deterministic wallets is the HD wallet defined by the BIP-32 standard. HD wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.
+((("wallets", "types of", "hierarchical deterministic (HD) wallets")))((("hierarchical deterministic (HD) wallets")))((("bitcoin improvement proposals", "Hierarchical Deterministic Wallets (BIP-32/BIP-44)")))Deterministic wallets were developed to make it easy to derive many keys from a single "seed". The most advanced form of deterministic wallets is the HD wallet defined by the BIP-32 standard. HD wallets contain keys derived in a tree structure, such that a parent key can derive a sequence of children keys, each of which can derive a sequence of grandchildren keys, and so on, to an infinite depth. This tree structure is illustrated in <<Type2_wallet>>.
 
 [[Type2_wallet]]
 .Type-2 HD wallet: a tree of keys generated from a single seed
@@ -103,7 +103,7 @@ The following sections examine each of these technologies in detail.
 
 [TIP]
 ====
-If you are implementing a bitcoin wallet, it should be built as a HD wallet, with a seed encoded as mnemonic code for backup, following the BIP-32, BIP-39, BIP-43, and BIP-44 standards, as described in the following sections.
+If you are implementing a bitcoin wallet, it should be built as a HD wallet, with a seed derived from, and encoded as, a mnemonic code for backup, following the BIP-32, BIP-39, BIP-43, and BIP-44 standards, as described in the following sections.
 ====
 
 ==== Using a Bitcoin Wallet
@@ -116,7 +116,7 @@ If you are implementing a bitcoin wallet, it should be built as a HD wallet, wit
 .A Trezor device: a bitcoin HD wallet in hardware
 image::images/mbc2_0504.png[alt]
 
-When Gabriel used the Trezor for the first time, the device generated a mnemonic and seed from a built-in hardware random number generator. During this initialization phase, the wallet displayed a numbered sequence of words, one by one, on the screen (see <<trezor_mnemonic_display>>).
+When Gabriel used the Trezor for the first time, the device generated a random sequence (entropy), the associated mnemonic and derived a seed from a built-in hardware random number generator. During this initialization phase, the wallet displayed a numbered sequence of words, one by one, on the screen (see <<trezor_mnemonic_display>>).
 
 [[trezor_mnemonic_display]]
 .Trezor displaying one of the mnemonic words
@@ -277,9 +277,9 @@ The optional passphrase creates two important features:
 
 However, it is important to note that the use of a passphrase also introduces the risk of loss:
 
-* If the wallet owner is incapacitated or dead and no one else knows the passphrase, the seed is useless and all the funds stored in the wallet are lost forever.
+* If the wallet owner is incapacitated or dead and no one else knows the passphrase, the mnemonic code is useless and all the funds stored in the wallet are lost forever.
 
-* Conversely, if the owner backs up the passphrase in the same place as the seed, it defeats the purpose of a second factor.
+* Conversely, if the owner backs up the passphrase in the same place as the mnemonic code, it defeats the purpose of a second factor.
 
 While passphrases are very useful, they should only be used in combination with a carefully planned process for backup and recovery, considering the possibility of surviving the owner and allowing his or her family to recover the cryptocurrency estate.
 
