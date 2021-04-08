@@ -20,7 +20,7 @@ compressed_private_key = private_key + '01'
 print("Private Key Compressed (hex) is: ", compressed_private_key)
 
 # Generate a WIF format from the compressed private key (WIF-compressed)
-wif_compressed_private_key = bitcoin.encode_privkey(
+wif_compressed_private_key = cryptos.encode_privkey(
     cryptos.decode_privkey(compressed_private_key, 'hex_compressed'), 'wif_compressed')
 print("Private Key (WIF-Compressed) is: ", wif_compressed_private_key)
 
