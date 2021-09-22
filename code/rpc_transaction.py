@@ -13,4 +13,4 @@ decoded_tx = p.decoderawtransaction(raw_tx)
 
 # Retrieve each of the outputs from the transaction
 for output in decoded_tx['vout']:
-    print(output['scriptPubKey']['addresses'], output['value'])
+    print(output['scriptPubKey']['address'], output['value'])
