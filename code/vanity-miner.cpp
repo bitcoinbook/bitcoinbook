@@ -45,7 +45,7 @@ bc::ec_secret random_secret(std::default_random_engine& engine)
     bc::ec_secret secret;
     // Iterate through every byte setting a random value...
     for (uint8_t& byte: secret)
-        byte = engine() % std::numeric_limits<uint8_t>::max();
+        byte = engine() & 255;
     // Return result.
     return secret;
 }

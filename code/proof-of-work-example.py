@@ -19,10 +19,10 @@ def proof_of_work(header, difficulty_bits):
     target = 2 ** (256 - difficulty_bits)
 
     for nonce in xrange(max_nonce):
-        hash_result = hashlib.sha256(str(header) + str(nonce)).hexdigest()
+        hash_result = hashlib.sha256((str(header) + str(nonce)).encode()).hexdigest()
 
-        # check if this is a valid result, below the target
-        if long(hash_result, 16) < target:
+        # check if this is a valid result, equal to or below the target
+        if long(hash_result, 16) <= target:
             print("Success with nonce %d" % nonce)
             print("Hash is %s" % hash_result)
             return (hash_result, nonce)

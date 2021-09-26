@@ -14,7 +14,7 @@ First, we will look at _multisignature_ scripts. Next, we will examine the secon
 
 ((("transactions", "advanced", "multisignature scripts")))((("transactions", "advanced", id="Tadv07")))((("scripting", "multisignature scripts", id="Smulti07")))((("multisignature scripts")))Multisignature scripts set a condition where N public keys are recorded in the script and at least M of those must provide signatures to unlock the funds. This is also known as an M-of-N scheme, where N is the total number of keys and M is the threshold of signatures required for validation. For example, a 2-of-3 multisignature is one where three public keys are listed as potential signers and at least two of those must be used to create signatures for a valid transaction to spend the funds.
 
-At this time, _standard_ multisignature scripts are limited to at most 3 listed public keys, meaning you can do anything from a 1-of-1 to a 3-of-3 multisignature or any combination within that range. The limitation to 3 listed keys might be lifted by the time this book is published, so check the +IsStandard()+ function to see what is currently accepted by the network. Note that the limit of 3 keys applies only to standard (also known as "bare") multisignature scripts, not to multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script. P2SH multisignature scripts are limited to 15 keys, allowing for up to 15-of-15 multisignature. We will learn about P2SH in <<p2sh>>.
+At this time, _standard_ multisignature scripts are limited to at most 3 listed public keys, meaning you can do anything from a 1-of-1 to a 3-of-3 multisignature or any combination within that range. The limitation to 3 listed keys might be lifted by the time this book is published, so check the +IsStandard()+ function to see what is currently accepted by the network. Note that the limit of 3 keys applies only to standard (also known as "bare") multisignature scripts, not to multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script. P2SH multisignature scripts are limited to 15 keys, allowing for up to 15-of-15 multisignature. This limitation is also imposed by the +IsStandard()+ function. We will learn about P2SH in <<p2sh>>.
 
 The general form of a locking script setting an M-of-N multisignature condition is:
 
@@ -30,12 +30,11 @@ A locking script setting a 2-of-3 multisignature condition looks like this:
 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
 ----
 
-The preceding locking script can be satisfied with an unlocking script containing pairs of signatures and public keys:
+The preceding locking script can be satisfied with an unlocking script containing any combination of two signatures from the private keys corresponding to the three listed public keys:
 
 ----
 <Signature B> <Signature C>
 ----
-or any combination of two signatures from the private keys corresponding to the three listed public keys.
 
 The two scripts together would form the combined validation script:
 
@@ -101,7 +100,7 @@ P2SH was developed to resolve these practical difficulties and to make the use o
 .Complex script without P2SH
 |=======
 | Locking Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
-| Unlocking Script | Sig1 Sig2
+| Unlocking Script | 0 Sig1 Sig2
 |=======
 
 [[with_p2sh]]
@@ -109,10 +108,10 @@ P2SH was developed to resolve these practical difficulties and to make the use o
 |=======
 | Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
 | Locking Script | HASH160 <20-byte hash of redeem script> EQUAL
-| Unlocking Script | Sig1 Sig2 <redeem script>
+| Unlocking Script | 0 Sig1 Sig2 <redeem script>
 |=======
 
-As you can see from the tables, with P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeem script itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender to the recipient (spender) of the transaction.
+As you can see from the tables, with P2SH the complex script that details the conditions for spending the output (redeem script) is not presented in the locking script. Instead, only a hash of it is in the locking script and the redeem script itself is presented later, as part of the unlocking script when the output is spent. This shifts the burden in fees and complexity from the sender (who creates the transaction) to the recipient (who unlocks and spends the transaction).
 
 Let's look at Mohammed's company, the complex multisignature script, and the resulting P2SH scripts.
 
@@ -177,7 +176,12 @@ If the redeem script hash matches, the unlocking script is executed on its own, 
 <Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG
 ----
 
-Almost all the scripts described in this chapter can only be implemented as P2SH scripts. They cannot be used directly in the locking script of an UTXO.((("", startref="mohamseven")))
+Almost all the scripts described in this chapter can only be implemented as P2SH scripts. For example, a 2 of 5 standard multisignature locking script cannot be used directly in the locking script of an UTXO, as +IsStandard()+ would invalidate the transaction. To conform, a P2SH locking script can be used instead, as seen above. A transaction that then includes a P2SH unlocking script can be used to redeem this UTXO and will be valid so long as it does not contain more than 15 public keys. ((("", startref="mohamseven")))
+
+[TIP]
+====
+Remember, because of policy set forth by the +IsStandard()+ function at the time of this writing, standard multisignature scripts are limited to at most 3 listed public keys, while P2SH scripts are limited to at most 15 listed public keys. Standard multisignature scripts can invalidate transactions by way of their locking _or_ unlocking script, while P2SH scripts can invalidate transactions by way of their unlocking script _only_. This is because there is no way for +IsStandard()+ to tell if a hash of a redeem script in a locking script includes more signatures than the currently imposed size limitation, so it can only observe the unlocking scripts in transaction inputs. 
+====
 
 ==== P2SH Addresses
 
@@ -206,7 +210,7 @@ P2SH addresses hide all of the complexity, so that the person making a payment d
 * P2SH shifts the burden of constructing the script to the recipient, not the sender.
 * P2SH shifts the burden in data storage for the long script from the output (which additionally to being stored on the blockchain is in the UTXO set) to the input (only stored on the blockchain).
 * P2SH shifts the burden in data storage for the long script from the present time (payment) to a future time (when it is spent).
-* P2SH shifts the transaction fee cost of a long script from the sender to the recipient, who has to include the long redeem script to spend it.
+* P2SH shifts the higher transaction fee costs of a long script from the sender to the recipient, who has to include the long redeem script to spend it.
 
 ==== Redeem Script and Validation
 
@@ -240,7 +244,7 @@ In version 0.9 of the Bitcoin Core client, a compromise was reached with the int
 RETURN <data>
 ----
 
-((("Proof of Existence")))((("DOCPROOF prefix")))The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the http://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44 4f 43 50 52 4f 4f 46+ in hexadecimal.
+((("Proof of Existence")))((("DOCPROOF prefix")))The data portion is limited to 80 bytes and most often represents a hash, such as the output from the SHA256 algorithm (32 bytes). Many applications put a prefix in front of the data to help identify the application. For example, the https://proofofexistence.com[Proof of Existence] digital notarization service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44 4f 43 50 52 4f 4f 46+ in hexadecimal.
 
 Keep in mind that there is no "unlocking script" that corresponds to +RETURN+ that could possibly be used to "spend" a +RETURN+ output. The whole point of +RETURN+ is that you can't spend the money locked in that output, and therefore it does not need to be held in the UTXO set as potentially spendable—+RETURN+ is _provably unspendable_. +RETURN+ is usually an output with a zero bitcoin amount, because any bitcoin assigned to such an output is effectively lost forever. If a +RETURN+ is referenced as an input in a transaction, the script validation engine will halt the execution of the validation script and mark the transaction as invalid. The execution of +RETURN+ essentially causes the script to "RETURN" with a +FALSE+ and halt. Thus, if you accidentally reference a +RETURN+ output as an input in a transaction, that transaction is invalid.
 
@@ -262,7 +266,7 @@ Timelocks are useful for postdating transactions and locking funds to a date in 
 [[transaction_locktime_nlocktime]]
 ==== Transaction Locktime (nLocktime)
 
-((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is above 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
+((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
 
 [[locktime_limitations]]
 ===== Transaction locktime limitations
@@ -310,17 +314,17 @@ To lock it to a time, say 3 months from now, the transaction would be a P2SH tra
 
 where +<now {plus} 3 months>+ is a block height or time value estimated 3 months from the time the transaction is mined: current block height {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000 (seconds). For now, don't worry about the +DROP+ opcode that follows +CHECKLOCKTIMEVERIFY+; it will be explained shortly.
 
-When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal or greater to the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
+When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
 
-Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
+Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal to the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
 
 More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the transaction invalid if (source: BIP-65):
 
 1. the stack is empty; or
-1. the top item on the stack is less than 0; or
-1. the lock-time type (height versus timestamp) of the top stack item and the +nLocktime+ field are not the same; or
-1. the top stack item is greater than the transaction's +nLocktime+ field; or
-1. the +nSequence+ field of the input is 0xffffffff.
+2. the top item on the stack is less than 0; or
+3. the timelock type (height versus timestamp) of the top stack item and the +nLocktime+ field are not the same; or
+4. the top stack item is greater than the transaction's +nLocktime+ field; or
+5. the +nSequence+ field of the input is 0xffffffff.
 
 [NOTE]
 ====
@@ -329,7 +333,7 @@ More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the tra
 
 After execution, if +CLTV+ is satisfied, the time parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
 
-By using nLocktime in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
+By using +nLocktime+ in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
 
 By introducing timelock functionality directly into the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
 
@@ -355,11 +359,11 @@ BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the cons
 
 The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 0xFFFFFFFF it would be considered "finalized" and mined.
 
-The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
+The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with +nLocktime+ or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
 
 ===== nSequence as a consensus-enforced relative timelock
 
-Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
+Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
 
 Transaction inputs with +nSequence+ values less than 2^31^ are interpreted as having a relative timelock. Such a transaction is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with an +nSequence+ relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since +nSequence+ is a per-input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A transaction can include both timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative timelock (+nSequence+ >= 2^31^).
 
@@ -412,11 +416,11 @@ Median-Time-Past is specified in https://github.com/bitcoin/bips/blob/master/bip
 
 For example, let's say the highest block in existence is block  #100,000. If instead of attempting to mine block #100,001 to extend the chain, some miners attempt to remine  #100,000. These miners can choose to include any valid transaction (that hasn't been mined yet) in their candidate block  #100,000. They don't have to remine the block with the same transactions. In fact, they have the incentive to select the most profitable (highest fee per kB) transactions to include in their block. They can include any transactions that were in the "old" block  #100,000, as well as any transactions from the current mempool. Essentially they have the option to pull transactions from the "present" into the rewritten "past" when they re-create block  #100,000.
 
-Today, this attack is not very lucrative, because block reward is much higher than total fees per block. But at some point in the future, transaction fees will be the majority of the reward (or even the entirety of the reward). At that time, this scenario becomes inevitable.
+Today, this attack is not very lucrative, because block reward is much higher than total fees per block. But at some point in the future, transaction fees will be the majority of the mining reward (or even the entirety of the mining reward). At that time, this scenario becomes inevitable.
 
 To prevent "fee sniping," when Bitcoin Core creates transactions, it uses +nLocktime+ to limit them to the "next block," by default. In our scenario, Bitcoin Core would set +nLocktime+ to 100,001 on any transaction it created. Under normal circumstances, this +nLocktime+ has no effect&#x2014;the transactions could only be included in block #100,001 anyway; it's the next block.
 
-But under a blockchain fork attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only remine  #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
+But under a blockchain fork/double-spend attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only remine #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
 
 To achieve this, Bitcoin Core sets the +nLocktime+ on all new transactions to <current block # + 1> and sets the +nSequence+ on all the inputs to 0xFFFFFFFE to enable +nLocktime+.((("", startref="Stimelock07")))
 
@@ -428,7 +432,7 @@ At a basic level, bitcoin conditional opcodes allow us to construct a redeem scr
 
 Additionally, bitcoin conditional expressions can be "nested" indefinitely, meaning that a conditional clause can contain another within it, which contains another, etc. Bitcoin Script flow control can be used to construct very complex scripts with hundreds or even thousands of possible execution paths. There is no limit to nesting, but consensus rules impose a limit on the maximum size, in bytes, of a script.
 
-Bitcoin implements flow control using the +IF+, +ELSE+, +ENDIF+, and +NOTIF+ opcodes. Additionally, conditional expressions can contain boolean operators such as +BOOLAND+, pass:[<span class="keep-together"><code>BOOLOR</code></span>], and +NOT+.
+Bitcoin implements flow control using the +IF+, +ELSE+, +ENDIF+, and +NOTIF+ opcodes. Additionally, conditional expressions can contain boolean operators such as +BOOLAND+, +BOOLOR+, and +NOT+.
 
 At first glance, you may find the bitcoin's flow control scripts confusing. That is because Bitcoin Script is a stack language. The same way that +1 {plus} 1+ looks "backward" when expressed as +1 1 ADD+, flow control clauses in bitcoin also look "backward."
 
@@ -464,7 +468,7 @@ When reading Bitcoin Script, remember that the condition being evaluated comes _
 
 ((("guard clauses")))Unlike an +IF+ clause, which offers alternative execution paths, the +VERIFY+ suffix acts as a _guard clause_, continuing only if a precondition is met.
 
-For example, the following script requires Bob's signature and a pre-image (secret) that produces a specific hash. Both conditions must be satisfied to unlock:
+For example, the following script requires Bob's signature and a pre-image (secret) that produces a specific hash. Both conditions must be satisfied to unlock it:
 
 .A redeem script with an +EQUALVERIFY+  guard clause.
 ----
@@ -604,7 +608,7 @@ The second execution path can only be used after 30 days have elapsed from the c
 
 .Unlocking script for the second execution path (Lawyer + 1-of-3)
 ----
-0 <Saeed's Sig> <Abdul's Sig> FALSE TRUE
+0 <Abdul the Lawyer's Sig> <Saeed's Sig> FALSE TRUE
 ----
 
 [TIP]
@@ -616,7 +620,7 @@ Finally, the third execution path allows Abdul the lawyer to spend the funds alo
 
 .Unlocking script for the third execution path (Lawyer only)
 ----
-<Abdul's Sig> FALSE
+<Abdul the Lawyer's Sig> FALSE
 ----
 
 Try running the script on paper to see how it behaves on the stack.
@@ -638,7 +642,7 @@ A few more things to consider when reading this example. See if you can find the
 
 ((("segwit (Segregated Witness)", id="Ssegwit07")))Segregated Witness (segwit) is an upgrade to the bitcoin consensus rules and network protocol, proposed and implemented as a BIP-9 soft-fork that was activated on bitcoin's mainnet on August 1st, 2017.
 
-In cryptography, the term "witness" is used to describe a solution to a cryptographic puzzle. In bitcoin terms, the witness satisfies a cryptographic condition placed on a unspent transaction output (UTXO).
+In cryptography, the term "witness" is used to describe a solution to a cryptographic puzzle. In bitcoin terms, the witness satisfies a cryptographic condition placed on an unspent transaction output (UTXO).
 
 In the context of bitcoin, a digital signature is _one type of witness_, but a witness is more broadly any solution that can satisfy the conditions imposed on an UTXO and unlock that UTXO for spending. The term “witness” is a more general term for an “unlocking script” or “scriptSig.”
 
@@ -665,11 +669,11 @@ https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32
 
 Segregated Witness is an architectural change that has several effects on the scalability, security, economic incentives, and performance of bitcoin:
 
-Transaction Malleability :: By moving the witness outside the transaction, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With Segregated Witness, transaction hashes become immutable by anyone other than the creator of the transaction, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions, and lightning networks.
+Transaction Malleability :: By moving the witness outside the transaction data, the transaction hash used as an identifier no longer includes the witness data. Since the witness data is the only part of the transaction that can be modified by a third party (see <<segwit_txid>>), removing it also removes the opportunity for transaction malleability attacks. With Segregated Witness, transaction hashes become immutable by anyone other than the creator of the transaction, which greatly improves the implementation of many other protocols that rely on advanced bitcoin transaction construction, such as payment channels, chained transactions, and lightning networks.
 
 Script Versioning :: With the introduction of Segregated Witness scripts, every locking script is preceded by a _script version_ number, similar to how transactions and blocks have version numbers. The addition of a script version number allows the scripting language to be upgraded in a backward-compatible way (i.e., using soft fork upgrades) to introduce new script operands, syntax, or semantics. The ability to upgrade the scripting language in a nondisruptive way will greatly accelerate the rate of innovation in bitcoin.
 
-Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multisig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction, Segregated Witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
+Network and Storage Scaling :: The witness data is often a big contributor to the total size of a transaction. More complex scripts such as those used for multisig or payment channels are very large. In some cases these scripts account for the majority (more than 75%) of the data in a transaction. By moving the witness data outside the transaction data, Segregated Witness improves bitcoin’s scalability. Nodes can prune the witness data after validating the signatures, or ignore it altogether when doing simplified payment verification. The witness data doesn’t need to be transmitted to all nodes and does not need to be stored on disk by all nodes.
 
 Signature Verification Optimization :: Segregated Witness upgrades the signature functions (+CHECKSIG+, +CHECKMULTISIG+, etc.) to reduce the algorithm's computational complexity. Before segwit, the algorithm used to produce a signature required a number of hash operations that was proportional to the size of the transaction. Data-hashing computations increased in O(n^2^) with respect to the number of signature operations, introducing a substantial computational burden on all nodes verifying the signature. With segwit, the algorithm is changed to reduce the complexity to O(n).
 
@@ -685,7 +689,7 @@ When a transaction spends an UTXO, it must provide a witness. In a traditional U
 
 ==== Soft Fork (Backward Compatibility)
 
-Segregated Witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet to change the consensus rules&#x2014;what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backward compatible, known as a soft fork. This type of upgrade allows nonupgraded software to ignore the changes and continue to operate without any disruption.
+Segregated Witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet to change the consensus rules&#x2014;what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backward compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption.
 
 Segregated Witness outputs are constructed so that older systems that are not segwit-aware can still validate them. To an old wallet or node, a Segregated Witness output looks like an output that _anyone can spend_. Such outputs can be spent with an empty signature, therefore the fact that there is no signature inside the transaction (it is segregated) does not invalidate the transaction. Newer wallets and mining nodes, however, see the Segregated Witness output and expect to find a valid witness for it in the transaction’s witness data.
 
@@ -710,7 +714,7 @@ With Segregated Witness, Alice would create a Pay-to-Witness-Public-Key-Hash (P2
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-As you can see, a Segregated Witness output’s locking script is much simpler than a traditional output. It consists of two values that are pushed on to the script evaluation stack. To an old (nonsegwit-aware) bitcoin client, the two pushes would look like an output that anyone can spend and does not require a signature (or rather, can be spent with an empty signature). To a newer, segwit-aware client, the first number (0) is interpreted as a version number (the _witness version_) and the second part (20 bytes) is the equivalent of a locking script known as a _witness program_. The 20-byte witness program is simply the hash of the public key, as in a P2PKH script
+As you can see, a Segregated Witness output’s locking script is much simpler than a traditional output. It consists of two values that are pushed on to the script evaluation stack. To an old (nonsegwit-aware) bitcoin client, the two pushes would look like an output that anyone can spend and does not require a signature (or rather, can be spent with an empty signature). To a newer, segwit-aware client, the first number (0) is interpreted as a version number (the _witness version_) and the second part (20 bytes) is the equivalent of a locking script known as a _witness program_. The 20-byte witness program is simply the hash of the public key, as in a P2PKH script.
 
 Now, let’s look at the corresponding transaction that Bob uses to spend this output. For the original script (nonsegwit), Bob’s transaction would have to include a signature within the transaction input:
 
@@ -725,7 +729,7 @@ Now, let’s look at the corresponding transaction that Bob uses to spend this o
 [...]
 ----
 
-However, to spend the Segregated Witness output, the transaction has no signature on that input. Instead, Bob’s transaction has an empty +scriptSig+ and includes a Segregated Witness, outside the transaction itself:
+However, to spend the Segregated Witness output, the transaction has no signature in the input part. Instead, Bob’s transaction has an empty +scriptSig+ in the transaction data (the first part of a transaction, which includes the input part) and includes his signature in the witness data (the second part of a transaction, which is separated from the transaction data):
 
 .Decoded transaction showing a P2WPKH output being spent with separate witness data
 ----
@@ -742,7 +746,7 @@ However, to spend the Segregated Witness output, the transaction has no signatur
 
 ===== Wallet construction of P2WPKH
 
-It is extremely important to note that P2WPKH should only be created by the payee (recipient) and not converted by the sender from a known public key, P2PKH script, or address. The sender has no way of knowing if the recipient's wallet has the ability to construct segwit transactions and spend P2WPKH outputs.
+It is extremely important to note that P2WPKH should only be created by the payee (recipient) and not converted by the sender from a known public key, P2PKH script, or address. The receiver has no way of knowing if the sender's wallet has the ability to construct segwit transactions and spend P2WPKH outputs.
 
 Additionally, P2WPKH outputs must be constructed from the hash of a _compressed_ public key. Uncompressed public keys are nonstandard in segwit and may be explicitly disabled by a future soft fork. If the hash used in the P2WPKH came from an uncompressed public key, it may be unspendable and you may lose funds. P2WPKH outputs should be created by the payee's wallet by deriving a compressed public key from their private key.
 
@@ -761,7 +765,7 @@ The ((("use cases", "import/export", id="mohamappd")))second type of witness pro
 HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
 ----
 
-This P2SH script references the hash of a _redeem script_ that defines a 2-of-3 multisignature requirement to spend funds. To spend this output, Mohammed's company would present the redeem script (whose hash matches the script hash in the P2SH output) and the signatures necessary to satisfy that redeem script, all inside the transaction input:
+This P2SH script references the hash of a _redeem script_ that defines a 2-of-5 multisignature requirement to spend funds. To spend this output, Mohammed's company would present the redeem script (whose hash matches the script hash in the P2SH output) and the signatures necessary to satisfy that redeem script, all inside the transaction input:
 
 .Decoded transaction showing a P2SH output being spent
 ----
@@ -782,13 +786,7 @@ Now, let's look at how this entire example would be upgraded to segwit. If Moham
 
 Again, as with the example of P2WPKH, you can see that the Segregated Witness equivalent script is a lot simpler and omits the various script operands that you see in P2SH scripts. Instead, the Segregated Witness program consists of two values pushed to the stack: a witness version (0) and the 32-byte SHA256 hash of the redeem script.
 
-[TIP]
-====
-While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness program uses a 32-byte +SHA256(script)+ hash. This difference in the selection of the hashing algorithm is deliberate and is used to differentiate between the two types of witness programs (P2WPKH and P2WSH) by the length of the hash and to provide stronger security to P2WSH (128 bits of security in P2WSH versus 80 bits of security in P2SH).
-
-====
-
-Mohammed's company can spend outputs the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
+Mohammed's company can spend the P2WSH output by presenting the correct redeem script and sufficient signatures to satisfy it. Both the redeem script and the signatures would be segregated _outside_ the spending transaction data as part of the witness data. Within the transaction input, Mohammed's ((("", startref="mohamappd")))wallet would put an empty +scriptSig+:
 
 .Decoded transaction showing a P2WSH output being spent with separate witness data
 ----
@@ -802,6 +800,12 @@ Mohammed's company can spend outputs the P2WSH output by presenting the correct 
 “witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”
 [...]
 ----
+
+[TIP]
+====
+While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH witness program uses a 32-byte +SHA256(script)+ hash. This difference in the selection of the hashing algorithm is deliberate and provides stronger security to P2WSH (128 bits of security in P2WSH versus 80 bits of security in P2SH). It is also used to differentiate between the two types of witness programs (P2WPKH and P2WSH) by using the length of the hash (see below).
+
+====
 
 ===== Differentiating between P2WPKH and P2WSH
 
@@ -821,7 +825,7 @@ As we can see from the previous examples, upgrading to Segregated Witness is a t
 For P2WPKH and P2WSH payment types, both the sender and the recipient wallets need to be upgraded to be able to use segwit. Furthermore, the sender's wallet needs to know that the recipient's wallet is segwit-aware.
 ====
 
-Segregated Witness will not be implemented simultaneously across the entire network. Rather, Segregated Witness is implemented as a backward-compatible upgrade, where _old and new clients can coexist_. Wallet developers will independently upgrade wallet software to add segwit capabilities. The P2WPKH and P2WSH payment types are used when both sender and recipient are segwit-aware. The traditional P2PKH and P2SH will continue to work for nonupgraded wallets. That leaves two important scenarios, which are addressed in the next section:
+Segregated Witness will not be implemented simultaneously across the entire network. Rather, Segregated Witness is implemented as a backward-compatible upgrade, where _old and new clients can coexist_. Wallet developers will independently upgrade wallet software to add segwit capabilities. The P2WPKH and P2WSH payment types are used when both sender and recipient are segwit-aware. The traditional P2PKH and P2SH will continue to work for non-upgraded wallets. That leaves two important scenarios, which are addressed in the next section:
 
 * Ability of a sender's wallet that is not segwit-aware to make a payment to a recipient's wallet that can process segwit transactions
 
@@ -886,7 +890,7 @@ Even though Alice's wallet has no support for segwit, the payment it creates can
 
 Similarly, a P2WSH witness program for a multisig script or other complicated script can be embedded inside a P2SH script and address, making it possible for any wallet to make payments that are segwit compatible.
 
-As we saw in <<p2wsh>>, Mohammed's ((("use cases", "import/export")))company is using Segregated Witness payments to multisignature scripts. To make it possible for any client to pay his company, regardless of whether their wallets are upgraded for segwit, Mohammed's wallet can embed the P2WSH witness program inside a P2SH script.
+As we saw in <<p2wsh>>, Mohammed's ((("use cases", "import/export")))company is using Segregated Witness payments with multisignature scripts. To make it possible for any client to pay his company, regardless of whether their wallets are upgraded for segwit, Mohammed's wallet can embed the P2WSH witness program inside a P2SH script.
 
 First, Mohammed's wallet hashes the redeem script with SHA256 (just once). Let's use +bx+ to do that on the command-line:
 
@@ -940,7 +944,7 @@ Mohammed's company can then construct segwit transactions to spend these payment
 
 ===== Segregated Witness addresses
 
-Even after segwit activation, it will take some time until most wallets are upgraded. At first, segwit will be embedded in P2SH, as we saw in the previous section, to ease compatibility between segit-aware and unaware wallets.
+Even after segwit activation, it will take some time until most wallets are upgraded. At first, segwit will be embedded in P2SH, as we saw in the previous section, to ease compatibility between segwit-aware and unaware wallets.
 
 However, once wallets are broadly supporting segwit, it makes sense to encode witness scripts directly in a native address format designed for segwit, rather than embed it in P2SH.
 
@@ -948,7 +952,7 @@ The native segwit address format is defined in BIP-173:
 
 https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32 address format for native v0-16 witness outputs
 
-BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addesses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
+BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addresses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
 
 BIP-173 addresses use 32 lower-case-only alphanumeric character set, carefully selected to reduce errors from misreading or mistyping. By choosing a lower-case-only character set, bech32 is easier to read, speak, and 45% more efficient to encode in QR codes.
 
@@ -963,13 +967,31 @@ Testnet P2WSH:: tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7
 
 As you can see in these examples, a segwit bech32 string is up to 90 characters long and consists of three parts:
 
-The human readable part:: This prefix "bc" or "tb" identifying mainnet or testnet.
+The human readable part:: This prefix "bc" or "tb" identifying mainnet or testnet
 
 The separator:: The digit "1", which is not part of the 32-character encoding set and can only appear in this position as a separator
 
 The data part:: A minimum of 6 alphanumeric characters, the checksum encoded witness script
 
 At this time, only a few wallets accept or produce native segwit bech32 addresses, but as segwit adoption increases, you will see these more and more often.
+
+<<segwit_addresses>> shows bitcoin non-segwit (legacy) and segwit addresses.
+
+[[segwit_addresses]]
+.Bitcoin non-segwit (legacy) and segwit addresses
+|=======
+|Type |Encoding |Prefix 
+| Legacy P2PKH Address | Base58 | 1
+| Legacy Testnet P2PKH Address | Base58 | m or n
+| Legacy P2SH Address | Base58 | 3
+| Legacy Testnet P2SH Address | Base58 | 2
+| Nested (embedded) Segwit P2SH(P2WPKH) Address | Base58 | 3
+| Nested (embedded) Segwit P2SH(P2WSH) Address | Base58 | 3
+| Native Segwit P2WPKH Address | Bech32 | bc1
+| Native Segwit Testnet P2WPKH Address | Bech32 | tb1
+| Native Segwit P2WSH Address | Bech32 | bc1
+| Native Segwit Testnet P2WSH Address | Bech32 | tb1
+|=======
 
 [[segwit_txid]]
 ===== Transaction identifiers
@@ -980,13 +1002,13 @@ Before segwit, transactions could have their signatures subtly modified by third
 
 With the introduction of Segregated Witness, transactions have two identifiers, +txid+ and +wtxid+. The traditional transaction ID +txid+ is the double-SHA256 hash of the serialized transaction, without the witness data. A transaction +wtxid+ is the double-SHA256 hash of the new serialization format of the transaction with witness data.
 
-The traditional +txid+ is calculated in exactly the same way as with a nonsegwit transaction. However, since the segwit transaction has empty ++scriptSig++s in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a segwit transaction, the +txid+ is immutable by a third party, even when the transaction is unconfirmed.
+The traditional +txid+ is calculated in exactly the same way as with a nonsegwit transaction. However, since a pure segwit transaction (a transaction that only contains segwit inputs) has empty ++scriptSig++s in every input, there is no part of the transaction that can be modified by a third party. Therefore, in a pure segwit transaction, the +txid+ is immutable by a third party, even when the transaction is unconfirmed.
 
-The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a segwit transaction can be considered immutable by third parties and only if _all_ the inputs of the transaction are segwit inputs.
+The +wtxid+ is like an "extended" ID, in that the hash also incorporates the witness data. If a transaction is transmitted without witness data, then the +wtxid+ and +txid+ are identical. Note that since the +wtxid+ includes witness data (signatures) and since witness data may be malleable, the +wtxid+ should be considered malleable until the transaction is confirmed. Only the +txid+ of a pure segwit transaction can be considered immutable by third parties.
 
 [TIP]
 ====
-Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The +txid+ is the hash of the transaction without the witness data and the +wtxid+ is the hash inclusive of witness data. The +txid+ of a transaction where all inputs are segwit inputs is not susceptible to third-party transaction malleability.
+Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The +txid+ is the hash of the transaction without the witness data and the +wtxid+ is the hash inclusive of witness data. Only pure segwit transactions (transactions that only contain segwit inputs) have a +txid+ that is not susceptible to third-party transaction malleability.
 ====
 
 ==== Segregated Witness' New Signing Algorithm
@@ -1009,7 +1031,7 @@ Without transaction fees, the growth in bitcoin data would arguably increase dra
 
 The calculation of fees based on transaction size treats all the data in the transaction as equal in cost. But from the perspective of full nodes and miners, some parts of a transaction carry much higher costs. Every transaction added to the bitcoin network affects the consumption of four resources on nodes:
 
-Disk Space :: Every transaction is stored in the blockchain, adding to the total size of the blockchain. The blockchain is stored on disk, but the storage can be optimized by “pruning” older transactions.
+Disk Space :: Every transaction is stored in the blockchain, adding to the total size of the blockchain. The blockchain is stored on disk, but the storage can be optimized by “pruning” (deleting) older transactions.
 
 CPU :: Every transaction must be validated, which requires CPU time.
 
@@ -1023,25 +1045,25 @@ The incentives created by fees matter because they affect the behavior of wallet
 
 Transactions consume UTXO in their inputs and create new UTXO with their outputs. A transaction, therefore, that has more inputs than outputs will result in a decrease in the UTXO set, whereas a transaction that has more outputs than inputs will result in an increase in the UTXO set. Let’s consider the _difference_ between inputs and outputs and call that the “Net-new-UTXO.” That’s an important metric, as it tells us what impact a transaction will have on the most expensive network-wide resource, the in-memory UTXO set. A transaction with positive Net-new-UTXO adds to that burden. A transaction with a negative Net-new-UTXO reduces the burden. We would therefore want to encourage transactions that are either negative Net-new-UTXO or neutral with zero Net-new-UTXO.
 
-Let’s look at an example of what incentives are created by the transaction fee calculation, with and without Segregated Witness. We will look at two different transactions. Transaction A is a 3-input, 2-output transaction, which has a Net-new-UTXO metric of &#x2013;1, meaning it consumes one more UTXO than it creates, reducing the UTXO set by one. Transaction B is a 2-input, 3-output transaction, which has a Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set, imposing additional cost on the entire bitcoin network. Both transactions use multisignature (2-of-3) scripts to demonstrate how complex scripts increase the impact of segregated witness on fees. Let’s assume a transaction fee of 30 satoshi per byte and a 75% fee discount on witness data:
+Let’s look at an example of what incentives are created by the transaction fee calculation, with and without Segregated Witness. We will look at two different transactions. Transaction A is a 3-input, 2-output transaction, which has a Net-new-UTXO metric of &#x2013;1, meaning it consumes one more UTXO than it creates, reducing the UTXO set by one. Transaction B is a 2-input, 3-output transaction, which has a Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set, imposing additional cost on the entire bitcoin network. Both transactions use multisignature (2-of-3) scripts to demonstrate how complex scripts increase the impact of segregated witness on fees. Let’s assume a transaction feerate of 30 satoshi per byte and a 75% fee discount on witness data:
 
 ++++
 <dl>
 <dt>Without Segregated Witness</dt>
 <dd>
-<p>Transaction A fee: 25,710 satoshi</p>
-<p>Transaction B fee: 18,990 satoshi</p>
+<p>Transaction A fee: 28,590 satoshi</p>
+<p>Transaction B fee: 20,760 satoshi</p>
 </dd>
 
 <dt>With Segregated Witness</dt>
 <dd>
-<p>Transaction A fee: 8,130 satoshi</p>
-<p>Transaction B fee: 12,045 satoshi</p>
+<p>Transaction A fee: 12,255 satoshi</p>
+<p>Transaction B fee: 10,425 satoshi</p>
 </dd>
 </dl>
 ++++
 
 
-Both transactions are less expensive when segregated witness is implemented. But comparing the costs between the two transactions, we see that before Segregated Witness, the fee is higher for the transaction that has a negative Net-new-UTXO. After Segregated Witness, the transaction fees align with the incentive to minimize new UTXO creation by not inadvertently penalizing transactions with many inputs.
+Both transactions are less expensive when segregated witness is implemented. Comparing the costs between the two transactions, we see that before Segregated Witness, the transaction with the positive Net-new-UTXO has significant cost-savings. With Segregated Witness, the cost difference shrinks significantly in absolute as well as relative terms. While it would require inputs to become cheaper than outputs to incentivize UTXO set consolidation, this discount reduces the incentive to create new UTXO in order to avoid using more inputs.
 
-Segregated Witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data corrects a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.((("", startref="Tadv07")))((("", startref="Ssegwit07")))
+Segregated Witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data partially mitigates a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.((("", startref="Tadv07")))((("", startref="Ssegwit07")))
