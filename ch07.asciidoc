@@ -92,7 +92,7 @@ The resulting script is quite long and looks like this:
 
 Although multisignature scripts are a powerful feature, they are cumbersome to use. Given the preceding script, Mohammed would have to communicate this script to every customer prior to payment. Each customer would have to use special bitcoin wallet software with the ability to create custom transaction scripts, and each customer would have to understand how to create a transaction using custom scripts. Furthermore, the resulting transaction would be about five times larger than a simple payment transaction, because this script contains very long public keys. The burden of that extra-large transaction would be borne by the customer in the form of fees. Finally, a large transaction script like this would be carried in the UTXO set in RAM in every full node, until it was spent. All of these issues make using complex locking scripts difficult in practice.
 
-P2SH was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script that will be presented later when this output is spent."
+P2SH was developed to resolve these practical difficulties and to make the use of complex scripts as easy as a payment to a Bitcoin address. With P2SH payments, the complex locking script is replaced with its digital fingerprint, a cryptographic hash. When a transaction attempting to spend the UTXO is presented later, it must contain the script that matches the hash, in addition to the unlocking script. In simple terms, P2SH means "pay to a script matching this hash, a script that will be presented later when this output is spent."
 
 ((("redeem scripts")))((("scripting", "redeem scripts")))In P2SH transactions, the locking script that is replaced by a hash is referred to as the _redeem script_ because it is presented to the system at redemption time rather than as a locking script. <<without_p2sh>> shows the script without P2SH and <<with_p2sh>> shows the same script encoded with P2SH.
 
@@ -185,7 +185,7 @@ Remember, because of policy set forth by the +IsStandard()+ function at the time
 
 ==== P2SH Addresses
 
-((("scripting", "Pay-to-Script-Hash", "addresses")))((("Pay-to-Script-Hash (P2SH)", "addresses")))((("bitcoin improvement proposals", "Address Format for P2SH (BIP-13)")))Another important part of the P2SH feature is the ability to encode a script hash as an address, as defined in BIP-13. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5," which results in Base58Check-encoded addresses that start with a "3."
+((("scripting", "Pay-to-Script-Hash", "addresses")))((("Pay-to-Script-Hash (P2SH)", "addresses")))((("bitcoin improvement proposals", "Address Format for P2SH (BIP-13)")))Another important part of the P2SH feature is the ability to encode a script hash as an address, as defined in BIP-13. P2SH addresses are Base58Check encodings of the 20-byte hash of a script, just like Bitcoin addresses are Base58Check encodings of the 20-byte hash of a public key. P2SH addresses use the version prefix "5," which results in Base58Check-encoded addresses that start with a "3."
 
 For example, Mohammed's complex script, hashed and Base58Check-encoded as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. We can confirm that with the +bx+ command:
 
@@ -197,7 +197,7 @@ echo \
 ----
 
 
-Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a bitcoin address.
+Now, Mohammed can give this "address" to his customers and they can use almost any bitcoin wallet to make a simple payment, as if it were a Bitcoin address. The 3 prefix gives them a hint that this is a special type of address, one corresponding to a script instead of a public key, but otherwise it works in exactly the same way as a payment to a Bitcoin address.
 
 P2SH addresses hide all of the complexity, so that the person making a payment does not see the script.
 
@@ -234,7 +234,7 @@ Note that because the redeem script is not presented to the network until you at
 
 ((("transactions", "advanced", "data recording output")))((("scripting", "data recording output")))((("RETURN operator")))((("data recording (nonpayment data)")))((("nonpayment data")))((("blockchain (the)", "nonpayment data recording")))((("digital notary services")))Bitcoin's distributed and timestamped ledger, the blockchain, has potential uses far beyond payments. Many developers have tried to use the transaction scripting language to take advantage of the security and resilience of the system for applications such as digital notary services, stock certificates, and smart contracts. Early attempts to use bitcoin's script language for these purposes involved creating transaction outputs that recorded data on the blockchain; for example, to record a digital fingerprint of a file in such a way that anyone could establish proof-of-existence of that file on a specific date by reference to that transaction.
 
-((("blockchain bloat")))((("bloat")))((("unspent transaction outputs (UTXO)")))((("UTXO sets")))The use of bitcoin's blockchain to store data unrelated to bitcoin payments is a controversial subject. Many developers consider such use abusive and want to discourage it. Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of nonpayment data argue that it causes "blockchain bloat," burdening those running full bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry. Moreover, such transactions create UTXO that cannot be spent, using the destination bitcoin address as a freeform 20-byte field. Because the address is used for data, it doesn't correspond to a private key and the resulting UTXO can _never_ be spent; it's a fake payment. These transactions that can never be spent are therefore never removed from the UTXO set and cause the size of the UTXO database to forever increase, or "bloat."
+((("blockchain bloat")))((("bloat")))((("unspent transaction outputs (UTXO)")))((("UTXO sets")))The use of bitcoin's blockchain to store data unrelated to bitcoin payments is a controversial subject. Many developers consider such use abusive and want to discourage it. Others view it as a demonstration of the powerful capabilities of blockchain technology and want to encourage such experimentation. Those who object to the inclusion of nonpayment data argue that it causes "blockchain bloat," burdening those running full Bitcoin nodes with carrying the cost of disk storage for data that the blockchain was not intended to carry. Moreover, such transactions create UTXO that cannot be spent, using the destination Bitcoin address as a freeform 20-byte field. Because the address is used for data, it doesn't correspond to a private key and the resulting UTXO can _never_ be spent; it's a fake payment. These transactions that can never be spent are therefore never removed from the UTXO set and cause the size of the UTXO database to forever increase, or "bloat."
 
 In version 0.9 of the Bitcoin Core client, a compromise was reached with the introduction of the +RETURN+ operator. +RETURN+ allows developers to add 80 bytes of nonpayment data to a transaction output. However, unlike the use of "fake" UTXO, the +RETURN+ operator creates an explicitly _provably unspendable_ output, which does not need to be stored in the UTXO set. +RETURN+ outputs are recorded on the blockchain, so they consume disk space and contribute to the increase in the blockchain's size, but they are not stored in the UTXO set and therefore do not bloat the UTXO memory pool and burden full nodes with the cost of more expensive RAM.
 
@@ -266,7 +266,7 @@ Timelocks are useful for postdating transactions and locking funds to a date in 
 [[transaction_locktime_nlocktime]]
 ==== Transaction Locktime (nLocktime)
 
-((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
+((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the Bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
 
 [[locktime_limitations]]
 ===== Transaction locktime limitations
@@ -314,7 +314,7 @@ To lock it to a time, say 3 months from now, the transaction would be a P2SH tra
 
 where +<now {plus} 3 months>+ is a block height or time value estimated 3 months from the time the transaction is mined: current block height {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000 (seconds). For now, don't worry about the +DROP+ opcode that follows +CHECKLOCKTIMEVERIFY+; it will be explained shortly.
 
-When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the bitcoin network.
+When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the Bitcoin network.
 
 Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal to the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
 
@@ -689,7 +689,7 @@ When a transaction spends an UTXO, it must provide a witness. In a traditional U
 
 ==== Soft Fork (Backward Compatibility)
 
-Segregated Witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every bitcoin node and wallet to change the consensus rules&#x2014;what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backward compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption.
+Segregated Witness is a significant change to the way outputs and transactions are architected. Such a change would normally require a simultaneous change in every Bitcoin node and wallet to change the consensus rules&#x2014;what is known as a hard fork. Instead, segregated witness is introduced with a much less disruptive change, which is backward compatible, known as a soft fork. This type of upgrade allows non-upgraded software to ignore the changes and continue to operate without any disruption.
 
 Segregated Witness outputs are constructed so that older systems that are not segwit-aware can still validate them. To an old wallet or node, a Segregated Witness output looks like an output that _anyone can spend_. Such outputs can be spent with an empty signature, therefore the fact that there is no signature inside the transaction (it is segregated) does not invalidate the transaction. Newer wallets and mining nodes, however, see the Segregated Witness output and expect to find a valid witness for it in the transaction’s witness data.
 
@@ -714,7 +714,7 @@ With Segregated Witness, Alice would create a Pay-to-Witness-Public-Key-Hash (P2
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-As you can see, a Segregated Witness output’s locking script is much simpler than a traditional output. It consists of two values that are pushed on to the script evaluation stack. To an old (nonsegwit-aware) bitcoin client, the two pushes would look like an output that anyone can spend and does not require a signature (or rather, can be spent with an empty signature). To a newer, segwit-aware client, the first number (0) is interpreted as a version number (the _witness version_) and the second part (20 bytes) is the equivalent of a locking script known as a _witness program_. The 20-byte witness program is simply the hash of the public key, as in a P2PKH script.
+As you can see, a Segregated Witness output’s locking script is much simpler than a traditional output. It consists of two values that are pushed on to the script evaluation stack. To an old (nonsegwit-aware) Bitcoin client, the two pushes would look like an output that anyone can spend and does not require a signature (or rather, can be spent with an empty signature). To a newer, segwit-aware client, the first number (0) is interpreted as a version number (the _witness version_) and the second part (20 bytes) is the equivalent of a locking script known as a _witness program_. The 20-byte witness program is simply the hash of the public key, as in a P2PKH script.
 
 Now, let’s look at the corresponding transaction that Bob uses to spend this output. For the original script (nonsegwit), Bob’s transaction would have to include a signature within the transaction input:
 
@@ -752,7 +752,7 @@ Additionally, P2WPKH outputs must be constructed from the hash of a _compressed_
 
 [WARNING]
 ====
-P2WPKH should be constructed by the payee (recipient) by converting a compressed public key to a P2WPKH hash. You should never transform a P2PKH script, bitcoin address, or uncompressed public key to a P2WPKH witness script.
+P2WPKH should be constructed by the payee (recipient) by converting a compressed public key to a P2WPKH hash. You should never transform a P2PKH script, Bitcoin address, or uncompressed public key to a P2WPKH witness script.
 ====
 
 [[p2wsh]]
@@ -843,7 +843,7 @@ Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a P2SH addre
 
 The first form of witness script we will examine is P2SH(P2WPKH). This is a Pay-to-Witness-Public-Key-Hash witness program, embedded inside a Pay-to-Script-Hash script, so that it can be used by a wallet that is not aware of segwit.
 
-Bob's wallet constructs a P2WPKH witness program with Bob's public key. This witness program is then hashed and the resulting hash is encoded as a P2SH script. The P2SH script is converted to a bitcoin address, one that starts with a "3," as we saw in the <<p2sh>> section.
+Bob's wallet constructs a P2WPKH witness program with Bob's public key. This witness program is then hashed and the resulting hash is encoded as a P2SH script. The P2SH script is converted to a Bitcoin address, one that starts with a "3," as we saw in the <<p2sh>> section.
 
 Bob's wallet starts with the P2WPKH witness program we saw earlier:
 
@@ -867,7 +867,7 @@ echo \
 ----
 
 
-Next, the redeem script hash is converted to a bitcoin address. Let's use +bx+ on the command-line again:
+Next, the redeem script hash is converted to a Bitcoin address. Let's use +bx+ on the command-line again:
 
 .P2SH address
 ----
@@ -877,7 +877,7 @@ echo \
 37Lx99uaGn5avKBxiW26HjedQE3LrDCZru
 ----
 
-Now, Bob can display this address for customers to pay for their coffee. Alice's wallet can make a payment to +37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+, just as it would to any other bitcoin address.
+Now, Bob can display this address for customers to pay for their coffee. Alice's wallet can make a payment to +37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+, just as it would to any other Bitcoin address.
 
 To pay Bob, Alice's wallet would lock the output with a P2SH script:
 ----
@@ -923,9 +923,9 @@ Then, the witness program itself is hashed with SHA256 and RIPEMD160, producing 
 86762607e8fe87c0c37740cddee880988b9455b2
 ----
 
-Next, the wallet constructs a P2SH bitcoin address from this hash. Again, we use +bx+ to calculate on the command-line:
+Next, the wallet constructs a P2SH Bitcoin address from this hash. Again, we use +bx+ to calculate on the command-line:
 
-.P2SH bitcoin address
+.P2SH Bitcoin address
 ----
 echo \
 '86762607e8fe87c0c37740cddee880988b9455b2'\
@@ -952,7 +952,7 @@ The native segwit address format is defined in BIP-173:
 
 https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32 address format for native v0-16 witness outputs
 
-BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" bitcoin address. BIP-173 addresses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
+BIP-173 only encodes witness (P2WPKH and P2WSH) scripts. It is not compatible with non-segwit P2PKH or P2SH scripts. BIP-173 is a checksummed Base32 encoding, as compared to the Base58 encoding of a "traditional" Bitcoin address. BIP-173 addresses are also called _bech32_ addresses, pronounced "beh-ch thirty two", alluding to the use of a "BCH" error detection algorithm and 32-character encoding set.
 
 BIP-173 addresses use 32 lower-case-only alphanumeric character set, carefully selected to reduce errors from misreading or mistyping. By choosing a lower-case-only character set, bech32 is easier to read, speak, and 45% more efficient to encode in QR codes.
 
@@ -1017,7 +1017,7 @@ Segregated Witness modifies the semantics of the four signature verification fun
 
 Signatures in bitcoin transactions are applied on a _commitment hash_, which is calculated from the transaction data, locking specific parts of the data indicating the signer's commitment to those values. For example, in a simple +SIGHASH_ALL+ type signature, the commitment hash includes all inputs and outputs.
 
-Unfortunately, the way the commitment hash was calculated introduced the possibility that a node verifying the signature can be forced to perform a significant number of hash computations. Specifically, the hash operations increase in O(n^2^) with respect to the number of signature operations in the transaction. An attacker could therefore create a transaction with a very large number of signature operations, causing the entire bitcoin network to have to perform hundreds or thousands of hash operations to verify the transaction.
+Unfortunately, the way the commitment hash was calculated introduced the possibility that a node verifying the signature can be forced to perform a significant number of hash computations. Specifically, the hash operations increase in O(n^2^) with respect to the number of signature operations in the transaction. An attacker could therefore create a transaction with a very large number of signature operations, causing the entire Bitcoin network to have to perform hundreds or thousands of hash operations to verify the transaction.
 
 Segwit represented an opportunity to address this problem by changing the way the commitment hash is calculated. For segwit version 0 witness programs, signature verification occurs using an improved commitment hash algorithm as specified in BIP-143.
 
@@ -1025,11 +1025,11 @@ The new algorithm achieves two important goals. Firstly, the number of hash oper
 
 ==== Economic Incentives for Segregated Witness
 
-Bitcoin mining nodes and full nodes incur costs for the resources used to support the bitcoin network and the blockchain. As the volume of bitcoin transactions increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Nonmining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully validating full-index node, perhaps because they use the node to operate a bitcoin business.
+Bitcoin mining nodes and full nodes incur costs for the resources used to support the Bitcoin network and the blockchain. As the volume of bitcoin transactions increases, so does the cost of resources (CPU, network bandwidth, disk space, memory). Miners are compensated for these costs through fees that are proportional to the size (in bytes) of each transaction. Nonmining full nodes are not compensated, so they incur these costs because they have a need to run an authoritative fully validating full-index node, perhaps because they use the node to operate a bitcoin business.
 
 Without transaction fees, the growth in bitcoin data would arguably increase dramatically. Fees are intended to align the needs of bitcoin users with the burden their transactions impose on the network, through a market-based price discovery mechanism.
 
-The calculation of fees based on transaction size treats all the data in the transaction as equal in cost. But from the perspective of full nodes and miners, some parts of a transaction carry much higher costs. Every transaction added to the bitcoin network affects the consumption of four resources on nodes:
+The calculation of fees based on transaction size treats all the data in the transaction as equal in cost. But from the perspective of full nodes and miners, some parts of a transaction carry much higher costs. Every transaction added to the Bitcoin network affects the consumption of four resources on nodes:
 
 Disk Space :: Every transaction is stored in the blockchain, adding to the total size of the blockchain. The blockchain is stored on disk, but the storage can be optimized by “pruning” (deleting) older transactions.
 
@@ -1045,7 +1045,7 @@ The incentives created by fees matter because they affect the behavior of wallet
 
 Transactions consume UTXO in their inputs and create new UTXO with their outputs. A transaction, therefore, that has more inputs than outputs will result in a decrease in the UTXO set, whereas a transaction that has more outputs than inputs will result in an increase in the UTXO set. Let’s consider the _difference_ between inputs and outputs and call that the “Net-new-UTXO.” That’s an important metric, as it tells us what impact a transaction will have on the most expensive network-wide resource, the in-memory UTXO set. A transaction with positive Net-new-UTXO adds to that burden. A transaction with a negative Net-new-UTXO reduces the burden. We would therefore want to encourage transactions that are either negative Net-new-UTXO or neutral with zero Net-new-UTXO.
 
-Let’s look at an example of what incentives are created by the transaction fee calculation, with and without Segregated Witness. We will look at two different transactions. Transaction A is a 3-input, 2-output transaction, which has a Net-new-UTXO metric of &#x2013;1, meaning it consumes one more UTXO than it creates, reducing the UTXO set by one. Transaction B is a 2-input, 3-output transaction, which has a Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set, imposing additional cost on the entire bitcoin network. Both transactions use multisignature (2-of-3) scripts to demonstrate how complex scripts increase the impact of segregated witness on fees. Let’s assume a transaction feerate of 30 satoshi per byte and a 75% fee discount on witness data:
+Let’s look at an example of what incentives are created by the transaction fee calculation, with and without Segregated Witness. We will look at two different transactions. Transaction A is a 3-input, 2-output transaction, which has a Net-new-UTXO metric of &#x2013;1, meaning it consumes one more UTXO than it creates, reducing the UTXO set by one. Transaction B is a 2-input, 3-output transaction, which has a Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set, imposing additional cost on the entire Bitcoin network. Both transactions use multisignature (2-of-3) scripts to demonstrate how complex scripts increase the impact of segregated witness on fees. Let’s assume a transaction feerate of 30 satoshi per byte and a 75% fee discount on witness data:
 
 ++++
 <dl>
@@ -1066,4 +1066,4 @@ Let’s look at an example of what incentives are created by the transaction fee
 
 Both transactions are less expensive when segregated witness is implemented. Comparing the costs between the two transactions, we see that before Segregated Witness, the transaction with the positive Net-new-UTXO has significant cost-savings. With Segregated Witness, the cost difference shrinks significantly in absolute as well as relative terms. While it would require inputs to become cheaper than outputs to incentivize UTXO set consolidation, this discount reduces the incentive to create new UTXO in order to avoid using more inputs.
 
-Segregated Witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the bitcoin blockchain. Secondly, segwit’s discount on witness data partially mitigates a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.((("", startref="Tadv07")))((("", startref="Ssegwit07")))
+Segregated Witness therefore has two main effects on the fees paid by bitcoin users. Firstly, segwit reduces the overall cost of transactions by discounting witness data and increasing the capacity of the Bitcoin blockchain. Secondly, segwit’s discount on witness data partially mitigates a misalignment of incentives that may have inadvertently created more bloat in the UTXO set.((("", startref="Tadv07")))((("", startref="Ssegwit07")))
