@@ -3,21 +3,21 @@
 
 Let's now build on our understanding of bitcoin by looking at it as an _application platform_. Nowadays, many people use the term "blockchain" to refer to any application platform that shares the design principles of bitcoin. The term is often misused and applied to many things that fail to deliver the primary features that bitcoin's blockchain delivers.
 
-In this chapter we will look at the features offered by the bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as payment (state) channels and routed payment channels (Lightning Network).
+In this chapter we will look at the features offered by the Bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as payment (state) channels and routed payment channels (Lightning Network).
 
 === Introduction
 
-((("blockchain applications", "benefits of bitcoin system")))The bitcoin system was designed as a decentralized currency and payment system. However, most of its functionality is derived from much lower-level constructs that can be used for much broader applications. Bitcoin wasn't built with components such as accounts, users, balances, and payments. Instead, it uses a transactional scripting language with low-level cryptographic functions, as we saw in <<transactions>>. Just as the higher-level concepts of accounts, balances, and payments can be derived from these basic primitives, so can many other complex applications. Thus, the bitcoin blockchain can become an application platform offering trust services to applications, such as smart contracts, far surpassing the original purpose of digital currency and payments.
+((("blockchain applications", "benefits of Bitcoin system")))The Bitcoin system was designed as a decentralized currency and payment system. However, most of its functionality is derived from much lower-level constructs that can be used for much broader applications. Bitcoin wasn't built with components such as accounts, users, balances, and payments. Instead, it uses a transactional scripting language with low-level cryptographic functions, as we saw in <<transactions>>. Just as the higher-level concepts of accounts, balances, and payments can be derived from these basic primitives, so can many other complex applications. Thus, the Bitcoin blockchain can become an application platform offering trust services to applications, such as smart contracts, far surpassing the original purpose of digital currency and payments.
 
 === Building Blocks (Primitives)
 
-((("blockchain applications", "building blocks for (primitives)")))((("primitives")))When operating correctly and over the long term, the bitcoin system offers certain guarantees, which can be used as building blocks to create applications. These include:
+((("blockchain applications", "building blocks for (primitives)")))((("primitives")))When operating correctly and over the long term, the Bitcoin system offers certain guarantees, which can be used as building blocks to create applications. These include:
 
 No Double-Spend:: The most fundamental guarantee of bitcoin's decentralized consensus algorithm ensures that no UTXO can be spent twice.
 
 Immutability:: Once a transaction is recorded in the blockchain and sufficient work has been added with subsequent blocks, the transaction's data becomes immutable. Immutability is underwritten by energy, as rewriting the blockchain requires the expenditure of energy to produce Proof-of-Work. The energy required and therefore the degree of immutability increases with the amount of work committed on top of the block containing a transaction.
 
-Neutrality:: The decentralized bitcoin network propagates valid transactions regardless of the origin or content of those transactions. This means that anyone can create a valid transaction with sufficient fees and trust they will be able to transmit that transaction and have it included in the blockchain at any time.
+Neutrality:: The decentralized Bitcoin network propagates valid transactions regardless of the origin or content of those transactions. This means that anyone can create a valid transaction with sufficient fees and trust they will be able to transmit that transaction and have it included in the blockchain at any time.
 
 Secure Timestamping:: The consensus rules reject any block whose timestamp is too far in the past or future. This ensures that timestamps on blocks can be trusted. The timestamp on a block implies an unspent-before guarantee for the inputs of all included transactions.
 
@@ -74,7 +74,7 @@ More details about Counterparty can be found at https://counterparty.io. The ope
 [[state_channels]]
 === Payment Channels and State Channels
 
-_Payment channels_ ((("blockchain applications", "payment (state) channels", id="BCApayment12")))((("payment (state) channels", "defined")))are a trustless mechanism for exchanging bitcoin transactions between two parties, outside of the bitcoin blockchain. These transactions, which would be valid if settled on the bitcoin blockchain, are held off-chain instead, acting as _promissory notes_ for eventual batch settlement. Because the transactions are not settled, they can be exchanged without the usual settlement latency, allowing extremely high transaction throughput, low (submillisecond) latency, and fine (satoshi-level) granularity.
+_Payment channels_ ((("blockchain applications", "payment (state) channels", id="BCApayment12")))((("payment (state) channels", "defined")))are a trustless mechanism for exchanging bitcoin transactions between two parties, outside of the Bitcoin blockchain. These transactions, which would be valid if settled on the Bitcoin blockchain, are held off-chain instead, acting as _promissory notes_ for eventual batch settlement. Because the transactions are not settled, they can be exchanged without the usual settlement latency, allowing extremely high transaction throughput, low (submillisecond) latency, and fine (satoshi-level) granularity.
 
 Actually, the term _channel_ is a metaphor. State channels are virtual constructs represented by the exchange of state between two parties, outside of the blockchain. There are no "channels" per se and the underlying data transport mechanism is not the channel. We use the term channel to represent the relationship and shared state between two parties, outside of the blockchain.
 
@@ -162,7 +162,7 @@ For example, if commitment transaction #1 is timelocked to 4320 blocks in the fu
 .Each commitment sets a shorter timelock, allowing it to be spent before the previous commitments become valid
 image::images/mbc2_1204.png["Each commitment sets a shorter timelock, allowing it to be spent before the previous commitments become valid"]
 
-Each subsequent commitment transaction must have a shorter timelock so that it may be broadcast before its predecessors and before the refund transaction. The ability to broadcast a commitment earlier ensures it will be able to spend the funding output and preclude any other commitment transaction from being redeemed by spending the output. The guarantees offered by the bitcoin blockchain, preventing double-spends and enforcing timelocks, effectively allow each commitment transaction to invalidate its predecessors.
+Each subsequent commitment transaction must have a shorter timelock so that it may be broadcast before its predecessors and before the refund transaction. The ability to broadcast a commitment earlier ensures it will be able to spend the funding output and preclude any other commitment transaction from being redeemed by spending the output. The guarantees offered by the Bitcoin blockchain, preventing double-spends and enforcing timelocks, effectively allow each commitment transaction to invalidate its predecessors.
 
 State channels use timelocks to enforce smart contracts across a time dimension. In this example we saw how the time dimension guarantees that the most recent commitment transaction becomes valid before any earlier commitments. Thus, the most recent commitment transaction can be transmitted, spending the inputs and invalidating prior commitment transactions. The enforcement of smart contracts with absolute timelocks protects against cheating by one of the parties. This implementation needs nothing more than absolute transaction-level timelocks (+nLocktime+). Next, we will see how script-level timelocks, +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+, can be used to construct more flexible, useful, and sophisticated state channels.
 
@@ -180,7 +180,7 @@ Now that we understand how timelocks can be used to invalidate prior commitments
 
 Even though a transaction cannot be canceled, it can be constructed in such a way as to make it undesirable to use. The way we do that is by giving each party a _revocation key_ that can be used to punish the other party if they try to cheat. This mechanism for revoking prior commitment transactions was first proposed as part of the Lightning Network.
 
-To explain revocation keys, we will construct a more complex payment channel between two exchanges run by Hitesh and Irene. Hitesh and Irene run bitcoin exchanges in India and the USA, respectively. Customers of Hitesh's Indian exchange often send payments to customers of Irene's USA exchange and vice versa. Currently, these transactions occur on the bitcoin blockchain, but this means paying fees and waiting several blocks for confirmations. Setting up a payment channel between the exchanges will significantly reduce the cost and accelerate the transaction flow.
+To explain revocation keys, we will construct a more complex payment channel between two exchanges run by Hitesh and Irene. Hitesh and Irene run bitcoin exchanges in India and the USA, respectively. Customers of Hitesh's Indian exchange often send payments to customers of Irene's USA exchange and vice versa. Currently, these transactions occur on the Bitcoin blockchain, but this means paying fees and waiting several blocks for confirmations. Setting up a payment channel between the exchanges will significantly reduce the cost and accelerate the transaction flow.
 
 Hitesh and Irene start the channel by collaboratively constructing a funding transaction, each funding the channel with 5 bitcoin.
 The initial balance is 5 bitcoin for Hitesh and 5 bitcoin for Irene. The funding transaction locks the channel state in a 2-of-2 multisig, just like in the example of a simple channel.
@@ -326,7 +326,7 @@ In this example, we have five participants: Alice, Bob, Carol, Diana, and Eric. 
 .A series of bidirectional payment channels linked to form a Lightning Network that can route a payment from Alice to Eric
 image::images/mbc2_1206.png["A series of bi-directional payment channels linked to form a Lightning Network"]
 
-Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a payment channel. Creating a payment channel requires a funding transaction, which must be committed to the bitcoin blockchain. Alice does not want to open a new payment channel and commit more of her funds. Is there a way to pay Eric, indirectly?
+Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a payment channel. Creating a payment channel requires a funding transaction, which must be committed to the Bitcoin blockchain. Alice does not want to open a new payment channel and commit more of her funds. Is there a way to pay Eric, indirectly?
 
 <<ln_payment_process>> shows the step-by-step process of routing a payment from Alice to Eric, through a series of HTLC commitments on the payment channels connecting the participants.
 
@@ -376,7 +376,7 @@ The Lightning Network implements an onion-routed protocol based on a scheme call
 
 * Each part of the path is encrypted in such a way that a network-level attacker cannot associate the packets from different parts of the path to each other.
 
-* Unlike Tor (an onion-routed anonymization protocol on the internet), there are no "exit nodes" that can be placed under surveillance. The payments do not need to be transmitted to the bitcoin blockchain; the nodes just update channel balances.
+* Unlike Tor (an onion-routed anonymization protocol on the internet), there are no "exit nodes" that can be placed under surveillance. The payments do not need to be transmitted to the Bitcoin blockchain; the nodes just update channel balances.
 
 Using this onion-routed protocol, Alice wraps each element of the path in a layer of encryption, starting with the end and working backward. She encrypts a message to Eric with Eric's public key. This message is wrapped in a message encrypted to Diana, identifying Eric as the next recipient. The message to Diana is wrapped in a message encrypted to Carol's public key and identifying Diana as the next recipient. The message to Carol is encrypted to Bob's key. Thus, Alice has constructed this encrypted multilayer "onion" of messages. She sends this to Bob, who can only decrypt and unwrap the outer layer. Inside, Bob finds a message addressed to Carol that he can forward to Carol but cannot decipher himself. Following the path, the messages get forwarded, decrypted, forwarded, etc., all the way to Eric. Each participant knows only the previous and next node in each hop.((("", startref="alicetwelve")))
 
@@ -388,9 +388,9 @@ At this point, you might be wondering how it is possible that the nodes do not k
 
 ((("Lightning Network", "benefits of")))A Lightning Network is a second-layer routing technology. It can be applied to any blockchain that supports some basic capabilities, such as multisignature transactions, timelocks, and basic smart contracts.
 
-If a Lightning Network is layered on top of the bitcoin network, the bitcoin network can gain a significant increase in capacity, privacy, granularity, and speed, without sacrificing the principles of trustless operation without intermediaries:
+If a Lightning Network is layered on top of the Bitcoin network, the Bitcoin network can gain a significant increase in capacity, privacy, granularity, and speed, without sacrificing the principles of trustless operation without intermediaries:
 
-Privacy:: Lightning Network payments are much more private than payments on the bitcoin blockchain, as they are not public. While participants in a route can see payments propagated across their channels, they do not know the sender or recipient.
+Privacy:: Lightning Network payments are much more private than payments on the Bitcoin blockchain, as they are not public. While participants in a route can see payments propagated across their channels, they do not know the sender or recipient.
 
 Fungibility:: A Lightning Network makes it much more difficult to apply surveillance and blacklists on bitcoin, increasing the fungibility of the currency.
 
@@ -398,12 +398,12 @@ Speed:: Bitcoin transactions using Lightning Network are settled in milliseconds
 
 Granularity:: A Lightning Network can enable payments at least as small as the bitcoin "dust" limit, perhaps even smaller. Some proposals allow for subsatoshi increments.
 
-Capacity:: A Lightning Network increases the capacity of the bitcoin system by several orders of magnitude. There is no practical upper bound to the number of payments per second that can be routed over a Lightning Network, as it depends only on the capacity and speed of each node.
+Capacity:: A Lightning Network increases the capacity of the Bitcoin system by several orders of magnitude. There is no practical upper bound to the number of payments per second that can be routed over a Lightning Network, as it depends only on the capacity and speed of each node.
 
-Trustless Operation:: A Lightning Network uses bitcoin transactions between nodes that operate as peers without trusting each other. Thus, a Lightning Network preserves the principles of the bitcoin system, while expanding its operating parameters significantly.
+Trustless Operation:: A Lightning Network uses bitcoin transactions between nodes that operate as peers without trusting each other. Thus, a Lightning Network preserves the principles of the Bitcoin system, while expanding its operating parameters significantly.
 
 Of course, as mentioned previously, the Lightning Network protocol is not the only way to implement routed payment channels. Other proposed systems include Tumblebit and Teechan. At this time, however, the Lightning Network has already been deployed on testnet. Several different teams have developed competing implementations of LN and are working toward a common interoperability standard (called BOLT). It is likely that Lightning Network will be the first routed payment channel network to be deployed in production.((("", startref="BCAlightning12")))
 
 === Conclusion
 
-We have examined just a few of the emerging applications that can be built using the bitcoin blockchain as a trust platform. These applications expand the scope of bitcoin beyond payments and beyond financial instruments, to encompass many other applications where trust is critical. By decentralizing the basis of trust, the bitcoin blockchain is a platform that will spawn many revolutionary applications in a wide variety of industries.
+We have examined just a few of the emerging applications that can be built using the Bitcoin blockchain as a trust platform. These applications expand the scope of bitcoin beyond payments and beyond financial instruments, to encompass many other applications where trust is critical. By decentralizing the basis of trust, the Bitcoin blockchain is a platform that will spawn many revolutionary applications in a wide variety of industries.
