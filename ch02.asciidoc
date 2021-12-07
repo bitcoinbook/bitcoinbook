@@ -3,12 +3,11 @@
 
 === Transactions, Blocks, Mining, and the Blockchain
 
-((("bitcoin", "overview of", id="BCover02")))((("central trusted authority")))((("decentralized systems", "bitcoin overview", id="DCSover02")))The Bitcoin system, unlike traditional banking and payment systems, is based on decentralized trust. Instead of a central trusted authority, in bitcoin, trust is achieved as an emergent property from the interactions of different participants in the Bitcoin system. In this chapter, we will examine bitcoin from a high level by tracking a single transaction through the Bitcoin system and watch as it becomes "trusted" and accepted by the bitcoin mechanism of distributed consensus and is finally recorded on the blockchain, the distributed ledger of all transactions. Subsequent chapters will delve into the technology behind transactions, the network, and mining.
+((("bitcoin", "overview of", id="BCover02")))((("central trusted authority")))((("decentralized systems", "bitcoin overview", id="DCSover02")))The Bitcoin system, unlike traditional banking and payment systems, is based on decentralized trust. Instead of a central trusted authority, in Bitcoin, trust is achieved as an emergent property from the interactions of different participants in the Bitcoin system. In this chapter, we will examine bitcoin from a high level by tracking a single transaction through the Bitcoin system and watch as it becomes "trusted" and accepted by the bitcoin mechanism of distributed consensus and is finally recorded on the blockchain, the distributed ledger of all transactions. Subsequent chapters will delve into the technology behind transactions, the network, and mining.
 
 ==== Bitcoin Overview
 
 In the overview diagram shown in <<bitcoin-overview>>, we see that the Bitcoin system consists of users with wallets containing keys, transactions that are propagated across the network, and miners who produce (through competitive computation) the consensus blockchain, which is the authoritative ledger of all transactions.
-
 
 ((("blockchain explorer sites")))Each example in this chapter is based on an actual transaction made on the Bitcoin network, simulating the interactions between the users (Joe, Alice, Bob, and Gopesh) by sending funds from one wallet to another. While tracking a transaction through the Bitcoin network to the blockchain, we will use a _blockchain explorer_ site to visualize each step. A blockchain explorer is a web application that operates as a bitcoin search engine, in that it allows you to search for addresses, transactions, and blocks and see the relationships and flows between them.
 
@@ -26,26 +25,28 @@ image::images/mbc2_0201.png["Bitcoin Overview"]
 Each of these has a search function that can take a Bitcoin address, transaction hash, block number, or block hash and retrieve corresponding information from the Bitcoin network. With each transaction or block example, we will provide a URL so you can look it up yourself and study it in detail.
 
 
-[[cup_of_coffee]]
-==== Buying a Cup of Coffee
+[[bitcoin_e_commerce]]
+==== Buying from an Online Store
 
-((("use cases", "buying coffee", id="UCcoffee02")))Alice, introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her friend Joe to exchange some cash for bitcoin. The transaction created by Joe funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a cup of coffee at Bob's coffee shop in Palo Alto, California.
+Alice, introduced in the previous chapter, is a new user who has just acquired her first bitcoin. In <<getting_first_bitcoin>>, Alice met with her friend Joe to exchange some cash for bitcoin. The transaction created by Joe funded Alice's wallet with 0.10 BTC. Now Alice will make her first retail transaction, buying a laptop from Bob's online store.
 
-((("exchange rates", "determining")))Bob's Cafe recently started accepting bitcoin payments by adding a bitcoin option to its point-of-sale system. The prices at Bob's Cafe are listed in the local currency (US dollars), but at the register, customers have the option of paying in either dollars or bitcoin. Alice places her order for a cup of coffee and Bob enters it into the register, as he does for all transactions.  The point-of-sale system automatically converts the total price from US dollars to bitcoin at the prevailing market rate and displays the price in both currencies:
+Bob's web store recently started accepting bitcoin payments by adding a bitcoin option to its website. The prices at Bob's store are listed in the local currency (US dollars), but at checkout, customers have the option of paying in either dollars or bitcoin.
+
+Alice shops for a laptop and proceeds to the checkout page. At checkout, Alice is offered the option to pay with bitcoin, in addition to the usual options. The checkout cart displays the price in US dollars and also in bitcoin (BTC), at Bitcoin's prevailing exchange rate.
 
 ----
 Total:
-$1.50 USD
-0.015 BTC
+$750 USD
+0.01577764 BTC
 ----
 
+((("payment requests")))((("QR codes", "payment requests")))Bob's e-commerce system will automatically create a QR code containing a _payment request_ (see <<payment-request-QR>>).
 
-((("millibits")))Bob says, "That's one-dollar-fifty, or fifteen millibits."
+Unlike a QR code that simply contains a destination Bitcoin address, a payment request is a QR-encoded URL that contains a destination address, a payment amount, and a generic description such as "Bob's Store - Order 512". This allows a bitcoin wallet application to prefill the information used to send the payment while showing a human-readable description to the user. You can scan the QR code with a bitcoin wallet application to see what Alice would see.
 
-((("payment requests")))((("QR codes", "payment requests")))Bob's point-of-sale system will also automatically create a special QR code containing a _payment request_ (see <<payment-request-QR>>).
-
-Unlike a QR code that simply contains a destination Bitcoin address, a payment request is a QR-encoded URL that contains a destination address, a payment amount, and a generic description such as "Bob's Cafe." This allows a bitcoin wallet application to prefill the information used to send the payment while showing a human-readable description to the user. You can scan the QR code with a bitcoin wallet application to see what Alice would see.
-
+////
+TODO: Replace QR code with test-BTC address
+////
 
 [[payment-request-QR]]
 .Payment request QR code
@@ -58,20 +59,19 @@ image::images/mbc2_0202.png["payment-request"]
 [[payment-request-URL]]
 .The payment request QR code encodes the following URL, defined in BIP-21:
 ----
-bitcoin:1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA?
-amount=0.015&
-label=Bob%27s%20Cafe&
-message=Purchase%20at%20Bob%27s%20Cafe
+bitcoin:bc1qk2g6u8p4qm2s2lh3gts5cpt2mrv5skcuu7u3e4?amount=0.01577764&
+label=Bob%27s%20Store&
+message=Purchase%20at%20Bob%27s%20Store
 
 Components of the URL
 
-A Bitcoin address: "1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA"
-The payment amount: "0.015"
-A label for the recipient address: "Bob's Cafe"
-A description for the payment: "Purchase at Bob's Cafe"
+A Bitcoin address: "bc1qk2g6u8p4qm2s2lh3gts5cpt2mrv5skcuu7u3e4"
+The payment amount: "0.01577764"
+A label for the recipient address: "Bob's Store"
+A description for the payment: "Purchase at Bob's Store"
 ----
 
-Alice uses her smartphone to scan the barcode on display. Her smartphone shows a payment of +0.0150 BTC+ to +Bob's Cafe+ and she selects Send to authorize the payment. Within a few seconds (about the same amount of time as a credit card authorization), Bob sees the transaction on the register, completing the transaction.
+Alice uses her smartphone to scan the barcode on display. Her smartphone shows a payment of +0.01 BTC+ to +Bob's Store+ and she selects Send to authorize the payment. Within a few seconds (about the same amount of time as a credit card authorization), Bob sees the transaction on the register, completing the transaction.
 
 In the following sections, we will examine this transaction in more detail. We'll see how Alice's wallet constructed it, how it was propagated across the network, how it was verified, and finally, how Bob can spend that amount in subsequent transactions.
 
@@ -80,13 +80,13 @@ In the following sections, we will examine this transaction in more detail. We'l
 ((("fractional values")))((("milli-bitcoin")))((("satoshis")))The Bitcoin network can transact in fractional values, e.g., from millibitcoin (1/1000th of a bitcoin) down to 1/100,000,000th of a bitcoin, which is known as a satoshi.  Throughout this book, we’ll use the term “bitcoin” to refer to any quantity of bitcoin currency, from the smallest unit (1 satoshi) to the total number (21,000,000) of all bitcoin that will ever be mined.
 ====
 
-You can examine Alice's transaction to Bob's Cafe on the blockchain using a block explorer site (<<view_alice_transaction>>):
+You can examine Alice's transaction to Bob's Store on the blockchain using a block explorer site (<<view_alice_transaction>>):
 
 [[view_alice_transaction]]
-.View Alice's transaction on https://www.blockchain.com/btc/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2[blockchain.com]
+.View Alice's transaction on https://blockstream.info/tx/674616f1fbc6cc748213648754724eebff0fc04506f2c81efb1349d1ebc8a2ef[Blockstream Explorer]
 ====
 ----
-https://www.blockchain.com/btc/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2
+https://blockstream.info/tx/674616f1fbc6cc748213648754724eebff0fc04506f2c81efb1349d1ebc8a2ef
 ----
 ====
 
@@ -106,7 +106,7 @@ image::images/mbc2_0203.png["Transaction Double-Entry"]
 
 ==== Transaction Chains
 
-((("chain of transactions")))Alice's payment to Bob's Cafe uses a previous transaction's output as its input. In the previous chapter, Alice received bitcoin from her friend Joe in return for cash. That transaction created a bitcoin value locked by Alice's key. Her new transaction to Bob's Cafe references the previous transaction as an input and creates new outputs to pay for the cup of coffee and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature that unlocks those previous transaction outputs, thereby proving to the Bitcoin network that she owns the funds. She attaches the payment for coffee to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob. This chain of transactions, from Joe to Alice to Bob, is illustrated in <<blockchain-mnemonic>>.
+((("chain of transactions")))Alice's payment to Bob's Store uses a previous transaction's output as its input. In the previous chapter, Alice received bitcoin from her friend Joe in return for cash. That transaction created a bitcoin value locked by Alice's key. Her new transaction to Bob's Store references the previous transaction as an input and creates new outputs to pay for the laptop and receive change. The transactions form a chain, where the inputs from the latest transaction correspond to outputs from previous transactions. Alice's key provides the signature that unlocks those previous transaction outputs, thereby proving to the Bitcoin network that she owns the funds. She attaches the payment for the laptop to Bob's address, thereby "encumbering" that output with the requirement that Bob produces a signature in order to spend that amount. This represents a transfer of value between Alice and Bob. This chain of transactions, from Joe to Alice to Bob, is illustrated in <<blockchain-mnemonic>>.
 
 [[blockchain-mnemonic]]
 .A chain of transactions, where the output of one transaction is the input of the next transaction
@@ -187,14 +187,14 @@ The response in <<example_2-2>> shows one unspent output (one that has not been 
 View the https://www.blockchain.com/btc/tx/7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18[transaction from Joe to Alice].
 ====
 
-As you can see, Alice's wallet contains enough bitcoin in a single unspent output to pay for the cup of coffee. Had this not been the case, Alice's wallet application might have to "rummage" through a pile of smaller unspent outputs, like picking coins from a purse until it could find enough to pay for the coffee. In both cases, there might be a need to get some change back, which we will see in the next section, as the wallet application creates the transaction outputs (payments).
+As you can see, Alice's wallet contains enough bitcoin in a single unspent output to pay for the laptop. Had this not been the case, Alice's wallet application might have to "rummage" through a pile of smaller unspent outputs, like picking coins from a purse until it could find enough to pay for the laptop. In both cases, there might be a need to get some change back, which we will see in the next section, as the wallet application creates the transaction outputs (payments).
 
 
 ==== Creating the Outputs
 
 ((("outputs and inputs", "creating outputs")))A transaction output is created in the form of a script that creates an encumbrance on the value and can only be redeemed by the introduction of a solution to the script. In simpler terms, Alice's transaction output will contain a script that says something like, "This output is payable to whoever can present a signature from the key corresponding to Bob's address." Because only Bob has the wallet with the keys corresponding to that address, only Bob's wallet can present such a signature to redeem this output. Alice will therefore "encumber" the output value with a demand for a signature from Bob.
 
-This transaction will also include a second output, because Alice's funds are in the form of a 0.10 BTC output, too much money for the 0.015 BTC cup of coffee. Alice will need 0.085 BTC in change. Alice's change payment is created by Alice's wallet as an output in the very same transaction as the payment to Bob. Essentially, Alice's wallet breaks her funds into two payments: one to Bob and one back to herself. She can then use (spend) the change output in a subsequent transaction.
+This transaction will also include a second output, because Alice's funds are in the form of a 0.10 BTC output, too much money for the 0.015 BTC cup of laptop. Alice will need 0.085 BTC in change. Alice's change payment is created by Alice's wallet as an output in the very same transaction as the payment to Bob. Essentially, Alice's wallet breaks her funds into two payments: one to Bob and one back to herself. She can then use (spend) the change output in a subsequent transaction.
 
 Finally, for the transaction to be processed by the network in a timely fashion, Alice's wallet application will add a small fee. This is not explicit in the transaction; it is implied by the difference between inputs and outputs. If instead of taking 0.085 in change, Alice creates only 0.0845 as the second output, there will be 0.0005 BTC (half a millibitcoin) left over. The input's 0.10 BTC is not fully spent with the two outputs, because they will add up to less than 0.10. The resulting difference is the _transaction fee_ that is collected by the miner as a fee for validating and including the transaction in a block to be recorded on the blockchain.
 
@@ -202,13 +202,13 @@ The resulting transaction can be seen using a blockchain explorer web applicatio
 
 [[transaction-alice]]
 [role="smallerseventyfive"]
-.Alice's transaction to Bob's Cafe
+.Alice's transaction to Bob's Store
 image::images/mbc2_0208.png["Alice Coffee Transaction"]
 
 [[transaction-alice-url]]
 [TIP]
 ====
-View the https://www.blockchain.com/btc/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2[transaction from Alice to Bob's Cafe].
+View the https://www.blockchain.com/btc/tx/0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2[transaction from Alice to Bob's Store].
 ====
 
 ==== Adding the Transaction to the Ledger
@@ -277,7 +277,7 @@ image::images/mbc2_0209.png["Alice's transaction included in a block"]
 
 ((("spending bitcoin", "simplified-payment-verification (SPV)")))((("simplified-payment-verification (SPV)")))Now that Alice's transaction has been embedded in the blockchain as part of a block, it is part of the distributed ledger of bitcoin and visible to all bitcoin applications. Each Bitcoin client can independently verify the transaction as valid and spendable. Full-node clients can track the source of the funds from the moment the bitcoin were first generated in a block, incrementally from transaction to transaction, until they reach Bob's address. Lightweight clients can do what is called a simplified payment verification (see <<spv_nodes>>) by confirming that the transaction is in the blockchain and has several blocks mined after it, thus providing assurance that the miners accepted it as valid.
 
-Bob can now spend the output from this and other transactions. For example, Bob can pay a contractor or supplier by transferring value from Alice's coffee cup payment to these new owners. Most likely, Bob's bitcoin software will aggregate many small payments into a larger payment, perhaps concentrating all the day's bitcoin revenue into a single transaction. This would aggregate the various payments into a single output (and a single address). For a diagram of an aggregating transaction, see <<transaction-aggregating>>.
+Bob can now spend the output from this and other transactions. For example, Bob can pay a contractor or supplier by transferring value from Alice's laptop payment to these new owners. Most likely, Bob's bitcoin software will aggregate many small payments into a larger payment, perhaps concentrating all the day's bitcoin revenue into a single transaction. This would aggregate the various payments into a single output (and a single address). For a diagram of an aggregating transaction, see <<transaction-aggregating>>.
 
 As Bob spends the payments received from Alice and other customers, he extends the chain of transactions. Let's assume that Bob pays his web designer Gopesh((("use cases", "offshore contract services"))) in Bangalore for a new web page. Now the chain of transactions will look like <<block-alice2>>.
 
@@ -285,4 +285,4 @@ As Bob spends the payments received from Alice and other customers, he extends t
 .Alice's transaction as part of a transaction chain from Joe to Gopesh, where the output of one transaction is spent as the input of the next transaction
 image::images/mbc2_0210.png["Alice's transaction as part of a transaction chain"]
 
-In this chapter, we saw how transactions build a chain that moves value from owner to owner. We also tracked Alice's transaction, from the moment it was created in her wallet, through the Bitcoin network and to the miners who recorded it on the blockchain. In the rest of this book, we will examine the specific technologies behind wallets, addresses, signatures, transactions, the network, and finally mining.((("", startref="BCover02")))((("", startref="DCSover02"))) ((("", startref="UCcoffee02")))
+In this chapter, we saw how transactions build a chain that moves value from owner to owner. We also tracked Alice's transaction, from the moment it was created in her wallet, through the Bitcoin network and to the miners who recorded it on the blockchain. In the rest of this book, we will examine the specific technologies behind wallets, addresses, signatures, transactions, the network, and finally mining.
