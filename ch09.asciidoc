@@ -61,7 +61,7 @@ A second way to identify a block is by its position in the blockchain, called th
 
 In addition, the term _current block height_ indicates the size of the blockchain in blocks at any given time. For example, the current block height on March 1, 2021 was approximately 672,722, meaning there were 672,722 blocks stacked on top of the first block created in January 2009.
 
-Unlike the block hash, the block height is not a unique identifier. Although a single block will always have a specific and invariant block height, the reverse is not true—the block height does not always identify a single block. Two or more blocks might have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section <<forks>>. The block height is also not a part of the block's data structure; it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the bitcoin network. The block height might also be stored as metadata in an indexed database table for faster retrieval.
+Unlike the block hash, the block height is not a unique identifier. Although a single block will always have a specific and invariant block height, the reverse is not true—the block height does not always identify a single block. Two or more blocks might have the same block height, competing for the same position in the blockchain. This scenario is discussed in detail in the section <<forks>>. The block height is also not a part of the block's data structure; it is not stored within the block. Each node dynamically identifies a block's position (height) in the blockchain when it is received from the Bitcoin network. The block height might also be stored as metadata in an indexed database table for faster retrieval.
 
 [TIP]
 ====
@@ -72,9 +72,9 @@ A block's _block hash_ always identifies a single block uniquely. A block also a
 
 ((("blocks", "genesis block")))((("blockchain (the)", "genesis block")))The first block in the blockchain is called the genesis block and was created in 2009. It is the common ancestor of all the blocks in the blockchain, meaning that if you start at any block and follow the chain backward in time, you will eventually arrive at the genesis block.
 
-Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created, and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain.
+Every node always starts with a blockchain of at least one block because the genesis block is statically encoded within the Bitcoin client software, such that it cannot be altered. Every node always "knows" the genesis block's hash and structure, the fixed time it was created, and even the single transaction within. Thus, every node has the starting point for the blockchain, a secure "root" from which to build a trusted blockchain.
 
-See the statically encoded genesis block inside the Bitcoin Core client, in http://bit.ly/1x6rcwP[_chainparams.cpp_].
+See the statically encoded genesis block inside the Bitcoin Core client, in https://bit.ly/1x6rcwP[_chainparams.cpp_].
 
 The following identifier hash belongs to the genesis block:
 
@@ -123,7 +123,7 @@ Let's assume, for example, that a node has 277,314 blocks in the local copy of t
 00000000000000027e7ba6fe7bad39faf3b5a83daed765f05f7d1b71a1632249
 ----
 
-The bitcoin node then receives a new block from the network, which it parses as follows:
+The Bitcoin node then receives a new block from the network, which it parses as follows:
 
 [source,json]
 ----
@@ -153,7 +153,7 @@ Looking at this new block, the node finds the +previousblockhash+ field, which c
 [[merkle_trees]]
 === Merkle Trees
 
-((("merkle trees", id="merkle09")))((("blockchain (the)", "merkle trees", id="BCTmerkle09")))Each block in the bitcoin blockchain contains a summary of all the transactions in the block using a _merkle tree_.
+((("merkle trees", id="merkle09")))((("blockchain (the)", "merkle trees", id="BCTmerkle09")))Each block in the Bitcoin blockchain contains a summary of all the transactions in the block using a _merkle tree_.
 
 ((("binary hash trees", see="merkle trees")))A _merkle tree_, also known as a _binary hash tree_, is a data structure used for efficiently summarizing and verifying the integrity of large sets of data. Merkle trees are binary trees containing cryptographic hashes. The term "tree" is used in computer science to describe a branching data structure, but these trees are usually displayed upside down with the "root" at the top and the "leaves" at the bottom of a diagram, as you will see in the examples that follow.
 
@@ -196,7 +196,7 @@ image::images/mbc2_0903.png["merkle_tree_odd"]
 
 The same method for constructing a tree from four transactions can be generalized to construct trees of any size. In bitcoin it is common to have several hundred to more than a thousand transactions in a single block, which are summarized in exactly the same way, producing just 32 bytes of data as the single merkle root. In <<merkle_tree_large>>, you will see a tree built from 16 transactions. Note that although the root looks bigger than the leaf nodes in the diagram, it is the exact same size, just 32 bytes. Whether there is one transaction or a hundred thousand transactions in the block, the merkle root always summarizes them into 32 bytes.
 
-((("authentication paths")))To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows bitcoin nodes to efficiently produce paths of 10 or 12 hashes (320–384 bytes), which can provide proof of a single transaction out of more than a thousand transactions in a megabyte-sized block.
+((("authentication paths")))To prove that a specific transaction is included in a block, a node only needs to produce +log~2~(N)+ 32-byte hashes, constituting an _authentication path_ or _merkle path_ connecting the specific transaction to the root of the tree. This is especially important as the number of transactions increases, because the base-2 logarithm of the number of transactions increases much more slowly. This allows Bitcoin nodes to efficiently produce paths of 10 or 12 hashes (320–384 bytes), which can provide proof of a single transaction out of more than a thousand transactions in a megabyte-sized block.
 
 [[merkle_tree_large]]
 .A merkle tree summarizing many data elements
@@ -261,13 +261,13 @@ As you can see from the table, while the block size increases rapidly, from 4 KB
 
 === Merkle Trees and Simplified Payment Verification (SPV)
 
-((("simplified-payment-verification (SPV)")))((("bitcoin nodes", "SPV nodes")))Merkle trees are used extensively by SPV nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an authentication path, or merkle path.
+((("simplified-payment-verification (SPV)")))((("Bitcoin nodes", "SPV nodes")))Merkle trees are used extensively by SPV nodes. SPV nodes don't have all transactions and do not download full blocks, just block headers. In order to verify that a transaction is included in a block, without having to download all the transactions in the block, they use an authentication path, or merkle path.
 
 Consider, for example, an SPV node that is interested in incoming payments to an address contained in its wallet. The SPV node will establish a bloom filter (see <<bloom_filters>>) on its connections to peers to limit the transactions received to only those containing addresses of interest. When a peer sees a transaction that matches the bloom filter, it will send that block using a +merkleblock+ message. The +merkleblock+ message contains the block header as well as a merkle path that links the transaction of interest to the merkle root in the block. The SPV node can use this merkle path to connect the transaction to the block and verify that the transaction is included in the block. The SPV node also uses the block header to link the block to the rest of the blockchain. The combination of these two links, between the transaction and block, and between the block and blockchain, proves that the transaction is recorded in the blockchain. All in all, the SPV node will have received less than a kilobyte of data for the block header and merkle path, an amount of data that is more than a thousand times less than a full block (about 1 megabyte currently).((("", startref="BCTmerkle09")))((("", startref="merkle09")))
 
 === Bitcoin's Test Blockchains
 
-((("blockchain (the)", "test blockchains", id="BCTtest09")))((("mainnet", seealso="blockchain (the)")))You might be surprised to learn that there is more than one bitcoin blockchain. The "main" bitcoin blockchain, the one created by Satoshi Nakamoto on January 3rd, 2009, the one with the genesis block we studied in this chapter, is called _mainnet_.  There are other bitcoin blockchains that are used for testing purposes: at this time _testnet_, _segnet_, and _regtest_. Let's look at each in turn.((("testnet", id="testnet09")))
+((("blockchain (the)", "test blockchains", id="BCTtest09")))((("mainnet", seealso="blockchain (the)")))You might be surprised to learn that there is more than one Bitcoin blockchain. The "main" Bitcoin blockchain, the one created by Satoshi Nakamoto on January 3rd, 2009, the one with the genesis block we studied in this chapter, is called _mainnet_.  There are other Bitcoin blockchains that are used for testing purposes: at this time _testnet_, _segnet_, and _regtest_. Let's look at each in turn.((("testnet", id="testnet09")))
 
 
 ==== Testnet&#x2014;Bitcoin's Testing Playground
