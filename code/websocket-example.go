@@ -11,7 +11,7 @@ import (
 	"github.com/conformal/btcwire"
 )
 
-// This example demonstrates a connection to the bitcoin network
+// This example demonstrates a connection to the Bitcoin network
 // by using websockets via btcd, use of notifications and an rpc
 // call to getblockcount.
 //
