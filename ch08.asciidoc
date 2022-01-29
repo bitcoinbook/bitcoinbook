@@ -76,6 +76,15 @@ To connect to a known peer, nodes establish a TCP connection, usually to port 83
 
 The +version+ message is always the first message sent by any peer to another peer. The local peer receiving a +version+ message will examine the remote peer's reported +nVersion+ and decide if the remote peer is compatible. If the remote peer is compatible, the local peer will acknowledge the +version+ message and establish a connection by sending a +verack+ message.
 
+[NOTE]
+====
+The introduction of BIP339 and BIP155 have altered the order of the handshake message sequence:
+
+BIP339: defines the feature negotiation of wtxidrelay, which must happen between VERSION and VERACK to avoid relay problems from switching after a connection is up.
+
+BIP155: defines the feature negotiation of addrv2 and sendaddrv2, which must happen between VERSION and VERACK.
+====
+
 How does a new node find peers? The first method is to query DNS using a number of "DNS seeds," which are DNS servers that provide a list of IP addresses of Bitcoin nodes. Some of those DNS seeds provide a static list of IP addresses of stable bitcoin listening nodes. Some of the DNS seeds are custom implementations of BIND (Berkeley Internet Name Daemon) that return a random subset from a list of Bitcoin node addresses collected by a crawler or a long-running Bitcoin node.  The Bitcoin Core client contains the names of nine different DNS seeds. The diversity of ownership and diversity of implementation of the different DNS seeds offers a high level of reliability for the initial bootstrapping process. In the Bitcoin Core client, the option to use the DNS seeds is controlled by the option switch +-dnsseed+ (set to 1 by default, to use the DNS seed).
 
 Alternatively, a bootstrapping node that knows nothing of the network must be given the IP address of at least one Bitcoin node, after which it can establish connections through further introductions. The command-line argument +-seednode+ can be used to connect to one node just for introductions using it as a seed. After the initial seed node is used to form introductions, the client will disconnect from it and use the newly discovered peers.
