@@ -20,3 +20,57 @@ While we don't have a definitive answer, the commonly accepted reasoning is that
 
 BIP-340 is the culmination of a multi-year research, standardization,  and development effort to bring Schnorr signatures to Bitcoin.
 ****
+
+==== Bitcoin's implementation of Schnorr signatures
+
+Schnorr signatures in Bitcoin are implemented according to BIP-340, which outlines the specific design choices and adaptations made to the Schnorr signature algorithm. Remember that a signature scheme, such as ECDSA or Schnorr, is simply a pair of equations that we can use to respectively produce and verify a signature. For both ECDSA and Schnorr signatures, the corresponding equations can be applied to any elliptic curve, relying on the discrete logarithm problem for their security properties.
+
+In Bitcoin, Schnorr signatures are applied to the secp256k1 elliptic curve. This is the same elliptic curve chosen by Satoshi that is used for ECDSA signatures. The difference is in the equations used to calculate and verify the signatures. When adapting Schnorr signatures for use in Bitcoin, the developers had to make several design choices that are specific to the security requirements of a decentralized cryptocurrency. In doing so, the Bitcoin developers have _adapted_ and _standardized_ the Schnorr signature algorithm and the encoding of the signatures. When we describe Schnorr signatures in this book, we are therefore describing the specific implentation of Schnorr signatures for Bitcoin, rather than the Schnorr signature scheme in general.
+
+The BIP-340 document contains more than simply the final implementation of Bitcoin's Schnorr signatures: it describes the various design decisions and the rationale for the choices that were made. While we won't repeat those explanations here, we urge you to read BIP-340 for yourself, so that you may better understand the process and reasoning behind the specification.
+
+==== Creting a Schnorr signature
+
+The first part of a signature scheme is the formula used to create the digital signature, which is shown in <<schnorr_signing_formula>>:
+
+[[schnorr_signing_formula]]
+.Bitcoin's Schnorr signing formula
+latexmath:[\(s⋅G = R + hash(R || P || m)⋅P\)]
+
+Let's work through this formula step-by-step, explaining the various components as they are build from the perspective of the software that is signing a specific Bitcoin transaction.
+
+===== The wallet owner's private key (pk)
+First of all, the purpose of Bitcoin digital signatures is to prove ownership and allow spending of bitcoin in a transaction. The owner of the bitcoin is identified by a private key +pk+, which they have kept secret. The owner has derived a corresponding public key +P+, such that latexmath:[\(P = pk⋅G\)]. As a reminder, +G+ is a known and fixed point on the elliptic curve called the _generator point_, used as the starting point for elliptic curve multiplication and public key derivation (see <<public_key_derivation>>).
+
+===== The ephemeral random value +r+
+
+The signing software will randomly generate one more integer (also known as the _emphemeral_ or _nonce_ value) +r+ and corresponding point +R+ such that:
+
+latexmath:[\(R = r⋅G\)]
+
+As in ECDSA signatures, it is *essential* to the security of the Schnorr signature scheme that +r+ is indeed random and used only once. Repeating values of +r+ with different messages or signing keys may allow an attacker to guess the signer's private key, defeating the security of the scheme.
+
+===== The Bitcoin transaction (message) +m+
+
+In cryptography, the thing we are signing is called the "message". In Bitcoin, the message is the serialized Bitcoin transaction. Therefore, in the formula the Bitcoin transaction is denoted by the letter +m+, for "message".
+
+===== The prefixed hash of the message +m+
+The signing software will now calculate a SHA256 hash of the message +m+, prefixed by +R+ and +P+, as follows:
+
+latexmath:[\(hash( R || P || m )\)]
+
+In Bitcoin's implementation of Schnorr signatures, the message is prefixed by +R+ and +P+ in the hash formula so as to _bind_ the signed message to those public keys, preventing a class of attacks called "related key attacks".
+
+===== Calculating the signature value +s+
+
+Finally, the signing software calculates a value +s+, using the equation in <<schnorr_signing_formula>>:
+
+latexmath:[\(s⋅G = R + hash(R || P || m)⋅P\)]
+
+===== Encoding the signature
+
+The signature is encoded in the witness of the Bitcoin transaction as a serialized encoding of the pair of values (R, s), which allows anyone to verify the authenticity of the signature.
+
+===== Verifying the signature
+
+Given the signature +(R, s)+, the message (Bitcoin transaction) +m+, and the owner's public key +P+ a verifier can evaluate the same formula as in <<schnorr_signing_formula>> and see that the two parts are equal. Since the verifier does not have the private key +pk+ or the nonce value +r+, that were used to produce the points +P+ and +R+ respectively, they cannot themselves calculate a value +s+ that satisfies the formula. They can however, given the value +s+, verify that it works in the equation and thereby verify that the signature is authentic.
