@@ -12,22 +12,22 @@ If you know how to make a pull request to contribute a fix, please write the cor
 
 # Reading this book
 
-To read this book, see [book.asciidoc](https://github.com/bitcoinbook/bitcoinbook/blob/develop/book.asciidoc). Click on each of the chapters to read in your browser. Other parties may choose to release PDFs of the book online.
+To read this book, see [book.asciidoc](book.asciidoc). Click on each of the chapters to read in your browser. Other parties may choose to release PDFs of the book online.
 
 ## Chapters
 
-+ Chapter 1: '[Introduction](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch01.asciidoc)'
-+ Chapter 2: '[How Bitcoin Works](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch02.asciidoc)'
-+ Chapter 3: '[Bitcoin Core: The Reference Implementation](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch03.asciidoc)'
-+ Chapter 4: '[Keys, Addresses](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch04.asciidoc)'
-+ Chapter 5: '[Wallets](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch05.asciidoc)'
-+ Chapter 6: '[Transactions](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch06.asciidoc)'
-+ Chapter 7: '[Advanced Transactions and Scripting](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch07.asciidoc)'
-+ Chapter 8: '[The Bitcoin Network](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch08.asciidoc)'
-+ Chapter 9: '[The Blockchain](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch09.asciidoc)'
-+ Chapter 10: '[Mining and Consensus](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch10.asciidoc)'
-+ Chapter 11: '[Bitcoin Security](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch11.asciidoc)'
-+ Chapter 12: '[Blockchain Applications](https://github.com/bitcoinbook/bitcoinbook/blob/develop/ch12.asciidoc)'
++ Chapter 1: [Introduction](ch01.asciidoc)
++ Chapter 2: [How Bitcoin Works](ch02.asciidoc)
++ Chapter 3: [Bitcoin Core: The Reference Implementation](ch03.asciidoc)
++ Chapter 4: [Keys, Addresses](ch04.asciidoc)
++ Chapter 5: [Wallets](ch05.asciidoc)
++ Chapter 6: [Transactions](ch06.asciidoc)
++ Chapter 7: [Advanced Transactions and Scripting](ch07.asciidoc)
++ Chapter 8: [The Bitcoin Network](ch08.asciidoc)
++ Chapter 9: [The Blockchain](ch09.asciidoc)
++ Chapter 10: [Mining and Consensus](ch10.asciidoc)
++ Chapter 11: [Bitcoin Security](ch11.asciidoc)
++ Chapter 12: [Blockchain Applications](ch12.asciidoc)
 
 # Published
 
