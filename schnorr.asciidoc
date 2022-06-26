@@ -44,7 +44,7 @@ The first part of a signature scheme is the formula used to create the digital s
 .Bitcoin's Schnorr signing formula
 latexmath:[\(s⋅G = R + hash(R || P || m)⋅P\)]
 
-Let's work through this formula step-by-step, explaining the various components as they are build from the perspective of the software that is signing a specific Bitcoin transaction.
+Let's work through this formula step-by-step, explaining the various components as they are built from the perspective of the software that is signing a specific Bitcoin transaction.
 
 ===== The wallet owner's private key (pk)
 First of all, the purpose of Bitcoin digital signatures is to prove ownership and allow spending of bitcoin in a transaction. The owner of the bitcoin is identified by a private key +pk+, which they have kept secret. The owner has derived a corresponding public key +P+, such that latexmath:[\(P = pk⋅G\)]. As a reminder, +G+ is a known and fixed point on the elliptic curve called the _generator point_, used as the starting point for elliptic curve multiplication and public key derivation (see <<public_key_derivation>>).
@@ -57,6 +57,9 @@ latexmath:[\(R = r⋅G\)]
 
 As in ECDSA signatures, it is *essential* to the security of the Schnorr signature scheme that +r+ is indeed random and used only once. Repeating values of +r+ with different messages or signing keys may allow an attacker to guess the signer's private key, defeating the security of the scheme.
 
+// As a reminder, wallet developers decide how their signing software will work and it is up to them to ensure there are no repeating +r+ values.
+
+
 ===== The Bitcoin transaction (message) +m+
 
 In cryptography, the thing we are signing is called the "message". In Bitcoin, the message is the serialized Bitcoin transaction. Therefore, in the formula the Bitcoin transaction is denoted by the letter +m+, for "message".
@@ -67,6 +70,8 @@ The signing software will now calculate a SHA256 hash of the message +m+, prefix
 latexmath:[\(hash( R || P || m )\)]
 
 In Bitcoin's implementation of Schnorr signatures, the message is prefixed by +R+ and +P+ in the hash formula so as to _bind_ the signed message to those public keys, preventing a class of attacks called "related key attacks".
+
+// To learn more about "related key attacks" see:
 
 ===== Calculating the signature value +s+
 
