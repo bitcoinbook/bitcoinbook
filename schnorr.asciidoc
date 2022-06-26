@@ -32,14 +32,22 @@ The BIP-340 document contains more than simply the final implementation of Bitco
 [[schnorr_sigs_illustrated]]
 ==== Schnorr signatures illustrated
 
-One of the best ways to understand Schnorr signatures, is to visualize the signing and verification steps. In <<schnorr_sigs_illustrated_diag>> below you can see the Schnorr signature algorithm, visualized. The black curved line represents the +secp256k1+ elliptic curve, Bitcoin's default curve for key operations. The curve has a static, pre-defined starting point, called the _generator point_, shown on the curve as point +G+. Public keys are derived by scalar multiplication of a private key and the generator point. For example, the public key of the transaction signer +P+ is computed by the multiplication of their private key +pk+ with the generator point. You can see this operation highlighted as a red arrow "from" point +G+ to point +P+, with the formula +P = pk x G+ above the red arrow.
+One of the best ways to understand Schnorr signatures, is to visualize the signing and verification steps.
+
+In <<schnorr_sigs_illustrated_diag>>footnote:[The Schnorr signature illustration is sourced from Stepan Snigirev's article "How Schnorr Signatures May Improve Bitcoin" (https://medium.com/cryptoadvance/how-schnorr-signatures-may-improve-bitcoin-91655bcb4744)] below, you can see the Schnorr signature algorithm, visualized. In the diagram, the red arrows represent operations that the signer performs to create a Schnorr signature, whereas blue arrows represent operations that anyone else can perform to verify that signature. The "signature" is simply the values (R, s), which the signer embeds in the signed transaction. Once anyone receives the transaction with the signature values (R, s), they can verify that this is a valid signature for message +m+, signed by the signer with public key +P+. The verification process is highlighted by the blue arrows. The link between the signature produced by the signer and the verification is the
+
+The black curved line represents the +secp256k1+ elliptic curve, Bitcoin's default curve for key operations. The curve has a static, pre-defined starting point, called the _generator point_, shown on the curve as point +G+. Public keys are derived by scalar multiplication of a private key and the generator point.
+
+For example, the public key of the transaction signer +P+ is computed by the multiplication of their private key +pk+ with the generator point +G+. You can see this operation highlighted as a red arrow "from" point +G+ to point +P+, with the formula +P = pk x G+ above the red arrow.
+
+
 
 
 [[schnorr_sigs_illustrated_diag]]
 .Schnorr signatures illustrated
 image::images/schnorr_signatures.png["Schnorr signatures illustrated"]
 
-footnote:[The Schnorr signature illustration is sourced from Stepan Snigirev's article "How Schnorr Signatures May Improve Bitcoin" (https://medium.com/cryptoadvance/how-schnorr-signatures-may-improve-bitcoin-91655bcb4744)]
+
 ==== Creting a Schnorr signature
 
 The first part of a signature scheme is the formula used to create the digital signature, which is shown in <<schnorr_signing_formula>>:
@@ -61,7 +69,7 @@ latexmath:[\(R = r⋅G\)]
 
 As in ECDSA signatures, it is *essential* to the security of the Schnorr signature scheme that +r+ is indeed random and used only once. Repeating values of +r+ with different messages or signing keys may allow an attacker to guess the signer's private key, defeating the security of the scheme.
 
-// As a reminder, wallet developers decide how their signing software will work and it is up to them to ensure there are no repeating +r+ values.
+// As a reminder, wallet developers decide how their signing software will work and it is up to them to ensure there are no repeating +r+ values.//
 
 
 ===== The Bitcoin transaction (message) +m+
