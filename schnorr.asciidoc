@@ -47,54 +47,84 @@ For example, the public key of the transaction signer +P+ is computed by the mul
 .Schnorr signatures illustrated
 image::images/schnorr_signatures.png["Schnorr signatures illustrated"]
 
-
 ==== Creting a Schnorr signature
 
 The first part of a signature scheme is the formula used to create the digital signature, which is shown in <<schnorr_signing_formula>>:
 
 [[schnorr_signing_formula]]
 .Bitcoin's Schnorr signing formula
-latexmath:[\(s⋅G = R + hash(R || P || m)⋅P\)]
+latexmath:[\(S = R + hash(R || A || m) ⋅ A\)]
 
 Let's work through this formula step-by-step, explaining the various components as they are built from the perspective of the software that is signing a specific Bitcoin transaction.
 
-===== The wallet owner's private key (pk)
-First of all, the purpose of Bitcoin digital signatures is to prove ownership and allow spending of bitcoin in a transaction. The owner of the bitcoin is identified by a private key +pk+, which they have kept secret. The owner has derived a corresponding public key +P+, such that latexmath:[\(P = pk⋅G\)]. As a reminder, +G+ is a known and fixed point on the elliptic curve called the _generator point_, used as the starting point for elliptic curve multiplication and public key derivation (see <<public_key_derivation>>).
+[TIP]
+====
+Throughout this book, we use lower-case letters to represent private keys (eg. +a+ is Alice's private key) and the corresponding upper case letter to denote the public key (eg. +A+ is Alice's public key). Upper-case letters more generally represent points on the elliptic curve, with +G+ being the special predefined generator point of the curve.
+====
+
+===== The wallet owner's private key (a)
+
+First of all, the purpose of Bitcoin digital signatures is to prove ownership and allow spending of bitcoin in a transaction. Alice, the owner of the bitcoin being spent, has a private key +a+, which she has kept secret. Alice has derived a corresponding public key +A+, such that latexmath:[\(A = a⋅G\)]. As a reminder, +G+ is a known and fixed point on the elliptic curve called the _generator point_, used as the starting point for elliptic curve multiplication and public key derivation (see <<public_key_derivation>>).
 
 ===== The ephemeral random value +r+
 
-The signing software will randomly generate one more integer (also known as the _emphemeral_ or _nonce_ value) +r+ and corresponding point +R+ such that:
+The signing software will randomly generate one more integer (also known as the _emphemeral key_ ) +r+ and corresponding point +R+ such that:
 
 latexmath:[\(R = r⋅G\)]
 
 As in ECDSA signatures, it is *essential* to the security of the Schnorr signature scheme that +r+ is indeed random and used only once. Repeating values of +r+ with different messages or signing keys may allow an attacker to guess the signer's private key, defeating the security of the scheme.
 
-// As a reminder, wallet developers decide how their signing software will work and it is up to them to ensure there are no repeating +r+ values.//
-
+////
+TODO
+ As a reminder, wallet developers decide how their signing software will work and it is up to them to ensure there are no repeating +r+ values.
+////
 
 ===== The Bitcoin transaction (message) +m+
 
-In cryptography, the thing we are signing is called the "message". In Bitcoin, the message is the serialized Bitcoin transaction. Therefore, in the formula the Bitcoin transaction is denoted by the letter +m+, for "message".
+In cryptography, the thing we are signing is called the "message". In Bitcoin, the message is the serialized Bitcoin transaction. Therefore, in the signing formula we represent the serialized Bitcoin transaction with the letter +m+, from the word "message".
 
 ===== The prefixed hash of the message +m+
-The signing software will now calculate a SHA256 hash of the message +m+, prefixed by +R+ and +P+, as follows:
+The signing software will now calculate a SHA256 hash of the message +m+, prefixed by +R+ and +A+, as follows:
 
-latexmath:[\(hash( R || P || m )\)]
+latexmath:[\(hash( R || A || m )\)]
 
-In Bitcoin's implementation of Schnorr signatures, the message is prefixed by +R+ and +P+ in the hash formula so as to _bind_ the signed message to those public keys, preventing a class of attacks called "related key attacks".
+In Bitcoin's implementation of Schnorr signatures, the message is prefixed by +R+ and +A+ in the hash formula so as to _bind_ the signed message to those public keys, preventing a class of attacks called "related key attacks".
 
-// To learn more about "related key attacks" see:
+////
+TODO
+ To learn more about "related key attacks" see:
+////
 
 ===== Calculating the signature value +s+
 
-Finally, the signing software calculates a value +s+, using the equation in <<schnorr_signing_formula>>:
+Finally, Alice's wallet calculates a value for +s+, using the equation in <<schnorr_signing_formula>>:
 
-latexmath:[\(s⋅G = R + hash(R || P || m)⋅P\)]
+latexmath:[\(s⋅G = R + hash(R || A || m)⋅A\)]
+
+Alice and only Alice can calculate +s+, because only Alice knows the secret values +a+ and +r+.
+
+.Calculating +s+ for the Schnorr signature
+****
+The algebraic formula that Alice's software uses to calculate +s+ is based on her knowledge of the secret keys +r+ and +a+, works as follows:
+
+++S = R + hash(R,A,m)⋅A++
+
+++s⋅G = r⋅G + hash(R,A,m)⋅a⋅G++
+
+++s⋅G = (r + hash(R,A,m)⋅a)⋅G++
+
+++s = (r + hash(R,A,m)⋅a)++
+
+Only Alice, since she knows +r+ and +a+, can find a value for +s+ that satisfies the signing formula:
+
+++S = R + hash(R,A,m) ⋅ A++
+
+****
 
 ===== Encoding the signature
 
-The signature is encoded in the witness of the Bitcoin transaction as a serialized encoding of the pair of values (R, s), which allows anyone to verify the authenticity of the signature.
+The signature is encoded in the witness of the Bitcoin transaction as a serialized encoding of the pair of values (R, S), which allows anyone to verify the authenticity of the signature.
 
 ===== Verifying the signature
 
-Given the signature +(R, s)+, the message (Bitcoin transaction) +m+, and the owner's public key +P+ a verifier can evaluate the same formula as in <<schnorr_signing_formula>> and see that the two parts are equal. Since the verifier does not have the private key +pk+ or the nonce value +r+, that were used to produce the points +P+ and +R+ respectively, they cannot themselves calculate a value +s+ that satisfies the formula. They can however, given the value +s+, verify that it works in the equation and thereby verify that the signature is authentic.
+Given the signature +(R, S)+, the message (Bitcoin transaction) +m+, and the owner's public key +P+ a verifier can evaluate the same formula as in <<schnorr_signing_formula>> and see that the two parts are equal. Since the verifier does not have the private key +a+ or the ephemeral random key +r+, that were used to produce the points +A+ and +R+ respectively, they cannot themselves calculate a value +s+ that satisfies the formula. They can however, given the value +S+, verify that it works in the equation and thereby verify that the signature is authentic.
