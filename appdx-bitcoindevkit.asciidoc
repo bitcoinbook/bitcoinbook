@@ -1,0 +1,709 @@
+[[appdx-bitcoindevkit]]
+[appendix]
+
+= Bitcoin Dev Kit and BDK-CLI
+
+== What is Bitcoin Dev Kit
+
+The https://bitcoindevkit.org/:[Bitcoin Dev Kit] project is a set of libraries and tools used to create Bitcoin descriptor based wallets. The core https://github.com/bitcoindevkit/bdk:[`bdk`] library is written in Rust and can easily integrate Bitcoin wallet features into any application. BDK also provides language-bindings via the https://github.com/bitcoindevkit/bdk-ffi:[`bdk-ffi`] project that allow developers to create bitcoin wallets in their native language such as Kotlin/Java, Swift, and Python. BDK is designed to be modular and supports different blockchain clients for syncing wallet transactions, such as Electrum and custom databases for storing wallet data. This allows developers to choose the components that are right for their application.
+
+=== BDK Library Features
+
+Below is a summary of the BDK library features. All features and the most flexibility can be found by using the core Rust based library. A large subset of features are also provided to application developers via the Kotlin, Swift and Python language bindings. The Kotlin and Swift versions of BDK are also packaged for mobile developers to easily include in their Android or iOS projects.
+
+[frame=all, grid=all]
+[%header, cols="1,1,1,1,1"]
+|===
+| 
+|Rust
+|Kotlin
+|Swift
+|Python 
+
+|https://bitcoindevkit.org/descriptors/[Descriptor] defined spending conditions
+|✓
+|✓
+|✓
+|✓
+
+|Top level descriptor and address types +
+   * Legacy: PK, PKH, SH(WPKH), SH(WSH), SH +
+   * Segwitv0 (Bech32): WPKH, WSH +
+   * Segwitv1 (Bech32m, Taproot): TR +
+|✓ 
+|✓
+|✓
+|✓
+
+| Hierarchical Deterministic (HD) key paths
+|✓
+|✓
+|✓
+|✓
+
+| Networks: regtest, signet, testnet, bitcoin
+|✓
+|✓
+|✓
+|✓
+
+| Pluggable blockchain clients +
+  * Electrum, optional SOCKS5 proxy +
+  * Esplora, optional SOCKS5 proxy +
+  * Received TX verified against core consensus rules +
+  * SOCKS5 Proxy configuration +
+|✓
+|✓
+|✓
+|✓
+
+| Generate/restore master key mnemonic +
+  * 12-24 words with optional password +
+|✓
+|✓
+|✓
+|✓
+
+| Pluggable databases for wallet data +
+  * SQLite +
+  * Memory +
+|✓
+|✓
+|✓
+|✓
+
+| Wallet functions +
+  * Get new address +
+  * List Transactions +
+  * Get Balance +
+  * Create, sign, combine and Finalize PSBT +
+  * Branch and bound coin selection +
+  * Sync blockchain data +
+  * Manual coin control +
+  * Drain wallet +
+  * Replace by Fee (RBF) +
+  * Child pays for parent (CPFP) +
+  * Single recipient and amount +
+  * Multiple recipients and amounts (batch payment) +
+  * Add OP_RETURN output +
+  * Set TX fee rate or absolute fee +
+|✓
+|✓
+|✓
+|✓
+
+| Linux, MacOS Support
+|✓
+|✓
+|✓
+|✓
+
+| Android Support
+|
+|✓
+|
+|
+
+| iOS Support
+|
+|
+|✓
+|
+
+| Descriptor templates +
+  * BIP44 (PKH), BIP49 (SH_WPKH), BIP84 (WPKH) +
+|✓
+|
+|
+|
+
+| Pluggable blockchain clients +
+  * Compact block filters, single peer +
+  * Core RPC, cookie or passwd auth +
+|✓
+|
+|
+|
+
+| Pluggable coin selection +
+  * Custom user provided algorithm +
+  * Oldest first +
+  * Largest first (for testing) +
+|✓
+|
+|
+|
+
+| Pluggable signers +
+   * HWI (desktop) +
+   * Custom user provided +
+|✓
+|
+|
+|
+
+| Parseable spending policies
+|✓
+|
+|
+|
+
+| More wallet functions +
+  * RBF with optional output shrinking +
+  * Select descriptor spending policy path +
+  * Add foreign UTXOs +
+|✓
+|
+|
+|
+
+| Compile spending policy to https://bitcoin.sipa.be/miniscript/:[miniscript]
+|✓
+|
+|
+|
+
+| View descriptor spending policy
+|✓
+|
+|
+|
+
+| Blocking or async IO
+|✓
+|
+|
+|
+
+| Wasm compatible (Esplora blockchain client only)
+|✓
+|
+|
+|
+
+|=== 
+
+== What is BDK-CLI
+
+The https://github.com/bitcoindevkit/bdk-cli:[`bdk-cli`] tool is a powerful lightweight command-line application for Bitcoin wallet testing, prototyping bdk functionalities and education. BDK-CLI uses the latest BDK library API’s to create miniscript based HD wallets. 
+
+---
+
+=== Database Options
+[%header,cols=2*] 
+|===
+|Feature
+|Description
+
+|`key-value-db` 
+|Use sled db for the wallet database
+
+|`sqlite-db`
+|Use sqlite3 for the wallet database
+|===
+
+=== Blockchain Client Options
+[%header,cols=2*] 
+|===
+|Feature
+|Description
+
+|`rpc` 
+|Connect to a bitcoin core node via RPC
+
+|`electrum`
+|Connect to an electrum server
+
+|`esplora-ureq`
+|Connect to an esplora server synchronously
+
+
+|`esplora-reqwest`
+|Connect to an esplora server asynchronously
+
+|`compact_filters`
+|Connect to the bitcoin P2P network via the BIP-157 light client protocol
+|===
+
+
+=== Extra  Utility Tools
+
+[%header,cols=2*] 
+|===
+|Feature
+|Description
+
+|`repl` 
+|Enable REPL shell mode for useful quick manual testing of wallet operations
+
+|`compiler`
+|Enable the miniscript compiler to create spending policies
+
+|`verify`
+| Verify transaction at every sync call using the bitcoin consensus library
+
+|`reserves`
+| Enable proof of reserves commands using the `bdk-reserves` library (requires the electurm feature) 
+|===
+
+=== Automated Regtest Node
+[%header,cols=2*] 
+|===
+|Feature
+|Description
+| `regtest-bitcoin`
+| Auto deploys a regtest bitciond node, connects the wallet, and exposes core RPC commands via `node` subcommands
+|`regtest-electrum`
+| Auto deploys connected electrsd and bitcoind nodes, exposes core RPC commands via `node` subcommands
+|===
+
+= Installation Pre-requisites
+-  Linux or macOS machine
+
+. Install Rust
++
+```zsh
+# install rust using rustup
+
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+```
+. Install `sqlite3`
++
+```!
+#sqlite is a database
+
+# Linux machine
+$ apt install sqlite-dev3
+
+# macOS machine
+$ brew sqlite
+```
+. Install `jq` 
++
+```!
+# jq is a tool used for data parsing
+
+# linux machine
+$ apt install jq
+
+# macOS machine
+$ brew install jq
+```
+
+Note: If you want to remove the cache wallet data at any time use this is the command.
+
+```
+$ rm -rf ~/.bdk-bitcoin
+```
+
+= Installation Instructions and Wallet Examples
+
+###  Airgapped Wallet Example
+
+. Install the `default` feature to use as an airgapped wallet which enables functions that do not require a network connection.
++
+```!
+$ cargo install --version 0.6.0 bdk-cli        
+```
+
+. Generate a fresh mnemonic and xprv, and create descriptor for a single signature wallet.
++
+```!
+$ bdk-cli key generate | tee my-key.json ; export XPRV=$(cat my-key.json | jq -r .xprv); export my_descriptor=("wpkh($XPRV/84h/1h/0h/0/*)")
+{
+  "fingerprint": "f7aa2f71",
+  "mnemonic": "matter announce strike embrace few swap top copper clever cricket inform iron blue pave family shop speak unable entry absent system orange blast gate",
+  "xprv": "tprv8ZgxMBicQKsPfEPYr6ArHsAZUfjnTuHsuCnMP4FwLCSiZFTxWmiihHz5iR2jiQoh9b6PREJJt3d3azJH44s32kb6UiMmMxpsbe9YEteBx4Q"
+}
+```
+. Create a receive address.
++
+```!
+$ bdk-cli wallet --descriptor $my_descriptor get_new_address
+{
+  "address": "tb1qdgfsf9mgd8eafga4fkqcxtdewhzlllsr2sj3ez"
+}
+```
+
+---
+###  Electrum Client Wallet Example (Testnet)
+
+. Install with feature Electrum Client enabled
++
+```!
+$ cargo install --features electrum  --version 0.6.0 bdk-cli
+```
+
+. Generate a fresh Mnemonic and XPRV, and create a Descriptor for a Single Sig P2WPKH Address
+
++
+```!
+$ bdk-cli key generate | tee my-key.json ; export XPRV=$(cat my-key.json | jq -r .xprv); export my_descriptor=("wpkh($XPRV/84h/1h/0h/0/*)")
+
+{
+  "fingerprint": "f7aa2f71",
+  "mnemonic": "matter announce strike embrace few swap top copper clever cricket inform iron blue pave family shop speak unable entry absent system orange blast gate",
+  "xprv": "tprv8ZgxMBicQKsPfEPYr6ArHsAZUfjnTuHsuCnMP4FwLCSiZFTxWmiihHz5iR2jiQoh9b6PREJJt3d3azJH44s32kb6UiMmMxpsbe9YEteBx4Q"
+}
+```
+
+. Enter Repl mode.
++
+```!
+$ bdk-cli repl --descriptor $my_descriptor
+
+>> 
+```
+
+. Create a new receive address.
++
+
+```!
+>> wallet get_new_address
+
+{
+  "address": "tb1qpfz8304uux7vchvcj5vxvujcm0c4pjakvadwhp"
+}
+```
+
+. Use a bitcoin Testnet faucet to send Testnet bitcoin to your receive address.
+
+. Sync the wallet.
++
+```!
+>> wallet sync
+
+{}
+```
+
+. Check Balance
++
+
+```
+>> wallet get_balance
+
+{
+  "satoshi": {
+    "confirmed": 12000,
+    "immature": 0,
+    "trusted_pending": 0,
+    "untrusted_pending": 0
+  }
+}
+
+```
+
+. Create a transaction and coins back to the Testnet faucet.
++
+```!
+### Create transaction to address and give an amount of satoshis
+>> wallet create_tx --to "<testnet_address_here>:<amount_of_sats>"
+
+### Or to create a transaction and send all funds use send_all flag
+>> wallet create_tx --to "tb1ql7w62elx9ucw4pj5lgw4l028hmuw80sndtntxt:0" --send_all
+
+{
+  "details": {
+    "confirmation_time": null,
+    "fee": 110,
+    "received": 0,
+    "sent": 11000,
+    "transaction": null,
+    "txid": "399953875baee25616ad356fd92ca368d50fe957342024b8f70bf47d7bef45f8"
+  },
+  "psbt": "cHNidP8BAFIBAAAAAY8caoAKaPG5UVgswfNk0Opk9L0eufBxk46W3TLBQf3CAQAAAAD+////ATNyMAAAAAAAFgAU/52lZ+YvMOqGVPodX71HvvjjvhMZSSQAAAEA3gIAAAAAAQG1KMBiCR5bXpwrrHjgQcakJFF4KtpSkgtCHEh1eyNb8wAAAAAA/v///wLjgpovAgAAABYAFDQaHFFtWVZTPPdHtDN0UP4kZePgoXIwAAAAAAAWABRVSG8mMTdFfDgIySj8Fcub8VXClgJHMEQCIHo/of45qxiExXS2v09sKRsi3rFUroqhyXymYWQ+2XNVAiAu1jAN3IllwUGIOQbOi7FlAVe9dU2jIBVW/wIhzkDkDAEhAh5bClVJE4c4aWTghYwYA6YqVa5/m/rDGltJ0pe7dXfLGUkkAAEBH6FyMAAAAAAAFgAUVUhvJjE3RXw4CMko/BXLm/FVwpYiBgNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6hhMXdOSVAAAgAEAAIAAAACAAAAAAAEAAAAAAA=="
+}
+```
+
+. Sign the transaction PSBT (copy/paste above "psbt" value).
++
+```!
+>> wallet sign --psbt "cHNidP8BAFIBAAAAAY8caoAKaPG5UVgswfNk0Opk9L0eufBxk46W3TLBQf3CAQAAAAD+////ATNyMAAAAAAAFgAU/52lZ+YvMOqGVPodX71HvvjjvhMZSSQAAAEA3gIAAAAAAQG1KMBiCR5bXpwrrHjgQcakJFF4KtpSkgtCHEh1eyNb8wAAAAAA/v///wLjgpovAgAAABYAFDQaHFFtWVZTPPdHtDN0UP4kZePgoXIwAAAAAAAWABRVSG8mMTdFfDgIySj8Fcub8VXClgJHMEQCIHo/of45qxiExXS2v09sKRsi3rFUroqhyXymYWQ+2XNVAiAu1jAN3IllwUGIOQbOi7FlAVe9dU2jIBVW/wIhzkDkDAEhAh5bClVJE4c4aWTghYwYA6YqVa5/m/rDGltJ0pe7dXfLGUkkAAEBH6FyMAAAAAAAFgAUVUhvJjE3RXw4CMko/BXLm/FVwpYiBgNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6hhMXdOSVAAAgAEAAIAAAACAAAAAAAEAAAAAAA==" 
+
+{
+  "is_finalized": true,
+  "psbt": "cHNidP8BAFIBAAAAAY8caoAKaPG5UVgswfNk0Opk9L0eufBxk46W3TLBQf3CAQAAAAD+////ATNyMAAAAAAAFgAU/52lZ+YvMOqGVPodX71HvvjjvhMZSSQAAAEA3gIAAAAAAQG1KMBiCR5bXpwrrHjgQcakJFF4KtpSkgtCHEh1eyNb8wAAAAAA/v///wLjgpovAgAAABYAFDQaHFFtWVZTPPdHtDN0UP4kZePgoXIwAAAAAAAWABRVSG8mMTdFfDgIySj8Fcub8VXClgJHMEQCIHo/of45qxiExXS2v09sKRsi3rFUroqhyXymYWQ+2XNVAiAu1jAN3IllwUGIOQbOi7FlAVe9dU2jIBVW/wIhzkDkDAEhAh5bClVJE4c4aWTghYwYA6YqVa5/m/rDGltJ0pe7dXfLGUkkAAEBH6FyMAAAAAAAFgAUVUhvJjE3RXw4CMko/BXLm/FVwpYiBgNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6hhMXdOSVAAAgAEAAIAAAACAAAAAAAEAAAABBwABCGsCRzBEAiAy7FAG3flAh34nqWAfvowo4sVI9ek8RvE3Og4YM4lIBQIgENNu7i72WoT82tmmb8Y+xFLRpJxoErHJF4kgM+HPuooBIQNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6gAA"
+}
+```
+
+. Broadcast the transaction PSBT (copy/paste above finalized "psbt" value).
++
+```!
+>> wallet broadcast --psbt "cHNidP8BAFIBAAAAAY8caoAKaPG5UVgswfNk0Opk9L0eufBxk46W3TLBQf3CAQAAAAD+////ATNyMAAAAAAAFgAU/52lZ+YvMOqGVPodX71HvvjjvhMZSSQAAAEA3gIAAAAAAQG1KMBiCR5bXpwrrHjgQcakJFF4KtpSkgtCHEh1eyNb8wAAAAAA/v///wLjgpovAgAAABYAFDQaHFFtWVZTPPdHtDN0UP4kZePgoXIwAAAAAAAWABRVSG8mMTdFfDgIySj8Fcub8VXClgJHMEQCIHo/of45qxiExXS2v09sKRsi3rFUroqhyXymYWQ+2XNVAiAu1jAN3IllwUGIOQbOi7FlAVe9dU2jIBVW/wIhzkDkDAEhAh5bClVJE4c4aWTghYwYA6YqVa5/m/rDGltJ0pe7dXfLGUkkAAEBH6FyMAAAAAAAFgAUVUhvJjE3RXw4CMko/BXLm/FVwpYiBgNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6hhMXdOSVAAAgAEAAIAAAACAAAAAAAEAAAABBwABCGsCRzBEAiAy7FAG3flAh34nqWAfvowo4sVI9ek8RvE3Og4YM4lIBQIgENNu7i72WoT82tmmb8Y+xFLRpJxoErHJF4kgM+HPuooBIQNTpmmf0AvvDxoT6T0Fg+r3KRFzNkQvAveFBrapNXYH6gAA"
+
+{
+  "txid": "399953875baee25616ad356fd92ca368d50fe957342024b8f70bf47d7bef45f8"
+}
+```
+
+. Exit REPL mode
++
+```!
+>> exit
+Exiting REPL
+```
+
+. Verify transaction is in the testnet mempool by using the txid above.
++
+
+https://mempool.space/testnet[Testnet Mempool]
+
+---
+### Local Regtest Wallet Example  
+
+Note : This feature deploys a `bitcoind` regtest node, intializes the wallet, and exposes the rpc commands via `node` subcommands. The `bdk-cli` wallet and `node` wallet are now able to interact making it suitable for quick wallet testing. 
+
+. Install with node features.
++
+```!
+$ cargo install --features regtest-bitcoin  --version 0.6.0 bdk-cli
+```
+
+. Setup wallet.
++
+```!
+$ bdk-cli key generate | tee my-key.json ; export XPRV=$(cat my-key.json | jq -r .xprv); export my_descriptor=("wpkh($XPRV/84h/1h/0h/0/*)")
+```
++
+```
+{
+  "fingerprint": "f7aa2f71",
+  "mnemonic": "matter announce strike embrace few swap top copper clever cricket inform iron blue pave family shop speak unable entry absent system orange blast gate",
+  "xprv": "tprv8ZgxMBicQKsPfEPYr6ArHsAZUfjnTuHsuCnMP4FwLCSiZFTxWmiihHz5iR2jiQoh9b6PREJJt3d3azJH44s32kb6UiMmMxpsbe9YEteBx4Q"
+}
+```
+
+. Enter repl mode.
++
+```!
+$ bdk-cli --network regtest repl --descriptor $my_descriptor
+>>
+```
+
+. Generate 101 regtest blocks using node command.
++
+```
+>> node generate 101
+[
+  "0fe8d1b9331a8adab5742dabd57a7b3348b241f6674a862f17dbe9f48a8e38d9",
+  "313a0d671b12ad3bfbc700c7202ab115d21567f86961c0e8770c37732ded8854",
+  "5f115bf98690660e9b6d519d6fb7008c97bf782c2046d55967fef3182ec69f6b",
+  "5d239915fa42320718c6f8c7981216f546d0af9433b70b19f81797c8c53b7f06",
+  "786f8e7b0b7e2dc3fa5a0f115eaf91bd2b49e7c50d888c4e76012035b3fe4aed",
+  "30e6765cbd189a018cb0cf9518f13fc5b6b8cbc8a5cafe9e4402b6313faff9e9",
+  "6f85ad3626b3b6af33ad9c30c828018406dda6790bab49c13eb4140c9b8f802a",
+  "7810f479178d11e682d91a5647c5df06b8744db4408cce62c1ec330873752b35",
+  "5d1f27aef1f822f2779a56cdd25249aabc40d6c3115d3c64094c5d8380f9835e",
+  "039aae8d8a55a1d5415e2d6951cabcc48575d78490ad47c1da1c86dfb1594df0"
+  ...
+]
+```
+
+. Get Balance from the regtest bitcoind node wallet.
++
+```!
+>> node getbalance
+"50.00000000 BTC"
+```
+
+. Sync bdk-cli wallet and get its balance.
++
+```!
+>> wallet sync
+{}
+
+>> wallet get_balance
+{
+  "satoshi": {
+    "confirmed": 0,
+    "immature": 0,
+    "trusted_pending": 0,
+    "untrusted_pending": 0
+  }
+}
+```
+
+. Generate new address for bdk-cli wallet.
++
+```!
+>> wallet get_new_address
+{
+  "address": "bcrt1q6xqtj9jejw5lz5edcp54mxkstvhh3ekt0n8vht"
+}
+```
+
+. Send funds via bitcoind node wallet To bdk-cli wallet.
++
+```!
+>> node sendtoaddress "bcrt1q6xqtj9jejw5lz5edcp54mxkstvhh3ekt0n8vht:100000000"
+"bede5951fbb500ab97d0048844560699576c1ac0c5f14c91ae6f88adfd589d38"
+
+## generate another block to process transaction
+
+>> node generateblock 1
+```
+
+. Verify the bdk-cli wallet transaction was successful.
++
+```!
+>> wallet sync 
+{}
+
+>> wallet get_balance
+{
+  "satoshi": {
+    "confirmed": 100000000,
+    "immature": 0,
+    "trusted_pending": 0,
+    "untrusted_pending": 0
+  }
+} 
+```
+
+. Exit REPL mode.
+```!
+>> exit
+Exiting REPL
+```
+
+## Main Modules
+
+### WALLET 
+
+
+```!
+
+USAGE:
+    wallet <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    broadcast            Broadcasts a transaction to the network. Takes either a raw transaction or a PSBT to
+                         extract
+    bump_fee             Bumps the fees of an RBF transaction
+    combine_psbt         Combines multiple PSBTs into one
+    create_tx            Creates a new unsigned transaction
+    extract_psbt         Extracts a raw transaction from a PSBT
+    finalize_psbt        Finalizes a PSBT
+    get_balance          Returns the current wallet balance
+    get_new_address      Generates a new external address
+    help                 Prints this message or the help of the given subcommand(s)
+    list_transactions    Lists all the incoming and outgoing transactions of the wallet
+    list_unspent         Lists the available spendable UTXOs
+    policies             Returns the available spending policies for the descriptor
+    public_descriptor    Returns the public version of the wallet's descriptor(s)
+    sign                 Signs and tries to finalize a PSBT
+    sync                 Syncs with the chosen blockchain server
+
+```
+
+
+### KEY
+
+```!
+
+USAGE:
+    key <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    derive      Derive a child key pair from a master extended key and a derivation path string (eg. "m/84'/1'/0'/0"
+                or "m/84h/1h/0h/0")
+    generate    Generates new random seed mnemonic phrase and corresponding master extended key
+    help        Prints this message or the help of the given subcommand(s)
+    restore     Restore a master extended key from seed backup mnemonic words
+
+```
+
+### REPL
+
+```!
+
+USAGE:
+    bdk-cli repl [FLAGS] [OPTIONS] --descriptor <DESCRIPTOR>
+
+FLAGS:
+    -v, --verbose    
+            Adds verbosity, returns PSBT in JSON format alongside serialized, displays expanded objects
+
+    -h, --help       
+            Prints help information
+
+    -V, --version    
+            Prints version information
+
+
+OPTIONS:
+    -c, --change_descriptor <CHANGE_DESCRIPTOR>    
+            Sets the descriptor to use for internal addresses
+
+    -d, --descriptor <DESCRIPTOR>                  
+            Sets the descriptor to use for the external addresses
+
+    -s, --server <ELECTRUM_URL>
+            Sets the Electrum server to use [default: ssl://electrum.blockstream.info:60002]
+
+    -p, --proxy <PROXY_ADDRS:PORT>                 
+            Sets the SOCKS5 proxy for a blockchain client
+
+    -r, --retries <PROXY_RETRIES>                  
+            Sets the SOCKS5 proxy retries for the blockchain client [default: 5]
+
+    -t, --timeout <PROXY_TIMEOUT>                  
+            Sets the SOCKS5 proxy timeout for the Electrum client
+
+    -a, --proxy_auth <PROXY_USER:PASSWD>           
+            Sets the SOCKS5 proxy credential
+
+    -g, --stop_gap <STOP_GAP>
+            Stop searching addresses for transactions after finding an unused gap of this length [default: 10]
+
+    -w, --wallet <WALLET_NAME>                     
+            Selects the wallet to use
+
+
+```
+
+### NODE
+
+```!
+
+node 0.6.0
+Backend Node operation subcommands
+
+USAGE:
+    node <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    generate         Generate given number of blocks and fund the internal wallet with coinbases
+    getbalance       Get Wallet balance
+    getinfo          Get info
+    getnewaddress    Get new address from node's test wallet
+    help             Prints this message or the help of the given subcommand(s)
+    sendtoaddress    Send to an external wallet address
+    
+```
+
+
+### BDK Links 
+
+https://bitcoindevkit.org/[Bitcoin Dev Kit Web Site]
+
+https://github.com/bitcoindevkit[Bitcoin Dev Kit Github]
+
+https://github.com/bitcoindevkit/bdk[BDK Main Rust Library]
+
+https://github.com/bitcoindevkit/bdk-cli[BDK command-line]
+
+https://github.com/bitcoindevkit/bdk-ffi[BDK Language Bindings]
