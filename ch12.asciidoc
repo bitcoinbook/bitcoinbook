@@ -3,7 +3,7 @@
 
 Let's now build on our understanding of bitcoin by looking at it as an _application platform_. Nowadays, many people use the term "blockchain" to refer to any application platform that shares the design principles of bitcoin. The term is often misused and applied to many things that fail to deliver the primary features that bitcoin's blockchain delivers.
 
-In this chapter we will look at the features offered by the Bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as payment (state) channels and routed payment channels (Lightning Network).
+In this chapter we will look at the features offered by the Bitcoin blockchain, as an application platform. We will consider the application building _primitives_, which form the building blocks of any blockchain application. We will look at several important applications that use these primitives, such as colored coins, payment (state) channels, and routed payment channels (Lightning Network).
 
 === Introduction
 
@@ -61,11 +61,152 @@ Kickstarter (Lighthouse):: Consistency + Atomicity + Integrity. If you sign one 
 
 Payment Channels:: ((("payment (state) channels", "building blocks (primitives) used in")))Quorum of Control + Timelock + No Double Spend + Nonexpiration + Censorship Resistance + Authorization. A multisig 2-of-2 (Quorum) with a timelock (Timelock) used as the "settlement" transaction of a payment channel can be held (Nonexpiration) and spent at any time (Censorship Resistance) by either party (Authorization). The two parties can then create commitment transactions that double-spend (No Double-Spend) the settlement on a shorter timelock (Timelock).
 
+=== Colored Coins
+
+((("blockchain applications", "colored coins", id="BCAcoins12")))((("colored coins", id="color12")))The first blockchain application we will discuss is _colored coins_.
+
+((("extrinsic asset management")))Colored coins refers to a set of similar technologies that use bitcoin transactions to record the creation, ownership, and transfer of extrinsic assets other than bitcoin. By "extrinsic" we mean assets that are not stored directly on the bitcoin blockchain, as opposed to bitcoin itself, which is an asset intrinsic to the blockchain.
+
+((("digital asset management")))Colored coins are used to track digital assets as well as physical assets held by third parties and traded through colored coins certificates of ownership. Digital asset colored coins can represent intangible assets such as a stock certificate, license, virtual property (game items), or most any form of licensed intellectual property (trademarks, copyrights, etc.). Tangible asset colored coins can represent certificates of ownership of commodities (gold, silver, oil), land title, automobiles, boats, aircraft, etc.
+
+((("Enhanced Padded-Order-Based Coloring (EPOBC)")))The term derives from the idea of "coloring" or marking a nominal amount of bitcoin, for example, a single satoshi, to represent something other than the bitcoin value itself. As an analogy, consider stamping a $1 note with a message saying, "this is a stock certificate of ACME" or "this note can be redeemed for 1 oz of silver" and then trading the $1 note as a certificate of ownership of this other asset. The first implementation of colored coins, named _Enhanced Padded-Order-Based Coloring_ or _EPOBC_, assigned extrinsic assets to a 1-satoshi output. In this way, it was a true "colored coin," as each asset was added as an attribute (color) of a single satoshi.
+
+More recent implementations of colored coins use the +OP_RETURN+ script opcode to store metadata in a transaction, in conjunction with external data stores that associate the metadata to specific assets.
+
+((("Open Assets")))The two most prominent implementations of colored coins today are http://www.openassets.org/[_Open Assets_] and http://coloredcoins.org[_Colored Coins by Colu_]. These two systems use different approaches to colored coins and are not compatible. Colored coins created in one system cannot be seen or used in the other system.
+
+==== Using Colored Coins
+
+Colored coins are created, transferred, and generally viewed in special wallets that can interpret the colored coins protocol metadata attached to bitcoin transactions. Special care must be taken to avoid using a colored-coin&#x2013;related key in a regular bitcoin wallet, as the regular wallet may destroy the metadata. Similarly, colored coins should not be sent to addresses managed by regular wallets, but only to addresses that are managed by wallets that are colored-coin-aware. Both Colu and Open Assets systems use special colored-coin addresses to mitigate this risk and to ensure that colored coins are not sent to unaware wallets.
+
+Colored coins are also not visible to most general-purpose blockchain explorers. Instead, you must use a colored-coins explorer to interpret the metadata of a colored coins transaction.
+
+An Open Assets-compatible wallet application and blockchain explorer can be found at https://www.coinprism.info[coinprism].
+
+A Colu Colored Coins-compatible wallet application and blockchain explorer can be found at http://coloredcoins.org/explorer/[Blockchain Explorer].
+
+A Copay wallet plug-in can be found at  http://coloredcoins.org/colored-coins-copay-addon/[Colored Coins Copay Addon].
+
+==== Issuing Colored Coins
+
+Each of the colored coins implementations has a different way of creating colored coins, but they all provide similar functionality. The process of creating a colored coin asset is called _issuance_. An initial transaction, the _issuance transaction_ registers the asset on the bitcoin blockchain and creates an _asset ID_ that is used to reference the asset. Once issued, assets can be transferred between addresses using _transfer transactions_.
+
+Assets issued as colored coins can have multiple properties. They can be _divisible_ or _indivisible_, meaning that the amount of asset in a transfer can be an integer (e.g., 5) or have decimal subdivision (e.g., 4.321). Assets can also have _fixed issuance_, meaning a certain amount are issued only once, or can be _reissued_, meaning that new units of the asset can be issued by the original issuer after the initial issuance.
+
+Finally, some colored coins enable _dividends_, allowing the distribution of bitcoin payments to the owners of a colored coin asset in proportion to their ownership.
+
+==== Colored Coins Transactions
+
+The metadata that gives meaning to a colored coin transaction is usually stored in one of the outputs using the +OP_RETURN+ opcode. Different colored coins protocols use different encodings for the content of the +OP_RETURN+ data. The output containing the +OP_RETURN+ is called the _marker output_.
+
+The order of the outputs and position of the marker output may have special meaning in the colored coins protocol. In Open Assets, for example, any outputs before the marker output represent asset issuance. Any outputs after the marker represent asset transfer. The marker output assigns specific values and colors to the other outputs by referencing their order in the transaction.
+
+In Colored Coins (Colu), by comparison, the marker output encodes an opcode that determines how the metadata is interpreted. Opcodes 0x01 through 0x0F indicate an issuance transaction. An issuance opcode is usually followed by an asset ID or other identifier that can be used to retrieve the asset information from an external source (e.g., bittorrent).
+Opcodes 0x10 through 0x1F represent a transfer transaction.  Transfer transaction metadata contain simple scripts that transfer specific amounts of assets from inputs to outputs, by reference to their index. Ordering of inputs and outputs is therefore important in the interpretation of the script.
+
+If the metadata is too long to fit in +OP_RETURN+, the colored coins protocol may use other "tricks" to store metadata in a transaction. Examples include putting metadata in a redeem script, followed by +OP_DROP+ opcodes to ensure the script ignores the metadata. Another mechanism used is a 1-of-N multisig script where only the first public key is a real public key that can spend the output and subsequent "keys" are replaced by encoded metadata.
+
+In order to correctly interpret the metadata in a colored coins transaction you must use a compatible wallet or block explorer. Otherwise, the transaction looks like a "normal" bitcoin transaction with an +OP_RETURN+ output.
+
+As an example, I created and issued a MasterBTC asset using colored coins. The MasterBTC asset represents a voucher for a free copy of this book. These vouchers can be transferred, traded, and redeemed using a colored coins-compatible wallet.
+
+For this particular example, I used the wallet and explorer at http://coinprism.info/[_https://coinprism.info_], which uses the Open Assets colored coins protocol.
+
+<<the_issuance_transaction_as_viewed_on_coinprismio>> shows the issuance transaction using the Coinprism block explorer:
+
+https://www.coinprism.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec[https://www.coinprism.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec])
+
+[[the_issuance_transaction_as_viewed_on_coinprismio]]
+.The issuance transaction as viewed on coinprism.info
+image::images/mbc2_1201.png[The Issuance Transaction - as viewed on coinprism.info]
+
+As you can see, coinprism shows the issuance of 20 units of "Free copy of Mastering Bitcoin," the MasterBTC asset, to a special colored coin address:
+
+----
+akTnsDt5uzpioRST76VFRQM8q8sBFnQiwcx
+----
+
+[WARNING]
+====
+Any funds or colored assets sent to this address will be lost forever. Do not send value to this example address!
+====
+
+((("transaction IDs (txid)")))The transaction ID of the issuance transaction is a "normal" bitcoin transaction ID. <<the_issuance_transaction_on_a_block>> shows that same transaction in a block explorer that doesn't decode colored coins. We'll use _blockchain.info_:
+
+https://blockchain.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec[https://blockchain.info/tx/10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec]
+
+[[the_issuance_transaction_on_a_block]]
+.The issuance transaction on a block explorer that doesn't decode colored coins
+image::images/mbc2_1202.png[The Issuance Transaction - on a block explorer that doesn't decode colored coins]
+
+As you can see, _blockchain.info_ doesn't recognize this as a colored coins transaction. In fact, it marks the second output with "Unable to decode output address" in red letters.
+
+If you select "Show scripts &amp; coinbase" on that screen, you can see more detail about the transaction (<<the_scripts_in_the_issuance_transaction>>).
+
+[[the_scripts_in_the_issuance_transaction]]
+.The scripts in the issuance transaction
+image::images/mbc2_1203.png[The scripts in the Issuance Transaction]
+
+Once again, _blockchain.info_ doesn't understand the second output. It marks it with "Strange" in red letters. However, we can see that some of the metadata in the marker output is human-readable:
+
+----
+OP_RETURN 4f41010001141b753d68747470733a2f2f6370722e736d2f466f796b777248365559
+(decoded) "OA____u=https://cpr.sm/FoykwrH6UY
+----
+
+Let's retrieve the transaction using +bitcoin-cli+:
+
+----
+$ bitcoin-cli decoderawtransaction `bitcoin-cli getrawtransaction 10d7c4e022f35288779be6713471151ede967caaa39eecd35296aa36d9c109ec`
+----
+
+Stripping out the rest of the transaction, the second output looks like this:
+
+[role="pagebreak-before"]
+[source,json]
+----
+{
+  "value": 0.00000000,
+  "n": 1,
+  "scriptPubKey": "OP_RETURN 4f41010001141b753d68747470733a2f2f6370722e736d2f466f796b777248365559"
+
+}
+----
+
+The prefix +4F41+ represents the letters "OA", which stands for "Open Assets" and helps us identify that what follows is metadata defined by the Open Assets protocol. The ASCII-encoded string that follows is a link to an asset definition:
+
+----
+u=https://cpr.sm/FoykwrH6UY
+----
+
+((("", startref="color12")))((("", startref="BCAcoins12")))If we retrieve this URL, we get a JSON-encoded asset definition, as shown here:
+
+[source,json]
+----
+{
+  "asset_ids": [
+    "AcuRVsoa81hoLHmVTNXrRD8KpTqUXeqwgH"
+  ],
+  "contract_url": null,
+  "name_short": "MasterBTC",
+  "name": "Free copy of \"Mastering Bitcoin\"",
+  "issuer": "Andreas M. Antonopoulos",
+  "description": "This token is redeemable for a free copy of the book \"Mastering Bitcoin\"",
+  "description_mime": "text/x-markdown; charset=UTF-8",
+  "type": "Other",
+  "divisibility": 0,
+  "link_to_website": false,
+  "icon_url": null,
+  "image_url": null,
+  "version": "1.0"
+}
+----
+
 === Counterparty
 
-((("blockchain applications", "Counterparty")))((("Counterparty")))((("smart contracts")))((("Ethereum Virtual Machine (EVM)")))((("extrinsic asset management")))((("virtual asset management")))Counterparty is a protocol layer built on top of bitcoin. The Counterparty protocol offers the ability to create and trade virtual assets and tokens. In addition, Counterparty offers a decentralized exchange for assets. Counterparty is also implementing smart contracts, based on the Ethereum Virtual Machine (EVM).
+((("blockchain applications", "Counterparty")))((("Counterparty")))((("smart contracts")))((("Ethereum Virtual Machine (EVM)")))((("extrinsic asset management")))((("virtual asset management")))Counterparty is a protocol layer built on top of bitcoin. The Counterparty protocol, similar to colored coins, offers the ability to create and trade virtual assets and tokens. In addition, Counterparty offers a decentralized exchange for assets. Counterparty is also implementing smart contracts, based on the Ethereum Virtual Machine (EVM).
 
-Counterparty embeds metadata in bitcoin transactions, using the +OP_RETURN+ opcode or 1-of-N multisignature addresses that encode metadata in the place of public keys. Using these mechanisms, Counterparty implements a protocol layer encoded in bitcoin transactions. The additional protocol layer can be interpreted by applications that are Counterparty-aware, such as wallets and blockchain explorers, or any application built using the Counterparty libraries.
+Like the colored coins protocols, Counterparty embeds metadata in bitcoin transactions, using the +OP_RETURN+ opcode or 1-of-N multisignature addresses that encode metadata in the place of public keys. Using these mechanisms, Counterparty implements a protocol layer encoded in bitcoin transactions. The additional protocol layer can be interpreted by applications that are Counterparty-aware, such as wallets and blockchain explorers, or any application built using the Counterparty libraries.
 
 ((("digital ownership")))Counterparty can be used as a platform for other applications and services, in turn. For example, Tokenly is a platform built on top of Counterparty that allows content creators, artists, and companies to issue tokens that express digital ownership and can be used to rent, access, trade, or shop for content, products, and services. Other applications leveraging Counterparty include games (Spells of Genesis) and grid computing projects (Folding Coin).
 
@@ -100,7 +241,7 @@ In the entire lifetime of the channel, only two transactions need to be submitte
 
 [[payment_channel]]
 .A payment channel between Bob and Alice, showing the funding, commitment, and settlement transactions
-image::images/mbc2_1201.png["A payment channel between Bob and Alice, showing the funding, commitment, and settlement transactions"]
+image::images/mbc2_1204.png["A payment channel between Bob and Alice, showing the funding, commitment, and settlement transactions"]
 
 ==== Simple Payment Channel Example
 
@@ -110,7 +251,7 @@ For this example we will assume two participants: Emma and Fabian. Fabian offers
 
 [[emma_fabian_streaming_video]]
 .Emma purchases streaming video from Fabian with a payment channel, paying for each second of video
-image::images/mbc2_1202.png["Emma purchases streaming video from Fabian with a payment channel, paying for each second of video"]
+image::images/mbc2_1205.png["Emma purchases streaming video from Fabian with a payment channel, paying for each second of video"]
 
 In this example, Fabian and Emma are using special software that handles both the payment channel and the video streaming. Emma is running the software in her browser, Fabian is running it on a server. The software includes basic bitcoin wallet functionality and can create and sign bitcoin transactions. Both the concept and the term "payment channel" are completely hidden from the users. What they see is video that is paid for by the second.
 
@@ -126,7 +267,7 @@ In the next round, Emma's software creates and signs another commitment transact
 
 In this way, Emma's software continues to send commitment transactions to Fabian's server in exchange for streaming video. The balance of the channel gradually accumulates in favor of Fabian, as Emma consumes more seconds of video. Let's say Emma watches 600 seconds (10 minutes) of video, creating and signing 600 commitment transactions. The last commitment transaction (#600) will have two outputs, splitting the balance of the channel, 6 millibits to Fabian and 30 millibits to Emma.
 
-Finally, Emma selects "Stop" to stop streaming video. Either Fabian or Emma can now transmit the final state transaction for settlement. This last transaction is the _settlement transaction_ and pays Fabian for all the video Emma consumed, refunding the remainder of the funding transaction to Emma.
+Finally, Emma clicks "Stop" to stop streaming video. Either Fabian or Emma can now transmit the final state transaction for settlement. This last transaction is the _settlement transaction_ and pays Fabian for all the video Emma consumed, refunding the remainder of the funding transaction to Emma.
 
 <<video_payment_channel>> shows the channel between Emma and Fabian and the commitment transactions that update the balance of the channel.
 
@@ -134,7 +275,7 @@ In the end, only two transactions are recorded on the blockchain: the funding tr
 
 [[video_payment_channel]]
 .Emma's payment channel with Fabian, showing the commitment transactions that update the balance of the channel
-image::images/mbc2_1203.png["Emma's payment channel with Fabian, showing the commitment transactions that update the balance of the channel"]
+image::images/mbc2_1206.png["Emma's payment channel with Fabian, showing the commitment transactions that update the balance of the channel"]
 
 ==== Making Trustless Channels
 
@@ -146,7 +287,7 @@ image::images/mbc2_1203.png["Emma's payment channel with Fabian, showing the com
 
 Both of these problems can be solved with timelocks&#x2014;let's look at how we could use transaction-level timelocks (+nLocktime+).
 
-Emma cannot risk funding a 2-of-2 multisig unless she has a guaranteed refund. To solve this problem, Emma constructs the funding and refund transactions at the same time. She signs the funding transaction but doesn't transmit it to anyone. Emma transmits only the refund transaction to Fabian and obtains his signature.
+Emma cannot risk funding a 2-of-2 multisig unless she has a guaranteed refund. To solve this problem, Emma constructs the funding and refund transaction at the same time. She signs the funding transaction but doesn't transmit it to anyone. Emma transmits only the refund transaction to Fabian and obtains his signature.
 
 The refund transaction acts as the first commitment transaction and its timelock establishes the upper bound for the channel's life. In this case, Emma could set the +nLocktime+ to 30 days or 4320 blocks into the future. All subsequent commitment transactions must have a shorter timelock, so that they can be redeemed before the refund transaction.
 
@@ -160,13 +301,13 @@ For example, if commitment transaction #1 is timelocked to 4320 blocks in the fu
 
 [[timelocked_commitments]]
 .Each commitment sets a shorter timelock, allowing it to be spent before the previous commitments become valid
-image::images/mbc2_1204.png["Each commitment sets a shorter timelock, allowing it to be spent before the previous commitments become valid"]
+image::images/mbc2_1207.png["Each commitment sets a shorter timelock, allowing it to be spent before the previous commitments become valid"]
 
 Each subsequent commitment transaction must have a shorter timelock so that it may be broadcast before its predecessors and before the refund transaction. The ability to broadcast a commitment earlier ensures it will be able to spend the funding output and preclude any other commitment transaction from being redeemed by spending the output. The guarantees offered by the Bitcoin blockchain, preventing double-spends and enforcing timelocks, effectively allow each commitment transaction to invalidate its predecessors.
 
 State channels use timelocks to enforce smart contracts across a time dimension. In this example we saw how the time dimension guarantees that the most recent commitment transaction becomes valid before any earlier commitments. Thus, the most recent commitment transaction can be transmitted, spending the inputs and invalidating prior commitment transactions. The enforcement of smart contracts with absolute timelocks protects against cheating by one of the parties. This implementation needs nothing more than absolute transaction-level timelocks (+nLocktime+). Next, we will see how script-level timelocks, +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+, can be used to construct more flexible, useful, and sophisticated state channels.
 
-The first form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers.
+The first form of unidirectional payment channel was demonstrated as a prototype video streaming application in 2015 by an Argentinian team of developers. You can still see it at pass:[<a href="https://streamium.io/" class="orm:hideurl"><em>streamium.io</em></a>].
 
 Timelocks are not the only way to invalidate prior commitment transactions. In the next sections we will see how a revocation key can be used to achieve the same result. Timelocks are effective but they have two distinct disadvantages. By establishing a maximum timelock when the channel is first opened, they limit the lifetime of the channel. Worse, they force channel implementations to strike a balance between allowing long-lived channels and forcing one of the participants to wait a very long time for a refund in case of premature closure. For example, if you allow the channel to remain open for 30 days, by setting the refund timelock to 30 days, if one of the parties disappears immediately the other party must wait 30 days for a refund. The more distant the endpoint, the more distant the refund.
 
@@ -197,7 +338,7 @@ Input: 2-of-2 funding output, signed by Irene
 Output 0 <5 bitcoin>:
     <Irene's Public Key> CHECKSIG
 
-Output 1 <5 bitcoin>:
+Output 1:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
@@ -212,20 +353,20 @@ Input: 2-of-2 funding output, signed by Hitesh
 Output 0 <5 bitcoin>:
     <Hitesh's Public Key> CHECKSIG
 
-Output 1 <5 bitcoin>:
+Output 1:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
     <Irene's Public Key> CHECKSIG
 ----
 
-This way, each party has a commitment transaction, spending the 2-of-2 funding output. This input is signed by the _other_ party. At any time the party holding the transaction can also sign (completing the 2-of-2) and broadcast. However, if they broadcast the commitment transaction, it pays the other party immediately whereas they have to wait for a timelock to expire. By imposing a delay on the redemption of one of the outputs, we put each party at a slight disadvantage when they choose to unilaterally broadcast a commitment transaction. But a time delay alone isn't enough to encourage fair conduct.
+This way, each party has a commitment transaction, spending the 2-of-2 funding output. This input is signed by the _other_ party. At any time the party holding the transaction can also sign (completing the 2-of-2) and broadcast. However, if they broadcast the commitment transaction, it pays the other party immediately whereas they have to wait for a short timelock to expire. By imposing a delay on the redemption of one of the outputs, we put each party at a slight disadvantage when they choose to unilaterally broadcast a commitment transaction. But a time delay alone isn't enough to encourage fair conduct.
 
 <<asymmetric_commitments>> shows two asymmetric commitment transactions, where the output paying the holder of the commitment is delayed.
 
 [[asymmetric_commitments]]
 .Two asymmetric commitment transactions with delayed payment for the party holding the transaction
-image::images/mbc2_1205.png["Two asymmetric commitment transactions with delayed payment for the party holding the transaction"]
+image::images/mbc2_1208.png["Two asymmetric commitment transactions with delayed payment for the party holding the transaction"]
 
 Now we introduce the final element of this scheme: a revocation key that prevents a cheater from broadcasting an expired commitment. The revocation key allows the wronged party to punish the cheater by taking the entire balance of the channel.
 
@@ -258,7 +399,7 @@ CHECKSIG
 
 Irene can confidently sign this transaction, since if transmitted it will immediately pay her what she is owed. Hitesh holds the transaction, but knows that if he transmits it in a unilateral channel closing, he will have to wait 1000 blocks to get paid.
 
-When the channel is advanced to the next state, Hitesh has to _revoke_ this commitment transaction before Irene agrees to sign the next commitment transaction. To do that, all he has to do is send his half of the _revocation key_ to Irene. Once Irene has both halves of the revocation secret key for this commitment, she can sign the next commitment with confidence. She knows that if Hitesh tries to cheat by publishing the prior commitment, she can use the revocation key to redeem Hitesh's delayed output. _If Hitesh cheats, Irene gets BOTH outputs_. Meanwhile, Hitesh only has half the revocation secret for that revocation public key and can't redeem the output until 1000 blocks. Irene will be able to redeem the output and punish Hitesh before the 1000 blocks have elapsed.
+When the channel is advanced to the next state, Hitesh has to _revoke_ this commitment transaction before Irene agrees to sign the next commitment transaction. To do that, all he has to do is send his half of the _revocation key_ to Irene. Once Irene has both halves of the  revocation secret key for this commitment, she can sign the next commitment with confidence. She knows that if Hitesh tries to cheat by publishing the prior commitment, she can use the revocation key to redeem Hitesh's delayed output. _If Hitesh cheats, Irene gets BOTH outputs_. Meanwhile, Hitesh only has half the revocation secret for that revocation public key and can't redeem the output until 1000 blocks. Irene will be able to redeem the output and punish Hitesh before the 1000 blocks have elapsed.
 
 The revocation protocol is bilateral, meaning that in each round, as the channel state is advanced, the two parties exchange new commitments, exchange revocation secrets for the previous commitments, and sign each other's new commitment transactions. As they accept a new state, they make the prior state impossible to use, by giving each other the necessary revocation secrets to punish any cheating.
 
@@ -268,7 +409,7 @@ As before, these commitment transactions are asymmetric so that the commitment t
 
 Importantly, the revocation doesn't happen automatically. While Hitesh has the ability to punish Irene for cheating, he has to watch the blockchain diligently for signs of cheating. If he sees a prior commitment transaction broadcast, he has 1000 blocks to take action and use the revocation key to thwart Irene's cheating and punish her by taking the entire balance, all 10 bitcoin.
 
-Asymmetric revocable commitments with relative time locks (+CSV+) are a much better way to implement payment channels and a very significant innovation in this technology. With this construct, the channel can remain open indefinitely and can have billions of intermediate commitment transactions. In prototype implementations of Lightning Network, the commitment state is identified by a 48-bit index, allowing more than 281 trillion (2.8 x 10^14^) state transitions in any single channel!((("", startref="PSCaymetric12")))
+Asymmetric revocable commitments with relative time locks (+CSV+) are a much better way to implement payment channels and a very significant innovation in this technology.  With this construct, the channel can remain open indefinitely and can have billions of intermediate commitment transactions. In prototype implementations of Lightning Network, the commitment state is identified by a 48-bit index, allowing more than 281 trillion (2.8 x 10^14^) state transitions in any single channel!((("", startref="PSCaymetric12")))
 
 ==== Hash Time Lock Contracts (HTLC)
 
@@ -308,9 +449,9 @@ This is a basic implementation of an HTLC. This type of HTLC can be redeemed by 
 
 ((("blockchain applications", "routed payment channels", seealso="Lightning Network", id="BCAlightning12")))((("routed payment channels", see="Lightning Network")))((("Lightning Network", "defined")))The Lightning Network is a proposed routed network of bidirectional payment channels connected end-to-end. A network like this can allow any participant to route a payment from channel to channel without trusting any of the intermediaries. The Lightning Network was https://lightning.network/lightning-network-paper.pdf[first described by Joseph Poon and Thadeus Dryja in February 2015], building on the concept of payment channels as proposed and elaborated upon by many others.
 
-"Lightning Network" refers to a specific design for a routed payment channel network, which has now been implemented by at least five different open source teams. ((("Basics of Lightning Technology (BOLT)")))The independent implementations are coordinated by a set of interoperability standards described in the https://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ paper].
+"Lightning Network" refers to a specific design for a routed payment channel network, which has now been implemented by at least five different open source teams. ((("Basics of Lightning Technology (BOLT)")))The independent implementations are coordinated by a set of interoperability standards described in the http://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ paper].
 
-Prototype implementations of the Lightning Network have been released by several teams.
+Prototype implementations of the Lightning Network have been released by several teams. For now, these implementations can only be run on testnet because they use segwit, which is not activated on the main bitcoin blockchain (mainnet).
 
 The Lightning Network is one possible way of implementing routed payment channels. There are several other designs that aim to achieve similar goals, such as Teechan and Tumblebit.
 
@@ -324,7 +465,7 @@ In this example, we have five participants: Alice, Bob, Carol, Diana, and Eric. 
 
 [[lightning_network_fig]]
 .A series of bidirectional payment channels linked to form a Lightning Network that can route a payment from Alice to Eric
-image::images/mbc2_1206.png["A series of bi-directional payment channels linked to form a Lightning Network"]
+image::images/mbc2_1209.png["A series of bi-directional payment channels linked to form a Lightning Network"]
 
 Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a payment channel. Creating a payment channel requires a funding transaction, which must be committed to the Bitcoin blockchain. Alice does not want to open a new payment channel and commit more of her funds. Is there a way to pay Eric, indirectly?
 
@@ -332,7 +473,7 @@ Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to Eric by a 
 
 [[ln_payment_process]]
 .Step-by-step payment routing through a Lightning Network
-image::images/mbc2_1207.png["Step-by-step payment routing through a Lightning Network"]
+image::images/mbc2_1210.png["Step-by-step payment routing through a Lightning Network"]
 
 Alice is running a Lightning Network (LN) node that is keeping track of her payment channel to Bob and has the ability to discover routes between payment channels. Alice's LN node also has the ability to connect over the internet to Eric's LN node. Eric's LN node creates a secret +R+ using a random number generator. Eric's node does not reveal this secret to anyone. Instead, Eric's node calculates a hash +H+ of the secret +R+ and transmits this hash to Alice's node (see <<ln_payment_process>> step 1).
 
@@ -356,9 +497,9 @@ Alice has paid Eric 1 bitcoin without opening a channel to Eric. None of the int
 
 ==== Lightning Network Transport and Routing
 
-((("Lightning Network", "transport and routing")))All communications between LN nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they use as an identifier and to authenticate each other.
+((("Lightning Network", "transport and routing")))All communications between LN nodes are encrypted point-to-point. In addition, nodes have a long-term public key that they http://bit.ly/2r5TACm[use as an identifier and to authenticate each other].
 
-Whenever a node wishes to send a payment to another node, it must first construct a _path_ through the network by connecting payment channels with sufficient capacity. Nodes advertise routing information, including what channels they have open, how much capacity each channel has, and what fees they charge to route payments. The routing information can be shared in a variety of ways and different routing protocols are likely to emerge as Lightning Network technology advances. Some Lightning Network implementations use the IRC protocol as a convenient mechanism for nodes to announce routing information. Another implementation of route discovery uses a P2P model where nodes propagate channel announcements to their peers, in a "flooding" model, similar to how bitcoin propagates transactions. Future plans include a proposal called https://bit.ly/2r5TACm[Flare], which is a hybrid routing model with local node "neighborhoods" and longer-range beacon nodes.
+Whenever a node wishes to send a payment to another node, it must first construct a _path_ through the network by connecting payment channels with sufficient capacity. Nodes advertise routing information, including what channels they have open, how much capacity each channel has, and what fees they charge to route payments. The routing information can be shared in a variety of ways and different routing protocols are likely to emerge as Lightning Network technology advances. Some Lightning Network implementations use the IRC protocol as a convenient mechanism for nodes to announce routing information. Another implementation of route discovery uses a P2P model where nodes propagate channel announcements to their peers, in a "flooding" model, similar to how bitcoin propagates transactions. Future plans include a proposal called http://bit.ly/2r5TACm[Flare], which is a hybrid routing model with local node "neighborhoods" and longer-range beacon nodes.
 
 In our previous example, Alice's node uses one of these route discovery mechanisms to find one or more paths connecting her node to Eric's node. Once Alice's node has constructed a path, she will initialize that path through the network, by propagating a series of encrypted and nested instructions to connect each of the adjacent payment channels.
 
@@ -366,7 +507,7 @@ Importantly, this path is only known to Alice's node. All other participants in 
 
 This is a critical feature of the Lightning Network, because it ensures privacy of payments and makes it very difficult to apply surveillance, censorship, or blacklists. But how does Alice establish this payment path, without revealing anything to the intermediary nodes?
 
-The Lightning Network implements an onion-routed protocol based on a scheme called https://bit.ly/2q6ZDrP[Sphinx]. This routing protocol ensures that a payment sender can construct and communicate a path through the Lightning Network such that:
+The Lightning Network implements an onion-routed protocol based on a scheme called http://bit.ly/2q6ZDrP[Sphinx]. This routing protocol ensures that a payment sender can construct and communicate a path through the Lightning Network such that:
 
 * Intermediate nodes can verify and decrypt their portion of route information and find the next hop.
 

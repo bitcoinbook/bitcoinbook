@@ -25,7 +25,7 @@ image::images/mbc2_0301.png["Bitcoin Core Architecture"]
 [[compiling_core]]
 === Compiling Bitcoin Core from the Source Code
 
-((("Bitcoin Core", "compiling from source code", id="BCsource03")))((("Bitcoin Core", "compiling from source code", "downloading")))((("code examples, obtaining and using")))Bitcoin Core's source code can be downloaded as an archive or by cloning the authoritative source repository from GitHub.  ((("Bitcoin Core downloads")))On the https://bitcoincore.org/bin/[Bitcoin Core download page], select the most recent version and download the compressed archive of the source code, e.g., +bitcoin-0.15.0.2.tar.gz+. ((("GitHub bitcoin page")))Alternatively, use the git command line to create a local copy of the source code from the https://github.com/bitcoin/bitcoin[GitHub bitcoin page].
+((("Bitcoin Core", "compiling from source code", id="BCsource03")))((("Bitcoin Core", "compiling from source code", "downloading")))((("code examples, obtaining and using")))Bitcoin Core's source code can be downloaded as a archive or by cloning the authoritative source repository from GitHub.  ((("Bitcoin Core downloads")))On the https://bitcoincore.org/bin/[Bitcoin Core download page], select the most recent version and download the compressed archive of the source code, e.g., +bitcoin-0.15.0.2.tar.gz+. ((("GitHub bitcoin page")))Alternatively, use the git command line to create a local copy of the source code from the https://github.com/bitcoin/bitcoin[GitHub bitcoin page].
 
 [TIP]
 ====
@@ -222,7 +222,7 @@ $ which bitcoin-cli
 
 ((("Bitcoin Core", "running core nodes", id="BCnode03")))((("Bitcoin nodes", "running core nodes", id="BNcore03")))Bitcoin's peer-to-peer network is composed of network "nodes," run mostly by volunteers and some of the businesses that build bitcoin applications. Those running Bitcoin nodes have a direct and authoritative view of the Bitcoin blockchain, with a local copy of all the transactions, independently validated by their own system. By running a node, you don't have to rely on any third party to validate a transaction. Moreover, by running a Bitcoin node you contribute to the Bitcoin network by making it more robust.
 
-Running a node, however, requires a permanently connected system with enough resources to process all bitcoin transactions. Depending on whether you choose to index all transactions and keep a full copy of the blockchain, you may also need a lot of disk space and RAM. As of early 2021, a full-index node needs 2 GB of RAM and a minimum of 360 GB of disk space (see https://www.blockchain.com/charts/blocks-size[]). Bitcoin nodes also transmit and receive bitcoin transactions and blocks, consuming internet bandwidth. If your internet connection is limited, has a low data cap, or is metered (charged by the gigabit), you should probably not run a Bitcoin node on it, or run it in a way that constrains its bandwidth (see <<constrained_resources>>).
+Running a node, however, requires a permanently connected system with enough resources to process all Bitcoin transactions. Depending on whether you choose to index all transactions and keep a full copy of the blockchain, you may also need a lot of disk space and RAM. As of early 2018, a full-index node needs 2 GB of RAM and a minimum of 160 GB of disk space (see https://blockchain.info/charts/blocks-size[]). Bitcoin nodes also transmit and receive bitcoin transactions and blocks, consuming internet bandwidth. If your internet connection is limited, has a low data cap, or is metered (charged by the gigabit), you should probably not run a Bitcoin node on it, or run it in a way that constrains its bandwidth (see <<constrained_resources>>).
 
 [TIP]
 ====
@@ -258,7 +258,7 @@ Using config file /home/ubuntu/.bitcoin/bitcoin.conf
 ...
 ----
 
-You can hit Ctrl-C to shut down the node once you determine the location of the config file. Usually the configuration file is inside the _.bitcoin_ data directory under your user's home directory. It is not created automatically, but you can create a starter config file by copying and pasting from the <<#full_index_node>> example, below. You can create or modify the configuration file in your preferred editor.
+You can hit Ctrl-C to shut down the node once you determine the location of the config file. Usually the configuration file is inside the _.bitcoin_ data directory under your user's home directory. Open the configuration file in your preferred editor.
 
 Bitcoin Core offers more than 100 configuration options that modify the behavior of the network node, the storage of the blockchain, and many other aspects of its operation. To see a listing of these options, run +bitcoind  --help+:
 
@@ -300,7 +300,7 @@ prune:: Reduce the disk space requirements to this many megabytes, by deleting o
 
 txindex:: Maintain an index of all transactions. This means a complete copy of the blockchain that allows you to programmatically retrieve any transaction by ID.
 
-dbcache:: The size of the UTXO cache. The default is 450 MiB. Increase this on high-end hardware and reduce the size on low-end hardware to save memory at the expense of slow disk IO.
+dbcache:: The size of the UTXO cache. The default is 300 MiB. Increase this on high-end hardware and reduce the size on low-end hardware to save memory at the expense of slow disk IO.
 
 maxconnections:: Set the maximum number of nodes from which to accept connections. Reducing this from the default will reduce your bandwidth consumption. Use if you have a data cap or pay by the gigabyte.
 
@@ -465,7 +465,7 @@ In the next sections we will demonstrate some very useful RPC commands and their
 
 ==== Getting Information on the Bitcoin Core Client Status
 
-((("Bitcoin Core", "Bitcoin Core API", "status information")))Bitcoin Core provides status reports on different modules through the JSON-RPC interface. The most important commands include +getblockchaininfo+, +getmempoolinfo+, +getnetworkinfo+ and +getwalletinfo+.
+((("Bitcoin Core", "Bitcoin Core API", "status information")))Bitcoin Core provides status reports on diffent modules through the JSON-RPC interface. The most important commands include +getblockchaininfo+, +getmempoolinfo+, +getnetworkinfo+ and +getwalletinfo+.
 
 Bitcoin's +getblockchaininfo+ RPC command was introduced earlier. The +getnetworkinfo+ command displays basic information about the status of the Bitcoin network node. Use +bitcoin-cli+ to run it:
 
@@ -474,7 +474,6 @@ $ bitcoin-cli getnetworkinfo
 ----
 [source,json]
 ----
-{
   "version": 150000,
   "subversion": "/Satoshi:0.15.0/",
   "protocolversion": 70015,
@@ -685,13 +684,13 @@ $ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "met
 
 This command shows that +curl+ submits an HTTP request to the local host (127.0.0.1), connecting to the default bitcoin port (8332), and submitting a  +jsonrpc+ request for the +getblockchaininfo+ method using +text/plain+ encoding.
 
-You might notice that curl will ask for credentials to be sent along with the request. Bitcoin Core will create a random password on each start and place it in the data directory under the name +.cookie+. The +bitcoin-cli+ helper can read this password file given the data directory. Similarly, you can copy the password and pass it to curl (or any higher level Bitcoin Core RPC wrappers). Alternatively, you can create a static password with the helper script provided in _./share/rpcauth/rpcauth.py_ in Bitcoin Core's source directory.
+You might notice that curl will ask for credentials to be sent along with the request. Bitcoin Core will create a random password on each start and place it in the data directory under the name +.cookie+. The +bitcoin-cli+ helper can read this password file given the data directory. Similarly, you can copy the password and pass it to curl (or any higher level Bitcoin Core RPC wrappers). Alternatively, you can create a static password with the helper script provided in _./share/rpcuser/rpcuser.py_ in Bitcoin Core's source directory.
 
 If you're implementing a JSON-RPC call in your own program, you can use a generic HTTP library to construct the call, similar to what is shown in the preceding +curl+ example.
 
 However, there are libraries in most every programming language that "wrap" the Bitcoin Core API in a way that makes this a lot simpler. We will use the +python-bitcoinlib+ library to simplify API access. Remember, this requires you to have a running Bitcoin Core instance, which will be used to make JSON-RPC calls.
 
-The Python script in <<rpc_example>> makes a simple +getblockchaininfo+ call and prints the +blocks+ parameter from the data returned by Bitcoin Core (full node required).
+The Python script in <<rpc_example>> makes a simple +getblockchaininfo+ call and prints the +block+ parameter from the data returned by Bitcoin Core.
 
 [[rpc_example]]
 .Running getblockchaininfo via Bitcoin Core's JSON-RPC API
@@ -762,17 +761,18 @@ The following sections list some of the best libraries, clients, and toolkits, o
 
 ==== C/C++
 https://github.com/bitcoin/bitcoin[Bitcoin Core] :: The reference implementation of bitcoin
-https://github.com/libbitcoin/libbitcoin-system[libbitcoin]:: Cross-platform C++ development toolkit, node, and consensus library
+https://github.com/libbitcoin/libbitcoin[libbitcoin]:: Cross-platform C++ development toolkit, node, and consensus library
 https://github.com/libbitcoin/libbitcoin-explorer[bitcoin explorer]:: Libbitcoin's command-line tool
 https://github.com/jgarzik/picocoin[picocoin]:: A C language lightweight client library for bitcoin by Jeff Garzik
 
 ==== JavaScript
-https://bcoin.io/[bcoin]:: A modular and scalable full-node implementation with API
+http://bcoin.io/[bcoin]:: A modular and scalable full-node implementation with API
 https://bitcore.io/[Bitcore] :: Full node, API, and library by Bitpay
 https://github.com/bitcoinjs/bitcoinjs-lib[BitcoinJS] :: A pure JavaScript Bitcoin library for node.js and browsers
 
 ==== Java
 https://bitcoinj.github.io[bitcoinj]:: A Java full-node client library
+https://bitsofproof.com[Bits of Proof (BOP)]:: A Java enterprise-class implementation of bitcoin
 
 ==== PHP
 https://github.com/bit-wasp/bitcoin-php[bitwasp/bitcoin]:: A PHP bitcoin library, and related projects
@@ -780,7 +780,7 @@ https://github.com/bit-wasp/bitcoin-php[bitwasp/bitcoin]:: A PHP bitcoin library
 ==== Python
 https://github.com/petertodd/python-bitcoinlib[python-bitcoinlib]::  A Python bitcoin library, consensus library, and node by Peter Todd
 https://github.com/richardkiss/pycoin[pycoin]:: A Python bitcoin library by Richard Kiss
-https://github.com/primal100/pybitcointools[pybitcointools]:: An archived fork of Python bitcoin library by Vitalik Buterin
+https://github.com/vbuterin/pybitcointools[pybitcointools]:: A Python bitcoin library by Vitalik Buterin
 
 ==== Ruby
 https://github.com/sinisterchipmunk/bitcoin-client[bitcoin-client]:: A Ruby library wrapper for the JSON-RPC API
@@ -789,7 +789,7 @@ https://github.com/sinisterchipmunk/bitcoin-client[bitcoin-client]:: A Ruby libr
 https://github.com/btcsuite/btcd[btcd]:: A Go language full-node Bitcoin client
 
 ==== Rust
-https://github.com/rust-bitcoin/rust-bitcoin[rust-bitcoin]:: Rust bitcoin library for serialization, parsing, and API calls
+https://github.com/apoelstra/rust-bitcoin[rust-bitcoin]:: Rust bitcoin library for serialization, parsing, and API calls
 
 ==== C#
 https://github.com/MetacoSA/NBitcoin[NBitcoin]:: Comprehensive bitcoin library for the .NET framework
