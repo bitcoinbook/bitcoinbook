@@ -87,8 +87,8 @@ _invoice_ (see <<invoice-QR>>).
 
 Unlike a QR code that simply contains a destination Bitcoin address, this
 invoice is a QR-encoded URI that contains a destination address,
-a payment amount, and a description such as "Bob's Store - Order
-512". This allows a bitcoin wallet application to prefill the
+a payment amount, and a description.
+This allows a bitcoin wallet application to prefill the
 information used to send the payment while showing a human-readable
 description to the user. You can scan the QR code with a bitcoin wallet
 application to see what Alice would see.
@@ -196,23 +196,59 @@ image::images/mbc2_0203.png["Transaction Double-Entry"]
 
 ((("chain of transactions")))Alice's payment to Bob's Store uses a
 previous transaction's output as its input. In the previous chapter,
-Alice received bitcoin from her friend Joe in return for cash. That
-transaction created a bitcoin value locked by Alice's key. Her new
-transaction to Bob's Store references the previous transaction as an
-input and creates new outputs to pay for the podcast and receive change.
-The transactions form a chain, where the inputs from the latest
-transaction correspond to outputs from previous transactions. Alice's
-key provides the signature that unlocks those previous transaction
-outputs, thereby proving to the Bitcoin network that she owns the funds.
-She attaches the payment for the podcast to Bob's address, thereby
-"encumbering" that output with the requirement that Bob produces a
-signature in order to spend that amount. This represents a transfer of
-value between Alice and Bob. This chain of transactions, from Joe to
-Alice to Bob, is illustrated in <<blockchain-mnemonic>>.
+Alice received bitcoin from her friend Joe in return for cash.
+We've labeled that as _Transaction 1_ (Tx1) in <<transaction-chain>>.
 
-[[blockchain-mnemonic]]
+Tx1 sent 0.001 bitcoins (100,000 satoshis) to an output locked by
+Alice's key. Her new transaction to Bob's Store (Tx2) references the
+previous output as an input.  In the illustration, we show that
+reference using an arrow and by labeling the input as "Tx1:0".  In an
+actual transaction, the reference is the 32-byte transaction identifier
+(txid) for the transaction where Alice received the money from Joe.  The
+":0" indicates the position of the output where Alice received the
+money; in this case, the first position (position 0).
+
+As shown in the illustration, actual Bitcoin transactions don't
+explicitly include the value of their input.  To determine the value of
+an input, software needs to use the input's reference to find the
+previous transaction output being spent.
+
+Alice's Tx2 contains two new outputs, one paying 75,000 satoshis for the
+podcast and another paying 20,000 satoshis back to Alice to receive
+change.
+
+////
+@startditaa
+      Transaction 1             Tx2                   Tx3
+     Inputs  Outputs         In     Out           In      Out
+   +-------+---------+   +-------+--------+    +-------+--------+
+   |       |         |   |       | cDDD   |    |       |        |
+<--+ Tx0꞉0 | 100,000 |<--+ Tx1꞉0 | 20,000 |  +-+ Tx2꞉1 | 67,000 |
+   |       |         |   |       |        |  | |       |        |
+   +-------+---------+   +-------+--------+  | +-------+--------+
+   |       | cDDD    |   |       |        |  | |       |        |
+   |       | 500,000 |   |       | 75,000 |<-+ |       |        |
+   |       |         |   |       |        |    |       |        |
+   +-------+---------+   +-------+--------+    +-------+--------+
+        Fee꞉ (unknown)           Fee꞉ 5,000            Fee꞉ 8,000
+@enddittaa
+////
+
+[[transaction-chain]]
 .A chain of transactions, where the output of one transaction is the input of the next transaction
-image::images/mbc2_0204.png["Transaction chain"]
+image::images/transaction-chain.png["Transaction chain"]
+
+[TIP]
+====
+Serialized Bitcoin transactions---the data format that software uses for
+sending transactions---encodes the value to transfer using an integer
+of the smallest defined onchain unit of value.  When Bitcoin was first
+created, this unit didn't have a name and some developers simply called
+it the _base unit._  Later many users began calling this unit a
+_satoshi_ (sat) in honor of Bitcoin's creator.  In <<transaction-chain>>
+and some other illustrations in this book, we use satoshi values because
+that's what the protocol itself uses.
+====
 
 ==== Making Change
 
