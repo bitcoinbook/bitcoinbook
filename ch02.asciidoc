@@ -642,10 +642,28 @@ block and announced it to the network. After other miners
 validated the winning block, they started a new lottery to generate the next
 block.
 
-Jing's winning block became part of the blockchain as block #277316,
-containing 419 transactions, including Alice's transaction. The block
-containing Alice's transaction is counted as one "confirmation" of that
-transaction.
+Jing's winning block containing Alice's transaction became part of the
+blockchain. The block containing Alice's transaction is counted as one
+"confirmation" of that transaction.  After the block containing Alice's
+transaction has propagated through the network, creating an alternative
+block with a different version of Alice's transaction (such as a
+transaction that doesn't pay Bob) would require performing the same
+amount of work as it will take all Bitcoin miners to create an entirely
+new block.  For the entire network to accept an alternative block, an
+additional new block would need to be mined on top of the alternative.
+
+That means miners have a choice.  They can work with Alice on an
+alternative version of the transaction where she pays Bob, perhaps with
+Alice paying miners a share of the money she previously paid Bob.  This
+dishonest behavior will require they expend the effort required to
+create two new blocks.  Instead, miners who behave honestly can create a
+single new block and and receive all of the fees from the tranactions
+they include in it, plus the block reward.  Normally, the high cost of
+dishonestly creating two blocks for a small additional payment is much
+less profitable than honestly creating a new block, making it unlikely
+that a confirmed tranaction will be deliberately changed.  For Bob, this
+means that he can begin to believe that the payment from Alice can be
+relied upon.
 
 [TIP]
 ====
@@ -654,28 +672,28 @@ https://blockstream.info/block/000000000000000000027d39da52dd790d98f85895b02e764
 ====
 
 ((("confirmations", "role in transactions")))Approximately 19 minutes
-later, a new block, #277317, is mined by another miner. Because this new
-block is built on top of block #277316 that contained Alice's
-transaction, it added even more computation to the blockchain, thereby
-strengthening the trust in those transactions. Each block mined on top
-of the one containing the transaction counts as an additional
-confirmation for Alice's transaction. As the blocks pile on top of each
-other, it becomes exponentially harder to reverse the transaction,
-thereby making it more and more trusted by the network.
+after Jing's block, a new block is mined by another miner. Because this
+new block is built on top of the block that contained Alice's
+transaction (giving Alice's transaction two confirmations) Alice's
+transaction can now only be changed if two alternative blocks are
+mined--plus a new block built on top of them--for a total of three
+blocks that would need to be mined for Alice to take back the money she
+sent Bob.  Each block mined on top of the one containing Alice's
+transaction counts as an additional confirmation.  As the blocks pile on
+top of each other, it becomes harder to reverse the transaction, thereby
+giving Bob more and more confidence that Alice's payment is secure.
 
 ((("genesis block")))((("blocks", "genesis block")))((("blockchain
 (the)", "genesis block")))In the diagram in <<block-alice1>>,  we can
 see block the block which contains Alice's transaction. Below it are
 hundreds of thousands of blocks, linked to each other in a chain of
 blocks (blockchain) all the way back to block #0, known as the _genesis
-block_. Over time, as the "height" in blocks increases, so does the
-computation difficulty for each block and the chain as a whole. The
-blocks mined after the one that contains Alice's transaction act as
-further assurance, as they pile on more computation in a longer and
-longer chain. By convention, any block with more than six confirmations
-is considered irrevocable, because it would require an immense amount of
-computation to invalidate and recalculate six blocks. We will examine
-the process of mining and the way it builds trust in more detail in
+block_. Over time, as the "height" of new blocks increases, so does the
+computation difficulty for the chain as a whole.
+By convention, any block with more than six confirmations
+is considered very hard to change, because it would require an immense amount of
+computation to recalculate six blocks (plus one new block). We will examine
+the process of mining and the way it builds confidence in more detail in
 <<mining>>.((("", startref="BToverview02")))((("",
 startref="MACover02")))
 
