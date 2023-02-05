@@ -94,13 +94,12 @@ local copy ("clone") of the source code:
 ----
 $ git clone https://github.com/bitcoin/bitcoin.git
 Cloning into 'bitcoin'...
-remote: Counting objects: 102071, done.
-remote: Compressing objects: 100% (10/10), done.
-Receiving objects: 100% (102071/102071), 86.38 MiB | 730.00 KiB/s, done.
-remote: Total 102071 (delta 4), reused 5 (delta 1), pack-reused 102060
-Resolving deltas: 100% (76168/76168), done.
-Checking connectivity... done.
-$
+remote: Enumerating objects: 245912, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 245912 (delta 1), reused 2 (delta 1), pack-reused 245909
+Receiving objects: 100% (245912/245912), 217.74 MiB | 13.05 MiB/s, done.
+Resolving deltas: 100% (175649/175649), done.
 ----
 
 [TIP]
@@ -148,21 +147,26 @@ The list of tags shows all the released versions of bitcoin. By
 convention, _release candidates_, which are intended for testing, have
 the suffix "rc." Stable releases that can be run on production systems
 have no suffix. From the preceding list, select the highest version
-release, which at the time of writing was v0.15.0. To synchronize the
+release, which at the time of writing was v24.0.1. To synchronize the
 local code with this version, use the +git checkout+ command:
 
 ----
-$ git checkout v0.15.0
-HEAD is now at 3751912... Merge #11295: doc: Old fee_estimates.dat are discarded by 0.15.0
+$ git checkout v24.0.1
+Note: switching to 'v24.0.1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+HEAD is now at b3f866a8d Merge bitcoin/bitcoin#26647: 24.0.1 final changes
 ----
 
 You can confirm you have the desired version "checked out" by issuing
 the command +git status+:
 
 ----
-$ git status
-HEAD detached at v0.15.0
-nothing to commit, working directory clean
+HEAD detached at v24.0.1
+nothing to commit, working tree clean
 ----
 
 ==== Configuring the Bitcoin Core Build
@@ -191,19 +195,13 @@ set of build scripts using the _autogen.sh_ script.
 
 ----
 $ ./autogen.sh
-...
-glibtoolize: copying file 'build-aux/m4/libtool.m4'
-glibtoolize: copying file 'build-aux/m4/ltoptions.m4'
-glibtoolize: copying file 'build-aux/m4/ltsugar.m4'
-glibtoolize: copying file 'build-aux/m4/ltversion.m4'
-...
-configure.ac:10: installing 'build-aux/compile'
-configure.ac:5: installing 'build-aux/config.guess'
-configure.ac:5: installing 'build-aux/config.sub'
-configure.ac:9: installing 'build-aux/install-sh'
-configure.ac:9: installing 'build-aux/missing'
-Makefile.am: installing 'build-aux/depcomp'
-...
+libtoolize: putting auxiliary files in AC_CONFIG_AUX_DIR, 'build-aux'.
+libtoolize: copying file 'build-aux/ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'build-aux/m4'.
+ ...
+configure.ac:58: installing 'build-aux/missing'
+src/Makefile.am: installing 'build-aux/depcomp'
+parallel-tests: installing 'build-aux/test-driver'
 ----
 
 The _autogen.sh_ script creates a set of automatic configuration scripts
@@ -215,7 +213,7 @@ of different options to customize the build process. Type
 
 ----
 $ ./configure --help
-`configure' configures Bitcoin Core 0.15.0 to adapt to many kinds of systems.
+`configure' configures Bitcoin Core 24.0.1 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -224,10 +222,8 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-
-  --enable-wallet         enable wallet (default is yes)
-
-  --with-gui[=no|qt4|qt5|auto]
+  --enable-silent-rules   less verbose build output (undo: "make V=1")
+  --disable-silent-rules  verbose build output (undo: "make V=0")
 ...
 ----
 
@@ -265,17 +261,14 @@ Next, run the +configure+ script to automatically discover all the necessary lib
 
 ----
 $ ./configure
-checking build system type... x86_64-unknown-linux-gnu
-checking host system type... x86_64-unknown-linux-gnu
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
 checking for a BSD-compatible install... /usr/bin/install -c
-checking whether build environment is sane... yes
-checking for a thread-safe mkdir -p... /bin/mkdir -p
-checking for gawk... gawk
-checking whether make sets $(MAKE)... yes
 ...
 [many pages of configuration tests follow]
 ...
-$
 ----
 
 If all went well, the +configure+ command will end by creating the
@@ -302,20 +295,13 @@ executable application:
 ----
 $ make
 Making all in src
-  CXX      crypto/libbitcoinconsensus_la-hmac_sha512.lo
-  CXX      crypto/libbitcoinconsensus_la-ripemd160.lo
-  CXX      crypto/libbitcoinconsensus_la-sha1.lo
-  CXX      crypto/libbitcoinconsensus_la-sha256.lo
-  CXX      crypto/libbitcoinconsensus_la-sha512.lo
-  CXX      libbitcoinconsensus_la-hash.lo
-  CXX      primitives/libbitcoinconsensus_la-transaction.lo
-  CXX      libbitcoinconsensus_la-pubkey.lo
-  CXX      script/libbitcoinconsensus_la-bitcoinconsensus.lo
-  CXX      script/libbitcoinconsensus_la-interpreter.lo
-
+  CXX      bitcoind-bitcoind.o
+  CXX      libbitcoin_node_a-addrdb.o
+  CXX      libbitcoin_node_a-addrman.o
+  CXX      libbitcoin_node_a-banman.o
+  CXX      libbitcoin_node_a-blockencodings.o
+  CXX      libbitcoin_node_a-blockfilter.o
 [... many more compilation messages follow ...]
-
-$
 ----
 
 On a fast system with more than one CPU, you might want to set the
@@ -336,7 +322,6 @@ libtool: install: /usr/bin/install -c bitcoind /usr/local/bin/bitcoind
 libtool: install: /usr/bin/install -c bitcoin-cli /usr/local/bin/bitcoin-cli
 libtool: install: /usr/bin/install -c bitcoin-tx /usr/local/bin/bitcoin-tx
 ...
-$
 ----
 
 ((("", startref="BCsource03")))The default installation of +bitcoind+
@@ -434,10 +419,13 @@ lines.
 
 ----
 $ bitcoind -printtoconsole
-Bitcoin version v0.15.0
-Using the 'standard' SHA256 implementation
-Using data directory /home/ubuntu/.bitcoin/
-Using config file /home/ubuntu/.bitcoin/bitcoin.conf
+2023-01-28T03:21:42Z Bitcoin Core version v24.0.1
+2023-01-28T03:21:42Z Using the 'x86_shani(1way,2way)' SHA256 implementation
+2023-01-28T03:21:42Z Using RdSeed as an additional entropy source
+2023-01-28T03:21:42Z Using RdRand as an additional entropy source
+2023-01-28T03:21:42Z Default data directory /home/harding/.bitcoin
+2023-01-28T03:21:42Z Using data directory /home/harding/.bitcoin
+2023-01-28T03:21:42Z Config file: /home/harding/.bitcoin/bitcoin.conf
 ...
 [a lot more debug output]
 ...
@@ -455,28 +443,20 @@ other aspects of its operation. To see a listing of these options, run
 
 ----
 $ bitcoind --help
-Bitcoin Core Daemon version v0.15.0
+Bitcoin Core version v24.0.1
 
-Usage:
-  bitcoind [options]                     Start Bitcoin Core Daemon
+Usage:  bitcoind [options]                     Start Bitcoin Core
 
 Options:
 
   -?
        Print this help message and exit
 
-  -version
-       Print version and exit
-
   -alertnotify=<cmd>
-       Execute command when a relevant alert is received or we see a really
-       long fork (%s in cmd is replaced by message)
+       Execute command when an alert is raised (%s in cmd is replaced by
+       message)
 ...
 [many more options]
-...
-
-  -rpcthreads=<n>
-       Set the number of threads to service RPC calls (default: 4)
 ----
 
 ((("configuration options", seealso="Bitcoin Core")))Here are some of
@@ -576,35 +556,33 @@ foreground with output to the console:
 
 ----
 $ bitcoind -printtoconsole
-
-Bitcoin version v0.15.0
-InitParameterInteraction: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1
-Assuming ancestors of block 0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a have valid signatures.
-Using the 'standard' SHA256 implementation
-Default data directory /home/ubuntu/.bitcoin
-Using data directory /lotsofspace/.bitcoin
-Using config file /home/ubuntu/.bitcoin/bitcoin.conf
-Using at most 125 automatic connections (1048576 file descriptors available)
-Using 16 MiB out of 32/2 requested for signature cache, able to store 524288 elements
-Using 16 MiB out of 32/2 requested for script execution cache, able to store 524288 elements
-Using 2 threads for script verification
-HTTP: creating work queue of depth 16
-No rpcpassword set - using random cookie authentication
-Generated RPC authentication cookie /lotsofspace/.bitcoin/.cookie
-HTTP: starting 4 worker threads
-init message: Verifying wallet(s)...
-Using BerkeleyDB version Berkeley DB 4.8.30: (April  9, 2010)
-Using wallet wallet.dat
-CDBEnv::Open: LogDir=/lotsofspace/.bitcoin/database ErrorFile=/lotsofspace/.bitcoin/db.log
-scheduler thread start
-Cache configuration:
-* Using 250.0MiB for block index database
-* Using 8.0MiB for chain state database
-* Using 1742.0MiB for in-memory UTXO set (plus up to 286.1MiB of unused mempool space)
-init message: Loading block index...
-Opening LevelDB in /lotsofspace/.bitcoin/blocks/index
-Opened LevelDB successfully
-
+2023-01-28T03:43:39Z Bitcoin Core version v24.0.1
+2023-01-28T03:43:39Z Using the 'x86_shani(1way,2way)' SHA256 implementation
+2023-01-28T03:43:39Z Using RdSeed as an additional entropy source
+2023-01-28T03:43:39Z Using RdRand as an additional entropy source
+2023-01-28T03:43:39Z Default data directory /home/harding/.bitcoin
+2023-01-28T03:43:39Z Using data directory /lotsofspace/bitcoin
+2023-01-28T03:43:39Z Config file: /home/harding/.bitcoin/bitcoin.conf
+2023-01-28T03:43:39Z Config file arg: [main] blockfilterindex="1"
+2023-01-28T03:43:39Z Config file arg: [main] maxuploadtarget="1000"
+2023-01-28T03:43:39Z Config file arg: [main] txindex="1"
+2023-01-28T03:43:39Z Setting file arg: wallet = ["msig0"]
+2023-01-28T03:43:39Z Command-line arg: printtoconsole=""
+2023-01-28T03:43:39Z Using at most 125 automatic connections (1024 file descriptors available)
+2023-01-28T03:43:39Z Using 16 MiB out of 16 MiB requested for signature cache, able to store 524288 elements
+2023-01-28T03:43:39Z Using 16 MiB out of 16 MiB requested for script execution cache, able to store 524288 elements
+2023-01-28T03:43:39Z Script verification uses 3 additional threads
+2023-01-28T03:43:39Z scheduler thread start
+2023-01-28T03:43:39Z [http] creating work queue of depth 16
+2023-01-28T03:43:39Z Using random cookie authentication.
+2023-01-28T03:43:39Z Generated RPC authentication cookie /lotsofspace/bitcoin/.cookie
+2023-01-28T03:43:39Z [http] starting 4 worker threads
+2023-01-28T03:43:39Z Using wallet directory /lotsofspace/bitcoin/wallets
+2023-01-28T03:43:39Z init message: Verifying wallet(s)…
+2023-01-28T03:43:39Z Using BerkeleyDB version Berkeley DB 4.8.30: (April  9, 2010)
+2023-01-28T03:43:39Z Using /16 prefix for IP bucketing
+2023-01-28T03:43:39Z init message: Loading P2P addresses…
+2023-01-28T03:43:39Z Loaded 63866 addresses from peers.dat  114ms
 [... more startup messages ...]
 ----
 
@@ -629,11 +607,14 @@ $ bitcoin-cli getblockchaininfo
   "headers": 83999,
   "bestblockhash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
   "difficulty": 1,
+  "time": 1673379796,
   "mediantime": 1231006505,
   "verificationprogress": 3.783041623201835e-09,
+  "initialblockdownload": true,
   "chainwork": "0000000000000000000000000000000000000000000000000000000100010001",
+  "size_on_disk": 89087,
   "pruned": false,
-  [...]
+  "warnings": ""
 }
 ----
 
@@ -663,18 +644,14 @@ the available bitcoin RPC commands:
 
 ----
 $ bitcoin-cli help
-addmultisigaddress nrequired ["key",...] ( "account" )
-addnode "node" "add|remove|onetry"
-backupwallet "destination"
-createmultisig nrequired ["key",...]
-createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
-decoderawtransaction "hexstring"
++== Blockchain ==
+getbestblockhash
+getblock "blockhash" ( verbosity )
+getblockchaininfo
 ...
-...
-verifymessage "bitcoinaddress" "signature" "message"
-walletlock
 walletpassphrase "passphrase" timeout
 walletpassphrasechange "oldpassphrase" "newpassphrase"
+walletprocesspsbt "psbt" ( sign "sighashtype" bip32derivs finalize )
 ----
 
 Each of these commands may take a number of parameters. To get
@@ -689,14 +666,14 @@ getblockhash height
 Returns hash of block in best-block-chain at height provided.
 
 Arguments:
-1. height         (numeric, required) The height index
+1. height    (numeric, required) The height index
 
 Result:
-"hash"         (string) The block hash
+"hex"    (string) The block hash
 
 Examples:
 > bitcoin-cli getblockhash 1000
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id": "curltest", "method": "getblockhash", "params": [1000]}' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 ----
 
 At the end of the help information you will see two examples of the RPC
@@ -734,17 +711,25 @@ $ bitcoin-cli getnetworkinfo
 ----
 [source,json]
 ----
-  "version": 150000,
-  "subversion": "/Satoshi:0.15.0/",
-  "protocolversion": 70015,
-  "localservices": "000000000000000d",
+{
+  "version": 240001,
+  "subversion": "/Satoshi:24.0.1/",
+  "protocolversion": 70016,
+  "localservices": "0000000000000409",
+  "localservicesnames": [
+    "NETWORK",
+    "WITNESS",
+    "NETWORK_LIMITED"
+  ],
   "localrelay": true,
-  "timeoffset": 0,
+  "timeoffset": -1,
   "networkactive": true,
-  "connections": 8,
+  "connections": 10,
+  "connections_in": 0,
+  "connections_out": 10,
   "networks": [
     ...
-    detailed information about all networks (ipv4, ipv6 or onion)
+    detailed information about all networks (ipv4, ipv6, onion, i2p, and cjdns)
     ...
   ],
   "relayfee": 0.00001000,
@@ -753,14 +738,13 @@ $ bitcoin-cli getnetworkinfo
   ],
   "warnings": ""
 }
-
 ----
 
 The data is returned in JavaScript Object Notation (JSON), a format that
 can easily be "consumed" by all programming languages but is also quite
 human-readable. Among this data we see the version numbers for the
-bitcoin software client (150000) and Bitcoin protocol (70015).  We see
-the current number of connections (8) and various information about the
+bitcoin software client and Bitcoin protocol.  We see
+the current number of connections and various information about the
 Bitcoin network and the settings related to this client.
 
 [TIP]
@@ -779,27 +763,24 @@ transactions")))((("transactions", "exploring with Bitcoin Core
 API")))Commands: +getrawtransaction+, +decoderawtransaction+
 
 In <<cup_of_coffee>>, ((("use cases", "buying coffee",
-id="alicethree")))Alice bought a cup of coffee from Bob's Cafe. Her
-transaction was recorded on the blockchain with transaction ID (+txid+)
-+0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2+.
+id="alicethree")))Alice made a purchase from Bob's store. Her
+transaction was recorded on the blockchain.
 Let's use the API to retrieve and examine that transaction by passing
-the transaction ID as a parameter:
+the txid as a parameter:
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli getrawtransaction 0627052b6f28912f2703066a912ea577f2ce4da4caa5a&#x21b5;
-5fbd8a57286c345c2f2
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a4138ecdfdfaa2a8&#x21b5;
+029c1f9bcecd1f96177
 
-0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779000&#x21b5;
-000008b483045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4&#x21b5;
-ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813014&#x21b5;
-10484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc54123363767&#x21b5;
-89d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adfffffffff0260e3160000000&#x21b5;
-0001976a914ab68025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef8000000000001976a9&#x21b5;
-147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000000
+01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54&#x21b5;
+a0100000000ffffffff02204e0000000000002251203b41daba4c9ace578369740f15e5ec880c&#x21b5;
+28279ee7f51b07dca69c7061e07068f8240100000000001600147752c165ea7be772b2c0acb7f&#x21b5;
+4d6047ae6f4768e0141cf5efe2d8ef13ed0af21d4f4cb82422d6252d70324f6f4576b727b7d91&#x21b5;
+8e521c00b51be739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e817130100000&#x21b5;
+000
 </pre>
 ++++
-
 
 [TIP]
 ====
@@ -819,84 +800,79 @@ returned by +getrawtransaction+ and paste it as a parameter to
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli decoderawtransaction 0100000001186f9f998a5aa6f048e51dd8419a14d8&#x21b5;
-a0f1a8a2836dd734d2804fe65fa35779000000008b483045022100884d142d86652a3f47ba474&#x21b5;
-6ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298&#x21b5;
-cad530a863ea8f53982c09db8f6e381301410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fd&#x21b5;
-e0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa&#x21b5;
-336a8d752adfffffffff0260e31600000000001976a914ab68025513c3dbd2f7b92a94e0581f5&#x21b5;
-d50f654e788acd0ef8000000000001976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8&#x21b5;
-88ac00000000
-
+$ bitcoin-cli decoderawtransaction 01000000000101eb3ae38f27191aa5f3850dc9cad0&#x21b5;
+0492b88b72404f9da135698679268041c54a0100000000ffffffff02204e00000000000022512&#x21b5;
+03b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068f82401000000&#x21b5;
+00001600147752c165ea7be772b2c0acb7f4d6047ae6f4768e0141cf5efe2d8ef13ed0af21d4f&#x21b5;
+4cb82422d6252d70324f6f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad280aca6&#x21b5;
+dab0d2fa2b42a45182fc83e817130100000000
 </pre>
 ++++
 
 ++++
 <pre data-type="programlisting" data-code-language="json">
 {
-  "txid": "0627052b6f28912f2703066a912ea577f2ce4da4caa5a5fbd8a57286c345c2f2",
-  "size": 258,
+  "txid": "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+  "hash": "f7cdbc7cf8b910d35cc69962e791138624e4eae7901010a6da4c02e7d238cdac",
   "version": 1,
+  "size": 194,
+  "vsize": 143,
+  "weight": 569,
   "locktime": 0,
   "vin": [
     {
-      "txid": "7957a35fe64f80d234d76d83a2...8149a41d81de548f0a65a8a999f6f18",
-      "vout": 0,
+      "txid": "4ac541802679866935a19d4f40728bb89204d0cac90d85f3a51a19...aeb",
+      "vout": 1,
       "scriptSig": {
-        "asm":"3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1decc...",
-        "hex":"483045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1de..."
+        "asm": "",
+        "hex": ""
       },
+      "txinwitness": [
+        "cf5efe2d8ef13ed0af21d4f4cb82422d6252d70324f6f4576b727b7d918e5...301"
+      ],
       "sequence": 4294967295
     }
   ],
   "vout": [
     {
-      "value": 0.01500000,
+      "value": 0.00020000,
       "n": 0,
       "scriptPubKey": {
-        "asm": "OP_DUP OP_HASH160 ab68...5f654e7 OP_EQUALVERIFY OP_CHECKSIG",
-        "hex": "76a914ab68025513c3dbd2f7b92a94e0581f5d50f654e788ac",
-        "reqSigs": 1,
-        "type": "pubkeyhash",
-        "addresses": [
-          "1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA"
-        ]
+        "asm": "1 3b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca...068",
+        "desc": "rawtr(3b41daba4c9ace578369740f15e5ec880c28279ee7f51b...6ev",
+        "hex": "51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07d...068",
+        "address": "bc1p8dqa4wjvnt890qmfws83te0v3qxzsfu7ul63kp7u56w8q...5qn",
+        "type": "witness_v1_taproot"
       }
     },
     {
-      "value": 0.08450000,
+      "value": 0.00075000,
       "n": 1,
       "scriptPubKey": {
-        "asm": "OP_DUP OP_HASH160 7f9b1a...025a8 OP_EQUALVERIFY OP_CHECKSIG",
-        "hex": "76a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac",
-        "reqSigs": 1,
-        "type": "pubkeyhash",
-        "addresses": [
-          "1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK"
-        ]
+        "asm": "0 7752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "desc": "addr(bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w0zpkpg)#qq404gts",
+        "hex": "00147752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "address": "bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w0zpkpg",
+        "type": "witness_v0_keyhash"
       }
     }
   ]
 }
-
 </pre>
 ++++
 
 The transaction decode shows all the components of this transaction,
 including the transaction inputs and outputs. In this case we see that
-the transaction that credited our new address with 15 millibits used one
-input and generated two outputs. The input to this transaction was the
-output from a previously confirmed transaction (shown as the vin +txid+
-starting with +7957a35fe+). The two outputs correspond to the 15
-millibit credit and an output with change back to the sender.
+the transaction used one input and generated two outputs. The input to
+this transaction was the output from a previously confirmed transaction
+(shown as the vin +txid+). The two outputs correspond to the payment to
+Bob and the change back to Alice.
 
 We can further explore the blockchain by examining the previous
 transaction referenced by its +txid+ in this transaction using the same
 commands (e.g., +getrawtransaction+). Jumping from transaction to
 transaction we can follow a chain of transactions back as the coins are
-transmitted from owner address to owner address.
-
-
+transmitted from one owner to the next.
 
 ==== Exploring Blocks
 
@@ -906,71 +882,79 @@ transmitted from owner address to owner address.
 ((("blocks", "block height")))((("blocks", "block hash")))Exploring
 blocks is similar to exploring transactions. However, blocks can be
 referenced either by the block _height_ or by the block _hash_. First,
-let's find a block by its height. In <<cup_of_coffee>>, we saw that
-Alice's transaction was included in block 277316.
-
+let's find a block by its height.
 We use the +getblockhash+ command, which takes the block height as the
-parameter and returns the block hash for that block:
+parameter and returns the block _header hash_ for that block:
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli getblockhash 277316
-0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
+$ bitcoin-cli getblockhash 123456
+0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca
 </pre>
 ++++
 
-Now that we know which block Alice's transaction was included in, we can
+Now that we know the _header hash_ for our chosen block, we can
 query that block. We use the +getblock+ command with the block hash as
 the parameter:
 
 ++++
 <pre data-type="programlisting">
-$ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b3&#x21b5;
-1b2cc7bdc4
+$ bitcoin-cli getblock 0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682f&#x21b5;
+f6cd83c3ca
 </pre>
 ++++
 
 ++++
 <pre data-type="programlisting" data-code-language="json">
 {
-  "hash": "0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4",
-  "confirmations": 37371,
-  "size": 218629,
-  "height": 277316,
-  "version": 2,
-  "merkleroot": "c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e",
+  "hash": "0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca",
+  "confirmations": 651742,
+  "height": 123456,
+  "version": 1,
+  "versionHex": "00000001",
+  "merkleroot": "0e60651a9934e8f0decd1c5fde39309e48fca0cd1c84a21ddfde95033762d86c",
+  "time": 1305200806,
+  "mediantime": 1305197900,
+  "nonce": 2436437219,
+  "bits": "1a6a93b3",
+  "difficulty": 157416.4018436489,
+  "chainwork": "000000000000000000000000000000000000000000000000541788211ac227bc",
+  "nTx": 13,
+  "previousblockhash": "0000000000000b60bc96a44724fd72daf9b92cf8ad00510b5224c6253ac40095",
+  "nextblockhash": "000000000000129f5f02be247070bf7334d3753e4ddee502780c2acaecec6d66",
+  "strippedsize": 4179,
+  "size": 4179,
+  "weight": 16716,
   "tx": [
-    "d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f",
-    "b268b45c59b39d759614757718b9918caf0ba9d97c56f3b91956ff877c503fbe",
-    "04905ff987ddd4cfe603b03cfb7ca50ee81d89d1f8f5f265c38f763eea4a21fd",
-    "32467aab5d04f51940075055c2f20bbd1195727c961431bf0aff8443f9710f81",
-    "561c5216944e21fa29dd12aaa1a45e3397f9c0d888359cb05e1f79fe73da37bd",
-[... hundreds of transactions ...]
-    "78b300b2a1d2d9449b58db7bc71c3884d6e0579617e0da4991b9734cef7ab23a",
-    "6c87130ec283ab4c2c493b190c20de4b28ff3caf72d16ffa1ce3e96f2069aca9",
-    "6f423dbc3636ef193fd8898dfdf7621dcade1bbe509e963ffbff91f696d81a62",
-    "802ba8b2adabc5796a9471f25b02ae6aeee2439c679a5c33c4bbcee97e081196",
-    "eaaf6a048588d9ad4d1c092539bd571dd8af30635c152a3b0e8b611e67d1a1af",
-    "e67abc6bd5e2cac169821afc51b207127f42b92a841e976f9b752157879ba8bd",
-    "d38985a6a1bfd35037cb7776b2dc86797abbb7a06630f5d03df2785d50d5a2ac",
-    "45ea0a3f6016d2bb90ab92c34a7aac9767671a8a84b9bcce6c019e60197c134b",
-    "c098445d748ced5f178ef2ff96f2758cbec9eb32cb0fc65db313bcac1d3bc98f"
-  ],
-  "time": 1388185914,
-  "mediantime": 1388183675,
-  "nonce": 924591752,
-  "bits": "1903a30c",
-  "difficulty": 1180923195.258026,
-  "chainwork": "000000000000000000000000000000000000000000000934695e92aaf53afa1a",
-  "previousblockhash": "0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569",
-  "nextblockhash": "000000000000000010236c269dd6ed714dd5db39d36b33959079d78dfd431ba7"
+    "5b75086dafeede555fc8f9a810d8b10df57c46f9f176ccc3dd8d2fa20edd685b",
+    "e3d0425ab346dd5b76f44c222a4bb5d16640a4247050ef82462ab17e229c83b4",
+    "137d247eca8b99dee58e1e9232014183a5c5a9e338001a0109df32794cdcc92e",
+    "5fd167f7b8c417e59106ef5acfe181b09d71b8353a61a55a2f01aa266af5412d",
+    "60925f1948b71f429d514ead7ae7391e0edf965bf5a60331398dae24c6964774",
+    "d4d5fc1529487527e9873256934dfb1e4cdcb39f4c0509577ca19bfad6c5d28f",
+    "7b29d65e5018c56a33652085dbb13f2df39a1a9942bfe1f7e78e97919a6bdea2",
+    "0b89e120efd0a4674c127a76ff5f7590ca304e6a064fbc51adffbd7ce3a3deef",
+    "603f2044da9656084174cfb5812feaf510f862d3addcf70cacce3dc55dab446e",
+    "9a4ed892b43a4df916a7a1213b78e83cd83f5695f635d535c94b2b65ffb144d3",
+    "dda726e3dad9504dce5098dfab5064ecd4a7650bfe854bb2606da3152b60e427",
+    "e46ea8b4d68719b65ead930f07f1f3804cb3701014f8e6d76c4bdbc390893b94",
+    "864a102aeedf53dd9b2baab4eeb898c5083fde6141113e0606b664c41fe15e1f"
+  ]
 }
 </pre>
 ++++
 
-The block contains 419 transactions and the 64th transaction listed
-(+0627052b...+) is Alice's coffee payment. The +height+ entry tells us
-this is the 277316th block in the blockchain.
+The +confirmations+ entry tells us the _depth_ of this block--how many
+blocks have been built on top of it, indicating the difficulty of
+changing any of the transactions in this block.  The +height+ tells us
+how many blocks preceeded this block.  We see the block's version, the
+time it was created (according to its miner), the median time of the 11
+blocks that preceed this block (a time measurement that's harder for
+miners to manipulate), and the size of the block in three different
+measurements (its legacy stripped size, it's full size, and its size in
+weight units).  We also see some fields used for security and
+proof-of-work (merkle root, nonce, bits, difficulty, and chainwork);
+we'll examine those in detail in <<mining>>.
 
 ==== Using Bitcoin Core's Programmatic Interface
 
@@ -998,7 +982,7 @@ $ curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "met
 ----
 
 This command shows that +curl+ submits an HTTP request to the local host
-(127.0.0.1), connecting to the default bitcoin port (8332), and
+(127.0.0.1), connecting to the default Bitcoin RPC port (8332), and
 submitting a  +jsonrpc+ request for the +getblockchaininfo+ method using
 +text/plain+ encoding.
 
@@ -1038,10 +1022,10 @@ Running it gives us the following result:
 
 ----
 $ python rpc_example.py
-394075
+773973
 ----
 
-It tells us that our local Bitcoin Core node has 394075 blocks in its
+It tells us how many blocks our local Bitcoin Core node has in its
 blockchain. Not a spectacular result, but it demonstrates the basic use
 of the library as a simplified interface to Bitcoin Core's JSON-RPC API.
 
@@ -1049,7 +1033,7 @@ Next, let's use the +getrawtransaction+ and +decodetransaction+ calls to
 retrieve the details of Alice's coffee payment. In <<rpc_transaction>>,
 we retrieve Alice's transaction and list the transaction's outputs. For
 each output, we show the recipient address and value. As a reminder,
-Alice's transaction had one output paying Bob's Cafe and one output for
+Alice's transaction had one output paying Bob and one output for
 change back to Alice.
 
 [[rpc_transaction]]
@@ -1065,8 +1049,8 @@ Running this code, we get:
 
 ----
 $ python rpc_transaction.py
-([u'1GdK9UzpHBzqzX2A9JFP3Di4weBwqgmoQA'], Decimal('0.01500000'))
-([u'1Cdid9KFAaatwczBwBttQcwXYCpvK8h7FK'], Decimal('0.08450000'))
+bc1p8dqa4wjvnt890qmfws83te0v3qxzsfu7ul63kp7u56w8qc0qwp5qv995qn 0.00020000
+bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w0zpkpg 0.00075000
 ----
 
 Both of the preceding examples are rather simple. You don't really need
@@ -1093,7 +1077,7 @@ Running this code, we get:
 ----
 $ python rpc_block.py
 
-('Total value in block: ', Decimal('10322.07722534'))
+Total value in block:  10322.07722534
 ----
 
 Our example code calculates that the total value transacted in this
@@ -1123,7 +1107,6 @@ toolkits, organized by programming languages.
 https://github.com/bitcoin/bitcoin[Bitcoin Core] :: The reference implementation of bitcoin
 https://github.com/libbitcoin/libbitcoin[libbitcoin]:: Cross-platform C++ development toolkit, node, and consensus library
 https://github.com/libbitcoin/libbitcoin-explorer[bitcoin explorer]:: Libbitcoin's command-line tool
-https://github.com/jgarzik/picocoin[picocoin]:: A C language lightweight client library for bitcoin by Jeff Garzik
 
 ==== JavaScript
 http://bcoin.io/[bcoin]:: A modular and scalable full-node implementation with API
@@ -1132,30 +1115,19 @@ https://github.com/bitcoinjs/bitcoinjs-lib[BitcoinJS] :: A pure JavaScript Bitco
 
 ==== Java
 https://bitcoinj.github.io[bitcoinj]:: A Java full-node client library
-https://bitsofproof.com[Bits of Proof (BOP)]:: A Java enterprise-class implementation of bitcoin
-
-==== PHP
-https://github.com/bit-wasp/bitcoin-php[bitwasp/bitcoin]:: A PHP bitcoin library, and related projects
 
 ==== Python
 https://github.com/petertodd/python-bitcoinlib[python-bitcoinlib]::  A Python bitcoin library, consensus library, and node by Peter Todd
 https://github.com/richardkiss/pycoin[pycoin]:: A Python bitcoin library by Richard Kiss
-https://github.com/vbuterin/pybitcointools[pybitcointools]:: A Python bitcoin library by Vitalik Buterin
-
-==== Ruby
-https://github.com/sinisterchipmunk/bitcoin-client[bitcoin-client]:: A Ruby library wrapper for the JSON-RPC API
 
 ==== Go
 https://github.com/btcsuite/btcd[btcd]:: A Go language full-node Bitcoin client
 
 ==== Rust
-https://github.com/apoelstra/rust-bitcoin[rust-bitcoin]:: Rust bitcoin library for serialization, parsing, and API calls
+https://github.com/rust-bitcoin/rust-bitcoin[rust-bitcoin]:: Rust bitcoin library for serialization, parsing, and API calls
 
 ==== C#
 https://github.com/MetacoSA/NBitcoin[NBitcoin]:: Comprehensive bitcoin library for the .NET framework
-
-==== Objective-C
-https://github.com/oleganza/CoreBitcoin[CoreBitcoin]:: Bitcoin toolkit for ObjC and Swift
 
 Many more libraries exist in a variety of other programming languages
 and more are created all the time.((("", startref="BCalt03")))((("",
