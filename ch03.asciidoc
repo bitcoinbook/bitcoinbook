@@ -475,7 +475,7 @@ the most important options that you can set in the configuration file,
 or as command-line parameters to +bitcoind+:
 
 alertnotify:: Run a specified command or script to send emergency alerts
-to the owner of this node, usually by email.
+to the owner of this node.
 
 conf:: An alternative location for the configuration file. This only
 makes sense as a command-line parameter to +bitcoind+, as it can't be
@@ -490,27 +490,21 @@ prune:: Reduce the disk space requirements to this many megabytes, by
 deleting old blocks. Use this on a resource-constrained node that can't
 fit the full blockchain.
 
-txindex:: Maintain an index of all transactions. This means a complete
-copy of the blockchain that allows you to programmatically retrieve any
-transaction by ID.
+txindex:: Maintain an index of all transactions. This allows you to
+programmatically retrieve any transaction by its ID provided that the
+block containing that transaction hasn't been pruned.
 
-dbcache:: The size of the UTXO cache. The default is 300 MiB. Increase
-this on high-end hardware and reduce the size on low-end hardware to
-save memory at the expense of slow disk IO.
+dbcache:: The size of the UTXO cache. The default is 450 MiB. Increase
+this size on high-end hardware to read and write from your disk less
+often, or reduce the size on low-end hardware to save memory at the
+expense of more using your disk more frequently.
 
-maxconnections:: Set the maximum number of nodes from which to accept
-connections. Reducing this from the default will reduce your bandwidth
-consumption. Use if you have a data cap or pay by the gigabyte.
+blocksonly:: Minimize your bandwidth usage you only accepting blocks of
+confirmed transactions from your peers instead of relaying unconfirmed
+transactions.
 
 maxmempool:: Limit the transaction memory pool to this many megabytes.
 Use it to reduce memory use on memory-constrained nodes.
-
-maxreceivebuffer/maxsendbuffer:: Limit per-connection memory buffer to
-this many multiples of 1000 bytes. Use on memory-constrained nodes.
-
-minrelaytxfee:: Set the minimum fee rate for transaction you will relay.
-Below this value, the transaction is treated nonstandard, rejected from
-the transaction pool and not relayed.
 
 [[txindex]]
 .Transaction Database Index and txindex Option
@@ -525,7 +519,7 @@ transaction with commands like +getrawtransaction+ (see
 Core to build a complete transaction index, which can be achieved with
 the +txindex+ option. Set +txindex=1+ in the Bitcoin Core configuration
 file. If you don't set this option at first and later set it to full
-indexing, you need to restart +bitcoind+ with the +-reindex+ option and
+indexing, you need to
 wait for it to rebuild the index.
 ****
 
@@ -551,12 +545,10 @@ smaller server.
 ====
 ----
 alertnotify=myemailscript.sh "Alert: %s"
-maxconnections=15
+blocksonly=1
 prune=5000
 dbcache=150
 maxmempool=150
-maxreceivebuffer=2500
-maxsendbuffer=500
 ----
 ====
 
