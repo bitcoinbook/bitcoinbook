@@ -1,75 +1,30 @@
 [[ch04_keys_addresses]]
-== Keys, Addresses
+== Keys and Addresses
 
-((("cryptography", "defined")))((("cryptography", see="also keys and
-addresses")))You may have heard that bitcoin is based on _cryptography_,
-which is a branch of mathematics used extensively in computer security.
-Cryptography means "secret writing" in Greek, but the science of
-cryptography encompasses more than just secret writing, which is
-referred to as encryption. Cryptography can also be used to prove
-knowledge of a secret without revealing that secret (digital signature),
-or prove the authenticity of data (digital fingerprint). These types of
-cryptographic proofs are the mathematical tools critical to bitcoin and
-used extensively in bitcoin applications.
-((("encryption")))((("encryption", see="also keys and
-addresses")))Ironically, encryption is not an important part of bitcoin,
-as its communications and transaction data are not encrypted and do not
-need to be encrypted to protect the funds. In this chapter we will
-introduce some of the cryptography used in bitcoin to control ownership
-of funds, in the form of keys, addresses, and wallets.
+Alice wants to pay Bob, but the the thousands of Bitcoin full nodes who
+will verify her transaction don't know who Alice or Bob are--and we want
+to keep it that way to protect their privacy.  Alice needs to
+communicate that Bob should receive some of her bitcoins without tying
+any aspect of that transaction to Bob's real-world identity or to other
+Bitcoin payments that Bob receives.  The method Alice uses must ensure
+that only Bob can further spend the bitcoins he receives.
 
-=== Introduction
+The original Bitcoin paper describes a very simple scheme for achieving
+those goals, shown in <<pay-to-pure-pubkey>>.  A receiver like Bob
+accepts bitcoins to a public key in a transaction which is signed by the
+spender (like Alice).  The bitcoins which Alice is spending had been
+previously received to one her public keys, and she uses the
+corresponding private key to generate her signature.  Full nodes can
+verify that Alice's signature commits to the output of a hash function
+that itself commits to Bob's public key and other transaction details.
 
-((("digital keys", see="keys and addresses")))((("keys and addresses",
-"overview of", id="KAover04")))((("digital signatures", "purpose
-of")))Ownership of bitcoin is established through _digital keys_,
-_Bitcoin addresses_, and _digital signatures_. The digital keys are not
-actually stored in the network, but are instead created and stored by
-users in a file, or simple database, called a _wallet_. The digital keys
-in a user's wallet are completely independent of the Bitcoin protocol
-and can be generated and managed by the user's wallet software without
-reference to the blockchain or access to the internet. Keys enable many
-of the interesting properties of bitcoin, including decentralized trust
-and control, ownership attestation, and the cryptographic-proof security
-model.
+[[pay-to-pure-pubkey]]
+.Transaction chain from original Bitcoin paper
+image::images/mbc2_abin01.png["Transaction chain from original Bitcoin paper"]
 
-Most bitcoin transactions require a valid digital signature to be
-included in the blockchain, which can only be generated with a secret
-key; therefore, anyone with a copy of that key has control of the
-bitcoin. ((("witnesses")))The digital signature used to spend funds is
-also referred to as a _witness_, a term used in cryptography. The
-witness data in a bitcoin transaction testifies to the true ownership of
-the funds being spent.
-
-((("public and private keys", "key pairs")))((("public and private
-keys", see="also keys and addresses")))Keys come in pairs consisting of
-a private (secret) key and a public key. Think of the public key as
-similar to a bank account number and the private key as similar to the
-secret PIN, or signature on a check, that provides control over the
-account. These digital keys are very rarely seen by the users of
-bitcoin. For the most part, they are stored inside the wallet file and
-managed by the bitcoin wallet software.
-
-In the payment portion of a bitcoin transaction, the recipient's public
-key is represented by its digital fingerprint, called a _Bitcoin
-address_, which is used in the same way as the beneficiary name on a
-check (i.e., "Pay to the order of"). In most cases, a Bitcoin address is
-generated from and corresponds to a public key. However, not all Bitcoin
-addresses represent public keys; they can also represent other
-beneficiaries such as scripts, as we will see later in this chapter.
-This way, Bitcoin addresses abstract the recipient of funds, making
-transaction destinations flexible, similar to paper checks: a single
-payment instrument that can be used to pay into people's accounts, pay
-into company accounts, pay for bills, or pay to cash. The Bitcoin
-address is the only representation of the keys that users will routinely
-see, because this is the part they need to share with the world.
-
-First, we will introduce cryptography and explain the mathematics used
-in bitcoin. Next, we will look at how keys are generated, stored, and
-managed.  We will review the various encoding formats used to represent
-private and public keys, addresses, and script addresses. Finally, we
-will look at advanced use of keys and addresses: vanity, multisignature,
-and script addresses and paper wallets.
+We'll examine public keys, private keys, signatures, and hash functions
+in the following sections, and then use all of them together to describe
+the addresses used by modern Bitcoin software.
 
 ==== Public Key Cryptography and Cryptocurrency
 
