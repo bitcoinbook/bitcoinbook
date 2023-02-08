@@ -1583,8 +1583,7 @@ because it has the added +01+ suffix to distinguish it from an
 
 ((("keys and addresses", "advanced forms", id="KAadvanced04")))In the
 following sections we will look at advanced forms of keys and addresses,
-such as encrypted private keys, script and multisignature addresses,
-vanity addresses, and paper wallets.
+such as vanity addresses and paper wallets.
 
 
 ==== Vanity Addresses
@@ -1596,7 +1595,7 @@ addresses that contain human-readable messages. For example,
 +1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33+ is a valid address that contains
 the letters forming the word "Love" as the first four Base-58 letters.
 Vanity addresses require generating and testing billions of candidate
-private keys, until a bitcoin address with the desired pattern is found.
+private keys, until a Bitcoin address with the desired pattern is found.
 Although there are some optimizations in the vanity generation
 algorithm, the process essentially involves picking a private key at
 random, deriving the public key, deriving the Bitcoin address, and
@@ -1669,141 +1668,50 @@ As you can see, Eugenia won't be creating the vanity address
 computers. Each additional character increases the difficulty by a
 factor of 58. Patterns with more than seven characters are usually found
 by specialized hardware, such as custom-built desktops with multiple
-GPUs. These are often repurposed bitcoin mining "rigs" that are no
-longer profitable for bitcoin mining but can be used to find vanity
-addresses. Vanity searches on GPU systems are many orders of magnitude
+GPUs.
+Vanity searches on GPU systems are many orders of magnitude
 faster than on a general-purpose CPU.
 
 Another way to find a vanity address is to outsource the work to a pool
-of vanity miners, such as the pool at
-http://vanitypool.appspot.com[Vanity Pool]. A pool is a service that
+of vanity miners. A pool is a service that
 allows those with GPU hardware to earn bitcoin searching for vanity
-addresses for others. For a small payment (0.01 bitcoin or approximately
-$5 at the time of this writing), Eugenia can outsource the search for a
+addresses for others. For a fee, Eugenia can outsource the search for a
 seven-character pattern vanity address and get results in a few hours
 instead of having to run a CPU search for months.
 
 Generating a vanity address is a brute-force exercise: try a random key,
 check the resulting address to see if it matches the desired pattern,
-repeat until successful. <<vanity_miner_code>> shows an example of a
-"vanity miner," a program designed to find vanity addresses, written in
-C++. The example uses the libbitcoin library, which we introduced in
-<<alt_libraries>>.
+repeat until successful.
 
-[[vanity_miner_code]]
-.Vanity address miner
-====
-[source,cpp]
-----
-include::code/vanity-miner.cpp[]
-----
-====
+===== Vanity address security and privacy
 
-[NOTE]
-====
-<<vanity_miner_run>> uses +std::random_device+. Depending on the
-implementation it may reflect a CSRNG provided by the underlying
-operating system. In the case of a Unix-like operating system such as
-Linux, it draws from +/dev/urandom+. The random number generator used
-here is for demonstration purposes, and it is _not_ appropriate for
-generating production-quality bitcoin keys as it is not implemented with
-sufficient security.
-====
+((("security", "vanity addresses")))Vanity addresses were popular in the
+early years of Bitcoin but have almost entirely disappeared from use as
+of 2023.  There are two likely causes for this trend:
 
-The example code must be compiled using a pass:[C++] compiler and linked
-against the libbitcoin library (which must be first installed on that
-system). To run the example, run the ++vanity-miner++ executable with no
-parameters (see <<vanity_miner_run>>) and it will attempt to find a
-vanity address starting with "1kid."
+1. Deterministic wallets: as we saw in <<recovery_code_intro>>, it's possible to
+backup every key in most modern wallets by simply writing down a few
+words or characters.  This is achieved by deriving every key in the
+wallet from those words or characters using a deterministic algorithm.
+It's not possible to use vanity addresses with a deterministic wallet
+unless the user backs up additional data for every vanity address they
+create.  More practically, most wallets using deterministic key
+generation simply don't allow importing a private key or key tweak from
+a vanity generator.
 
-[[vanity_miner_run]]
-.Compiling and running the vanity-miner example
-====
-[source,bash]
-----
-$ # Compile the code with g++
-$ g++ -o vanity-miner vanity-miner.cpp $(pkg-config --cflags --libs libbitcoin)
-$ # Run the example
-$ ./vanity-miner
-Found vanity address! 1KiDzkG4MxmovZryZRj8tK81oQRhbZ46YT
-Secret: 57cc268a05f83a23ac9d930bc8565bac4e277055f4794cbd1a39e5e71c038f3f
-$ # Run it again for a different result
-$ ./vanity-miner
-Found vanity address! 1Kidxr3wsmMzzouwXibKfwTYs5Pau8TUFn
-Secret: 7f65bbbbe6d8caae74a0c6a0d2d7b5c6663d71b60337299a1a2cf34c04b2a623
-# Use "time" to see how long it takes to find a result
-$ time ./vanity-miner
-Found vanity address! 1KidPWhKgGRQWD5PP5TAnGfDyfWp5yceXM
-Secret: 2a802e7a53d8aa237cd059377b616d2bfcfa4b0140bc85fa008f2d3d4b225349
+2. Avoiding address reuse: using a vanity address to receive multiple
+payments to the same address creates a link between all of those
+payments.  This might be acceptable to Eugenia if her non-profit needs
+to report its income and expenditures to a tax authority anyway.
+However, it also reduces the privacy of people who either pay Eugenia or
+receive payments from her.  For example, Alice may want to donate
+anonymously and Bob may not want his other customers to know that he
+gives discount pricing to Eugenia.
 
-real	0m8.868s
-user	0m8.828s
-sys	0m0.035s
-----
-====
+// https://github.com/MakisChristou/vanitybech
 
-The example code will take a few seconds to find a match for the
-three-character pattern "kid," as we can see when we use the +time+ Unix
-command to measure the execution time. Change the +search+ pattern in
-the source code and see how much longer it takes for four- or
-five-character patterns!
-
-===== Vanity address security
-
-((("security", "vanity addresses")))Vanity addresses can be used to
-enhance _and_ to defeat security measures; they are truly a double-edged
-sword. Used to improve security, a distinctive address makes it harder
-for adversaries to substitute their own address and fool your customers
-into paying them instead of you. Unfortunately, vanity addresses also
-make it possible for anyone to create an address that _resembles_ any
-random address, or even another vanity address, thereby fooling your
-customers.
-
-Eugenia could advertise a randomly generated address (e.g.,
-+1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+) to which people can send their
-donations. Or, she could generate a vanity address that starts with
-1Kids, to make it more distinctive.
-
-In both cases, one of the risks of using a single fixed address (rather
-than a separate dynamic address per donor) is that a thief might be able
-to infiltrate your website and replace it with his own address, thereby
-diverting donations to himself. If you have advertised your donation
-address in a number of different places, your users may visually inspect
-the address before making a payment to ensure it is the same one they
-saw on your website, on your email, and on your flyer. In the case of a
-random address like +1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy+, the average
-user will perhaps inspect the first few characters "1J7mdg" and be
-satisfied that the address matches. Using a vanity address generator,
-someone with the intent to steal by substituting a similar-looking
-address can quickly generate addresses that match the first few
-characters, as shown in <<table_4-13>>.
-
-[[table_4-13]]
-.Generating vanity addresses to match a random address
-|=======
-| *Original Random Address* | 1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
-| *Vanity (4-character match)* | 1J7md1QqU4LpctBetHS2ZoyLV5d6dShhEy
-| *Vanity (5-character match)* | 1J7mdgYqyNd4ya3UEcq31Q7sqRMXw2XZ6n
-| *Vanity (6-character match)* | 1J7mdg5WxGENmwyJP9xuGhG5KRzu99BBCX
-|=======
-
-So does a vanity address increase security? If Eugenia generates the
-vanity address +1Kids33q44erFfpeXrmDSz7zEqG2FesZEN+, users are likely to
-look at the vanity pattern word _and a few characters beyond_, for
-example noticing the "1Kids33" part of the address. That would force an
-attacker to generate a vanity address matching at least six characters
-(two more), expending an effort that is 3,364 times (58 &#x00D7; 58)
-higher than the effort Eugenia expended for her 4-character vanity.
-Essentially, the effort Eugenia expends (or pays a vanity pool for)
-"pushes" the attacker into having to produce a longer pattern vanity. If
-Eugenia pays a pool to generate an 8-character vanity address, the
-attacker would be pushed into the realm of 10 characters, which is
-infeasible on a personal computer and expensive even with a custom
-vanity-mining rig or vanity pool. What is affordable for Eugenia becomes
-unaffordable for the attacker, especially if the potential reward of
-fraud is not high enough to cover the cost of the vanity address
-generation.((("", startref="Avanity04")))((("",
-startref="vanity04")))((("", startref="eugeniafour")))
+Given those problems, we don't expect to see many vanity addresses in
+the future, although there will probably always be some.
 
 [[paper_wallets]]
 ==== Paper Wallets
