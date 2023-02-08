@@ -31,31 +31,32 @@ the addresses used by modern Bitcoin software.
 ((("keys and addresses", "overview of", "public key
 cryptography")))((("digital currencies", "cryptocurrency")))Public key
 cryptography was invented in the 1970s and is a mathematical foundation
-for computer and information security.
+for modern computer and information security.
 
 Since the invention of public key cryptography, several suitable
 mathematical functions, such as prime number exponentiation and elliptic
 curve multiplication, have been discovered. These mathematical functions
-are practically irreversible, meaning that they are easy to calculate in
-one direction and infeasible to calculate in the opposite direction.
+are easy to calculate in
+one direction and infeasible to calculate in the opposite direction
+using the computers and algorithms available today.
 Based on these mathematical functions, cryptography enables the creation
-of digital secrets and unforgeable digital signatures. Bitcoin uses
-elliptic curve multiplication as the basis for its cryptography.
+of unforgeable digital signatures. Bitcoin uses
+elliptic curve addition and multiplication as the basis for its cryptography.
 
-In bitcoin, we use public key cryptography to create a key pair that
+In Bitcoin, we can use public key cryptography to create a key pair that
 controls access to bitcoin. The key pair consists of a private key
-and--derived from it--a unique public key. The public key is used to
+and a public key derived from the private key. The public key is used to
 receive funds, and the private key is used to sign transactions to spend
 the funds.
 
 There is a mathematical relationship between the public and the private
 key that allows the private key to be used to generate signatures on
-messages. This signature can be validated against the public key without
+messages. These signatures can be validated against the public key without
 revealing the private key.
 
 [TIP]
 ====
-((("keys and addresses", "overview of", "key pairs")))In most wallet
+((("keys and addresses", "overview of", "key pairs")))In some wallet
 implementations, the private and public keys are stored together as a
 _key pair_ for convenience. However, the public key can be calculated
 from the private key, so storing only the private key is also possible.
@@ -63,7 +64,7 @@ from the private key, so storing only the private key is also possible.
 
 ((("keys and addresses", "overview of", "private and public key
 pairs")))((("elliptic curve cryptography")))((("cryptography", "elliptic
-curve cryptography")))A bitcoin wallet contains a collection of key
+curve cryptography")))A Bitcoin wallet contains a collection of key
 pairs, each consisting of a private key and a public key. The private
 key (k) is a number, usually derived from a number picked at random.
 From the private key, we
@@ -92,7 +93,7 @@ signatures.
 
 ((("keys and addresses", "overview of", "private key
 generation")))((("warnings and cautions", "private key protection")))A
-private key is simply a number, picked at random. Ownership and control
+private key is simply a number, picked at random.  Control
 over the private key is the root of user control over all funds
 associated with the corresponding Bitcoin public key. The private key is
 used to create signatures that are used to spend bitcoin by proving
@@ -105,21 +106,21 @@ forever lost, too.
 
 [TIP]
 ====
-The bitcoin private key is just a number. You can pick your private keys
+A bitcoin private key is just a number. You can pick your private keys
 randomly using just a coin, pencil, and paper: toss a coin 256 times and
 you have the binary digits of a random private key you can use in a
-bitcoin wallet. The public key can then be generated from the private
+Bitcoin wallet. The public key can then be generated from the private
 key.  Be careful, though, as any process that's less than completely
 random can significantly reduce the security of your private key and the
 bitcoins it controls.
 ====
 
 The first and most important step in generating keys is to find a secure
-source of entropy, or randomness. Creating a bitcoin key is essentially
+source of randomness (which computer scientists call _entropy_). Creating a Bitcoin key is almost
 the same as "Pick a number between 1 and 2^256^." The exact method you
 use to pick that number does not matter as long as it is not predictable
 or repeatable. Bitcoin software uses cryptographically-secure random
-number generators to produce 256 bits of entropy (randomness).
+number generators to produce 256 bits of entropy.
 
 More precisely, the private key can be any number between +0+ and +n -
 1+ inclusive, where n is a constant (n = 1.1578 * 10^77^, slightly less
@@ -234,8 +235,7 @@ P = (550662630222773436695787188951685343262506034537775941755001873603891167292
 ====
 [source, pycon]
 ----
-Python 3.4.0 (default, Mar 30 2014, 19:23:13)
-[GCC 4.2.1 Compatible Apple LLVM 5.1 (clang-503.0.38)] on darwin
+Python 3.10.6 (main, Nov 14 2022, 16:10:14) [GCC 11.3.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> p = 115792089237316195423570985008687907853269984665640564039457584007908834671663
 >>> x = 55066263022277343669578718895168534326250603453777594175500187360389116729240
@@ -405,7 +405,7 @@ scriptPubKey which acts like a public key, and bitcoin spending is
 authorized by a scriptSig which acts like a signature.
 
 [[p2pk]]
-=== IP Addresses: The Original Address For Bitcoin
+=== IP Addresses: The Original Address For Bitcoin (P2PK)
 
 We've established that Alice can pay Bob by assigning some of her
 bitcoins to one of Bob's public keys.  But how does Alice get one of
@@ -470,7 +470,7 @@ removing them from the stack.  It verifies the signature corresponds to
 the public key and also commits to (signs) the various fields in the
 transaction.  If the signature is correct, OP_CHECKSIG replaces itself
 on the stack with the value 1; if the signature was not correct, it
-replaces itself with a 0.  If the top of the stack is non-zero at the
+replaces itself with a 0.  If there's a non-zero item on top of the stack at the
 end of evaluation, the script passes.  If all scripts in a transaction
 pass, and all of the other details about the transaction are valid, then
 full nodes will consider the transaction to be valid.
@@ -497,14 +497,14 @@ using Network Address Translation (NAT).
 
 This brings us back to the problem of receivers like Bob having to give
 spenders like Alice a long public key.  The shortest version of Bitcoin
-public keys known to the developers of early Bitcoin were 65 bytes, or
-about 130 characters when written in hexadecimal.  However, Bitcoin
+public keys known to the developers of early Bitcoin were 65 bytes, the
+equivalent of 130 characters when written in hexadecimal.  However, Bitcoin
 already contained several data structures much larger than 65 bytes
 which needed to be securely referenced in other parts of Bitcoin using the
 smallest amount of data that was secure.
 
 Bitcoin accomplishes that with a _hash function_, a function which takes
-a potentially large amount of data and scrambles (hashes) it into a
+a potentially large amount of data, scrambles it (hashes it), and outputs a
 fixed amount of data.  A cryptographic hash function will always produce
 the same output when given the same input, and a secure function will
 also make it impractical for somebody to choose a different input that
@@ -515,7 +515,7 @@ produce output _X_.
 For example, imagine I want to ask you a question and also give you my
 answer in a form that you can't read immediately.  Let's say the
 question is, "in what year did Satoshi Nakamoto start working on
-Bitcoin?"  I'll give you my commitment to the answer in the form of
+Bitcoin?"  I'll give you a commitment to my answer in the form of
 output from the SHA256 hash function, the function most commonly used in
 Bitcoin:
 
@@ -616,9 +616,9 @@ look at compact encoding and reliable checksums.
 [[base58]]
 === Base58Check Encoding
 
-((("keys and addresses", "Bitcoin addresses", "Base58 and Base58check
-encoding")))((("Base58 and Base58check encoding",
-id="base5804")))((("addresses", "Base58 and Base58check encoding",
+((("keys and addresses", "Bitcoin addresses", "base58 and base58check
+encoding")))((("base58 and base58check encoding",
+id="base5804")))((("addresses", "base58 and base58check encoding",
 id="Abase5804")))In order to represent long numbers in a compact way,
 using fewer symbols, many computer systems use mixed-alphanumeric
 representations with a base (or radix) higher than 10. For example,
@@ -626,44 +626,41 @@ whereas the traditional decimal system uses 10 numerals, 0 through 9,
 the hexadecimal system uses 16, with the letters A through F as the six
 additional symbols. A number represented in hexadecimal format is
 shorter than the equivalent decimal representation. Even more compact,
-Base64 representation uses 26 lowercase letters, 26 capital letters, 10
-numerals, and 2 more characters such as &#x201c;`+`&#x201d; and "/" to
-transmit binary data over text-based media such as email. Base64 is most
-commonly used to add binary attachments to email.
+base64 representation uses 26 lowercase letters, 26 capital letters, 10
+numerals, and 2 more characters such as "+" and "/" to
+transmit binary data over text-based media such as email.
 
-Base58 is a text-based binary-encoding format that offers a balance
-between compact representation and readability. Base58 is similar to
-Base64, using upper- and lowercase letters and numbers,
+Base58 is a similar encoding to
+base64, using upper- and lowercase letters and numbers,
 but omitting some characters that are frequently mistaken for one
 another and can appear identical when displayed in certain fonts.
-Specifically, Base58 is Base64 without the 0 (number zero), O (capital
-o), l (lower L), I (capital i), and the symbols &#x201c;`+`&#x201d; and
+Specifically, base58 is base64 without the 0 (number zero), O (capital
+o), l (lower L), I (capital i), and the symbols "+" and
 "/". Or, more simply, it is a set of lowercase and capital letters and
 numbers without the four (0, O, l, I) just mentioned. <<base58alphabet>>
-shows the full Base58 alphabet.
+shows the full base58 alphabet.
 
 [[base58alphabet]]
-.Bitcoin's Base58 alphabet
+.Bitcoin's base58 alphabet
 ====
 ----
 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
 ----
 ====
 
-To add extra security against typos or transcription errors, Base58Check
-is a Base58 encoding format, frequently used in Bitcoin, which has a
-built-in error-checking code. The checksum is an additional four bytes
+To add extra security against typos or transcription errors, base58check
+adds an error-checking code to the base58 alphabet. The checksum is an additional four bytes
 added to the end of the data that is being encoded. The checksum is
 derived from the hash of the encoded data and can therefore be used to
 detect transcription and typing errors. When presented with
-Base58Check code, the decoding software will calculate the checksum of
+base58check code, the decoding software will calculate the checksum of
 the data and compare it to the checksum included in the code. If the two
-do not match, an error has been introduced and the Base58Check data is
+do not match, an error has been introduced and the base58check data is
 invalid. This prevents a mistyped Bitcoin address from being accepted by
 the wallet software as a valid destination, an error that would
 otherwise result in loss of funds.
 
-To convert data (a number) into a Base58Check format, we first add a
+To convert data (a number) into a base58check format, we first add a
 prefix to the data, called the "version byte," which serves to easily
 identify the type of data that is encoded. For example, the prefix zero
 (0x00 in hex) indicates that the data should be used as the commitment (hash) in
@@ -682,24 +679,24 @@ four bytes. These four bytes serve as the error-checking code, or
 checksum. The checksum is appended to the end.
 
 The result is composed of three items: a prefix, the data, and a
-checksum. This result is encoded using the Base58 alphabet described
-previously. <<base58check_encoding>> illustrates the Base58Check
+checksum. This result is encoded using the base58 alphabet described
+previously. <<base58check_encoding>> illustrates the base58check
 encoding process.
 
 [[base58check_encoding]]
-.Base58Check encoding: a Base58, versioned, and checksummed format for unambiguously encoding bitcoin data
+.Base58Check encoding: a base58, versioned, and checksummed format for unambiguously encoding bitcoin data
 image::images/mbc2_0406.png["Base58CheckEncoding"]
 
-In Bitcoin, more than just addresses are presented to the user in
-Base58Check encoding to make it compact, easy to read, and easy to detect
-errors. The version prefix in Base58Check encoding is used to create
-easily distinguishable formats, which when encoded in Base58 contain
-specific characters at the beginning of the Base58Check-encoded payload.
+In Bitcoin, other data besides public key commitmens are presented to the user in
+base58check encoding to make that data compact, easy to read, and easy to detect
+errors. The version prefix in base58check encoding is used to create
+easily distinguishable formats, which when encoded in base58 contain
+specific characters at the beginning of the base58check-encoded payload.
 These characters make it easy for humans to identify the type of data
 that is encoded and how to use it. This is what differentiates, for
-example, a Base58Check-encoded Bitcoin address that starts with a 1 from
-a Base58Check-encoded private key WIF that starts with a 5. Some example
-version prefixes and the resulting Base58 characters are shown in
+example, a base58check-encoded Bitcoin address that starts with a 1 from
+a base58check-encoded private key WIF that starts with a 5. Some example
+version prefixes and the resulting base58 characters are shown in
 <<base58check_versions>>.
 
 [[base58check_versions]]
@@ -715,7 +712,7 @@ version prefixes and the resulting Base58 characters are shown in
 | BIP-32 Extended Public Key | 0x0488B21E | xpub
 |=======
 
-Putting together public keys, hash-based commitments, and Base58Check
+Putting together public keys, hash-based commitments, and base58check
 encocding, we can see the illustration of the conversion of a public key
 into a Bitcoin address in <<pubkey_to_address>>.
 
@@ -728,7 +725,7 @@ image::images/mbc2_0405.png["pubkey_to_address"]
 The Bitcoin Explorer commands (see <<appdx_bx>>) make it easy to write
 shell scripts and command-line "pipes" that manipulate bitcoin keys,
 addresses, and transactions. You can use Bitcoin Explorer to decode the
-Base58Check format on the command line.
+base58check format on the command line.
 
 We use the +base58check-decode+ command to decode the uncompressed key:
 
@@ -769,8 +766,8 @@ alternative encoding for public keys that used only 33 bytes and which
 was backwards compatible with all Bitcoin full nodes at the time,
 so there was no need to change the Bitcoin protocol.  Those 33-byte
 public keys are known as _compressed public keys_ and the original 65
-byte keys are known as _uncompressed public keys_.  Smaller public keys
-was smaller transactions, allowing more payments to be made in the same
+byte keys are known as _uncompressed public keys_.  Using smaller public keys
+results in smaller transactions, allowing more payments to be made in the same
 block.
 
 As we saw in the section <<public_key_derivation>>, a public key is a point (x,y) on an
@@ -891,12 +888,12 @@ scriptPubKey to commit to a _redemption script_ (_redeemScript_).  When
 Bob spends his bitcoins, his scriptSig need to provide a redeemScript
 that matches the commitment and also any data necessary to satisfy the
 redeemScript (such as signatures).  Let's start by imagining Bob wants
-to require two signatures from different wallets he controls in
-order to spend his bitcoins.  He puts those conditions into a
-redeemScript:
+to require two signatures to spend his bitcoins, one signature from his
+desktop wallet and one from a hardware signing device.  He puts those
+conditions into a redeemScript:
 
 ----
-<pubkey1> OP_CHECKSIGVERIFY <pubkey2> OP_CHECKSIG
+<public key 1> OP_CHECKSIGVERIFY <public key 2> OP_CHECKSIG
 ----
 
 He then creates a commitment to the redeemScript using the same
@@ -939,7 +936,7 @@ The script is executed and, if it passes and all of the other
 transaction details are correct, the transaction is valid.
 
 Addresses for Pay-to-Script-Hash (P2SH) are also created with
-Base58Check.  The version prefix is set to 5, which results in an
+base58check.  The version prefix is set to 5, which results in an
 encoded address starting with a +3+. An example of a P2SH address is
 +3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the
 Bitcoin Explorer commands +script-encode+, +sha256+, +ripemd160+, and
@@ -961,7 +958,7 @@ script, but it might also represent a script encoding other types of
 transactions.
 ====
 
-P2PKH and P2SH are the only two script templates used with Base58Check
+P2PKH and P2SH are the only two script templates used with base58check
 encoding.  They are now known as legacy addresses and, as of early 2023,
 are only used in
 https://transactionfee.info/charts/payments-spending-segwit/[about 10% of transactions].
@@ -969,8 +966,7 @@ Legacy addresses were supplanted by the bech32 family of addresses.
 
 [[p2sh_collision_attacks]]
 .P2SH collision attacks
-[WARNING]
-====
+****
 All addresses based on hash functions are theoretically vulnerable to an
 attacker finding two different inputs (e.g. redeemScripts) that produce
 the same hash function output (commitment).  For addresses created
@@ -980,7 +976,7 @@ strength of the hash algorithm.  For a secure 160-bit algorithm like
 HASH160, the probability is 1-in-2^160^.  This is a _second pre-image
 attack_.
 
-However, this changes when an attacker is able to influence the input
+However, this changes when an attacker is able to influence the original input
 value. For example, an attacker participates in the creation of a
 multisignature script where the attacker doesn't need to submit his
 public key until after he learns all of the other party's public keys.
@@ -1010,13 +1006,13 @@ collision attacks but a simple solution which doesn't require any
 special knowledge on the part of wallet developers is to simply use
 a stronger hash function.  Later upgrades to Bitcoin made that possible
 and newer Bitcoin addresses provide at least 128 bits of collision
-resistance--a number of hash operations that would require all current
-Bitcoin miners about about 50 billion years to perform.
+resistance.  To perform 2^128^ hash operations would require all current
+Bitcoin miners about 50 billion years to perform.
 
 Although we do not believe there is any immediate threat to anyone
 creating new P2SH addresses, we recommend all new wallets use newer
 types of addresses to eliminate address collision attacks as a concern.
-====
+****
 
 === Bech32 addresses
 
@@ -1039,12 +1035,12 @@ need Alice's wallet to pay him using a different type of script.  That
 would require Alice's wallet to upgrade to supporting the new scripts.
 
 At first, Bitcoin developers proposed BIP142, which would continue using
-Base58Check with a new version byte, similar to the P2SH upgrade.  But
-getting all wallets to upgrade to new scripts with a new Base58Check
+base58check with a new version byte, similar to the P2SH upgrade.  But
+getting all wallets to upgrade to new scripts with a new base58check
 version was expected to require almost as much work as getting them to
 upgrade to an entirely new address format, so several Bitcoin
 contributors set out to design the best possible address format.  They
-identified several problems with Base58Check:
+identified several problems with base58check:
 
 - Its mixed case presentation made it inconvenient to read aloud or
   transcribe.  Try reading one of the legacy addresses in this chapter
@@ -1078,19 +1074,19 @@ bech32 (pronounced with a soft "ch", as in "besh thirty-two").  The
 "bech" stands for BCH, the initials of the three individuals who
 discovered the cyclic code in 1959 and 1960 upon which bech32 is based.
 The "32" stands for the number of characters in the bech32 alphabet
-(similar to the 58 in Base58Check).
+(similar to the 58 in base58check).
 
 - Bech32 uses only numbers and a single case of letters (preferably
   rendered in lowercase).  Despite its alphabet being almost half the
-  size of the Base58Check alphabet, bech32 addresses are only slightly
+  size of the base58check alphabet, bech32 addresses are only slightly
   longer than the longest equivalent P2PKH legacy addresses.
 
 - Bech32 can both detect and help correct errors.  In an address of an
   expected length, it is mathematically guaranteed to detect any error
   affecting four characters or less; that's more reliable than
-  Base58Check.  For longer errors, it will fail to detect them less than
+  base58check.  For longer errors, it will fail to detect them less than
   one time in a billion, which is roughly the same reliability as
-  Base58Check.  Even better, for an address typed with just a few
+  base58check.  Even better, for an address typed with just a few
   errors, it can tell the user where those errors occurred, allowing them
   quickly correct minor transcription mistakes.  See <<bech32_typo_detection>>
   for an example of an address entered with errors.
@@ -1119,9 +1115,9 @@ image::images/bech32-qrcode-uc-lc.png["The same bech32 address QR encoded in upp
 - Bech32 takes advantage of an upgrade mechanism designed as part of
   segwit to make it possible for spender wallets to be able to pay
   output types that aren't in use yet.  The goal was to allow developers
-  to build a wallet today that allows spending to a bech32 address which
-  will work without changes even years from now when a later protocol
-  upgrade adds a new feature for users who receive bitcoins.  It was
+  to build a wallet today that allows spending to a bech32 address
+  and have that wallet remain able to spend to bech32 addresses for
+  users of new features added in future protocol upgrades.  It was
   hoped that we might never again need to go through the system-wide
   upgrade cycles necessary to allow people to fully use P2SH and segwit.
 
@@ -1133,8 +1129,9 @@ errors only apply if the length of the address you enter into a wallet
 is the same length of the original address.  If you add or remove any
 characters during transcription, the guarantee doesn't apply and your
 wallet may spend funds to a wrong address.  However, even without the
-guarantee, it was thought that it would be unlikely that a user adding
-or removing characters would produce a string with a valid checksum.
+guarantee, it was thought that it would be very unlikely that a user adding
+or removing characters would produce a string with a valid checksum, ensuring
+users' funds were safe.
 
 Unfortunately, the choice for one of the constants in the bech32
 algorithm just happened to make it very easy to add or remove the letter
@@ -1256,8 +1253,7 @@ Checksum::
 //TODO
 
 Let's illustrate these rules by walking through an example of creating
-bech32 and bech32m addresses.  We'll use the
-For all of the following examples, we'll use the
+bech32 and bech32m addresses.  For all of the following examples, we'll use the
 https://github.com/sipa/bech32/tree/master/ref[bech32m reference code
 for Python].
 
@@ -1325,7 +1321,7 @@ deeper look at what's happening:
 wget https://raw.githubusercontent.com/sipa/bech32/master/ref/python/segwit_addr.py
 2023-01-30 11:59:10 (46.3 MB/s) - ‘segwit_addr.py’ saved [5022/5022]
 
-python
+$ python
 >>> from segwit_addr import *
 >>> from binascii import unhexlify
 
@@ -1411,7 +1407,7 @@ support for new Bitcoin features as soon as they become available.
 
 ((("public and private keys", "private key formats")))The private key
 can be represented in a number of different formats, all of which
-correspond to the same 256-bit number. <<table_4-2>> shows three common
+correspond to the same 256-bit number. <<table_4-2>> shows several common
 formats used to represent private keys. Different formats are used in
 different circumstances. Hexadecimal and raw binary formats are used
 internally in software and rarely shown to users. The WIF is used for
@@ -1450,11 +1446,11 @@ For more information, see <<hd_wallets>>.
 |Type|Prefix|Description
 | Raw | None | 32 bytes
 | Hex | None | 64 hexadecimal digits
-| WIF |  5 | Base58Check encoding: Base58 with version prefix of 128- and 32-bit checksum
+| WIF |  5 | Base58Check encoding: base58 with version prefix of 128- and 32-bit checksum
 | WIF-compressed | K or L | As above, with added suffix 0x01 before encoding
 |=======
 
-<<table_4-3>> shows the private key generated in these three formats.
+<<table_4-3>> shows the private key generated in several different formats.
 
 [[table_4-3]]
 .Example: Same key, different formats
@@ -1482,7 +1478,6 @@ $ bx wif-to-ec 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 $ bx wif-to-ec KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd
 ----
-
 
 [[comp_priv]]
 ===== Compressed private keys
@@ -1516,14 +1511,14 @@ confusion
 |=======
 
 Notice that the hex-compressed private key format has one extra byte at
-the end (01 in hex). While the Base58 encoding version prefix is the
+the end (01 in hex). While the base58 encoding version prefix is the
 same (0x80) for both WIF and WIF-compressed formats, the addition of one
-byte on the end of the number causes the first character of the Base58
+byte on the end of the number causes the first character of the base58
 encoding to change from a 5 to either a _K_ or _L_. Think of this as the
-Base58 equivalent of the decimal encoding difference between the number
+base58 equivalent of the decimal encoding difference between the number
 100 and the number 99. While 100 is one digit longer than 99, it also
 has a prefix of 1 instead of a prefix of 9. As the length changes, it
-affects the prefix. In Base58, the prefix 5 changes to a _K_ or _L_ as
+affects the prefix. In base58, the prefix 5 changes to a _K_ or _L_ as
 the length of the number increases by one byte.
 
 Remember, these formats are _not_ used interchangeably. In a newer
@@ -1542,11 +1537,10 @@ compressed. The compressed public keys will be used to produce Bitcoin
 addresses and those will be used in transactions. When exporting private
 keys from a new wallet that implements compressed public keys, the WIF
 is modified, with the addition of a one-byte suffix +01+ to the private
-key. The resulting Base58Check-encoded private key is called a
+key. The resulting base58check-encoded private key is called a
 "compressed WIF" and starts with the letter _K_ or _L_, instead of
-starting with "5" as is the case with WIF-encoded (noncompressed) keys
+starting with "5" as is the case with WIF-encoded (uncompressed) keys
 from older wallets.
-
 
 [TIP]
 ====
@@ -1564,7 +1558,6 @@ because it has the added +01+ suffix to distinguish it from an
 following sections we will look at advanced forms of keys and addresses,
 such as vanity addresses and paper wallets.
 
-
 ==== Vanity Addresses
 
 ((("keys and addresses", "advanced forms", "vanity
@@ -1572,7 +1565,7 @@ addresses")))((("vanity addresses", id="vanity04")))((("addresses",
 "vanity addresses", id="Avanity04")))Vanity addresses are valid Bitcoin
 addresses that contain human-readable messages. For example,
 +1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33+ is a valid address that contains
-the letters forming the word "Love" as the first four Base-58 letters.
+the letters forming the word "Love" as the first four base58 letters.
 Vanity addresses require generating and testing billions of candidate
 private keys, until a Bitcoin address with the desired pattern is found.
 Although there are some optimizations in the vanity generation
@@ -1601,7 +1594,7 @@ it means for the security of Eugenia's charity.((("use cases",
 ===== Generating vanity addresses
 
 It's important to realize that a Bitcoin address is simply a number
-represented by symbols in the Base58 alphabet. The search for a pattern
+represented by symbols in the base58 alphabet. The search for a pattern
 like "1Kids" can be seen as searching for an address in the range from
 +1Kids11111111111111111111111111111+ to
 +1Kidszzzzzzzzzzzzzzzzzzzzzzzzzzzzz+. There are approximately 58^29^
@@ -1669,7 +1662,7 @@ early years of Bitcoin but have almost entirely disappeared from use as
 of 2023.  There are two likely causes for this trend:
 
 1. Deterministic wallets: as we saw in <<recovery_code_intro>>, it's possible to
-backup every key in most modern wallets by simply writing down a few
+back up every key in most modern wallets by simply writing down a few
 words or characters.  This is achieved by deriving every key in the
 wallet from those words or characters using a deterministic algorithm.
 It's not possible to use vanity addresses with a deterministic wallet
