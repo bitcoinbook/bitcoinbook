@@ -1029,6 +1029,395 @@ are only used in
 https://transactionfee.info/charts/payments-spending-segwit/[about 10% of transactions].
 Legacy addresses were supplanted by the bech32 family of addresses.
 
+//FIXME: collision attacks
+
+=== Bech32 addresses
+
+In 2017, the Bitcoin protocol was upgraded to prevent transaction
+identifiers (txids) from being changed without the consent of a spending
+user (or a quorum of signers when multiple signatures are required).
+The upgrade, called _segregated witness_ (or _segwit_ for short),  also
+provided additional capacity for transaction data in blocks and several
+other benefits.  However, users wanting direct access to segwit's
+benefits had to accept payments to variations on the legacy P2PKH and
+P2SH scripts.
+
+As mentioned in <<p2sh>>, one of the advantages of the P2SH output type
+was that a spender (such as Alice) didn't need to know the details of
+the script the receiver (such as Bob) used.  The segwit upgrade was
+designed to be compatible with this mechanism, allowing users to
+immediately begin accessing many of the new benefits by using a P2SH
+address.  But for Bob to gain access to all of the benefits, he would
+need Alice's wallet to pay him using a different type of script.  That
+would require Alice's wallet to upgrade to supporting the new scripts.
+
+At first, Bitcoin developers proposed BIP142, which would continue using
+Base58Check with a new version byte, similar to the P2SH upgrade.  But
+getting all wallets to upgrade to new scripts with a new Base58Check
+version was expected to require almost as much work as getting them to
+upgrade to an entirely new address format, so several Bitcoin
+contributors set out to design the best possible address format.  They
+identified several problems with Base58Check:
+
+- Its mixed case presentation made it inconvenient to read aloud or
+  transcribe.  Try reading one of the legacy addresses in this chapter
+  to a friend who you have transcribe it.  Notice how you have to prefix
+  every letter with the words "uppercase" and "lowercase".  Also note
+  when you review their writing that the uppercase and lowercase
+  versions of some letters can look similar in many people's
+  handwriting.
+
+- It can detect errors, but it can't help users correct those errors.
+  For example, if you accidentally transpose two characters when manually
+  entering an address, your wallet will almost certainly warn that a
+  mistake exists, but it won't help you figure out where the error is
+  located.  It might take you several frustrating minutes to eventually
+  discover the mistake.
+
+- A mixed case alphabet also requires extra space to encode in QR code
+  images, which are commonly used to share addresses and invoices
+  between wallets.  That extra space means QR codes need to be larger at
+  the same resolution or they become harder to scan quickly.
+
+- It requires every spender wallet upgrade to support new protocol
+  features like P2SH and segwit.  Although the upgrades themselves might
+  not require much code, experience shows that many wallet authors are
+  busy with other work and can sometimes delay upgrading for years.
+  This adversely affects everyone who wants to use the new features.
+
+The developers working on an address format for segwit found solutions
+for each of these problems in a new address format called
+bech32 (pronounced with a soft "ch", as in "besh thirty-two").  The
+"bech" stands for BCH, the initials of the three individuals who
+discovered the cyclic code in 1959 and 1960 upon which bech32 is based.
+The "32" stands for the number of characters in the bech32 alphabet
+(similar to the 58 in Base58Check).
+
+- Bech32 uses only numbers and a single case of letters (preferably
+  rendered in lowercase).  Despite its alphabet being almost half the
+  size of the Base58Check alphabet, bech32 addresses are only slightly
+  longer than the longest equivalent P2PKH legacy addresses.
+
+- Bech32 can both detect and help correct errors.  In an address of an
+  expected length, it is mathematically guaranteed to detect any error
+  affecting four characters or less; that's more reliable than
+  Base58Check.  For longer errors, it will fail to detect them less than
+  one time in a billion, which is roughly the same reliability as
+  Base58Check.  Even better, for an address typed with just a few
+  errors, it can tell the user where those errors occurred, allowing them
+  quickly correct minor transcription mistakes.  See <<bech32_typo_detection>>
+  for an example of an address entered with errors.
+
+[[bech32_typo_detection]]
+.Bech32 typo detection
+====
+Address:
+  bc1p9nh05ha8wrljf7ru236aw**n**4t2x0d5ctkkywm**v**9sclnm4t0av2vgs4k3au7
+
+Detected errors shown in bold.  Generated using the
+https://bitcoin.sipa.be/bech32/demo/demo.html[bech32 address decoder demo].
+====
+
+- Bech32 is preferably written with only lowercase characters, but those
+  lowercase characters can be replaced with uppercase characters before
+  encoding an address in a QR code.  This allows the use of a special QR
+  encoding mode that uses less space.  Notice the difference in size and
+  complexity of the two QR codes for the same address in
+  <<bech32_qrcode_uc_lc>>.
+
+[[bech32_qrcode_uc_lc]]
+.The same bech32 address QR encoded in uppercase and lowercase
+image::images/bech32-qrcode-uc-lc.png["The same bech32 address QR encoded in uppercase and lowercase"]
+
+- Bech32 takes advantage of an upgrade mechanism designed as part of
+  segwit to make it possible for spender wallets to be able to pay
+  output types that aren't in use yet.  The goal was to allow developers
+  to build a wallet today that allows spending to a bech32 address which
+  will work without changes even years from now when a later protocol
+  upgrade adds a new feature for users who receive bitcoins.  It was
+  hoped that we might never again need to go through the system-wide
+  upgrade cycles necessary to allow people to fully use P2SH and segwit.
+
+==== Problems with bech32 addresses
+
+Bech32 addresses would have been a success in every area except for one
+problem.  The mathematical guarantees about their ability to detect
+errors only apply if the length of the address you enter into a wallet
+is the same length of the original address.  If you add or remove any
+characters during transcription, the guarantee doesn't apply and your
+wallet may spend funds to a wrong address.  However, even without the
+guarantee, it was thought that it would be unlikely that a user adding
+or removing characters would produce a string with a valid checksum.
+
+Unfortunately, the choice for one of the constants in the bech32
+algorithm just happened to make it very easy to add or remove the letter
+"q" in the penultimate position of an address that ends with the letter
+"p".  In those cases, you can also add or remove the letter "q" multiple
+times.  This will be caught by the checksum some of the time, but it
+will be missed far more often than the one-in-a-billion expectations for
+bech32's substitution errors.
+
+.Extending the length of bech32 address without invalidating its checksum
+====
+----
+Intended bech32 address:
+bc1pqqqsq9txsqp
+
+Incorrect addresses with a valid checksum:
+bc1pqqqsq9txsqqqqp
+bc1pqqqsq9txsqqqqqqp
+bc1pqqqsq9txsqqqqqqqqp
+bc1pqqqsq9txsqqqqqqqqqp
+bc1pqqqsq9txsqqqqqqqqqqqp
+----
+====
+//from segwit_addr import *
+//
+//for foo in range(0,1000):
+//    addr = encode('bc', 1, foo.to_bytes(3,'big'))
+//    print(foo, addr)
+
+
+
+For the initial version of segwit (version 0), this wasn't a practical
+concern.  Only two valid lengths were defined for v0 segwit outputs: 22
+bytes and 34 bytes.  Those correspond to bech32 addresses 42 characters
+or 62 characters long, so someone would need to add or remove the letter "q"
+from the penultimate position of a bech32 address 20 times in order to
+send money to an invalid address without a wallet being able to detect
+it.  However, it would become a problem for users in the future if
+a segwit-based upgrade were ever to be implemented.
+
+==== Bech32m
+
+Although bech32 worked well for segwit v0, developers didn't want to
+unnecessarily constrain output sizes in later versions of segwit.
+Without constraints, adding or removing a single "q" in a bech32 address
+could result in a user accidentally sending their money to an
+output that was either unspendable or spendable by anyone (allowing
+those bitcoins to be taken by anyone).  Developers exhaustively analyzed the bech32
+problem and found that changing a single constant in their algorithm
+would eliminate the problem, ensuring that any insertion or deletion of
+up to five characters will only fail to be detected less often than one
+time in a billion.
+
+//https://gist.github.com/sipa/a9845b37c1b298a7301c33a04090b2eb
+
+The version of bech32 with a single different constant is known as
+Bech32 Modified (bech32m).  All of the characters in bech32 and bech32m
+addresses for the same underlying data will be identical except for the
+last six (the checksum).  That means a wallet will need to know which
+version is in use in order to validate the checksum, but both address
+types contain an internal version byte that makes determining that easy.
+
+===== Encoding and Decoding bech32m addresses
+
+In this section, we'll look at the encoding and parsing rules for
+bech32m Bitcoin addresses since they encompass the ability to parse
+bech32 addresses and are the current recommended address format for
+Bitcoin wallets.
+
+Bech32m addresses start with a Human Readable Part (HRP).  There are
+rules in BIP173 for creating your own HRPs, but for Bitcoin you only
+need to know about the HRPs already chosen:
+
+.Bech32 HRPs for Bitcoin
+[cols="1,1"]
+|===
+| bc
+| Bitcoin mainnet
+
+| tb
+| Bitcoin testnet
+|===
+
+The HRP is followed by a separator, the number "1".  Earlier proposals
+for a protocol separator used a colon but some operating systems and
+applications which allow a user to double click on a word to highlight
+it for copy and pasting won't extend the highlighting to and past a
+colon.  A number ensured double-click highlighting would work with any
+program that supports bech32m strings in general (which include other
+numbers).  The number "1" was chosen because bech32 strings don't
+otherwise use it in order to prevent accidental transliteration between
+the number "1" and the lowercase letter "l".
+
+The other part of a bech32m address is called the "data part".  There
+are three elements to this part:
+
+Witness version::
+  A single byte which encodes as a single character
+  in a bech32m Bitcoin address immediately following the separator.
+  This letter represents the segwit version.  The letter "q" is the
+  encoding of "0" for segwit v0, the initial version of segwit where
+  bech32 addresses were introduced.  The letter "p" is the encoding of
+  "1" for segwit v1 (also called taproot) where bech32m began to be
+  used.  There are seventeen possible versions of segwit and it's
+  required for Bitcoin that the first byte of a bech32m data part decode
+  to the number 0 through 16 (inclusive).
+
+Witness program::
+  From 2 to 40 bytes.  For segwit v0, this witness program
+  must be either 20 or 32 bytes; no other length is valid.  For segwit
+  v1, the only defined length as of this writing is 32 bytes but other
+  lengths may be defined later.
+
+Checksum::
+  Exactly 6 characters.  This is created using a BCH code, a type of
+  error correction code (although for Bitcoin addresses, we'll see later
+  that it's essential to use the checksum only for error detection--not
+  correction).
+//TODO
+
+Let's illustrate these rules by walking through an example of creating
+bech32 and bech32m addresses.  We'll use the
+For all of the following examples, we'll use the
+https://github.com/sipa/bech32/tree/master/ref[bech32m reference code
+for Python].
+
+Let's start by generating four output scripts, one for each of the
+different segwit outputs in use at the time of publication, plus one for
+a future segwit version that doesn't yet have a defined meaning.
+
+// bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee
+// 2b626ed108ad00a944bb2922a309844611d25468
+//
+// bc1qvj9r9egtd7mu2gemy28kpf4zefq4ssqzdzzycj7zjhk4arpavfhsct5a3p
+// 648a32e50b6fb7c5233b228f60a6a2ca4158400268844c4bc295ed5e8c3d626f
+//
+// bc1p9nh05ha8wrljf7ru236awm4t2x0d5ctkkywmu9sclnm4t0av2vgs4k3au7
+// 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311
+//
+// bc1sqqqqkfw08p
+// O_16 OP_PUSH2 0000
+
+.Scripts for different types of segwit outputs
+[cols="1,1"]
+|===
+| P2WPKH
+| OP_0 2b626ed108ad00a944bb2922a309844611d25468
+
+| P2WSH
+| OP_0 648a32e50b6fb7c5233b228f60a6a2ca4158400268844c4bc295ed5e8c3d626f
+
+| P2TR
+| OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311
+
+| Future Example
+| OP_16 0000
+|===
+
+For the P2WPKH output, the witness program contains a commitment constructed in exactly the same
+way as the commitment for a P2PKH output seen in <<p2pkh>>.  A public key is passed into a SHA256 hash
+function.  The resultant 32 byte digest is then passed into a RIPEMD-160
+hash function.  The digest of that function (the commitment) is placed
+in the witness program.
+
+For the P2WSH output, we don't use the P2SH algorithm.  Instead we take
+the script, pass it into a SHA256 hash function, and use the 32-byte
+digest of that function in the witness program.  For P2SH, the SHA256
+digest was hashed again with RIPEMD-160, but that may not be secure in
+some cases; for details, see <<p2sh_collision_attacks>>.  A result of
+using SHA256 without RIPEMD160 is that P2WSH commitments are 32 bytes
+(256 bits) instead 20 bytes (160 bits).
+
+For the Pay-to-Taproot (P2TR) output, the witness program is a point on
+the secp256k1 curve.  It may be a simple public key, but in most cases
+it should be a public key that commits to some additional data.  We'll
+learn more about that commitment in <<FIXME_later_chapter_about_taproot>>.
+
+For the example of a future segwit version, we simply use the highest
+possible segwit version number (16) and the smallest allowed witness
+program (2 bytes) with a null value.
+
+Now that we know the version number and the witness program, we can
+convert each of them into a bech32 address.  Let's use the bech32m reference
+library for Python to quickly generate those addresses, and then take a
+deeper look at what's happening:
+
+----
+wget https://raw.githubusercontent.com/sipa/bech32/master/ref/python/segwit_addr.py
+2023-01-30 11:59:10 (46.3 MB/s) - ‘segwit_addr.py’ saved [5022/5022]
+
+python
+>>> from segwit_addr import *
+>>> from binascii import unhexlify
+
+>>> help(encode)
+encode(hrp, witver, witprog)
+    Encode a segwit address.
+
+>>> encode('bc', 0, unhexlify('2b626ed108ad00a944bb2922a309844611d25468'))
+'bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee'
+>>> encode('bc', 0, unhexlify('648a32e50b6fb7c5233b228f60a6a2ca4158400268844c4bc295ed5e8c3d626f'))
+'bc1qvj9r9egtd7mu2gemy28kpf4zefq4ssqzdzzycj7zjhk4arpavfhsct5a3p'
+>>> encode('bc', 1, unhexlify('2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311'))
+'bc1p9nh05ha8wrljf7ru236awm4t2x0d5ctkkywmu9sclnm4t0av2vgs4k3au7'
+>>> encode('bc', 16, unhexlify('0000'))
+'bc1sqqqqkfw08p'
+----
+
+If we open the file +segwit_addr.py+ and look at what the code is doing,
+the first thing we will notice
+is the sole difference between bech32 (used for segwit v0) and bech32m
+(used for later segwit versions) is the constant.
+
+----
+BECH32_CONSTANT = 1
+BECH32M_CONSTANT = 0x2bc830a3
+----
+
+Next we notice the code produce the checksum.  In the final step of the
+checksum, the appropriate constant is merged into the value using an xor
+operation.  That single value is the only difference between bech32 and
+bech32m.
+
+With the checksum created, each 5-bit character in the data part
+(including the witness version, witness program, and checksum) is
+converted to alphanumeric characters.
+
+For decoding back into a scriptPubKey, we work in reverse.  First let's
+use the reference library to decode two of our addresses:
+
+----
+>>> help(decode)
+decode(hrp, addr)
+    Decode a segwit address.
+
+>>> _ = decode("bc", "bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee"); _[0], bytes(_[1]).hex()
+(0, '2b626ed108ad00a944bb2922a309844611d25468')
+>>> _ = decode("bc", "bc1p9nh05ha8wrljf7ru236awm4t2x0d5ctkkywmu9sclnm4t0av2vgs4k3au7"); _[0], bytes(_[1]).hex()
+(1, '2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311')
+----
+
+We get back both the witness version and the witness program.  Those can
+be inserted into the template for our scriptPubKey:
+
+----
+<version> <program>
+----
+
+For example:
+
+----
+OP_0 2b626ed108ad00a944bb2922a309844611d25468
+OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311
+----
+
+[WARNING]
+====
+One
+possible mistake here to be aware of is that a witness version of `0` is
+for `OP_0`, which uses the byte 0x00--but a witness version of `1` uses
+`OP_1`, which is byte 0x51.  Witness versions `2` through `16` use 0x52
+through 0x60, respectively.
+====
+
+When implementing bech32m encoding or decoding, we very strongly
+recommend that you use the test vectors provided in BIP350.  We also ask
+that you ensure your code passes the test vectors related to paying future segwit
+versions that haven't been defined yet.  This will help make your
+software usable for many years to come even if you aren't able to add
+support for new Bitcoin features as soon as they become available.
 
 ==== Key Formats
 
