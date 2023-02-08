@@ -450,44 +450,167 @@ library] to do the elliptic curve math.
 .Elliptic curve cryptography: visualizing the multiplication of a point G by an integer k on an elliptic curve
 image::images/mbc2_0404.png["ecc_illustrated"]
 
-=== Bitcoin Addresses
+=== ScriptPubKey and ScriptSig
 
-((("keys and addresses", "bitcoin addresses", id="KAaddress04")))A
-Bitcoin address is a string of digits and characters that can be shared
-with anyone who wants to send you money. Addresses produced from public
-keys consist of a string of numbers and letters, beginning with the
-digit "1." Here's an example of a bitcoin address:
+Although the illustration from the original Bitcoin paper, <<pay-to-pure-pubkey>>,
+shows public keys (pubkeys) and signatures (sigs) being used directly,
+the first version of Bitcoin instead had payments sent to a field called
+_scriptPubKey_ and had them authorized by a field called _scriptSig_.
+These fields allow additional operations to be performed in addition to
+(or instead of) verifying that a signature corresponds to a public key.
+For example, a scriptPubKey can contain two public keys and require two
+corresponding signatures be placed in the spending scriptSig.
+
+Later, in <<tx_script>>, we'll learn about scripts in detail.  For now,
+all we need to understand is that bitcoins are received to a
+scriptPubKey which acts like a public key, and bitcoin spending is
+authorized by a scriptSig which acts like a signature.
+
+[[p2pk]]
+=== IP Addresses: The Original Address For Bitcoin
+
+We've established that Alice can pay Bob by assigning some of her
+bitcoins to one of Bob's public keys.  But how does Alice get one of
+Bob's public keys?  Bob could just give her a copy, but let's look again
+at the public key we worked with in <<public_key_derivation>>.  Notice
+that it's quite long.  Imagine Bob trying to read that to Alice over the
+phone.
 
 ----
-1J7mdg5rbQyUHENYdx39WVWK7fsLpEoXZy
+x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
+y = 07CF33DA18BD734C600B96A72BBC4749D5141C90EC8AC328AE52DDFE2E505BDB
 ----
 
-The Bitcoin address is what appears most commonly in a transaction as
-the "recipient" of the funds. If we compare a bitcoin transaction to a
-paper check, the Bitcoin address is the beneficiary, which is what we
-write on the line after "Pay to the order of." On a paper check, that
-beneficiary can sometimes be the name of a bank account holder, but can
-also include corporations, institutions, or even cash. Because paper
-checks do not need to specify an account, but rather use an abstract
-name as the recipient of funds, they are very flexible payment
-instruments. Bitcoin transactions use a similar abstraction, the Bitcoin
-address, to make them very flexible. A Bitcoin address can represent the
-owner of a private/public key pair, or it can represent something else,
-such as a payment script, as we will see in <<p2sh>>. For now, let's
-examine the simple case, a Bitcoin address that represents, and is
-derived from, a public key.
+Instead of direct public key entry, the earliest version of Bitcoin
+software allowed a spender to enter the receiver's IP address.  This
+feature was later removed--there are many problems
+with using IP addresses--but a quick description of it will help us
+better understand why certain features may have been added to the
+Bitcoin protocol.
 
-((("addresses", "algorithms used to create")))The Bitcoin address is
-derived from the public key through the use of one-way cryptographic
-hashing. A "hashing algorithm" or simply "hash algorithm" is a one-way
-function that produces a fingerprint or "hash" of an arbitrary-sized
-input. Cryptographic hash functions are used extensively in bitcoin: in
-Bitcoin addresses, in script addresses, and in the mining Proof-of-Work
-algorithm. The algorithms used to make a Bitcoin address from a public
-key are the Secure Hash Algorithm (SHA) and the RACE Integrity
-Primitives Evaluation Message Digest (RIPEMD), specifically SHA256 and
-RIPEMD160.
+[[bitcoin_01_send]]
+.Early send screen for Bitcoin via http://web.archive.org/web/20090722011820/https://bitcoin.org/[The Internet Archive]
+image::images/bitcoin-01-send.png["Early Bitcoin send screen"]
 
+If Alice entered Bob's IP address in Bitcoin 0.1, her full node would
+establish a connection with his full node and receive a new public key
+from Bob's wallet that his node had never previously given anyone.  This
+being a new public key was important to ensure that different
+transactions paying Bob couldn't be connected together by someone
+looking at the blockchain and noticing that all of the transactions paid
+the same public key.
+
+Using the public key her node received from Bob's node, Alice's wallet
+would construct a transaction output paying a very simple scriptPubKey:
+
+----
+<Bob's public key> OP_CHECKSIG
+----
+
+Bob would later be able to spend that output with a scriptSig consisting
+entirely of his signature:
+
+----
+<Bob's signature>
+----
+
+To figure out what a scriptPubKey and scriptSig are doing, you can
+combine them together (scriptSig first) and then note that each piece of
+data (shown in angle brackets) is placed at the top of a list of items,
+called a stack.  When an operation code (opcode) is encountered, it uses
+items from the stack, starting with the topmost items.  Let's look at
+how that works by beginning with the combined script:
+
+----
+<Bob's signature> <Bob's public key> OP_CHECKSIG
+----
+
+For this script, Bob's signature is put on the stack, then Bob's public
+key is placed on top of it.  The +OP_CHECKSIG+ operation consumes two
+elements, starting with the public key and followed by the signature,
+removing them from the stack.  It verifies the signature corresponds to
+the public key and also commits to (signs) the various fields in the
+transaction.  If the signature is correct, OP_CHECKSIG replaces itself
+on the stack with the value 1; if the signature was not correct, it
+replaces itself with a 0.  If the top of the stack is non-zero at the
+end of evaluation, the script passes.  If all scripts in a transaction
+pass, and all of the other details about the transaction are valid, then
+full nodes will consider the transaction to be valid.
+
+In short, the script above uses the same public key and signature
+described in the original paper but adds in the complexity of two script
+fields and an opcode.  That seems like extra work here, but we'll begin
+to see the benefits when we look at <<p2pkh>>.
+
+This type of output is known today as _Pay-to-Public-Key_, or _P2PK_ for
+short.  It was never widely used for payments, and no widely-used
+program has supported IP address payments for almost a decade.
+
+[[p2pkh]]
+=== Legacy Addresses for P2PKH
+
+Entering the IP address of the person you want to pay has a number of
+advantages, but it also has a number of downsides.  One particular
+downside is that the receiver needs their wallet to be online at their
+IP address, and it needs to be accessible from the outside world.  For
+a lot of people, that isn't an option.  They turn their computers off at
+night, their laptops go to sleep, they're behind firewalls, or they're
+using Network Address Translation (NAT).
+
+This brings us back to the problem of receivers like Bob having to give
+spenders like Alice a long public key.  The shortest version of Bitcoin
+public keys known to the developers of early Bitcoin were 65 bytes, or
+about 130 characters when written in hexadecimal.  However, Bitcoin
+already contained several data structures much larger than 65 bytes
+which needed to be securely referenced in other parts of Bitcoin using the
+smallest amount of data that was secure.
+
+Bitcoin accomplishes that with a _hash function_, a function which takes
+a potentially large amount of data and scrambles (hashes) it into a
+fixed amount of data.  A cryptographic hash function will always produce
+the same output when given the same input, and a secure function will
+also make it impractical for somebody to choose a different input that
+produces a previously-seen output.  That makes the output a _commitment_
+to the input.  It's a promise that, in practice, only input _x_ will
+produce output _X_.
+
+For example, imagine I want to ask you a question and also give you my
+answer in a form that you can't read immediately.  Let's say the
+question is, "in what year did Satoshi Nakamoto start working on
+Bitcoin?"  I'll give you my commitment to the answer in the form of
+output from the SHA256 hash function, the function most commonly used in
+Bitcoin:
+
+----
+94d7a772612c8f2f2ec609d41f5bd3d04a5aa1dfe3582f04af517d396a302e4e
+----
+
+Later, after you tell me your guess to the answer of the question, I can
+reveal my answer and prove to you that my answer, as input to the hash
+function, produces exactly the same output I gave you earlier:
+
+----
+$ echo "2007.  He said about a year and a half before Oct 2008" | sha256sum
+94d7a772612c8f2f2ec609d41f5bd3d04a5aa1dfe3582f04af517d396a302e4e
+----
+
+Now imagine that we ask Bob the question, "what is your public key?" Bob
+can use a hash function to give us a cryptographically secure commitment
+to his public key.  If he later reveals his key, and we verify it
+produces the same commitment he previously gave us, we can be sure it
+was the exact same key that was used to create that earlier commitment.
+
+The SHA256 hash function is considered to be very secure and produces
+256 bits (32 bytes) of output, less than half the size of original
+Bitcoin public keys.  However, there are other slightly less secure hash
+functions that produce smaller output, such as the RIPEMD160 hash
+function whose output is 160 bits (20 bytes).  For reasons Satoshi
+Nakamoto never stated, the original version of Bitcoin made commitments
+to public keys by first hashing the key with SHA256 and then hashing
+that output with RIPEMD160; this produced a 20-byte commitment to the
+public key.
+
+We can look at that algorithmically.
 Starting with the public key _K_, we compute the SHA256 hash and then
 compute the RIPEMD160 hash of the result, producing a 160-bit (20-byte)
 number:
@@ -499,29 +622,58 @@ number:
 \end{equation}
 ++++
 
-where _K_ is the public key and _A_ is the resulting Bitcoin address.
+where _K_ is the public key and _A_ is the resulting commitment.
 
+Now that we understand how to make a commitment to a public key, we need
+to figure out how to use it in a transaction.  Consider the following
+scriptPubKey:
 
-[TIP]
-====
-A Bitcoin address is _not_ the same as a public key. Bitcoin addresses
-are derived from a public key using a one-way function.
-====
+----
+OP_DUP OP_HASH160 <Bob's commitment> OP_EQUAL OP_CHECKSIG
+----
 
-Bitcoin addresses are almost always encoded as "Base58Check" (see
-<<base58>>), which uses 58 characters (a Base58 number system) and a
-checksum to help human readability, avoid ambiguity, and protect against
-errors in address transcription and entry. Base58Check is also used in
-many other ways in bitcoin, whenever there is a need for a user to read
-and correctly transcribe a number, such as a Bitcoin address, a private
-key, an encrypted key, or a script hash. In the next section we will
-examine the mechanics of Base58Check encoding and decoding and the
-resulting representations. <<pubkey_to_address>> illustrates the
-conversion of a public key into a Bitcoin address.
+And also the following scriptSig:
 
-[[pubkey_to_address]]
-.Public key to Bitcoin address: conversion of a public key into a Bitcoin address
-image::images/mbc2_0405.png["pubkey_to_address"]
+----
+<Bob's signature> <Bob's public key>
+----
+
+Together, they form the following script:
+
+----
+<sig> <pubkey> OP_DUP OP_HASH160 <commitment> OP_EQUALVERIFY OP_CHECKSIG
+----
+
+As we did in <<p2pk>>, we start putting items on the stack.  Bob's
+signature goes on first; his public key is then placed on top of the
+stack.  The +OP_DUP+ operation duplicates the top item, so the top and
+second-to-top item on the stack are now both Bob's public key.  The
++OP_HASH160+ operation consumes (removes) the top public key and
+replaces it with the result of hashing it with +RIPEMD160(SHA256(K))+,
+so now the top of the stack is a hash of Bob's public key.  Next, the
+commitment to Bob's public key is added to the top of the stack.  The
++OP_EQUALVERIFY+ operation consumes the top two items and verifies that
+they are equal; that should be the case if the public key Bob provided
+in the scriptSig is the same public key used to create the commitment in
+the scriptPubKey that Alice paid.  If +OP_EQUALVERIFY+ fails, the whole
+script fails.  Finally, we're left with a stack containing just Bob's
+signature and his public key; the +OP_CHECKSIG+ opcode verifies they
+correspond with each other and that the signature commits to the
+transaction.
+
+Although this process of Paying To a Public Key Hash (_P2PKH_) may seem
+convoluted, it allows Alice's payment to
+Bob to contain only a 20 byte commitment to his public key instead of
+the key itself, which would've been 65 bytes in the original version of
+Bitcoin.  That's a lot less data for Bob to have to communicate to
+Alice.
+
+However, we haven't yet discussed how Bob gets those 20 bytes from his
+Bitcoin wallet to Alice's wallet.  There are commonly used encodings for
+byte values, such as hexadecimal, but any mistake made in copying a
+commitment would result in the bitcoins being sent to an unspendable
+output, causing them to be lost forever.  In <<base58>>, we'll
+look at compact encoding and reliable checksums.
 
 [[base58]]
 ==== Base58 and Base58Check Encoding
@@ -684,6 +836,9 @@ $ bx wif-to-ec 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
 $ bx wif-to-ec KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd
 ----
+[[pubkey_to_address]]
+.Public key to Bitcoin address: conversion of a public key into a Bitcoin address
+image::images/mbc2_0405.png["pubkey_to_address"]
 
 ===== Decode from Base58Check
 
