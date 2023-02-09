@@ -640,7 +640,7 @@ output, causing them to be lost forever.  In <<base58>>, we'll
 look at compact encoding and reliable checksums.
 
 [[base58]]
-==== Base58 and Base58Check Encoding
+=== Base58Check Encoding
 
 ((("keys and addresses", "Bitcoin addresses", "Base58 and Base58check
 encoding")))((("Base58 and Base58check encoding",
@@ -648,18 +648,18 @@ id="base5804")))((("addresses", "Base58 and Base58check encoding",
 id="Abase5804")))In order to represent long numbers in a compact way,
 using fewer symbols, many computer systems use mixed-alphanumeric
 representations with a base (or radix) higher than 10. For example,
-whereas the traditional decimal system uses the 10 numerals 0 through 9,
+whereas the traditional decimal system uses 10 numerals, 0 through 9,
 the hexadecimal system uses 16, with the letters A through F as the six
 additional symbols. A number represented in hexadecimal format is
 shorter than the equivalent decimal representation. Even more compact,
 Base64 representation uses 26 lowercase letters, 26 capital letters, 10
 numerals, and 2 more characters such as &#x201c;`+`&#x201d; and "/" to
 transmit binary data over text-based media such as email. Base64 is most
-commonly used to add binary attachments to email. Base58 is a text-based
-binary-encoding format developed for use in bitcoin and used in many
-other cryptocurrencies. It offers a balance between compact
-representation, readability, and error detection and prevention. Base58
-is a subset of Base64, using upper- and lowercase letters and numbers,
+commonly used to add binary attachments to email.
+
+Base58 is a text-based binary-encoding format that offers a balance
+between compact representation and readability. Base58 is similar to
+Base64, using upper- and lowercase letters and numbers,
 but omitting some characters that are frequently mistaken for one
 another and can appear identical when displayed in certain fonts.
 Specifically, Base58 is Base64 without the 0 (number zero), O (capital
@@ -677,11 +677,11 @@ shows the full Base58 alphabet.
 ====
 
 To add extra security against typos or transcription errors, Base58Check
-is a Base58 encoding format, frequently used in bitcoin, which has a
+is a Base58 encoding format, frequently used in Bitcoin, which has a
 built-in error-checking code. The checksum is an additional four bytes
 added to the end of the data that is being encoded. The checksum is
 derived from the hash of the encoded data and can therefore be used to
-detect and prevent transcription and typing errors. When presented with
+detect transcription and typing errors. When presented with
 Base58Check code, the decoding software will calculate the checksum of
 the data and compare it to the checksum included in the code. If the two
 do not match, an error has been introduced and the Base58Check data is
@@ -691,10 +691,10 @@ otherwise result in loss of funds.
 
 To convert data (a number) into a Base58Check format, we first add a
 prefix to the data, called the "version byte," which serves to easily
-identify the type of data that is encoded. For example, in the case of a
-Bitcoin address the prefix is zero (0x00 in hex), whereas the prefix
-used when encoding a private key is 128 (0x80 in hex). A list of common
-version prefixes is shown in <<base58check_versions>>.
+identify the type of data that is encoded. For example, the prefix zero
+(0x00 in hex) indicates that the data should be used as the commitment (hash) in
+a legacy P2PKH scriptPubKey.  A list of common version prefixes is shown
+in <<base58check_versions>>.
 
 Next, we compute the "double-SHA" checksum, meaning we apply the SHA256
 hash-algorithm twice on the previous result (prefix and data):
@@ -705,7 +705,7 @@ checksum = SHA256(SHA256(prefix+data))
 
 From the resulting 32-byte hash (hash-of-a-hash), we take only the first
 four bytes. These four bytes serve as the error-checking code, or
-checksum. The checksum is concatenated (appended) to the end.
+checksum. The checksum is appended to the end.
 
 The result is composed of three items: a prefix, the data, and a
 checksum. This result is encoded using the Base58 alphabet described
@@ -716,8 +716,8 @@ encoding process.
 .Base58Check encoding: a Base58, versioned, and checksummed format for unambiguously encoding bitcoin data
 image::images/mbc2_0406.png["Base58CheckEncoding"]
 
-In bitcoin, most of the data presented to the user is
-Base58Check-encoded to make it compact, easy to read, and easy to detect
+In Bitcoin, more than just addresses are presented to the user in
+Base58Check encoding to make it compact, easy to read, and easy to detect
 errors. The version prefix in Base58Check encoding is used to create
 easily distinguishable formats, which when encoded in Base58 contain
 specific characters at the beginning of the Base58Check-encoded payload.
@@ -733,21 +733,23 @@ version prefixes and the resulting Base58 characters are shown in
 [options="header"]
 |=======
 |Type| Version prefix (hex)| Base58 result prefix
-| Bitcoin Address | 0x00 | 1
-| Pay-to-Script-Hash Address | 0x05 | 3
-| Bitcoin Testnet Address | 0x6F | m or n
+| Address for Pay-to-Public-Key-Hash (P2PKH) | 0x00 | 1
+| Address for Pay-to-Script-Hash (P2SH) | 0x05 | 3
+| Testnet Address for P2PKH | 0x6F | m or n
+| Testnet Address for P2SH | 0xC4 | 2
 | Private Key WIF |  0x80 | 5, K, or L
-| BIP-38 Encrypted Private Key | 0x0142 | 6P
 | BIP-32 Extended Public Key | 0x0488B21E | xpub
 |=======
 
-==== Key Formats
+Putting together public keys, hash-based commitments, and Base58Check
+encocding, we can see the illustration of the conversion of a public key
+into a Bitcoin address in <<pubkey_to_address>>.
 
 [[pubkey_to_address]]
 .Public key to Bitcoin address: conversion of a public key into a Bitcoin address
 image::images/mbc2_0405.png["pubkey_to_address"]
 
-===== Decode from Base58Check
+==== Decode from Base58Check
 
 The Bitcoin Explorer commands (see <<appdx_bx>>) make it easy to write
 shell scripts and command-line "pipes" that manipulate bitcoin keys,
@@ -780,8 +782,6 @@ wrapper
     version 128
 }
 ----
-
-FIXME:HERE
 
 [[comp_pub]]
 === Compressed public keys
