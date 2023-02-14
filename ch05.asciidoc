@@ -113,6 +113,63 @@ possible to store private keys more securely than public keys.
 .Deterministic key generation: a deterministic sequence of keys derived from a seed for a wallet database
 image::images/mbc2_0502.png["Deterministic Wallet"]
 
+==== Public Child Key Derivation
+
+In <<public_key_derivation>>, we learned how to create a public key from a private key
+using Elliptic Curve Cryptography (ECC).  Although operations on an
+elliptic curve are not intuitive, they are analogous to the addition,
+subtraction, and multiplication operations we use in regular
+arithmetic.  In other words, it's possible to add or subtract from a
+public key, or to multiply it.  Consider the equation we used for
+generating a public key (K) from a private key (k) using the generator
+point (G):
+
+----
+K == k * G
+----
+
+It's possible to create a derived keypair, called a child keypair, by
+simply adding the same value to both sides of the equation:
+
+----
+K + (123 * G) == (k + 123) * G
+----
+
+An interesting consequence of this is that adding `123` to the public
+key can be done using entirely public information.  For example, Alice
+generates public key K and gives it to Bob.  Bob doesn't know the
+private key, but he does know the global constant G, so he can add any
+value to the public key to produce a derived public child key.  If he
+then tells Alice the value he added to the public key, she can add the
+same value to the private key, producing a derived private child key
+that corresponds to the public child key Bob created.
+
+In other words, it's possible to create child public keys even if you
+don't know anything about the parent private key.  The value added to a
+public key is known as a _key tweak._  If a deterministic algorithm is
+used for generating the key tweaks, then it's possible to for someone
+who doesn't know the private key to create an essentially unlimited
+sequence of public child keys from a single public parent key. The
+person who controls the private parent key can then use the same key
+tweaks to create all the corresponding private child keys.
+
+This technique is commonly used is to separate wallet application
+frontends (which don't require private keys) from signing operations
+(which do require private keys).  For example, Alice's frontend
+distributes her public keys to people wanting to pay her.  Later, when
+she wants to spend the received money, she can provide the key tweaks
+she used to a _hardware signing device_ (sometimes confusingly called a
+_hardware wallet_) which securely stores her original private key.  The
+hardware signer uses the tweaks to derive the necessary child private
+keys and uses them to sign the transactions, returning the signed
+transactions to the less-secure frontend for broadcast to the Bitcoin
+network.
+
+Public child key derivation can produce a linear sequence of keys
+similar to the previously seen <<Type1_wallet>>, but modern wallets
+applications use one more trick to provide a tree of keys instead a
+single sequence.
+
 [[hd_wallets]]
 ==== HD Wallets (BIP32/BIP44)
 
