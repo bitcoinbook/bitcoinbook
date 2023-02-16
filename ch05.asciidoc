@@ -469,6 +469,118 @@ application can then retrieve the latest backup file, regenerate the
 encryption key, decrypt the backup, and restore all of the user's labels
 and additional protocol data.
 
+==== Backing Up Key Derivation Paths
+
+In a BIP32 tree of keys, there are approximately four billion first-level
+keys and each of those keys can have its own four billion children, with
+those children each potentially having four billion children of their
+own, and so on.  It's not possible for a wallet application to generate
+even a small fraction of every possible key in a BIP32 tree, which means
+that recovering from data loss requires knowing more than just the
+recovery code, the algorithm for obtaining your seed (e.g. BIP39), and
+the deterministic key derivation algorithm
+(e.g., BIP32)---it also requires knowing what paths in the tree of keys
+your wallet application used for generating the specific keys it distributed.
+
+Two solutions to this problem have been adopted.  The first is using
+standard paths.  Every time there's a change related to the addresses
+that wallet applications might want to generate, someone creates a BIP
+defining what key derivation path to use.  For example, BIP44 defines
+`m/44'/0'/0'` as the path to use for keys in P2PKH scripts (a
+legacy address).  A wallet application implementing this standard uses
+the keys in that path both when it is first started and after a
+restoration from a recovery code.  We call this solution _implicit
+paths_.
+
+[cols="1,1,1"]
+|===
+| Standard | Script | BIP32 Path
+| BIP44    | P2PKH  | m/44'/0'/0'
+| BIP49    | Nested P2WPKH  | m/49'/1'/0'
+| BIP84    | P2WPKH | m/84'/0'/0'
+| BIP86    | P2TR Single-key | m/86'/0'/0'
+|===
+
+The second solution is to back up the path information with the recovery
+code, making it clear with path is used with which scripts.  We call
+this _explicit paths_.
+
+The advantage of implicit paths is that users don't need to keep a record
+of what paths they use.  If the user enters their recovery code into the
+same wallet application they previously used, of the same version or
+higher, it will automatically regenerate keys for the same paths it
+previously used.
+
+The disadvantage of implicit scripts is their inflexibility.  When a
+recovery code is entered, a wallet application must generate the keys
+for every path it supports and it must scan the blockchain for
+transactions involving those keys, otherwise it might not find all of a
+user's transactions.  This is wasteful in wallets that support many
+features each with their own path if the user only tried a few of those
+features.
+
+For implicit path recovery codes that don't include a version number,
+such as BIP39 and SLIP39, a new version of a wallet application that drops support
+for an older path can't warn users during the restore process that some
+of their funds may not be found.  The same problem happens in reverse if
+a user enters their recovery code into older software, it won't find
+newer paths to which the user may have received funds.  Recovery codes
+that include version information, such as Electrum v2 and Aezeed, can
+detect that a user is entering an older or newer recovery code and
+direct them to appropriate resources.
+
+The final consequence of implicit paths is that they can only include
+information that is either universal (such as a standardized path) or
+derived from the seed (such as keys).  Important non-deterministic
+information that's specific to a certain user can't be restored using
+a recovery code.  For example, Alice, Bob, and Carol receive funds that
+can only be spent with signatures from two out of three of them.  Although
+Alice only needs either Bob's or Carol's signature to spend, she needs
+both of their public keys in order to find their joint funds on the
+blockchain.  That means each of them must back up the public keys for
+all three of them.  As multi-signature and other advanced scripts become
+more common on Bitcoin, the inflexibility of implicit paths becomes more
+significant.
+
+The advantage of explicit paths is that they can describe exactly what
+keys should be used with what scripts.  There's no need to support
+outdated scripts, no problems with backwards or forwards compatibility,
+and any extra information (like the public keys of other users) can be
+included directly.  Their disadvantage is that they require users back
+up additional information along with their recovery code.  The
+additional information usually can't compromise a user's security, so it
+doesn't require as much protection as the recovery code, although it can
+reduce their privacy and so does require some protection.
+
+Almost all wallet applications which use explicit paths as of this
+writing use the _output script descriptors_ standard (called
+_descriptors_ for short) as specified in BIPs 380-386.  Descriptors
+describe a script and the keys (or key paths) to be used with it.
+A few example descriptors are shown in <<sample_descriptors>>.
+
+[[sample_descriptors]]
+.Sample Descriptors from Bitcoin Core documentation (with elision)
+[cols="1,1"]
+|===
+| Descriptor | Explanation
+
+| pkh(02c6...9ee5)
+| P2PKH script for the provided public key
+
+| sh(multi(2,022f...2a01,03ac...ccbe))
+| P2SH multi-signature requring two signatures corresponding to these two keys
+
+| pkh([d34db33f/44'/0'/0']xpub6ERA...RcEL/1/*)
+| P2PKH scripts for the BIP32 wallet with fingerprint d34db33f with the extended public key (xpub) at the path M/44'/0'/0', which is xpub6ERA...RcEL, using the keys at M/1/* of that xpub.
+|===
+
+It has long been the trend for wallet applications designed only for
+single signature scripts to use implicit paths.  Wallet applications
+designed for multiple signatures or other advanced scripts are
+increasingly adopting support for explicit paths using descriptors.
+Applications which do both will usually conform to the standards for
+implicit paths and also provide descriptors.
+
 ==== Wallet Best Practices
 
 ((("wallets", "best practices for")))((("bitcoin improvement proposals",
