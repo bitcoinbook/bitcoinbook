@@ -390,7 +390,84 @@ duress.  We suspect the debate will continue for as long as recovery
 codes continue to be widely used.
 ****
 
-FIXME:label export
+==== Backing Up Non-Key Data
+
+The most important data in a wallet database is its private keys.  If
+you lose access to the private keys, you lose the ability to spend your
+bitcoins.  Deterministic key derivation and recovery codes provide a
+reasonably robust solution for backing up and recovering your keys and
+the bitcoins they control.  But many wallet databases store more than
+just keys.  They also also store user-provided information about every
+transaction they sent or received.
+
+For example, when Bob creates a new address as part of sending an
+invoice to Alice, he adds a _label_ in to the address he generates
+so that he can distinguish her payment
+from other payments he receives.  When Alice pays Bob's address, she
+labels the transaction as paying Bob for the same reason.  Some wallets
+also add other useful information to transactions, such as the current
+exchange rate, which can be useful for calculating taxes in some
+jurisdictions.  These labels are stored entirely within their own
+wallets--not shared with the network--protecting their privacy
+and keeping unnecessary personal data out of the blockchain.
+
+.Alice's transaction history with each transaction labeled
+[cols="1,1,1"]
+|===
+| Date | Label | BTC
+| 2023-01-01 | Bought bitcoins from Joe | +0.0010
+| 2023-01-02 | Paid Joe for podcast | -0.0075
+|===
+
+However, because address and transaction labels are stored only in each
+user's wallet database and because they aren't deterministic, they can't
+be restored by using just a recovery code.  If the only recovery is
+seed-based, then all the user will see is a list of approximate
+transaction times and bitcoin amounts.  This can make it quite difficult
+to figure out how you used your money in the past.  Imagine reviewing a
+bank or credit card statement from a year ago that had the date and
+amount of every transaction listed but a blank entry for the
+"description" field.
+
+Wallets should provide their users with a convenient way to back up
+label data.  That seems obvious, but there are a number of
+widely used wallet applications that make it easy to create and use
+recovery codes but which provide no way to back up or restore label
+data.
+
+Additionally, it may be useful for wallets applications to provide a
+standardized format to export labels so that they can be used in other
+applications, e.g. accounting software.  A standard for that format is
+proposed in BIP329.
+
+Wallet applications implementing additional protocols beyond basic
+Bitcoin support may also need or want to store other data.  For example,
+as of 2023, an increasing number of applications have added support for
+sending and receiving transactions over the Lightning Network (LN).
+Although the LN protocol provides a method to recover
+funds in the event of a data loss, called _static channel backups_, it
+can't guarantee results.  If the node your wallet connects to realizes
+you've lost data, it may be able to steal bitcoins from you.  If it
+loses its wallet database at the same time you lose your database, and
+neither of you has an adequate backup, you'll both lose funds.
+
+Again, this means users and wallet applications need to do more than just back up a
+recovery code.
+
+One solution implemented by a few wallet applications is to frequently
+and automatically create complete backups of their wallet database
+encrypted by one of the keys derived from their seed.  Bitcoin keys must
+be unguessable and modern encryption algorithms are considered very
+secure, so nobody should be able to open the encrypted backup except
+someone who can generate the seed, making it safe to store the backup on
+untrusted computers such as cloud hosting services or even random
+network peers.
+
+Later, if the original wallet database is lost, the user can enter their
+recovery code into the wallet application to restore their seed.  The
+application can then retrieve the latest backup file, regenerate the
+encryption key, decrypt the backup, and restore all of the user's labels
+and additional protocol data.
 
 ==== Wallet Best Practices
 
