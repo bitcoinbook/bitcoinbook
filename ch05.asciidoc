@@ -599,52 +599,47 @@ you'll have no problem finding additional resources for using them.
 However, if you're feeling bold, we do encourage you to investigate more
 modern standards that may provide additional features or safety.
 
-[[mnemonic_code_words]]
-==== Mnemonic Code Words (BIP39)
+[[recovery_code_words]]
+==== BIP39 Recovery Codes
 
-((("wallets", "technology of", "mnemonic code words")))((("mnemonic code
-words", id="mnemonic05")))((("bitcoin improvement proposals", "Mnemonic
-Code Words (BIP39)", id="BIP3905")))Mnemonic code words are word
+((("wallets", "technology of", "recovery code words")))((("recovery code
+words", id="mnemonic05")))((("bitcoin improvement proposals", "Recovery
+Code Words (BIP39)", id="BIP3905")))BIP39 recovery codes are word
 sequences that represent (encode) a random number used as a seed to
 derive a deterministic wallet. The sequence of words is sufficient to
-re-create the seed and from there re-create the wallet and all the
+re-create the seed and from there re-create all the
 derived keys. A wallet application that implements deterministic wallets
-with mnemonic words will show the user a sequence of 12 to 24 words when
+with a BIP39 recovery code will show the user a sequence of 12 to 24 words when
 first creating a wallet. That sequence of words is the wallet backup and
 can be used to recover and re-create all the keys in the same or any
-compatible wallet application. Mnemonic words make it easier for users
-to back up wallets because they are easy to read and correctly
-transcribe, as compared to a random sequence of numbers.
+compatible wallet application. Recovery codes make it easier for users
+to back up because they are easy to read and correctly
+transcribe.
 
 [TIP]
 ====
-((("brainwallets")))Mnemonic words are often confused with
+((("brainwallets")))Recovery codes are often confused with
 "brainwallets." They are not the same. The primary difference is that a
-brainwallet consists of words chosen by the user, whereas mnemonic words
+brainwallet consists of words chosen by the user, whereas recovery codes
 are created randomly by the wallet and presented to the user. This
-important difference makes mnemonic words much more secure, because
+important difference makes recovery codes much more secure, because
 humans are very poor sources of randomness.
 ====
 
-Mnemonic codes are defined in BIP39 (see <<appdxbitcoinimpproposals>>).
-Note that BIP39 is one implementation of a mnemonic code standard.
-((("Electrum wallet", seealso="wallets")))There is a different standard,
-with a different set of words, used by the Electrum wallet and predating
-BIP39. BIP39 was proposed by the company behind the Trezor hardware
-wallet and is incompatible with Electrum's implementation. However,
-BIP39 has now achieved broad industry support across dozens of
-interoperable implementations and should be considered the de facto
-industry standard.
+Note that BIP39 is one implementation of a recovery code standard.
+BIP39 was proposed by the company behind the Trezor hardware wallet and
+is compatible with many other wallets applications, although certainly
+not all.
 
-BIP39 defines the creation of a mnemonic code and seed, which we
+BIP39 defines the creation of a recovery code and seed, which we
 describe here in nine steps. For clarity, the process is split into two
-parts: steps 1 through 6 are shown in <<generating_mnemonic_words>> and
-steps 7 through 9 are shown in <<mnemonic_to_seed>>.
+parts: steps 1 through 6 are shown in <<generating_recovery_words>> and
+steps 7 through 9 are shown in <<recovery_to_seed>>.
 
-[[generating_mnemonic_words]]
-===== Generating mnemonic words
+[[generating_recovery_words]]
+===== Generating a recovery code
 
-Mnemonic words are generated automatically by the wallet using the
+Recovery codes are generated automatically by the wallet application using the
 standardized process defined in BIP39. The wallet starts from a source
 of entropy, adds a checksum, and then maps the entropy to a word list:
 
@@ -660,24 +655,24 @@ of entropy, adds a checksum, and then maps the entropy to a word list:
 5. Map each 11-bit value to a word from the predefined dictionary of
 2048 words.
 
-6. The mnemonic code is the sequence of words.
+6. The recovery code is the sequence of words.
 
 <<generating_entropy_and_encoding>> shows how entropy is used to
-generate mnemonic words.
+generate a BIP39 recovery code.
 
 [[generating_entropy_and_encoding]]
 [role="smallerseventy"]
-.Generating entropy and encoding as mnemonic words
-image::images/mbc2_0506.png["Generating entropy and encoding as mnemonic words"]
+.Generating entropy and encoding as a recovery code
+image::images/mbc2_0506.png["Generating entropy and encoding as a recovery code"]
 
 <<table_4-5>> shows the relationship between the size of the entropy
-data and the length of mnemonic codes in words.
+data and the length of recovery code in words.
 
 [[table_4-5]]
-.Mnemonic codes: entropy and word length
+.BIP39: entropy and word length
 [options="header"]
 |=======
-|Entropy (bits) | Checksum (bits) | Entropy *+* checksum (bits) | Mnemonic length (words)
+|Entropy (bits) | Checksum (bits) | Entropy *+* checksum (bits) | Recovery code words
 | 128 | 4 | 132 | 12
 | 160 | 5 | 165 | 15
 | 192 | 6 | 198 | 18
@@ -685,47 +680,47 @@ data and the length of mnemonic codes in words.
 | 256 | 8 | 264 | 24
 |=======
 
-[[mnemonic_to_seed]]
-===== From mnemonic to seed
+[[recovery_to_seed]]
+===== From recovery code to seed
 
-((("key-stretching function")))((("PBKDF2 function")))The mnemonic words
-represent entropy with a length of 128 to 256 bits. The entropy is then
+((("key-stretching function")))((("PBKDF2 function")))The recovery code
+represents entropy with a length of 128 to 256 bits. The entropy is then
 used to derive a longer (512-bit) seed through the use of the
 key-stretching function PBKDF2. The seed produced is then used to build
 a deterministic wallet and derive its keys.
 
 ((("salts")))((("passphrases")))The key-stretching function takes two
-parameters: the mnemonic and a _salt_. The purpose of a salt in a
+parameters: the entropy and a _salt_. The purpose of a salt in a
 key-stretching function is to make it difficult to build a lookup table
 enabling a brute-force attack. In the BIP39 standard, the salt has
-another purpose&#x2014;it allows the introduction of a passphrase that
+another purpose--it allows the introduction of a passphrase that
 serves as an additional security factor protecting the seed, as we will
-describe in more detail in <<mnemonic_passphrase>>.
+describe in more detail in <<recovery_passphrase>>.
 
 The process described in steps 7 through 9 continues from the process
-described previously in <<generating_mnemonic_words>>:
+described previously in <<generating_recovery_words>>:
 
 ++++
 <ol start="7">
   <li>The first parameter to the PBKDF2 key-stretching function is the
-  <em>mnemonic</em> produced from step 6.</li>
+  <em>entropy</em> produced from step 6.</li>
 
   <li>The second parameter to the PBKDF2 key-stretching function is a
   <em>salt</em>. The salt is composed of the string constant
   "<code>mnemonic</code>" concatenated with an optional user-supplied
   passphrase string.</li>
 
-  <li>PBKDF2 stretches the mnemonic and salt parameters using 2048
+  <li>PBKDF2 stretches the recovery code and salt parameters using 2048
   rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit
   value as its final output. That 512-bit value is the seed.</li>
 </ol>
 ++++
 
-<<fig_5_7>> shows how a mnemonic is used to generate a seed.
+<<fig_5_7>> shows how a recovery code is used to generate a seed.
 
 [[fig_5_7]]
-.From mnemonic to seed
-image::images/mbc2_0507.png["From mnemonic to seed"]
+.From recovery code to seed
+image::images/mbc2_0507.png["From recovery code to seed"]
 
 [TIP]
 ====
@@ -746,44 +741,44 @@ complex Scrypt algorithm, although they may not be as convenient to run
 on hardware signing devices.
 ====
 
-Tables pass:[<a data-type="xref" href="#mnemonic_128_no_pass"
-data-xrefstyle="select: labelnumber">#mnemonic_128_no_pass</a>],
-pass:[<a data-type="xref" href="#mnemonic_128_w_pass"
-data-xrefstyle="select: labelnumber">#mnemonic_128_w_pass</a>], and
-pass:[<a data-type="xref" href="#mnemonic_256_no_pass"
-data-xrefstyle="select: labelnumber">#mnemonic_256_no_pass</a>] show
-some examples of mnemonic codes and the seeds they produce (without any
+Tables pass:[<a data-type="xref" href="#bip39_128_no_pass"
+data-xrefstyle="select: labelnumber">#bip39_128_no_pass</a>],
+pass:[<a data-type="xref" href="#bip39_128_w_pass"
+data-xrefstyle="select: labelnumber">#bip39_128_w_pass</a>], and
+pass:[<a data-type="xref" href="#bip39_256_no_pass"
+data-xrefstyle="select: labelnumber">#bip39_256_no_pass</a>] show
+some examples of recovery codes and the seeds they produce (without any
 passphrase).
 
-[[mnemonic_128_no_pass]]
-.128-bit entropy mnemonic code, no passphrase, resulting seed
+[[bip39_128_no_pass]]
+.128-bit entropy BIP39 recovery code, no passphrase, resulting seed
 [cols="h,"]
 |=======
 | *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
-| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Recovery Code (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
 | *Passphrase*| (none)
 | *Seed  (512 bits)* | +5b56c417303faa3fcba7e57400e120a0ca83ec5a4fc9ffba757fbe63fbd77a89a1a3be4c67196f57c39+
 +a88b76373733891bfaba16ed27a813ceed498804c0570+
 |=======
 
-[[mnemonic_128_w_pass]]
-.128-bit entropy mnemonic code, with passphrase, resulting seed
+[[bip39_128_w_pass]]
+.128-bit entropy BIP39 recovery code, with passphrase, resulting seed
 [cols="h,"]
 |=======
 | *Entropy input (128 bits)*| +0c1e24e5917779d297e14d45f14e1a1a+
-| *Mnemonic (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
+| *Recovery Code (12 words)* | +army van defense carry jealous true garbage claim echo media make crunch+
 | *Passphrase*| SuperDuperSecret
 | *Seed  (512 bits)* | +3b5df16df2157104cfdd22830162a5e170c0161653e3afe6c88defeefb0818c793dbb28ab3ab091897d0+
 +715861dc8a18358f80b79d49acf64142ae57037d1d54+
 |=======
 
 
-[[mnemonic_256_no_pass]]
-.256-bit entropy mnemonic code, no passphrase, resulting seed
+[[bip39_256_no_pass]]
+.256-bit entropy BIP39 recovery code, no passphrase, resulting seed
 [cols="h,"]
 |=======
 | *Entropy input (256 bits)* | +2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c+
-| *Mnemonic (24 words)* | +cake apple borrow silk endorse fitness top denial coil riot stay wolf
+| *Recovery Code (24 words)* | +cake apple borrow silk endorse fitness top denial coil riot stay wolf
 luggage oxygen faint major edit measure invite love trap field dilemma oblige+
 | *Passphrase*| (none)
 | *Seed (512 bits)* | +3269bce2674acbd188d4f120072b13b088a0ecf87c6e4cae41657a0bb78f5315b33b3a04356e53d062e5+
@@ -839,15 +834,15 @@ As of 2023, most modern wallets generate 128 bits of entropy for their
 recovery codes (or a value near 128, such as Electrum v2's 132 bits).
 ****
 
-[[mnemonic_passphrase]]
+[[recovery_passphrase]]
 ===== Optional passphrase in BIP39
 
 ((("passphrases")))The BIP39 standard allows the use of an optional
 passphrase in the derivation of the seed. If no passphrase is used, the
-mnemonic is stretched with a salt consisting of the constant string
-+"mnemonic"+, producing a specific 512-bit seed from any given mnemonic.
+recovery code is stretched with a salt consisting of the constant string
++"mnemonic"+, producing a specific 512-bit seed from any given recovery code.
 If a passphrase is used, the stretching function produces a _different_
-seed from that same mnemonic. In fact, given a single mnemonic, every
+seed from that same recovery code. In fact, given a single recovery code, every
 possible passphrase leads to a different seed. Essentially, there is no
 "wrong" passphrase. All passphrases are valid and they all lead to
 different seeds, forming a vast set of possible uninitialized wallets.
@@ -863,8 +858,10 @@ some wallet, which unless previously used will be empty.
 
 The optional passphrase creates two important features:
 
-- A second factor (something memorized) that makes a mnemonic useless on
-  its own, protecting mnemonic backups from compromise by a thief.
+- A second factor (something memorized) that makes a recovery code useless on
+  its own, protecting recovery codes from compromise by a casual thief.  For
+  protection from a tech-savvy thief, you will need to use a very strong
+  passphrase.
 
 - A form of plausible deniability or "duress wallet," where a chosen
   passphrase leads to a wallet with a small amount of funds used to
@@ -882,7 +879,7 @@ combination with a carefully planned process for backup and recovery,
 considering the possibility of surviving the owner and allowing his or
 her family to recover the cryptocurrency estate.
 
-===== Working with mnemonic codes
+===== Working with BIP39 recovery codes
 
 BIP39 is implemented as a library in many different programming
 languages:
@@ -898,19 +895,20 @@ https://github.com/libbitcoin/libbitcoin/blob/master/src/wallet/mnemonic.cpp[lib
 An implementation of BIP39, as part of the popular Libbitcoin
 framework, in pass:[<span class="keep-together">C++</span>]
 
+[[hd_wallet_details]]
 ==== Creating an HD Wallet from the Seed
 
 ((("wallets", "technology of", "creating HD wallets from root
 seed")))((("root seeds")))((("hierarchical deterministic (HD)
 wallets")))HD wallets are created from a single _root seed_, which is a
 128-, 256-, or 512-bit random number. Most commonly, this seed is
-generated from a _mnemonic_ as detailed in the previous section.
+generated by or decrypted from a _recovery code_ as detailed in the previous section.
 
 Every key in the HD wallet is deterministically derived from this root
 seed, which makes it possible to re-create the entire HD wallet from
 that seed in any compatible HD wallet. This makes it easy to back up,
 restore, export, and import HD wallets containing thousands or even
-millions of keys by simply transferring only the mnemonic that the root
+millions of keys by simply transferring only the recovery code that the root
 seed is derived from.
 
 The process of creating the master keys and master chain code for an HD
@@ -983,7 +981,7 @@ Child private keys are indistinguishable from nondeterministic (random)
 keys. Because the derivation function is a one-way function, the child
 key cannot be used to find the parent key. The child key also cannot be
 used to find any siblings. If you have the n~th~ child, you cannot find
-its siblings, such as the n&#x2013;1 child or the n+1 child, or any
+its siblings, such as the n-1 child or the n+1 child, or any
 other children that are part of the sequence. Only the parent key and
 chain code can derive all the children. Without the child chain code,
 the child key cannot be used to derive any grandchildren either. You
@@ -1036,10 +1034,11 @@ structure. Sharing an extended key gives access to the entire branch.
 ====
 
 Extended keys are encoded using Base58Check, to easily export and import
-between different BIP32&#x2013;compatible wallets. The Base58Check
+between different BIP32-compatible wallets. The Base58Check
 coding for extended keys uses a special version number that results in
 the prefix "xprv" and "xpub" when encoded in Base58 characters to make
-them easily recognizable. Because the extended key is 512 or 513 bits,
+them easily recognizable. Because the extended key contains many more
+bytes than regular addresses,
 it is also much longer than other Base58Check-encoded strings we have
 seen previously.
 
@@ -1069,7 +1068,7 @@ An extended public key can be used, therefore, to derive all of the
 _public_ keys (and only the public keys) in that branch of the HD wallet
 structure.
 
-This shortcut can be used to create very secure public key&#x2013;only
+This shortcut can be used to create very secure public key-only
 deployments where a server or application has a copy of an extended
 public key and no private keys whatsoever. That kind of deployment can
 produce an infinite number of public keys and Bitcoin addresses, but
@@ -1138,13 +1137,13 @@ not been used in production as of this writing.
 
 ((("cold storage")))((("storage", "cold storage")))((("hardware
 wallets")))Another common application of this solution is for
-cold-storage or hardware wallets. In that scenario, the extended private
-key can be stored on a paper wallet or hardware device (such as a Trezor
-hardware wallet), while the extended public key can be kept online. The
+cold-storage or hardware signing devices. In that scenario, the extended
+private key can be stored on a paper wallet or hardware device, while
+the extended public key can be kept online. The
 user can create "receive" addresses at will, while the private keys are
 safely stored offline. To spend the funds, the user can use the extended
-private key on an offline signing Bitcoin client or sign transactions on
-the hardware wallet device (e.g., Trezor). <<CKDpub>> illustrates the
+private key on an offline software wallet application or
+the hardware signing device. <<CKDpub>> illustrates the
 mechanism for extending a parent public key to derive child public keys.
 
 [[CKDpub]]
@@ -1161,14 +1160,13 @@ Gabriel first set up his web store as a hobby, based on a simple hosted
 Wordpress page. His store was quite basic with only a few pages and an
 order form with a single bitcoin address.
 
-Gabriel used the first bitcoin address generated by his Trezor device as
-the main bitcoin address for his store. This way, all incoming payments
-would be paid to an address controlled by his Trezor hardware wallet.
-
+Gabriel used the first bitcoin address generated by his regular wallet as
+the main bitcoin address for his store.
 Customers would submit an order using the form and send payment to
 Gabriel's published bitcoin address, triggering an email with the order
 details for Gabriel to process. With just a few orders each week, this
-system worked well enough.
+system worked well enough, even though it weakened the privacy of
+Gabriel, his clients, and the people he paid.
 
 However, the little web store became quite successful and attracted many
 orders from the local community. Soon, Gabriel was overwhelmed. With all
@@ -1179,27 +1177,25 @@ same amount came in close together.
 Gabriel's HD wallet offers a much better solution through the ability to
 derive public child keys without knowing the private keys. Gabriel can
 load an extended public key (xpub) on his website, which can be used to
-derive a unique address for every customer order. Gabriel can spend the
-funds from his Trezor, but the xpub loaded on the website can only
+derive a unique address for every customer order, immediately improving
+privacy. Gabriel can spend the
+funds from his personal wallet application, but the xpub loaded on the website can only
 generate addresses and receive funds. This feature of HD wallets is a
 great security feature. Gabriel's website does not contain any private
 keys and therefore does not need high levels of security.
 
-To export the xpub, Gabriel uses the web-based software in conjunction
-with the Trezor hardware wallet. The Trezor device must be plugged in
-for the public keys to be exported. Note that hardware wallets will
-never export private keys&#x2014;those always remain on the device.
+To export the xpub from his Trezor hardware signing device, Gabriel uses
+the web-based Trezor wallet application. The Trezor device must be plugged in
+for the public keys to be exported. Note that hardware signing devices will
+never export private keys--those always remain on the device.
 <<export_xpub>> shows the web interface Gabriel uses to export the xpub.
 
 [[export_xpub]]
-.Exporting an xpub from a Trezor hardware wallet
+.Exporting an xpub from a Trezor hardware signing device
 image::images/mbc2_0512.png["Exporting the xpub from the Trezor"]
 
-Gabriel copies the xpub to his web store's bitcoin shop software. He
-uses _Mycelium Gear_, which is an open source web-store plugin for a
-variety of web hosting and content platforms. Mycelium Gear uses the
-xpub to generate a unique address for every purchase. ((("",
-startref="gabrielfivetwo")))
+Gabriel copies the xpub to his web store's Bitcoin payment processing
+software, such as the widely used open source BTCPay Server.
 
 ===== Hardened child key derivation
 
@@ -1214,8 +1210,8 @@ private key, together with a parent chain code, reveals all the private
 keys of all the children. Worse, the child private key together with a
 parent chain code can be used to deduce the parent private key.
 
-To counter this risk, HD wallets use an alternative derivation function
-called _hardened derivation_, which "breaks" the relationship between
+To counter this risk, HD wallets provide an alternative derivation function
+called _hardened derivation_, which breaks the relationship between
 parent public key and child chain code. The hardened derivation function
 uses the parent private key to derive the child chain code, instead of
 the parent public key. This creates a "firewall" in the parent/child
@@ -1235,7 +1231,7 @@ child private key and chain code are completely different from what
 would result from the normal derivation function. The resulting "branch"
 of keys can be used to produce extended public keys that are not
 vulnerable, because the chain code they contain cannot be exploited to
-reveal any private keys. Hardened derivation is therefore used to create
+reveal any private keys for their siblings or parents. Hardened derivation is therefore used to create
 a "gap" in the tree above the level where extended public keys are used.
 
 In simple terms, if you want to use the convenience of an xpub to derive
@@ -1248,7 +1244,7 @@ prevent compromise of the master keys.
 ===== Index numbers for normal and hardened derivation
 
 The index number used in the derivation function is a 32-bit integer. To
-easily distinguish between keys derived through the normal derivation
+easily distinguish between keys created through the normal derivation
 function versus keys derived through hardened derivation, this index
 number is split into two ranges. Index numbers between 0 and
 2^31^&#x2013;1 (0x0 to 0x7FFFFFFF) are used _only_ for normal
@@ -1263,7 +1259,11 @@ symbol. The first normal child key is therefore displayed as 0, whereas
 the first hardened child (index 0x80000000) is displayed as 0++&#x27;++.
 In sequence then, the second hardened key would have index 0x80000001
 and would be displayed as 1++&#x27;++, and so on. When you see an HD
-wallet index i++&#x27;++, that means 2^31^+i.
+wallet index i++&#x27;++, that means 2^31^+i.  In regular ASCII text, the
+prime symbol is substituted with either a single apostrophe or the
+letter _h_.  For situations, such as in output script descriptors, where
+text may be used in a shell or other context where a single apostrophe
+has special meaning, using the letter _h_ is recommended.
 
 ===== HD wallet key identifier (path)
 
