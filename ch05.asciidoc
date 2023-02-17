@@ -1075,6 +1075,54 @@ preload them on the ecommerce server. That approach is cumbersome and
 requires constant maintenance to ensure that the ecommerce server
 doesn't "run out" of keys.
 
+.Mind the gap
+****
+An extended public key can generate approximately four billion direct
+child keys, far more than any store or application should ever need.
+However, it would also take a wallet application an unreasonable amount
+of time to generate all four billion keys and scan the blockchain for
+transactions involving those keys.  For that reason, most wallets only
+generate a few keys at a time, scan for payments involving those keys,
+and generate additional keys in the sequence as previous keys are used.
+For example, Alice's wallet generates 100 keys.  When it sees a payment
+to the first key, it generates the 101st key.
+
+Sometimes a wallet application will distribute a key to someone who
+later decides not to pay, creating a gap in the key chain.  That's fine as
+long as the wallet has already generated keys after the gap so that it
+finds later payments and continues generating more keys.  The maximum
+number of unused keys in a row that can fail to receive a payment
+without causing problems is called the _gap limit_.
+
+When a wallet application has distributed all of the keys up to its gap
+limit and none of those keys have received a payment, it has three
+options about how to handle future requests for new keys:
+
+1. It can refuse the requests, preventing it from receiving any further
+payments.  This is obviously an unpalatable option, although it's the
+simplest to implement.
+
+2. It can generate new keys beyond its gap limit.  This ensures that
+every person requesting to pay gets a unique key, preventing address
+reuse and improving privacy.  However, if the wallet needs to be
+restored from a recovery code, or if the wallet owner is using other
+software loaded with the same extended public key, those other wallets
+won't see any payments received after the extended gap.
+
+3. It can distribute keys it previously distributed, ensuring a smooth
+recovery but potentially reducing the privacy of the wallet owner and
+the people with whom they transact.
+
+Open source production systems for online merchants, such as BTCPay
+Server, attempt to dodge this problem by using very large gap limits and
+limiting the rate at which they generate invoices.  Other solutions have
+been proposed, such as
+asking the spender's wallet to construct (but not broadcast) a
+transaction paying a possibly-reused address before they receive a fresh
+address for the actual transaction.  However, these other solutions have
+not been used in production as of this writing.
+****
+
 ((("cold storage")))((("storage", "cold storage")))((("hardware
 wallets")))Another common application of this solution is for
 cold-storage or hardware wallets. In that scenario, the extended private
