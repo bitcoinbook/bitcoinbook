@@ -777,6 +777,55 @@ luggage oxygen faint major edit measure invite love trap field dilemma oblige+
 +5f1e0deaa082df8d487381379df848a6ad7e98798404+
 |=======
 
+.How much entropy do you need?
+****
+BIP32 allows seeds to be from 128 to 512 bits.  BIP39 accepts from 128
+to 256 bits of entropy; Electrum v2 accepts 132 bits of entropy; Aezeed
+accepts 128 bits of entropy; SLIP39 accepts either 128 or 256 bits.  The
+variation in these numbers makes it unclear how much entropy is needed
+for safety.  We'll try to demystify that.
+
+BIP32 extended private keys consist of a 256-bit key and a 256-bit chain
+code, for a total of 512 bits.  That means there's a maximum of 2^512^
+different possible extended private keys.  If you start with more than
+512 bits of entropy, you'll still get an extended private key containing
+512 bits of entropy--so there's no point in using more than 512 bits
+even if any of the standards we mentioned allowed that.
+
+However, even though there are 2^512^ different extended private keys,
+there are only (slightly less than) 2^256^ regular private keys--and its
+those private keys that actually secure your bitcoins.  That means, if
+you use more than 256 bits of entropy for your seed, you still get private keys
+containing only 256 bits of entropy.  There may be future
+Bitcoin-related protocols where extra entropy in the extended keys
+provides extra security, but that's not currently the case.
+
+The security strength of a Bitcoin public key is 128 bits.  An attacker
+with a classical computer (the only kind which can be used for a
+practical attack as of this writing) would need to perform about 2^128^
+operations on Bitcoin's elliptic curve in order to find a private key
+for another user's public key.  The implication of a security strength
+of 128 bits is that there's no apparent benefit to using more than 128
+bits of entropy (although you need to ensure your generated private
+keys are selected uniformly from within the entire 2^256^ range of
+private keys).
+
+There is one extra benefit of greater entropy: if a fixed percentage of
+your recovery code (but not the whole code) is seen by an attacker, the
+greater the entropy, the harder it will be for them to figure out part
+of the code they didn't see.  For example, if an attacker sees half of a
+128-bit code (64 bits), it's plausible that they'll be able to brute
+force the remaining 64 bits.  If they see half of a 256-bit code (128
+bits), it's not plausible that they can brute force the other half.  We
+don't recommend relying on this defense--either keep your recovery codes
+very safe or use a method like SLIP39 that lets you distribute your
+recovery code across multiple locations without relying on the safety of
+any individual code.
+
+As of 2023, most modern wallets generate 128 bits of entropy for their
+recovery codes (or a value near 128, such as Electrum v2's 132 bits).
+****
+
 [[mnemonic_passphrase]]
 ===== Optional passphrase in BIP39
 
