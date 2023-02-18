@@ -196,33 +196,201 @@ subsidiaries, specific functions, or accounting categories.
 
 We'll provide a detailed exploration of HD wallets in <<hd_wallet_details>>.
 
-==== Seeds and Mnemonic Codes (BIP39)
+==== Seeds and Recovery Codes
 
-((("wallets", "technology of", "seeds and mnemonic codes")))((("mnemonic
-code words")))((("bitcoin improvement proposals", "Mnemonic Code Words
+((("wallets", "technology of", "seeds and recovery codes")))((("recovery
+code words")))((("bitcoin improvement proposals", "Recovery Code Words
 (BIP39)")))HD wallets are a very powerful mechanism for managing many
-keys and addresses. They are even more useful if they are combined with
-a standardized way of creating seeds from a sequence of English words
-that are easy to transcribe, export, and import across wallets. This is
-known as a _mnemonic_ and the standard is defined by BIP39. Today, most
-bitcoin wallets (as well as wallets for other cryptocurrencies) use this
-standard and can import and export seeds for backup and recovery using
-interoperable mnemonics.
+keys and addresses all derived from a single seed.  If your wallet database
+is ever corrupted or lost, you can regenerate all of the private keys
+for your wallet using your original seed.  But, if someone else gets
+your seed, they can also generate all of the private keys, allowing them
+to steal all of the bitcoins from a single-sig wallet and reduce the
+security of bitcoins in multi-signature wallets.  In this section, we'll
+look at several _recovery codes_ which are intended to make backups
+easier and safer.
 
-Let's look at this from a practical perspective. Which of the following
-seeds is easier to transcribe, record on paper, read without error,
-export, and import into another wallet?
+Although seeds are large random numbers, usually 128 to 256 bits, most
+recovery codes use human-language words.  A large part of the motivation
+for using words was to make a recovery code easy to remember.  For
+example, consider the recovery code encoded using both hexadecimal and
+words in <<hex_seed_vs_recovery_words>>.
 
-.A seed for an deterministic wallet, in hex
+[[hex_seed_vs_recovery_words]]
+.A seed encoded in hex and in English words
 ----
-0C1E24E5917779D297E14D45F14E1A1A
-----
+Hex-encoded:
+0C1E 24E5 9177 79D2 97E1 4D45 F14E 1A1A
 
-.A seed for an deterministic wallet, from a 12-word mnemonic
-----
+Word-encoded:
 army van defense carry jealous true
 garbage claim echo media make crunch
 ----
+
+There may be cases where remembering a recovery code is a powerful
+feature, such as when you are unable to transport physical belongings
+(like a recovery code written on paper) without them being seized or
+inspected by an outside party that might steal your bitcoins.  However,
+most of the time, relying on memory alone is dangerous:
+
+- If you forget your recovery code and lose access to your original
+  wallet database, your bitcoins are lost to you forever.
+
+- If you die or suffer a severe injury, and your heirs don't have access
+  to your original wallet database, they won't be able to inherit your
+  bitcoins.
+
+- If someone thinks you have a recovery code memorized that will give
+  them access to bitcoins, they may attempt to coerce you into
+  disclosing that code.  As of this writing, Bitcoin contributor Jameson
+  Lopp has
+  https://github.com/jlopp/physical-bitcoin-attacks/blob/master/README.md[documented]
+  over 100 physical attacks against suspected owners of bitcoin and
+  other digital assets, including at least three deaths and numerous
+  occasions where someone was tortured, held hostage, or had their
+  family threatened.
+
+[TIP]
+====
+Even if you use a type of recovery code that was designed for easy
+memorization, we very strongly encourage you to consider writing it down.
+====
+
+Several different types of recovery codes are in wide use as of this
+writing:
+
+BIP39::
+  The most popular method for generating recovery codes for the
+  past decade, BIP39 involves generating a random sequence of bytes,
+  adding a checksum to it, and encoding the data into a series of 12 to
+  24 words (which may be localized to a user's native language).  The
+  words (plus an optional passphrase) are run through a _key-stretching
+  function_ and the output is used as a seed.  BIP39 recovery codes have
+  several shortcomings which later schemes attempt to address.
+
+Electrum v2::
+  Used in the Electrum wallet (version 2.0 and above), this word-based
+  recovery code has several advantages over BIP39.  It doesn't rely on a
+  global word list that must be implemented by every version of every
+  compatible program, plus its recovery codes include a version number that
+  improves reliability and efficiency.  Like BIP39, it supports an optional
+  passphrase (which Electrum calls a _seed extension_) and uses the same
+  key-stretching function.
+
+Aezeed::
+  Used in the LND wallet, this is another word-based recovery code that
+  offers improvements over BIP39.  Similar to Electrum v2 recovery codes,
+  it includes a version number that eliminates several issues with
+  upgrading wallet applications.  It also includes a _wallet birthday_
+  in the recovery code, a reference to the date when the user created
+  the wallet database; this allows a restoration process to find all of
+  the funds associated with a wallet without scanning the entire
+  blockchain, which is especially useful for privacy-focused wallets.
+  It includes support for changing the passphrase or changing other
+  aspects of the recovery code without needing to move funds to a new
+  seed--the user need only back up a new recovery code.  One
+  disadvantage compared to Electrum v2 is that, like BIP39, it depends
+  on a global word list that all Aezeed-compatible wallet programs must
+  implement.
+
+Muun::
+  Used in the Muun wallet, which defaults to requiring spending
+  transactions be signed by multiple keys, this is a non-word code which
+  must be accompanied by additional information (which Muun currently
+  provides in a PDF).  This recovery code is unrelated to the seed and
+  is instead used to decrypt the private keys contained in the PDF.
+  Although this is unwieldy compared to the BIP39, Electrum v2, and
+  Aezeed recovery codes, it provides support for new technologies and
+  standards which are becoming more common in new wallets, such as
+  Lightning Network support, output script descriptors, and miniscript.
+
+SLIP39::
+  A successor to BIP39 with some of the same authors, SLIP39 allows
+  a single seed to be distributed using multiple recovery codes that can
+  be stored in different places (or by different people).  When you
+  create the recovery codes, you can specify how many will be required
+  to recover the seed.  For example, you create five recovery codes but
+  only require three of them to recover the seed.  SLIP39 provides
+  support for an optional passphrase, depends on a global word list, and
+  doesn't directly provide versioning.
+
+[NOTE]
+====
+A new system for distributing recovery codes with similarities to SLIP39
+was proposed during the writing of this book.  Codex32 allows creating
+and validating recovery codes with nothing except printed instructions,
+scissors, a precision knife, brass fasteners, and a pen--plus privacy
+and a few hours of spare time.  Alternatively, those who trust computers can create recovery codes
+instantly using software on a digital device.  You can create up to 31
+recovery codes to be stored in different places, specifying how many of
+them will be required in order to recover the seed.  As a new proposal,
+details about Codex32 may change significantly before this book is
+published, so we encourage any readers interested in distributed
+recovery codes to investigate its https://secretcodex32.com[current
+status].
+====
+
+.Recovery code passphrases
+****
+The BIP39, Electrum v2, Aezeed, and SLIP39 schemes may all be used with an
+optional passphrase.  If the only place you keep this passphrase is in
+your memory, it has the same advantages and disadvantages as memorizing
+your recovery code.  However, there's a further set of tradeoffs
+specific to the way the passphrase is used by the recovery code.
+
+Three of the schemes (BIP39, Electrum v2, and SLIP39) do not include the optional passphrase in the
+checksum they use to protect against data entry mistakes.  Every
+passphrase (including not using a passphrase) will result in producing a
+seed for a BIP32 tree of keys, but they'll won't be the same trees.
+Different passphrases will result in different keys.  That can be a
+positive or a negative, depending on your perspective:
+
+- On the positive, if someone obtains your recovery code (but not your
+  passphrase), they will see a valid BIP32 tree of keys.
+  If you prepared for that contingency and sent some bitcoins to the
+  non-passphrase tree, they will steal that money.  Although having some
+  of your bitcoins stolen is normally a bad thing, it can also provide
+  you with a warning that your recovery code has been compromised,
+  allowing you to investigate and take corrective measures.
+  The ability to create multiple passphrases for the same recovery code
+  that all look valid is a type of _plausible deniability._
+
+- On the negative, if you're coerced to give an attacker a recovery
+  code (with or without a passphrase) and it doesn't yield the amount of
+  bitcoins they expected, they may continue trying to coerce you until
+  you give them a different passphrase with access to more bitcoins.
+  Designing for plausible deniability means there's no way to prove to
+  an attacker that you've revealed all of your information, so they may
+  continue trying to coerce you even after you've given them all of
+  your bitcoins.
+
+- An additional negative is the reduced amount of error detection.  If
+  you enter a slightly wrong passphrase when restoring from a backup,
+  your wallet can't warn you about the mistake.  If you were expecting
+  a balance, you will know something is wrong when your wallet
+  application shows you a zero balance for the regenerated key tree.
+  However, novice users may think their money was permanently lost and do
+  something foolish, such as give up and throw away their recovery code.
+  Or, if you were actually expecting a zero balance, you might use the
+  wallet application for years after your mistake until the next time
+  you restore with the correct passphrase and see a zero balance.
+  Unless you can figure out what typo you previously made, your funds
+  are gone.
+
+Unlike the other schemes, the Aezeed seed encryption scheme
+authenticates its optional passphrase and will return an error if you
+provide an incorrect value.  This eliminates plausible deniability, adds
+error detection, and makes it possible to prove that passphrase has been
+revealed.
+
+Many users and developers disagree on which approach is better, with
+some strongly in favor of plausible deniability and others preferring the
+increased safety that error detection gives novice users and those under
+duress.  We suspect the debate will continue for as long as recovery
+codes continue to be widely used.
+****
+
+FIXME:label export
 
 ==== Wallet Best Practices
 
