@@ -1,752 +1,512 @@
 [[transactions]]
 == Transactions
 
-[[ch06_intro]]
-=== Introduction
+The way we typically transfer physical cash has little resemblance to
+the way we transfer bitcoins.  Physical cash is a bearer token.  Alice
+pays Bob by handing him some number of tokens, such as dollar bills.
+By comparison, bitcoins don't exist either physically or as digital
+data--Alice can't hand Bob some bitcoins or send them by email.
 
-((("transactions", "defined")))((("warnings and cautions", see="also
-security")))Transactions are the most important part of the Bitcoin
-system. Everything else in bitcoin is designed to ensure that
-transactions can be created, propagated on the network, validated, and
-finally added to the global ledger of transactions (the blockchain).
-Transactions are data structures that encode the transfer of value
-between participants in the Bitcoin system. Each transaction is a public
-entry in bitcoin's blockchain, the global double-entry bookkeeping
-ledger.
+Instead, consider how Alice might transfer control over a parcel of land
+to Bob.  She can't physically pick up the land and hand it to Bob.
+Rather there exists some sort of record (usually maintained by a local
+government) which describes the land Alice owns.  Alice transfers that
+land to Bob by convincing the government to update the record to say
+that Bob now owns the land.
 
-In this chapter we will examine all the various forms of transactions,
-what they contain, how to create them, how they are verified, and how
-they become part of the permanent record of all transactions. When we
-use the term "wallet" in this chapter, we are referring to the software
-that constructs transactions, not just the database of keys.
+Bitcoin works in a similar way.  There exists a database on every
+Bitcoin full node which says that Alice controls some number of
+bitcoins. Alice pays Bob by convincing full nodes to update their
+database to say that some of Alice's bitcoins are now controlled by Bob.
+The data that Alice uses to convince full nodes to update their
+databases is called a _transaction_.
+
+In this chapter we'll deconstruct a Bitcoin transaction and examine each
+of its parts to see how they facilitate the transfer of value in a way
+that's highly expressive and amazingly reliable.
 
 [[tx_structure]]
-=== Transactions in Detail
+=== A Serialized Bitcoin Transaction
 
-((("use cases", "buying coffee", id="alicesix")))In
-<<ch02_bitcoin_overview>>, we looked at the transaction Alice used to
-pay for coffee at Bob's coffee shop using a block explorer
-(<<alices_transactions_to_bobs_cafe>>).
+In <<exploring_and_decoding_transactions>>, we used Bitcoin Core with
+the txindex option enabled to retrieve a copy of Alice's payment to Bob.
+Let's retrieve the transaction containing that payment again.
 
-The block explorer application shows a transaction from Alice's
-"address" to Bob's "address." This is a much simplified view of what is
-contained in a transaction. In fact, as we will see in this chapter,
-much of the information shown is constructed by the block explorer and
-is not actually in the transaction.
-
-[[alices_transactions_to_bobs_cafe]]
-.Alice's transaction to Bob's Cafe
-image::images/mbc2_0208.png["Alice Coffee Transaction"]
-
-[[transactions_behind_the_scenes]]
-==== Transactions&#x2014;Behind the Scenes
-
-((("transactions", "behind the scenes details of")))Behind the scenes,
-an actual transaction looks very different from a transaction provided
-by a typical block explorer. In fact, most of the high-level constructs
-we see in the various bitcoin application user interfaces _do not
-actually exist_ in the Bitcoin system.
-
-We can use Bitcoin Core's command-line interface (+getrawtransaction+
-and +decoderawtransaction+) to retrieve Alice's "raw" transaction,
-decode it, and see what it contains. The result looks like this:
-
-[[alice_tx]]
-.Alice's transaction decoded
-[source,json]
+[[alice_tx_serialized_reprint]]
+.Alice's serialized transaction
+[listing]
 ----
-{
-  "version": 1,
-  "locktime": 0,
-  "vin": [
-    {
-      "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
-      "vout": 0,
-      "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
-      "sequence": 4294967295
-    }
-  ],
-  "vout": [
-    {
-      "value": 0.01500000,
-      "scriptPubKey": "OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHECKSIG"
-    },
-    {
-      "value": 0.08450000,
-      "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG",
-    }
-  ]
-}
+include::../snippets/getrawtransaction-alice.txt[]
 ----
 
-You may notice a few things about this transaction, mostly the things
-that are missing! Where is Alice's address? Where is Bob's address?
-Where is the 0.1 input "sent" by Alice? In bitcoin, there are no coins,
-no senders, no recipients, no balances, no accounts, and no addresses.
-All those things are constructed at a higher level for the benefit of
-the user, to make things easier to understand.
-
-You may also notice a lot of strange and indecipherable fields and
-hexadecimal strings. Don't worry, we will explain each field shown here
-in detail in this chapter.
-
-[[tx_inputs_outputs]]
-=== Transaction Outputs and Inputs
-
-((("transactions", "outputs and inputs", id="Tout06")))((("outputs and
-inputs", "outputs defined")))((("unspent transaction outputs
-(UTXO)")))((("UTXO sets")))((("transactions", "outputs and inputs",
-"output characteristics")))((("outputs and inputs", "output
-characteristics")))The fundamental building block of a bitcoin
-transaction is a  _transaction output_. Transaction outputs are
-indivisible chunks of bitcoin currency, recorded on the blockchain, and
-recognized as valid by the entire network. Bitcoin full nodes track all
-available and spendable outputs, known as _unspent transaction outputs_,
-or _UTXO_. The collection of all UTXO is known as the _UTXO set_ and
-currently numbers in the millions of UTXO. The UTXO set grows as new
-UTXO is created and shrinks when UTXO is consumed. Every transaction
-represents a change (state transition) in the UTXO set.
-
-((("balances")))When we say that a user's wallet has "received" bitcoin,
-what we mean is that the wallet has detected an UTXO that can be spent
-with one of the keys controlled by that wallet. Thus, a user's bitcoin
-"balance" is the sum of all UTXO that user's wallet can spend and which
-may be scattered among hundreds of transactions and hundreds of blocks.
-The concept of a balance is created by the wallet application. The
-wallet calculates the user's balance by scanning the blockchain and
-aggregating the value of any UTXO the wallet can spend with the keys it
-controls. Most wallets maintain a database or use a database service to
-store a quick reference set of all the UTXO they can spend with the keys
-they control.
-
-((("satoshis")))A transaction output can have an arbitrary (integer)
-value denominated as a multiple of satoshis.  Just as dollars can be
-divided down to two decimal places as cents, bitcoin can be divided down
-to eight decimal places as satoshis. Although an output can have any
-arbitrary value, once created it is indivisible. This is an important
-characteristic of outputs that needs to be emphasized: outputs are
-_discrete_ and _indivisible_ units of value, denominated in integer
-satoshis. An unspent output can only be consumed in its entirety by a
-transaction.
-
-((("change, making")))If an UTXO is larger than the desired value of a
-transaction, it must still be consumed in its entirety and change must
-be generated in the transaction. In other words, if you have an UTXO
-worth 20 bitcoin and want to pay only 1 bitcoin, your transaction must
-consume the entire 20-bitcoin UTXO and produce two outputs: one paying 1
-bitcoin to your desired recipient and another paying 19 bitcoin in
-change back to your wallet. As a result of the indivisible nature of
-transaction outputs, most bitcoin transactions will have to generate
-change.
-
-Imagine a shopper buying a $1.50 beverage, reaching into her wallet and
-trying to find a combination of coins and bank notes to cover the $1.50
-cost. The shopper will choose exact change if available e.g. a dollar
-bill and two quarters (a quarter is $0.25), or a combination of smaller
-denominations (six quarters), or if necessary, a larger unit such as a
-$5 note. If she hands too much money, say $5, to the shop owner, she
-will expect $3.50 change, which she will return to her wallet and have
-available for future transactions.
-
-Similarly, a bitcoin transaction must be created from a user's UTXO in
-whatever denominations that user has available. Users cannot cut an UTXO
-in half any more than they can cut a dollar bill in half and use it as
-currency. The user's wallet application will typically select from the
-user's available UTXO to compose an amount greater than or equal to the
-desired transaction amount.
-
-As with real life, the bitcoin application can use several strategies to
-satisfy the purchase amount: combining several smaller units, finding
-exact change, or using a single unit larger than the transaction value
-and making change. All of this complex assembly of spendable UTXO is
-done by the user's wallet automatically and is invisible to users. It is
-only relevant if you are programmatically constructing raw transactions
-from UTXO.
-
-A transaction consumes previously recorded unspent transaction outputs
-and creates new transaction outputs that can be consumed by a future
-transaction. This way, chunks of bitcoin value move forward from owner
-to owner in a chain of transactions consuming and creating UTXO.
-
-((("transactions", "coinbase transactions")))((("coinbase
-transactions")))((("mining and consensus", "coinbase transactions")))The
-exception to the output and input chain is a special type of transaction
-called the _coinbase_ transaction, which is the first transaction in
-each block. This transaction is placed there by the "winning" miner and
-creates brand-new bitcoin payable to that miner as a reward for mining.
-This special coinbase transaction does not consume UTXO; instead, it has
-a special type of input called the "coinbase." This is how bitcoin's
-money supply is created during the mining process, as we will see in
-<<mining>>.
+There's nothing special about Bitcoin Core's serialization format.
+Programs can use a different format as long as they transmit all of the
+same data.  However, Bitcoin Core's format is reasonably compact for the
+data it transmits and simple to parse, so many other Bitcoin programs
+use this format.
 
 [TIP]
 ====
-What comes first? Inputs or outputs, the chicken or the egg? Strictly
-speaking, outputs come first because coinbase transactions, which
-generate new bitcoin, have no inputs and create outputs from nothing.
+The only other widely-used transaction serialization format of which
+we're aware is the Partially Signed Bitcoin Transaction (PSBT) format
+documented in BIPs 174 and 370 (with extensions documented in other
+BIPs).  PSBT allows an untrusted program to produce a transaction
+template which can be verified and updated by trusted programs (such as
+hardware signing devices) that posses the necessary private keys or
+other sensitive data to fill in the template.  To accomplish this, PSBT
+allows storing a significant amount of metadata about a transaction,
+making it much less compact than the standard serialization format.
+This book does not go into detail about PSBT, but we strongly recommend
+it to developers of wallets that plan to support hardware signing
+devices or multiple-signer security.
+
 ====
 
-[[tx_outs]]
-==== Transaction Outputs
+The transaction displayed in hexadecimal in <<alice_tx_serialized_reprint>> is
+replicated as a byte map in <<alice_tx_byte_map>>.  Note that it takes
+64 hexadecimal characters to display 32 bytes.  This map shows only the
+top-level fields.  We'll examine each of them in the order they appear
+in the transaction and describe any additional fields that they contain.
 
-((("transactions", "outputs and inputs", "output
-components")))((("outputs and inputs", "output parts")))Every bitcoin
-transaction creates outputs, which are recorded on the bitcoin ledger.
-Almost all of these outputs, with one exception (see <<op_return>>)
-create spendable chunks of bitcoin called UTXO, which are then
-recognized by the whole network and available for the owner to spend in
-a future transaction.
+[[alice_tx_byte_map]]
+.A byte map of Alice's transaction
+image::../images/tx-map-1.png["A byte map of Alice's transaction"]
 
-UTXO are tracked by every full-node Bitcoin client in the UTXO set. New
-transactions consume (spend) one or more of these outputs from the UTXO
-set.
+[[nVersion]]
+=== Version
 
-Transaction outputs consist of two parts:
+The first four bytes of a serialized Bitcoin transaction are its
+version.  The original version of Bitcoin transactions was version 1
+(0x01000000).  All transactions in Bitcoin must follow
+the rules of version 1 transactions, with many of those rules being
+described throughout this book.
 
-- An amount of bitcoin, denominated in _satoshis_, the smallest bitcoin
-  unit
+Version 2 Bitcoin transactions were introduced in the BIP68 soft fork
+change to Bitcoin's consensus rules.  BIP68 places additional
+constraints on the nSequence field, but those constraints only apply to
+transactions with version 2 or higher.  Version 1 transactions are
+unaffected.  BIP112, which was part of the same soft fork as BIP68,
+upgraded an opcode (OP_CHECKSEQUENCEVERIFY) which will now fail if it is
+evaluated as part of a transaction with a version less than 2.  Beyond
+those two changes, version 2 transactions are identical to version 1
+transactions.
 
-- A cryptographic puzzle that determines the conditions required to
-  spend the output
+.Protecting Pre-Signed Transactions
+****
+The last step before broadcasting a transaction to the network for
+inclusion in the blockchain is to sign it.  However, it's possible to
+sign a transaction without broadcasting it immediately.  You can save
+that pre-signed transaction for months or years in the belief that it
+can be added to the blockchain later when you do broadcast it.  In the
+interim, you may even lose access to the private key (or keys) necessary
+to sign an alternative transaction spending the funds.  This isn't
+hypothetical: several protocols built on Bitcoin, including Lightning
+Network, depend on pre-signed transactions.
 
-((("locking scripts")))((("scripting", "locking
-scripts")))((("witnesses")))((("scriptPubKey")))The cryptographic puzzle
-is also known as a  _locking script_, a _witness script_, or a
-+scriptPubKey+.
+This creates a challenge for protocol developers when they assist users
+in upgrading the Bitcoin consensus protocol.  Adding new
+constraints--such as BIP68 did to the nSequence field--may invalidate
+some pre-signed transactions.  If there's no way to create a new
+signature for an equivalent transaction, then the money being spent in
+the pre-signed transaction is permanently lost.
 
-The transaction scripting language, used in the locking script mentioned
-previously, is discussed in detail in <<tx_script>>.
+This problem is solved by reserving some transaction features for
+upgrades, such as version numbers.  Anyone creating pre-signed
+transactions prior to BIP68 should have been using version 1
+transactions, so only applying BIP68's additional constraints on
+nSequence to transactions v2 or higher should not invalidate any
+pre-signed transactions.
 
-Now, let's look at Alice's transaction (shown previously in
-<<transactions_behind_the_scenes>>) and see if we can identify the
-outputs. In the JSON encoding, the outputs are in an array (list) named
-+vout+:
+If you implement a protocol that uses pre-signed transactions, ensure
+that it doesn't use any features that are reserved for future upgrades.
+Bitcoin Core's default transaction relay policy does not allow the use
+of reserved features.  You can test whether a transaction complies with
+that policy by using the Bitcoin Core RPC +testmempoolaccept+ on Bitcoin
+mainnet.
+****
 
-[source,json]
-----
-"vout": [
-  {
-    "value": 0.01500000,
-    "scriptPubKey": "OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY
-    OP_CHECKSIG"
-  },
-  {
-    "value": 0.08450000,
-    "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG",
-  }
-]
-----
+As of this writing, a proposal to begin using version 3 transactions is
+being widely considered.  That proposal does not seek to change the
+consensus rules but only the policy that Bitcoin full nodes use to relay
+transactions.  Under the proposal, version 3 transactions would be
+subject to additional constraints in order to prevent certain Denial of
+Service (DoS) attacks that we'll discuss further in <<transaction-pinning>>
 
-As you can see, the transaction contains two outputs. Each output is
-defined by a value and a cryptographic puzzle. In the encoding shown by
-Bitcoin Core, the value is shown in bitcoin, but in the transaction
-itself it is recorded as an integer denominated in satoshis. The second
-part of each output is the cryptographic puzzle that sets the conditions
-for spending. Bitcoin Core shows this as +scriptPubKey+ and shows us a
-human-readable representation of the script.
+=== Extended Marker and Flag
 
-The topic of locking and unlocking UTXO will be discussed later, in
-<<tx_lock_unlock>>. The scripting language that is used for the script
-in +scriptPubKey+ is discussed in <<tx_script>>. But before we delve
-into those topics, we need to understand the overall structure of
-transaction inputs and outputs.
+The next two fields of the example serialized transaction were added as
+part of the Segregated Witness (segwit) soft fork change to Bitcoin's
+consensus rules.  The rules were changed according to BIPs 141 and 143,
+but the _extended serialization format_ is defined in BIP144.
 
-===== Transaction serialization&#x2014;outputs
+If the transaction includes a witness field (which we'll describe in
+<<witnesses>>), the marker must be zero (0x00) and the flag must be
+non-zero.  In the current P2P protocol, the flag should always be one
+(0x01); alternative flags are reserved for later protocol upgrades.
 
-((("transactions", "outputs and inputs", "structure of")))((("outputs
-and inputs", "structure of")))((("serialization", "outputs")))When
-transactions are transmitted over the network or exchanged between
-applications, they are _serialized_. Serialization is the process of
-converting the internal representation of a data structure into a format
-that can be transmitted one byte at a time, also known as a byte stream.
-Serialization is most commonly used for encoding data structures for
-transmission over a network or for storage in a file. The serialization
-format of a transaction output is shown in <<tx_out_structure>>.
+If the transaction doesn't need a witness, the marker and flag most not
+be present.  This is compatible with the original version of Bitcoin's
+transaction serialization format, now called _legacy serialization_.
+For details, see <<legacy_serialization>>.
 
-[[tx_out_structure]]
-.Transaction output serialization
-[options="header"]
-|=======
-|Size| Field | Description
-| 8 bytes (little-endian) | Amount  | Bitcoin value in satoshis (10^-8^ bitcoin)
-| 1&#x2013;9 bytes (VarInt) | Locking-Script Size | Locking-Script length in bytes, to follow
-| Variable | Locking-Script | A script defining the conditions needed to spend the output
-|=======
+In legacy serialization, the marker byte would have been interpreted as
+the number of inputs (zero).  A transaction can't have zero inputs, so
+the marker signals to modern programs that extended serialization is
+being used.  The flag field provides a similar signal and also
+simplifies the process of updating the serialization format in the
+future.
 
-Most bitcoin libraries and frameworks do not store transactions
-internally as byte-streams, as that would require complex parsing every
-time you needed to access a single field. For convenience and
-readability, bitcoin libraries store transactions internally in data
-structures (usually object-oriented structures).
+[[inputs]]
+=== Inputs
 
-((("deserialization")))((("parsing")))((("transactions", "parsing")))The
-process of converting from the byte-stream representation of a
-transaction to a library's internal representation data structure is
-called _deserialization_ or _transaction parsing_. The process of
-converting back to a byte-stream for transmission over the network, for
-hashing, or for storage on disk is called _serialization_.  Most bitcoin
-libraries have built-in functions for transaction serialization and
-deserialization.
+The inputs field contains several other fields, so let's start by with a
+map of those bytes in <<alice_tx_input_map>>.
 
-See if you can manually decode Alice's transaction from the serialized
-hexadecimal form, finding some of the elements we saw previously. The
-section containing the two outputs is highlighted in <<example_6_1>> to
-help you:
+[[alice_tx_input_map]]
+.Map of bytes in the input field of Alice's transaction
+image::../images/input-byte-map.png["map of bytes in the input field of Alice's transaction"]
 
-[[example_6_1]]
-.Alice's transaction, serialized and presented in hexadecimal notation
+==== Inputs Count
+
+The input field starts with an integer indicating the number of inputs
+in the transaction.  The minimum value is one.  There's no explicit
+maximum value, but restrictions on the maximum size of a transaction
+effectively limit transactions to a few thousand inputs.  The number is
+encoded as a compactSize unsigned integer.
+
+.CompactSize Unsigned Integers
+****
+Unsigned integers in Bitcoin that often have low values, but which may
+sometimes have high values, are usually encoded using the compactSize
+data type.  CompactSize is a version of a variable-length integer, so
+it's sometimes called var_int or varint (see, for example, documentation
+for BIPs 37 and 144).
+
+[WARNING]
 ====
-+0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd73+
-+4d2804fe65fa35779000000008b483045022100884d142d86652a3f47+
-+ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039+
-+ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813+
-+01410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade84+
-+16ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc1+
-+7b4a10fa336a8d752adfffffffff02+*+60e31600000000001976a914ab6+*
-*+8025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef800000000000+*
-*+1976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac+*
-+00000000+
-====
-
-Here are some hints:
-
-- There are two outputs in the highlighted section, each serialized as
-  shown in <<tx_out_structure>>.
-
-- The value of 0.015 bitcoin is 1,500,000 satoshis. That's +16 e3 60+ in
-  hexadecimal.
-
-- In the serialized transaction, the value +16 e3 60+ is encoded in
-  little-endian (least-significant-byte-first) byte order, so it looks
-  like +60 e3 16+.
-
-- The +scriptPubKey+ length is 25 bytes, which is +19+ in hexadecimal.
-
-[[tx_inputs]]
-==== Transaction Inputs
-
-((("transactions", "outputs and inputs", "input
-components")))((("outputs and inputs", "input components")))((("unspent
-transaction outputs (UTXO)")))((("UTXO sets")))Transaction inputs
-identify (by reference) which UTXO will be consumed and provide proof of
-ownership through an unlocking script.
-
-To build a transaction, a wallet selects from the UTXO it controls, UTXO
-with enough value to make the requested payment. Sometimes one UTXO is
-enough, other times more than one is needed. For each UTXO that will be
-consumed to make this payment, the wallet creates one input pointing to
-the UTXO and unlocks it with an unlocking script.
-
-Let's look at the components of an input in greater detail. The first
-part of an input is a pointer to an UTXO by reference to the transaction
-hash and an output index, which identifies the specific UTXO in that
-transaction. The second part is an unlocking script, which the wallet
-constructs in order to satisfy the spending conditions set in the UTXO.
-Most often, the unlocking script is a digital signature and public key
-proving ownership of the bitcoin. However, not all unlocking scripts
-contain signatures. The third part is a sequence number, which will be
-discussed later.
-
-Consider our example in <<transactions_behind_the_scenes>>. The
-transaction inputs are an array (list) called +vin+:
-
-[[vin]]
-.The transaction inputs in Alice's transaction
-[source,json]
-----
-"vin": [
-  {
-    "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
-    "vout": 0,
-    "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
-    "sequence": 4294967295
-  }
-]
-----
-
-As you can see, there is only one input in the list (because one UTXO
-contained sufficient value to make this payment). The input contains
-four elements:
-
-- A ((("transaction IDs (txd)")))transaction ID, referencing the
-  transaction that contains the UTXO being spent
-
-- An output index (+vout+), identifying which UTXO from that transaction
-  is referenced (first one is zero)
-
-- A +scriptSig+, which satisfies the conditions placed on the UTXO,
-  unlocking it for spending
-
-- A sequence number (to be discussed later)
-
-In Alice's transaction, the input points to the transaction ID:
-
-----
-7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18
-----
-
-and output index +0+ (i.e., the first UTXO created by that transaction).
-The unlocking script is constructed by Alice's wallet by first
-retrieving the referenced UTXO, examining its locking script, and then
-using it to build the necessary unlocking script to satisfy it.
-
-Looking just at the input you may have noticed that we don't know
-anything about this UTXO, other than a reference to the transaction
-containing it. We don't know its value (amount in satoshi), and we don't
-know the locking script that sets the conditions for spending it. To
-find this information, we must retrieve the referenced UTXO by
-retrieving the underlying transaction. Notice that because the value of
-the input is not explicitly stated, we must also use the referenced UTXO
-in order to calculate the fees that will be paid in this transaction
-(see <<tx_fees>>).
-
-It's not just Alice's wallet that needs to retrieve UTXO referenced in
-the inputs. Once this transaction is broadcast to the network, every
-validating node will also need to retrieve the UTXO referenced in the
-transaction inputs in order to validate the transaction.
-
-Transactions on their own seem incomplete because they lack context.
-They reference UTXO in their inputs but without retrieving that UTXO we
-cannot know the value of the inputs or their locking conditions. When
-writing bitcoin software, anytime you decode a transaction with the
-intent of validating it or counting the fees or checking the unlocking
-script, your code will first have to retrieve the referenced UTXO from
-the blockchain in order to build the context implied but not present in
-the UTXO references of the inputs. For example, to calculate the amount
-paid in fees, you must know the sum of the values of inputs and outputs.
-But without retrieving the UTXO referenced in the inputs, you do not
-know their value. So a seemingly simple operation like counting fees in
-a single transaction in fact involves multiple steps and data from
-multiple transactions.
-
-We can use the same sequence of commands with Bitcoin Core as we used
-when retrieving Alice's transaction (+getrawtransaction+ and
-+decoderawtransaction+). With that we can get the UTXO referenced in the
-preceding input and take a look:
-
-[[alice_input_tx]]
-.Alice's UTXO from the previous transaction, referenced in the input
-[source,json]
-----
-"vout": [
-   {
-     "value": 0.10000000,
-     "scriptPubKey": "OP_DUP OP_HASH160 7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8 OP_EQUALVERIFY OP_CHECKSIG"
-   }
- ]
-----
-
-We see that this UTXO has a value of 0.1 BTC and that it has a locking
-script (+scriptPubKey+) that contains "OP_DUP OP_HASH160...".
-
-[TIP]
-====
-To fully understand Alice's transaction we had to retrieve the previous
-transaction(s) referenced as inputs. A function that retrieves previous
-transactions and unspent transaction outputs is very common and exists
-in almost every bitcoin library and API.
+There are several different varieties of variable length integers used
+in different programs, including in different Bitcoin programs.  For
+example, Bitcoin Core serializes its UTXO database using a data type it
+calls +VarInts+ which is different from compactSize.  Additionally, the
+nBits field in a Bitcoin block header is encoded using a custom data
+type known as +Compact+, which is unrelated to compactSize.  When
+talking about the variable length integers used in Bitcoin transaction
+serialization and other parts of the Bitcoin P2P protocol, we will
+always use the full name compactSize.
 ====
 
-===== Transaction serialization&#x2014;inputs
+For numbers from 0 to 252, compactSize unsigned integers are identical
+to the C-language data type +uint8_t+, which is probably the native
+encoding familiar to any programmer.  For other numbers up to
+0xffffffffffffffff, a byte is prefixed to the number to indicate its
+length—but otherwise the numbers look like regular unsigned integers.
 
-((("serialization", "inputs")))((("transactions", "outputs and inputs",
-"input serialization")))((("outputs and inputs", "input
-serialization")))When transactions are serialized for transmission on
-the network, their inputs are encoded into a byte stream as shown in
-<<tx_in_structure>>.
+[cols="1,1,1"]
+|===
+| Value | Bytes Used | Format
+| >= 0 && \<= 252 (0xfc) | 1 | uint8_t
+| >= 253 && \<= 0xffff | 3 | 0xfd followed by the number as uint16_t
+| >= 0x10000 && \<= 0xffffffff | 5 | 0xfe followed by the number as uint32_t
+| >= 0x100000000 && \<= 0xffffffffffffffff | 9 | 0xff followed by the number as uint64_t
+|===
+****
 
-[[tx_in_structure]]
-.Transaction input serialization
-[options="header"]
-|=======
-|Size| Field | Description
-| 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
-| 4 bytes | Output Index | The index number of the UTXO to be spent; first one is 0
-| 1&#x2013;9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
-| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script
-| 4 bytes | Sequence Number | Used for locktime or disabled (0xFFFFFFFF)
-|=======
+Each input in a transaction must contain three fields:
 
-As with the outputs, let's see if we can find the inputs from Alice's
-transaction in the serialized format. First, the inputs decoded:
+- An _outpoint_ field
 
-[source,json]
+- A length-prefixed _scriptSig_ field
+
+- An _nSequence_
+
+We'll look at each of those fields in the following sections.  Some
+inputs also include a witness, but this is serialized at the end of a
+transaction and so we'll examine it later.
+
+[[outpoints]]
+==== Outpoint
+
+A Bitcoin transaction is a request for full nodes to update their
+database of coin ownership information.  For Alice to transfer control
+of some of her bitcoins to Bob, she first needs to tell full nodes how
+to find the previous transfer where she received those bitcoins.  Since
+control over bitcoins is assigned in transaction outputs, Alice _points_
+to the previous _output_ using an _outpoint_ field.  Each input must
+contain a single outpoint.
+
+The outpoint contains a 32-byte transaction identifier (_txid_) for the
+transaction where Alice received the bitcoins she now wants to spend.
+This txid is in Bitcoin's internal byte order for hashes, see
+<<internal_and_display_order>>.
+
+Because transactions may contain multiple outputs, Alice also needs to
+identify which particular output from that transaction to use, called
+its output vector (_vout_).  Output vectors are four-byte unsigned
+integers indexed from zero.
+
+When a full node encounters an outpoint, it uses that information to
+try to find the referenced output.  Full nodes only look at earlier
+transactions in the blockchain.  For example, Alice's transaction is
+included in block 774,958.  A full node verifying her transaction will
+only look for the previous output referenced by her outpoint in that
+block and previous blocks, not any later blocks.  Within block 774,958,
+they will only look at transactions placed in the block prior to Alice's
+transaction, as determined by the order of leaves in the block's merkle
+tree (see <<merkle_trees>>).
+
+Upon finding the previous output, the full node obtains several critical
+pieces of information from it:
+
+- The value of bitcoins assigned to that previous output.  All of those
+  bitcoins will be transferred in this transaction.  In the example
+  transaction, the value of the previous output was 100,000 satoshis.
+
+- The authorization conditions for that previous output.  These are the
+  conditions that must be fulfilled in order to spend the bitcoins
+  assigned to that previous output.
+
+- For confirmed transactions, the height of the block which confirmed it
+  and the Median Time Past (MTP) for that block.  This is required for
+  relative timelocks (described in <<relative_timelocks>>) and outputs
+  of coinbase transactions (described in <<coinbase_transactions>>).
+
+- Proof that the previous output exists in the blockchain (or as a known
+  unconfirmed transaction) and that no other transaction has spent it.
+  One of Bitcoin's consensus rules forbids any output from being spent
+  more than once within a valid blockchain.  This is the rule against
+  _double spending_--Alice can't use the same previous output to pay
+  both Bob and Carol.  Two transactions which each try to the spend the
+  same previous output are called _conflicting transactions_ because
+  only one of them can be included in a valid blockchain.
+
+Different approaches to tracking previous outputs have been tried by
+different full node implementations at various times.  Bitcoin Core
+currently uses the solution believed to be most effective at retaining
+all necessary information while minimizing disk space: it keeps a
+database that stores every Unspent Transaction Output (UTXO) and
+essential metadata about it (like its confirmation block height).  Each
+time a new block of transactions arrives, all of the outputs they spend
+are removed from the UTXO database and all of the outputs they create
+are added to the database.
+
+[[internal_and_display_order]]
+.Internal and Display Byte Orders
+****
+Bitcoin uses the output of hash functions, called _digests_, in various
+ways.  Digests provide unique identifiers for blocks and transactions;
+they're used in commitments for addresses, blocks, transactions,
+signatures, and more; and digests are iterated upon in Bitcoin's
+proof-of-work function. In some cases, hash digests are displayed to
+users in one byte order but are used internally in a different byte
+order, creating confusion.  For example, consider the previous output
+txid from the outpoint in our example transaction:
+
 ----
-"vin": [
-  {
-    "txid": "7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18",
-    "vout": 0,
-    "scriptSig" : "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813[ALL] 0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf",
-    "sequence": 4294967295
-  }
-],
+eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
 ----
 
-Now, let's see if we can identify these fields in the serialized hex
-encoding in <<example_6_2>>:
+If we try using that that txid to retrieve that transaction using
+Bitcoin Core, we get an error and must reverse its byte order:
 
-[[example_6_2]]
-.Alice's transaction, serialized and presented in hexadecimal notation
-====
-+0100000001+*+186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd73+*
-*+4d2804fe65fa35779000000008b483045022100884d142d86652a3f47+*
-*+ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039+*
-*+ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813+*
-*+01410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade84+*
-*+16ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc1+*
-*+7b4a10fa336a8d752adfffffffff+*+0260e31600000000001976a914ab6+
-+8025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef800000000000+
-+1976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000+
-+000+
-====
+----
+$ bitcoin-cli getrawtransaction \
+  eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
+error code: -5
+error message:
+No such mempool or blockchain transaction. Use gettransaction for wallet transactions.
 
-Hints:
+$ echo eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a \
+  | fold -w2 | tac | tr -d "\n"
+4ac541802679866935a19d4f40728bb89204d0cac90d85f3a51a19278fe33aeb
 
-- The transaction ID is serialized in reversed byte order, so it starts
-  with (hex) +18+ and ends with +79+
+$ bitcoin-cli getrawtransaction \
+  4ac541802679866935a19d4f40728bb89204d0cac90d85f3a51a19278fe33aeb
+02000000000101c25ae90c9f3d40cc1fc509ecfd54b06e35450702...
+----
 
-- The output index is a 4-byte group of zeros, easy to identify
+This odd behavior is probably an unintentional consequence of a
+https://bitcoin.stackexchange.com/questions/116730/why-does-bitcoin-core-print-sha256-hashes-uint256-bytes-in-reverse-order[design
+decision in early Bitcoin software].  As a practical matter, it means
+developers of Bitcoin software need to remember to reverse the order of
+bytes in transaction and block identifiers that they show to users.
 
-- The length of the +scriptSig+ is 139 bytes, or +8b+ in hex
+In this book, we use the term _internal byte order_ for the data that
+appears within transactions and blocks.  We use _display byte order_ for
+the form displayed to users.  Another set of common terms is
+_little-endian byte order_ for the internal version and _big-endian byte
+order_ for the display version.
+****
 
-- The sequence number is set to +FFFFFFFF+, again easy to identify((("",
-  startref="alicesix")))
+==== ScriptSig
 
-=== Bitcoin Addresses, Balances, and Other Abstractions
+The scriptSig field is a remnant of the legacy transaction format.  Our
+example transaction input spends a native segwit output which doesn't
+require any data in the scriptSig, so the length prefix for the
+scriptSig is set to zero (0x00).
 
-((("transactions", "higher-level abstractions", id="Thigher06")))We
-began this chapter with the discovery that transactions look very
-different "behind the scenes" than how they are presented in wallets,
-blockchain explorers, and other user-facing applications. Many of the
-simplistic and familiar concepts from the earlier chapters, such as
-Bitcoin addresses and balances, seem to be absent from the transaction
-structure. We saw that transactions don't contain Bitcoin addresses, per
-se, but instead operate through scripts that lock and unlock discrete
-values of bitcoin. Balances are not present anywhere in this system and
-yet every wallet application prominently displays the balance of the
-user's wallet.
+For an example of a length-prefixed scriptSig that spends a legacy
+output, we use one from an arbitrary transaction in the most recent
+block as of this writing:
 
-Now that we have explored what is actually included in a bitcoin
-transaction, we can examine how the higher-level abstractions are
-derived from the seemingly primitive components of the transaction.
+----
+6b483045022100a6cc4e8cd0847951a71fad3bc9b14f24d44ba59d19094e0a8c
+fa2580bb664b020220366060ea8203d766722ed0a02d1599b99d3c95b97dab8e
+41d3e4d3fe33a5706201210369e03e2c91f0badec46c9c903d9e9edae67c167b
+9ef9b550356ee791c9a40896
+----
 
-Let's look again at how Alice's transaction was presented on a popular
-block explorer (<<alice_transaction_to_bobs_cafe>>).
+The length prefix is a compactSize unsigned integer indicating the
+length of the serialized scriptSig field.  In this case, it's a single
+byte (0x6b) indicating the scriptSig is 107 bytes.  We'll cover parsing
+and using scripts in detail in the next chapter,
+<<c_authorization_authentication>>.
 
-[[alice_transaction_to_bobs_cafe]]
-.Alice's transaction to Bob's Cafe
-image::images/mbc2_0208.png["Alice Coffee Transaction"]
+==== nSequence
 
-On the left side of the transaction, the blockchain explorer shows
-Alice's Bitcoin address as the "sender." In fact, this information is
-not in the transaction itself. When the blockchain explorer retrieved
-the transaction it also retrieved the previous transaction referenced in
-the input and extracted the first output from that older transaction.
-Within that output is a locking script that locks the UTXO to Alice's
-public key hash (a P2PKH script). The blockchain explorer extracted the
-public key hash and encoded it using Base58Check encoding to produce and
-display the Bitcoin address that represents that public key.
+The final four bytes of an input are its sequence number, called
+_nSequence_.  The use and meaning of this field has changed over time.
 
-Similarly, on the right side, the blockchain explorer shows the two
-outputs; the first to Bob's Bitcoin address and the second to Alice's
-Bitcoin address (as change). Once again, to create these Bitcoin
-addresses, the blockchain explorer extracted the locking script from
-each output, recognized it as a P2PKH script, and extracted the
-public-key-hash from within. Finally, the blockchain explorer reencoded
-that public key hash with Base58Check to produce and display the Bitcoin
-addresses.
+[[original_tx_replacement]]
+===== Original nSequence-based Transaction Replacement
 
-If you were to click on Bob's Bitcoin address, the blockchain explorer
-would show you the view in <<the_balance_of_bobs_bitcoin_address>>.
+The +nSequence+ field was originally intended to allow creation of
+multiple versions of the same transaction, with later versions replacing
+earlier versions as candidates for confirmation.  The nSequence number
+tracked the version of the transaction.
 
-[[the_balance_of_bobs_bitcoin_address]]
-.The balance of Bob's Bitcoin address
-image::images/mbc2_0608.png["The balance of Bob's Bitcoin address"]
+For example, imagine Alice and Bob want to bet on a game of cards.  They
+start by each signing a transaction that deposits some money into an
+output with a script which requires signatures from both of them to spend, a
+_multi-signature_ script (_multisig_ for short).  This is called the
+_setup transaction_.  They then create a transaction which spends that
+output:
 
-The blockchain explorer displays the balance of Bob's Bitcoin address.
-But nowhere in the Bitcoin system is there a concept of a "balance."
-Rather, the values displayed here are constructed by the blockchain
-explorer as follows.
+- The first version of the transaction, with nSequenece 0 (0x00000000)
+  pays Alice and Bob back the money they initially deposited.  This is
+  called a _refund transaction_.  Neither of them broadcasts the refund
+  the transaction at this time.  They only need it if there's a problem.
 
-To construct the "Total Received" amount, the blockchain explorer first
-will decode the Base58Check encoding of the Bitcoin address to retrieve
-the 160-bit hash of Bob's public key that is encoded within the address.
-Then, the blockchain explorer will search through the database of
-transactions, looking for outputs with P2PKH locking scripts that
-contain Bob's public key hash. By summing up the value of all the
-outputs, the blockchain explorer can produce the total value received.
+- Alice wins the first round of the card game, so the second version of
+  the transaction, with nSequence 1, increases the amount of money paid
+  to Alice and decreases Bob's share.  The both sign the updated
+  transaction.  Again, they don't need to broadcast this version of the
+  transaction unless there's a problem.
 
-Constructing the current balance (displayed as "Final Balance") requires
-a bit more work. The blockchain explorer keeps a separate database of
-the outputs that are currently unspent, the UTXO set. To maintain this
-database, the blockchain explorer must monitor the Bitcoin network, add
-newly created UTXO, and remove spent UTXO, in real time, as they appear
-in unconfirmed transactions. This is a complicated process that depends
-on keeping track of transactions as they propagate, as well as
-maintaining consensus with the Bitcoin network to ensure that the
-correct chain is followed. Sometimes, the blockchain explorer goes out
-of sync and its perspective of the UTXO set is incomplete or incorrect.
+- Bob wins the second round, so the nSequence is incremented to 2,
+  Alice's share is decreased, and Bob's share is increased.  They again
+  sign but don't broadcast.
 
-From the UTXO set, the blockchain explorer sums up the value of all
-unspent outputs referencing Bob's public key hash and produces the
-"Final Balance" number shown to the user.
+- After many more rounds where the nSequence is incremented, the
+  funds redistributed, and the resulting transaction is signed but not
+  broadcast, they decide to finalize the transaction.  Creating a
+  transaction with the final balance of funds, they set nSequence to its
+  maximum value (0xffffffff), finalizing the transaction.  They broadcast
+  this version of the transaction, it's relayed across the network, and
+  eventually confirmed by miners.
 
-In order to produce this one image, with these two "balances," the
-blockchain explorer has to index and search through dozens, hundreds, or
-even hundreds of thousands of transactions.
+We can see the replacement rules for nSequence at work if we consider
+alternative scenarios:
 
-In summary, the information presented to users through wallet
-applications, blockchain explorers, and other bitcoin user interfaces is
-often composed of higher-level abstractions that are derived by
-searching many different transactions, inspecting their content, and
-manipulating the data contained within them. By presenting this
-simplistic view of bitcoin transactions that resemble bank checks from
-one sender to one recipient, these applications have to abstract a lot
-of underlying detail. They mostly focus on the common types of
-transactions: P2PKH with SIGHASH_ALL signatures on every input. Thus,
-while bitcoin applications can present more than 80% of all transactions
-in an easy-to-read manner, they are sometimes stumped by transactions
-that deviate from the norm. Transactions that contain more complex
-locking scripts, or different SIGHASH flags, or many inputs and outputs,
-demonstrate the simplicity and weakness of these abstractions.
+- Imagine that Alice broadcasts the final transaction, with an nSequence of
+  0xffffffff, and then Bob broadcasts one of the earlier transactions
+  where his balance was higher.  Because Bob's version of the
+  transaction has a lower sequence number, full nodes using the original
+  Bitcoin code won't relay it to miners, and miners who also used the
+  original code won't mine it.
 
-Every day, hundreds of transactions that do not contain P2PKH outputs
-are confirmed on the blockchain. The blockchain explorers often present
-these with red warning messages saying they cannot decode an address.
-The following link contains the most recent "strange transactions" that
-were not fully decoded: https://blockchain.info/strange-transactions[].
+- In another scenario, imagine that Bob broadcasts an earlier version of
+  the transaction a few seconds before Alice broadcasts the final
+  version.  Nodes will relay Bob's version and miners will attempt to
+  mine it, but when Alice's version with its higher nSequence number
+  arrives, nodes will also relay it and miners using the original
+  Bitcoin code will try to mine it instead of Bob's version.  Unless Bob
+  got lucky and a block was discovered before Alice's version arrived,
+  it's Alice's version of the transaction that will get confirmed.
 
-As we will see in the next chapter, these are not necessarily strange
-transactions. They are transactions that contain more complex locking
-scripts than the common P2PKH. We will learn how to decode and
-understand more complex scripts and the applications they support
-next.((("", startref="Thigher06")))((("", startref="alicesixtwo")))
+This type of protocol is what we now call a _payment channel_.
+Bitcoin's creator, in an email attributed to him, described these as
+high-frequency transactions and described a number of features added to
+the protocol to support them.  We'll learn about several of those other
+features later and also discover how modern versions of payment channels
+are increasingly being used in Bitcoin today.
 
+There were a few problems with purely nSequence-based payment channels.
+The first was that the rules for replacing a lower-sequence transaction
+with a higher-sequence transaction were only a matter of software
+policy.  There was no direct incentive for miners to prefer one version
+of the transaction over any other.  The second problem was that the
+first person to send their transaction might get lucky and have it
+confirmed even if it wasn't the highest-sequence transaction.  A
+security protocol that fails a few percent of the time due to bad luck
+isn't a very effective protocol.
 
-=== Timelocks
+The third problem was that it was possible to replace one version of a
+transaction with a different version an unlimited number of
+times.  Each replacement would consume the bandwidth of all the relaying full nodes
+on the network.  For example, as of this writing there are about 50,000
+relaying full nodes; an attacker creating 1,000 replacement transactions
+per minute at 200 bytes each would use about 20 kilobytes of their
+personal bandwidth but about 10 gigabytes of full node network bandwidth
+every minute.  Except for the cost of their 20 KB/minute bandwidth and
+the occasional fee when a transaction got confirmed, the attacker wouldn't
+need to pay any costs for the enormous burden they placed on full node
+operators.
 
-((("transactions", "advanced", "timelocks")))((("scripting",
-"timelocks", id="Stimelock07")))((("nLocktime field")))((("scripting",
-"timelocks", "uses for")))((("timelocks", "uses for")))Timelocks are
-restrictions on transactions or outputs that only allow spending after a
-point in time. Bitcoin has had a transaction-level timelock feature from
-the beginning. It is implemented by the +nLocktime+ field in a
-transaction. Two new timelock features were introduced in late 2015 and
-mid-2016 that offer UTXO-level timelocks. These are
-+CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+.
+To eliminate the risk of this attack, the original type of
+nSequence-based transaction replacement was disabled in an early version
+of the Bitcoin software.  For several years, Bitcoin full nodes would
+not allow an unconfirmed transaction containing a particular input (as
+indicated by its outpoint) to be replaced by a different transaction
+containing the same input.  However, that situation didn't last forever.
 
-Timelocks are useful for postdating transactions and locking funds to a
-date in the future. More importantly, timelocks extend bitcoin scripting
-into the dimension of time, opening the door for complex multistep smart
-contracts.
+[[nsequence-bip125]]
+===== Opt-in Transaction Replacement Signaling
 
-[[transaction_locktime_nlocktime]]
-==== Transaction Locktime (nLocktime)
+After the original nSequence-based transaction replacement was disabled
+due to the potential for abuse, a solution was proposed: programming
+Bitcoin Core and other relaying full node software to allow a
+transaction that paid a higher transaction fee rate to replace a
+conflicting transaction that paid a lower fee rate.  This is called
+_Replace-By-Fee_, or _RBF_ for short.  Some users and businesses
+objected to adding support for transaction replacement back into Bitcoin
+Core, so a compromise was reached that once again used the nSequence
+field in support of replacement.
 
-((("scripting", "timelocks", "nLocktime")))((("timelocks",
-"nLocktime")))From the beginning, Bitcoin has had a transaction-level
-timelock feature. Transaction locktime is a transaction-level setting (a
-field in the transaction data structure) that defines the earliest time
-that a transaction is valid and can be relayed on the network or added
-to the blockchain. Locktime is also known as +nLocktime+ from the
-variable name used in the Bitcoin Core codebase. It is set to zero in
-most transactions to indicate immediate propagation and execution. If
-+nLocktime+ is nonzero and below 500 million, it is interpreted as a
-block height, meaning the transaction is not valid and is not relayed or
-included in the blockchain prior to the specified block height. If it is
-above 500 million, it is interpreted as a Unix Epoch timestamp (seconds
-since Jan-1-1970) and the transaction is not valid prior to the
-specified time. Transactions with +nLocktime+ specifying a future block
-or time must be held by the originating system and transmitted to the
-Bitcoin network only after they become valid. If a transaction is
-transmitted to the network before the specified +nLocktime+, the
-transaction will be rejected by the first node as invalid and will not
-be relayed to other nodes. The use of +nLocktime+ is equivalent to
-postdating a paper check.
+As documented in BIP125, an unconfirmed transaction with any input that
+has an nSequence set to a value below 0xfffffffe (i.e., at least 2 below
+the maximum value) signals to the network that its signer wants it to be
+replaceable by a conflicting transaction paying a higher fee rate.
+Bitcoin Core allowed those unconfirmed transactions to be replaced and
+continued to disallow other transactions from being replaced.  This
+allowed users and businesses that objected to replacement to simply
+ignore unconfirmed transactions containing the BIP125 signal until they
+became confirmed.
 
-[[locktime_limitations]]
-===== Transaction locktime limitations
+There's more to modern transaction replacement policies than fee rates
+and nSequence signals, which we'll see in <<rbf>>.
 
-+nLocktime+ has the limitation that while it makes it possible to spend
-some outputs in the future, it does not make it impossible to spend them
-until that time. Let's explain that with the following example.
-
-((("use cases", "buying coffee", id="alicesseven")))Alice signs a
-transaction spending one of her outputs to Bob's address, and sets the
-transaction +nLocktime+ to 3 months in the future. Alice sends that
-transaction to Bob to hold. With this transaction Alice and Bob know
-that:
-
-- Bob cannot transmit the transaction to redeem the funds until 3 months
-  have elapsed.
-
-- Bob may transmit the transaction after 3 months.
-
-However:
-
-- Alice can create another transaction, double-spending the same inputs
-  without a locktime. Thus, Alice can spend the same UTXO before the 3
-  months have elapsed.
-
-- Bob has no guarantee that Alice won't do that.
-
-It is important to understand the limitations of transaction
-+nLocktime+. The only guarantee is that Bob will not be able to redeem
-it before 3 months have elapsed. There is no guarantee that Bob will get
-the funds. To achieve such a guarantee, the timelock restriction must be
-placed on the UTXO itself and be part of the locking script, rather than
-on the transaction. This is achieved by the next form of timelock,
-called Check Lock Time Verify.
-
-==== Relative Timelocks with nSequence
-
-((("nSequence field")))((("scripting", "timelocks", "relative timelocks
-with nSequence")))Relative timelocks can be set on each input of a
-transaction, by setting the +nSequence+ field in each input.
-
-===== Original meaning of nSequence
-
-The +nSequence+ field was originally intended (but never properly
-implemented) to allow modification of transactions in the mempool. In
-that use, a transaction containing inputs with +nSequence+ value below
-2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet
-"finalized." Such a transaction would be held in the mempool until it
-was replaced by another transaction spending the same inputs with a
-higher +nSequence+ value. Once a transaction was received whose inputs
-had an +nSequence+ value of 0xFFFFFFFF it would be considered
-"finalized" and mined.
-
-The original meaning of +nSequence+ was never properly implemented and
-the value of +nSequence+ is customarily set to 0xFFFFFFFF in
-transactions that do not utilize timelocks. For transactions with
-nLocktime or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to
-less than 2^31^ for the timelock guards to have an effect, as explained
-below.
-
+[[relative_timelocks]]
 ===== nSequence as a consensus-enforced relative timelock
 
-Since the activation of BIP-68, new consensus rules apply for any
-transaction containing an input whose +nSequence+ value is less than
-2^31^ (bit 1<<31 is not set). Programmatically, that means that if the
-most significant (bit 1<<31) is not set, it is a flag that means
-"relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is
-reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+,
-+nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
+In the <<nVersion>> section, we learned that the BIP68 soft fork added
+a new constraint to transactions with version numbers 2 or higher.  That
+constraint applies to the nSequence field.
 
 Transaction inputs with +nSequence+ values less than 2^31^ are
-interpreted as having a relative timelock. Such a transaction is only
-valid once the input has aged by the relative timelock amount. For
-example, a transaction with one input with an +nSequence+ relative
-timelock of 30 blocks is only valid when at least 30 blocks have elapsed
-from the time the UTXO referenced in the input was mined. Since
-+nSequence+ is a per-input field, a transaction may contain any number
-of timelocked inputs, all of which must have sufficiently aged for the
-transaction to be valid. A transaction can include both timelocked
-inputs (+nSequence+ < 2^31^) and inputs without a relative timelock
-(+nSequence+ >= 2^31^).
+interpreted as having a relative timelock. Such a transaction may only
+be included in the blockchain once the previous output (referenced by the
+outpoint) has aged by the relative timelock amount. For example, a
+transaction with one input with a relative timelock of 30 blocks can
+only be confirmed after least 30 blocks have elapsed from the time the
+previous output was confirmed in a block on the current blockchain.
+Since +nSequence+ is a per-input field, a transaction may contain any
+number of timelocked inputs, all of which must have sufficiently aged
+for the transaction to be valid. A transaction can include both
+timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative
+timelock (+nSequence+ >= 2^31^).
 
-The +nSequence+ value is specified in either blocks or seconds, but in a
-slightly different format than we saw used in +nLocktime+. A type-flag
+The +nSequence+ value is specified in either blocks or seconds.
+A type-flag
 is used to differentiate between values counting blocks and values
 counting time in seconds. The type-flag is set in the 23rd
 least-significant bit (i.e., value 1<<22). If the type-flag is set, then
@@ -754,331 +514,649 @@ the +nSequence+ value is interpreted as a multiple of 512 seconds. If
 the type-flag is not set, the +nSequence+ value is interpreted as a
 number of blocks.
 
+
 When interpreting +nSequence+ as a relative timelock, only the 16 least
 significant bits are considered. Once the flags (bits 32 and 23) are
 evaluated, the +nSequence+ value is usually "masked" with a 16-bit mask
-(e.g., +nSequence+ & 0x0000FFFF).
+(e.g., +nSequence+ & 0x0000FFFF).  The multiple of 512 seconds is
+roughly equal to the average amount of time between blocks, so the
+maximum relative timelock in both blocks and seconds from 16 bits
+(2^16^) is about one year.
 
 <<bip_68_def_of_nseq>> shows the binary layout of the +nSequence+ value,
-as defined by BIP-68.
+as defined by BIP68.
 
 [[bip_68_def_of_nseq]]
-.BIP-68 definition of nSequence encoding (Source: BIP-68)
-image::images/mbc2_0701.png["BIP-68 definition of nSequence encoding"]
+.BIP68 definition of nSequence encoding (Source: BIP68)
+image::../images/mbc2_0701.png["BIP68 definition of nSequence encoding"]
 
-Relative timelocks based on consensus enforcement of the +nSequence+
-value are defined in BIP-68.
+Note that any transaction which sets a relative timelock using nSequence
+also sends the signal for opt-in replace-by-fee as described in
+<<nsequence-bip125>>.
 
-The standard is defined in
-https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki[BIP-68,
-Relative lock-time using consensus-enforced sequence numbers].
+=== Outputs
 
-[[segwit]]
-=== Segregated Witness
+The outputs field of a transaction contains several fields related to
+specific outputs.  Just as we did with the inputs field, we'll start by
+looking at the specific bytes of the output field from the example
+transaction where Alice pays Bob, displayed as
+a map of those bytes in <<output-byte-map>>.
 
-((("segwit (Segregated Witness)", id="Ssegwit07")))Segregated Witness
-(segwit) is an upgrade to the bitcoin consensus rules and network
-protocol, proposed and implemented as a BIP-9 soft-fork that was
-activated on bitcoin's mainnet on August 1st, 2017.
+[[output-byte-map]]
+.A byte map of the outputs field from Alice's transaction
+image::../images/output-byte-map.png["A byte map of the outputs field from Alice's transaction"]
 
-In cryptography, the term "witness" is used to describe a solution to a
-cryptographic puzzle. In bitcoin terms, the witness satisfies a
-cryptographic condition placed on a unspent transaction output (UTXO).
+==== Outputs Count
 
-In the context of bitcoin, a digital signature is _one type of witness_,
-but a witness is more broadly any solution that can satisfy the
-conditions imposed on an UTXO and unlock that UTXO for spending. The
-term “witness” is a more general term for an “unlocking script” or
-“scriptSig.”
+Identical to the start of the input section of transaction, the output
+field begins with a count indicating the number of outputs in this
+transaction.  It's a compactSize integer and must be greater than zero.
 
-Before segwit’s introduction, every input in a transaction was followed
-by the witness data that unlocked it. The witness data was embedded in
-the transaction as part of each input. The term _segregated witness_, or
-_segwit_ for short, simply means separating the signature or unlocking
-script of a specific output. Think "separate scriptSig," or “separate
-signature” in the simplest form.
+The example transaction has two outputs.
 
-Segregated Witness therefore is an architectural change to bitcoin that
-aims to move the witness data from the +scriptSig+ (unlocking script)
-field of a transaction into a separate _witness_ data structure that
-accompanies a transaction. Clients may request transaction data with or
-without the accompanying witness data.
+==== nValue
 
-In this section we will look at some of the benefits of Segregated
-Witness, describe the mechanism used to deploy and implement this
-architecture change, and demonstrate the use of Segregated Witness in
-transactions and addresses.
+The first field of a specific output is its value, also called
+_nValue_ in Bitcoin Core.  This is an eight-byte signed integer indicating
+the number of _satoshis_ to transfer.  A satoshi is the smallest unit of
+bitcoin that can be represented in an onchain Bitcoin transaction.
+There are 100 million satoshis in a bitcoin.
 
-Segregated Witness is defined by the following BIPs:
+Bitcoin's consensus rules allow an output to have a value as small as
+zero and as large as 21 million bitcoins (2.1 quadrillion satoshis).
 
-https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki[BIP-141] :: The main definition of Segregated Witness.
+//TODO:describe early integer overflow problem
 
-https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki[BIP-143] :: Transaction Signature Verification for Version 0 Witness Program
+[[uneconomical_outputs]]
+===== Uneconomical Outputs and Disallowed Dust
 
-https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki[BIP-144] :: Peer Services&#x2014;New network messages and serialization formats
+Despite not having any value, a zero-value output can be spent under
+the same rules as any other output.  However, spending an output (using
+it as the input in a transaction) increases the size of a transaction,
+which increases the amount of fee that needs to be paid.  If the value
+of the output is less than the cost of the additional fee, then it doesn't
+make economic sense to spend the output.  Such outputs are known as
+_uneconomical outputs_.
 
-https://github.com/bitcoin/bips/blob/master/bip-0145.mediawiki[BIP-145] :: getblocktemplate Updates for Segregated Witness (for mining)
+A zero-value output is always an uneconomical output; it wouldn't
+contribute any value to a transaction spending it even if the
+transaction's fee rate was zero.  However, many other outputs with low
+values can be uneconomical as well, even unintentionally.  For example,
+at the feerates prevelant on the network today, an output might add more
+value to a transaction than it costs to spend--but, tomorrow, feerates
+might rise and make the output uneconomical.
 
-https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki[BIP-173]:: Base32 address format for native v0-16 witness outputs
+The need for full nodes to keep track of all unspent transaction outputs
+(UTXOs), as described in <<outpoints>>, means that every UTXO makes it
+slightly harder to run a full node.  For UTXOs containing significant
+value, there's an incentive to eventually spend them, so they aren't a
+problem.  But there's no incentive for the person controlling an
+uneconomical UTXO to ever spend it, potentially making it a perpetual
+burden on operators of full nodes.  Because Bitcoin's decentralization
+depends on many people being willing to run full nodes, several full
+node implementations such as Bitcoin Core discourage the creation of
+uneconomical outputs using policies for the relay and mining of
+unconfirmed transactions.
 
-==== Why Segregated Witness?
-
-Segregated Witness is an architectural change that has several effects
-on the scalability, security, economic incentives, and performance of
-bitcoin:
-
-Transaction Malleability :: By moving the witness outside the
-transaction, the transaction hash used as an identifier no longer
-includes the witness data. Since the witness data is the only part of
-the transaction that can be modified by a third party (see
-<<segwit_txid>>), removing it also removes the opportunity for
-transaction malleability attacks. With Segregated Witness, transaction
-hashes become immutable by anyone other than the creator of the
-transaction, which greatly improves the implementation of many other
-protocols that rely on advanced bitcoin transaction construction, such
-as payment channels, chained transactions, and lightning networks.
-
-Script Versioning :: With the introduction of Segregated Witness
-scripts, every locking script is preceded by a _script version_ number,
-similar to how transactions and blocks have version numbers. The
-addition of a script version number allows the scripting language to be
-upgraded in a backward-compatible way (i.e., using soft fork upgrades)
-to introduce new script operands, syntax, or semantics. The ability to
-upgrade the scripting language in a nondisruptive way will greatly
-accelerate the rate of innovation in bitcoin.
-
-Network and Storage Scaling :: The witness data is often a big
-contributor to the total size of a transaction. More complex scripts
-such as those used for multisig or payment channels are very large. In
-some cases these scripts account for the majority (more than 75%) of the
-data in a transaction. By moving the witness data outside the
-transaction, Segregated Witness improves bitcoin’s scalability. Nodes
-can prune the witness data after validating the signatures, or ignore it
-altogether when doing simplified payment verification. The witness data
-doesn’t need to be transmitted to all nodes and does not need to be
-stored on disk by all nodes.
-
-Signature Verification Optimization :: Segregated Witness upgrades the
-signature functions (+CHECKSIG+, +CHECKMULTISIG+, etc.) to reduce the
-algorithm's computational complexity. Before segwit, the algorithm used
-to produce a signature required a number of hash operations that was
-proportional to the size of the transaction. Data-hashing computations
-increased in O(n^2^) with respect to the number of signature operations,
-introducing a substantial computational burden on all nodes verifying
-the signature. With segwit, the algorithm is changed to reduce the
-complexity to O(n).
-
-Offline Signing Improvement :: Segregated Witness signatures incorporate
-the value (amount) referenced by each input in the hash that is signed.
-Previously, an offline signing device, such as a hardware wallet, would
-have to verify the amount of each input before signing a transaction.
-This was usually accomplished by streaming a large amount of data about
-the previous transactions referenced as inputs. Since the amount is now
-part of the commitment hash that is signed, an offline device does not
-need the previous transactions. If the amounts do not match (are
-misrepresented by a compromised online system), the signature will be
-invalid.
-
-==== How Segregated Witness Works
-
-At first glance, Segregated Witness appears to be a change to how
-transactions are constructed and therefore a transaction-level feature,
-but it is not. Rather, Segregated Witness is a change to how individual
-UTXO are spent and therefore is a per-output feature.
-
-A transaction can spend Segregated Witness outputs or traditional
-(inline-witness) outputs or both. Therefore, it does not make much sense
-to refer to a transaction as a “Segregated Witness transaction.” Rather
-we should refer to specific transaction outputs as “Segregated Witness
-outputs."
-
-When a transaction spends an UTXO, it must provide a witness. In a
-traditional UTXO, the locking script requires that witness data be
-provided _inline_ in the input part of the transaction that spends the
-UTXO. A Segregated Witness UTXO, however, specifies a locking script
-that can be satisfied with witness data outside of the input
-(segregated).
-
-==== Soft Fork (Backward Compatibility)
-
-Segregated Witness is a significant change to the way outputs and
-transactions are architected. Such a change would normally require a
-simultaneous change in every Bitcoin node and wallet to change the
-consensus rules&#x2014;what is known as a hard fork. Instead, segregated
-witness is introduced with a much less disruptive change, which is
-backward compatible, known as a soft fork. This type of upgrade allows
-nonupgraded software to ignore the changes and continue to operate
-without any disruption.
-
-Segregated Witness outputs are constructed so that older systems that
-are not segwit-aware can still validate them. To an old wallet or node,
-a Segregated Witness output looks like an output that _anyone can
-spend_. Such outputs can be spent with an empty signature, therefore the
-fact that there is no signature inside the transaction (it is
-segregated) does not invalidate the transaction. Newer wallets and
-mining nodes, however, see the Segregated Witness output and expect to
-find a valid witness for it in the transaction’s witness data.
-
-[[segwit_txid]]
-===== Transaction identifiers
-
-((("transaction IDs (txid)")))One of the greatest benefits of Segregated
-Witness is that it eliminates third-party transaction malleability.
-
-Before segwit, transactions could have their signatures subtly modified
-by third parties, changing their transaction ID (hash) without changing
-any fundamental properties (inputs, outputs, amounts). This created
-opportunities for denial-of-service attacks as well as attacks against
-poorly written wallet software that assumed unconfirmed transaction
-hashes were immutable.
-
-With the introduction of Segregated Witness, transactions have two
-identifiers, +txid+ and +wtxid+. The traditional transaction ID +txid+
-is the double-SHA256 hash of the serialized transaction, without the
-witness data. A transaction +wtxid+ is the double-SHA256 hash of the new
-serialization format of the transaction with witness data.
-
-The traditional +txid+ is calculated in exactly the same way as with a
-nonsegwit transaction. However, since the segwit transaction has empty
-++scriptSig++s in every input, there is no part of the transaction that
-can be modified by a third party. Therefore, in a segwit transaction,
-the +txid+ is immutable by a third party, even when the transaction is
-unconfirmed.
-
-The +wtxid+ is like an "extended" ID, in that the hash also incorporates
-the witness data. If a transaction is transmitted without witness data,
-then the +wtxid+ and +txid+ are identical. Note than since the +wtxid+
-includes witness data (signatures) and since witness data may be
-malleable, the +wtxid+ should be considered malleable until the
-transaction is confirmed. Only the +txid+ of a segwit transaction can be
-considered immutable by third parties and only if _all_ the inputs of
-the transaction are segwit inputs.
+The policies against relaying or mining transactions creating new
+uneconomical outputs are called _dust_ policies, based on a metaphorical
+comparison between outputs with very small values and particles with
+very small size.  Bitcoin Core's dust policy is complicated and contains
+several arbitrary numbers, so many programs we're aware of simply
+assume outputs with less than 546 satoshis are dust and will not be
+relayed or mined by default.  There are occasionally proposals to lower
+dust limits, and counterproposals to raise them, so we encourage
+developers using presigned transactions or multi-party protocols to
+check whether the policy has changed since publication of this book.
 
 [TIP]
 ====
-Segregated Witness transactions have two IDs: +txid+ and +wtxid+. The
-+txid+ is the hash of the transaction without the witness data and the
-+wtxid+ is the hash inclusive of witness data. The +txid+ of a
-transaction where all inputs are segwit inputs is not susceptible to
-third-party transaction malleability.
+Since Bitcoin's inception, every full node has needed to keep a copy of
+every unspent transaction output (UTXO), but that might not always be
+the case.  Several developers have been working on Utreexo, a project
+that allows full nodes to store a commitment to the set of UTXOs rather
+than the data itself.  A minimal commitment might be only a kilobyte or
+two in size--compare that to the over five gigabytes Bitcoin Core stores
+as of this writing.
+
+However, Utreexo will still require some nodes to store all UTXO data,
+especially nodes serving miners and other operations that need to
+quickly validate new blocks.  That means uneconomical outputs can still
+be a problem for full nodes even in a possible future where most nodes
+use Utreexo.
 ====
 
-==== Economic Incentives for Segregated Witness
+Bitcoin Core's policy rules about dust do have one exception: output
+scriptPubKeys starting with +OP_RETURN+, called _data carrier outputs_,
+can have a value of zero.  The OP_RETURN opcode causes the script to
+immediately fail no matter what comes after it, so these outputs can
+never be spent.  That means full nodes don't need to keep track of them,
+a feature Bitcoin Core takes advantage of to allow users to store small
+amounts of arbitrary data in the blockchain without increasing the size
+of its UTXO database.  Since the outputs are unspendable, they aren't
+uneconomical--any satoshis in nValue assigned to them becomes
+permanently unspendable--so allowing the nValue to be zero ensures
+satoshis aren't being destroyed.
 
-Bitcoin mining nodes and full nodes incur costs for the resources used
-to support the Bitcoin network and the blockchain. As the volume of
-bitcoin transactions increases, so does the cost of resources (CPU,
-network bandwidth, disk space, memory). Miners are compensated for these
-costs through fees that are proportional to the size (in bytes) of each
-transaction. Nonmining full nodes are not compensated, so they incur
-these costs because they have a need to run an authoritative fully
-validating full-index node, perhaps because they use the node to operate
-a bitcoin business.
+==== ScriptPubKey
 
-Without transaction fees, the growth in bitcoin data would arguably
-increase dramatically. Fees are intended to align the needs of bitcoin
-users with the burden their transactions impose on the network, through
-a market-based price discovery mechanism.
+The output amount is followed by a compactSize integer indicating the
+length of the output's _scriptPubKey_, the script that contains the
+conditions which will need to be fulfilled in order to spend the
+bitcoins, the _spending authorization_.  According to Bitcoin's
+consensus rules, the minimum size of a scriptPubKey is zero.
 
-The calculation of fees based on transaction size treats all the data in
-the transaction as equal in cost. But from the perspective of full nodes
-and miners, some parts of a transaction carry much higher costs. Every
-transaction added to the Bitcoin network affects the consumption of four
-resources on nodes:
+The consensus maximum allowed size of a scriptPubKey varies depending on
+when it's being checked.  There's no explicit limit on the size of a
+scriptPubKey in the output of a transaction, but a later transaction can
+only spend a previous output with a scriptPubKey of 10,000 bytes or
+smaller.  Implicitly, a scriptPubKey can be almost as large as the
+transaction containing it, and a transaction can be almost as large as
+the block containing it.
 
-Disk Space :: Every transaction is stored in the blockchain, adding to
-the total size of the blockchain. The blockchain is stored on disk, but
-the storage can be optimized by “pruning” older transactions.
+[[anyone-can-spend]]
+[TIP]
+====
+A scriptPubKey with zero length can be spent by a scriptSig containing
+OP_TRUE.  Anyone can create that scriptSig, which means anyone
+can spend an empty scriptPubKey.  There are an essentially unlimited
+number of scripts which anyone can spend and they are known to Bitcoin
+protocol developers as _anyone can spends_.  Upgrades to Bitcoin's
+script language often take an existing anyone-can-spend script and add
+new constraints to it, making it only spendable under the new
+conditions.  Application developers should never need to use an
+anyone-can-spend script, but if you do, we highly recommend that you
+loudly announce your plans to Bitcoin users and developers so that
+future upgrades don't accidentally interfere with your system.
+====
 
-CPU :: Every transaction must be validated, which requires CPU time.
+Bitcoin Core's policy for relaying and mining transactions effectively
+limits scriptPubKeys to just a few templates, called _standard
+transaction outputs_.  This was originally implemented after the
+discovery of several early bugs in Bitcoin related to the Script
+language and is retained in modern Bitcoin Core to support
+anyone-can-spend upgrades and to encourage the best practice of placing
+script conditions in P2SH redeemScripts, segwit v1 witness scripts, and
+segwit v2 (taproot) tapscripts.
 
-Bandwidth :: Every transaction is transmitted (through flood
-propagation) across the network at least once. Without any optimization
-in the block propagation protocol, transactions are transmitted again as
-part of a block, doubling the impact on network capacity.
+We'll look at each of the current standard transaction templates and
+learn how to parse scripts in <<c_authorization_authentication>>.
 
-Memory :: Nodes that validate transactions keep the UTXO index or the
-entire UTXO set in memory to speed up validation. Because memory is at
-least one order of magnitude more expensive than disk, growth of the
-UTXO set contributes disproportionately to the cost of running a node.
+[[witnesses]]
+=== Witnesses
 
-As you can see from the list, not every part of a transaction has an
-equal impact on the cost of running a node or on the ability of bitcoin
-to scale to support more transactions. The most expensive part of a
-transaction are the newly created outputs, as they are added to the
-in-memory UTXO set. By comparison, signatures (aka witness data) add the
-least burden to the network and the cost of running a node, because
-witness data are only validated once and then never used again.
-Furthermore, immediately after receiving a new transaction and
-validating witness data, nodes can discard that witness data. If fees
-are calculated on transaction size, without discriminating between these
-two types of data, then the market incentives of fees are not aligned
-with the actual costs imposed by a transaction. In fact, the current fee
-structure actually encourages the opposite behavior, because witness
-data is the largest part of a transaction.
+In court, a witness is someone who testifies that they saw something
+important happen.  Human witnesses aren't always reliable, so courts
+have various processes for interrogating witnesses to (ideally) only
+accept evidence from those who are reliable.
 
-The incentives created by fees matter because they affect the behavior
-of wallets. All wallets must implement some strategy for assembling
-transactions that takes into consideration a number of factors, such as
-privacy (reducing address reuse), fragmentation (making lots of loose
-change), and fees. If the fees are overwhelmingly motivating wallets to
-use as few inputs as possible in transactions, this can lead to UTXO
-picking and change address strategies that inadvertently bloat the UTXO
-set.
+Imagine what a witness would look like for a math problem.  For example,
+if the important problem was _x + 2 = 4_ and someone claimed they
+witnessed the solution, what would we ask them?  We'd want a
+mathematical proof that showed a value which could be summed with two to
+equal four.  We could even omit the need for a person and just use the
+proposed value for _x_ as our witness.  If we were told that the witness
+was _two_, then we could fill in the equation, check that it was correct, and
+decide that the important problem had been solved.
 
-Transactions consume UTXO in their inputs and create new UTXO with their
-outputs. A transaction, therefore, that has more inputs than outputs
-will result in a decrease in the UTXO set, whereas a transaction that
-has more outputs than inputs will result in an increase in the UTXO set.
-Let’s consider the _difference_ between inputs and outputs and call that
-the “Net-new-UTXO.” That’s an important metric, as it tells us what
-impact a transaction will have on the most expensive network-wide
-resource, the in-memory UTXO set. A transaction with positive
-Net-new-UTXO adds to that burden. A transaction with a negative
-Net-new-UTXO reduces the burden. We would therefore want to encourage
-transactions that are either negative Net-new-UTXO or neutral with zero
-Net-new-UTXO.
+When spending bitcoins, the important problem we want to solve is
+determining whether the spend was authorized by the person or people who
+control those bitcoins.  The thousands of full nodes which enforce
+Bitcoin's consensus rules can't interrogate human witnesses, but they can
+accept _witnesses_ that consist entirely of data for solving math
+problems.  For example, a witness of _2_ will allow spending bitcoins
+protected by the following script:
 
-Let’s look at an example of what incentives are created by the
-transaction fee calculation, with and without Segregated Witness. We
-will look at two different transactions. Transaction A is a 3-input,
-2-output transaction, which has a Net-new-UTXO metric of &#x2013;1,
-meaning it consumes one more UTXO than it creates, reducing the UTXO set
-by one. Transaction B is a 2-input, 3-output transaction, which has a
-Net-new-UTXO metric of 1, meaning it adds one UTXO to the UTXO set,
-imposing additional cost on the entire Bitcoin network. Both
-transactions use multisignature (2-of-3) scripts to demonstrate how
-complex scripts increase the impact of segregated witness on fees. Let’s
-assume a transaction fee of 30 satoshi per byte and a 75% fee discount
-on witness data:
+----
+2 OP_ADD 4 OP_EQUAL
+----
 
-++++
-<dl>
-<dt>Without Segregated Witness</dt>
-<dd>
-<p>Transaction A fee: 25,710 satoshi</p>
-<p>Transaction B fee: 18,990 satoshi</p>
-</dd>
+Obviously, allowing your bitcoins to be spent by anyone who can solve a
+simple equation wouldn't be secure.  As we'll see in <<signatures>>, an
+unforgable digital signature scheme uses an equation that can only be
+solved by someone in possession of certain data which they're able to
+keep secret.  They're able to reference that secret data using a public
+identifier.  That public identifier is called a _public key_ and a
+solution to the equation is called a _signature_.
 
-<dt>With Segregated Witness</dt>
-<dd>
-<p>Transaction A fee: 8,130 satoshi</p>
-<p>Transaction B fee: 12,045 satoshi</p>
-</dd>
-</dl>
-++++
+The following script contains a public key and an opcode which requires
+a corresponding signature commit to the data in spending transaction.  Like
+the number _2_ in our simple example, the signature is our witness.
 
-Both transactions are less expensive when segregated witness is
-implemented. But comparing the costs between the two transactions, we
-see that before Segregated Witness, the fee is higher for the
-transaction that has a negative Net-new-UTXO. After Segregated Witness,
-the transaction fees align with the incentive to minimize new UTXO
-creation by not inadvertently penalizing transactions with many inputs.
+----
+<public key> OP_CHECKSIG
+----
 
-Segregated Witness therefore has two main effects on the fees paid by
-Bitcoin users. Firstly, segwit reduces the overall cost of transactions
-by discounting witness data and increasing the capacity of the Bitcoin
-blockchain. Secondly, segwit’s discount on witness data corrects a
-misalignment of incentives that may have inadvertently created more
-bloat in the UTXO set.((("", startref="Tadv07")))((("",
-startref="Ssegwit07")))
+Witnesses, the values used to solve the math problems that protect
+bitcoins, need to be included in the transactions where they're used in
+order for full nodes to verify them.  In the legacy transaction format
+used for all early Bitcoin transactions, signatures and other data are
+placed in the scriptSig field.  However, when developers started to
+implement contract protocols on Bitcoin, such as we saw in
+<<original_tx_replacement>>, they discovered several significant
+problems with placing witnesses in the scriptSig field.
+
+==== Circular Dependencies
+
+Many contract protocols for Bitcoin involve a series of transactions
+which are signed out of order.  For example, Alice and Bob want to
+deposit funds into a script that can only be spent with signatures from
+both of them, but they each also want to get their money back if the
+other person becomes unresponsive.  A simple solution is to sign
+transactions out of order.
+
+- Tx~0~ pays money from Alice and money from Bob into an output with a
+  scriptPubKey that requries signatures from both Alice and Bob to spend
+
+- Tx~1~ spends the previous output to two outputs, one refunding Alice
+  her money and one refunding Bob his money (minus a small amount for
+  transaction fees)
+
+- If Alice and Bob sign Tx~1~ before they sign Tx~0~, then they're both
+  guaranteed to be able to get a refund at any time.  The protocol
+  doesn't require either of them trust the other, making it a _trustless
+  protocol_.
+
+A problem with this construction in the legacy transaction format is
+that every field, including the scriptSig field which contains
+signatures, is used to build a transaction's identifier (txid).  The
+txid for Tx~0~ is part of the input's outpoint in Tx~1~.  That means
+there's no way for Alice and Bob to construct Tx~1~ until both
+signatures for Tx~0~ are known--but if they know the signatures for
+Tx~0~, one of them can broadcast that transaction before signing the
+refund transaction, eliminating the guarantee of a refund.  This is a
+_circular dependency_.
+
+==== Third-Party Transaction Malleability
+
+A more complex series of transactions can sometimes eliminate a circular
+dependency, but many protocols will then encounter a new concern: it's
+often possible to solve the same script in different ways.  For example,
+consider our simple script from <<witnesses>>:
+
+----
+2 OP_ADD 4 OP_EQUAL
+----
+
+We can make this script pass by providing the value _2_ in a scriptSig,
+but there are several ways to put that value on the stack in Bitcoin.
+Here are just a few:
+
+----
+OP_2
+OP_PUSH1 0x02
+OP_PUSH2 0x0002
+OP_PUSH3 0x000002
+...
+OP_PUSHDATA1 0x0102
+OP_PUSHDATA1 0x020002
+...
+OP_PUSHDATA2 0x000102
+OP_PUSHDATA2 0x00020002
+...
+OP_PUSHDATA4 0x0000000102
+OP_PUSHDATA4 0x000000020002
+...
+----
+
+Each alternative encoding of the number _2_ in a scriptSig will produce
+a slightly different transaction with a completely different txid.  Each
+different version of the transaction spends the same inputs (outpoints)
+as every other version of the transaction, making them all _conflict_
+with each other.  Only one version of a set of conflicting transactions
+can be contained within a valid blockchain.
+
+Imagine Alice creates one version of the transaction with +OP_2+ in the
+scriptSig and an output that pays Bob.  Bob then immediately spends that
+output to Carol.  Anyone on the network can replace +OP_2+ with
++OP_PUSH1 0x02+, creating a conflict with Alice's original version.  If
+that conflicting transaction is confirmed, then there's no way to
+include Alice's original version in the same blockchain, which means
+there's no way for Bob's transaction to spend its output.
+Bob's payment to Carol has been made invalid even though neither Alice,
+Bob, nor Carol did anything wrong.  Someone not involved in the
+transaction (a third-party) was able to change (mutate) Alice's
+transaction, a problem called _unwanted third-party transaction
+malleability_.
+
+[TIP]
+====
+There are cases when people want their transactions to be malleable and
+Bitcoin provides several features to support that, most notably the
+signature hashes (sighash) we'll learn about in <<sighashes>>.  For
+example, Alice can use a sighash to allow Bob to help her pay some
+transaction fees.  This mutates Alice's transaction but only in a way
+that Alice wants.  For that reason, we will occasionally prefix the
+word _unwanted_ to the term _transaction malleability_.  Even when we
+and other Bitcoin technical writers use the base term, we're almost
+certainly talking about the unwanted variant of malleability.
+====
+
+==== Second-Party Transaction Malleability
+
+When the legacy transaction format was the only transaction format,
+developers worked on proposals to minimize third-party malleability,
+such as BIP62.  However, even if they were able to entirely eliminate
+third-party malleability, users of contract protocols faced another problem:
+if they required a signature from someone else involved in the protocol,
+that person could generate alternative signatures and so change the txid.
+
+For example, Alice and Bob have deposited their money into a script
+requiring a signature from both of them to spend.  They've also created
+a refund transaction that allows each of the to get their money back at
+any time.  Alice decides she wants to spend just some of the
+money, so she cooperates with Bob to create a chain of transactions.
+
+- Tx~0~ includes signatures from both Alice and Bob, spending its
+  bitcoins to two outputs.  The first output spends some of Alice's
+  money; the second output returns the remainder of the bitcoins back to
+  the script requiring Alice and Bob's signatures.  Before signing this
+  transaction, they create a new refund transaction, Tx~1~.
+
+- Tx~1~ spends the second output of Tx~0~ to two new outputs, one to
+  Alice for her share of the joint funds, and one to Bob for his share.
+  Alice and Bob both sign this transaction before they sign Tx~0~.
+
+There's no circular dependency here and, if we ignore third-party
+transaction malleability, this looks like it should provide us with a
+trustless protocol.  However, it's a property of Bitcoin signatures that
+the signer has to choose a large random number when creating their
+signature.  Choosing a different random number will produce a different
+signature even if everything being signed stays the same.  It's sort of
+like how, if you provide a handwritten signature for two copies of the
+same contract, each of those physical signatures will look slightly
+different.
+
+This mutability of signatures means that, if Alice tries to broadcast
+Tx~0~ (which contains Bob's signature), Bob can generate an alternative
+signature to create a conflicting transaction with a different txid.  If
+Bob's alternative version of Tx~0~ gets confirmed, then Alice can't use
+the presigned version of Tx~1~ to claim her refund.  This type of
+mutation is called _unwanted second-party transaction malleability_.
+
+[[segwit]]
+==== Segregated Witness
+
+As early as https://bitcointalk.org/index.php?topic=40627.msg494697[2011],
+protocol developers knew how to solve the problems of circular
+dependence, third-party malleability, and second-party malleability.  The
+idea was to avoid including the scriptSig in the calculation that
+produces a transaction's txid.  Recall that an abstract name for the data
+held by a scriptSig is a _witness_.  The idea of separating the rest of
+the data in a transaction from its witness for the purpose of generating
+a txid is called _segregated witness_ (segwit).
+
+The obvious method for implementing segwit requires a
+backwards-incompatible change to Bitcoin's consensus rules, also called
+a _hard fork_.  Hard forks come with a lot of challenges, as we'll
+discuss further in <<hard_forks>>.
+
+An alternative approach to segwit was described in late 2015.  This
+would use a backwards-compatible change to the consensus rules, called a
+_soft fork_.  Backwards compatible means that full nodes implementing
+the change must not accept any blocks that full nodes without the change
+would consider invalid.  As long as they obey that rule, newer full
+nodes can reject blocks that older full nodes would accept, giving them
+the ability to enforce new consensus rules (but only if the newer full
+nodes represent the economic consensus among Bitcoin users--we'll
+explore the details of upgrading Bitcoin's consensus rules in
+<<mining>>).
+
+The soft fork segwit approach is based on anyone-can-spend
+scriptPubKeys.  A script which starts with any of the numbers 0 to 16
+and followed by 2 to 40 bytes of data is defined as a segwit
+scriptPubKey template.  The number indicates its version (e.g. 0 is
+segwit version 0, or _segwit v0_).  The data is called a _native witness
+program_.  It's also possible to wrap the segwit template in a P2SH
+commitment, called a _P2SH witness program_, but we won't deal with that
+here.
+
+From the perspective of old nodes, these scriptPubKey templates can be
+spent with an empty scriptSig.  From the perspective of a new node which
+is aware of the new segwit rules, any payment to a segwit scriptPubKey
+template must only be spent with an empty scriptSig.  Notice the
+difference here: old nodes _allow_ an empty scriptSig; new nodes
+_require_ an empty scriptSig.
+
+An empty scriptSig keeps witnesses from affecting the txid, eliminating
+circular dependencies, third-party transaction malleability, and
+second-party transaction malleability.  But, with no ability to put
+data in a scriptSig, users of segwit scriptPubKey templates need a
+new field.  That field is called is called the _witness_.
+
+The introduction of witnesses and witness programs complicates Bitcoin,
+but it follows an existing trend of increasing abstraction.  Recall from
+<<ch04_keys_addresses>> that the original Bitcoin whitepaper describes a system
+where bitcoins were received to public keys (pubkeys) and spent with
+signatures (sigs).  The public key defined who was _authorized_ to spend
+the bitcoins (whoever controlled the corresponding private key) and the
+signature provided _authentication_ that the spending transaction came
+from someone who controlled the private key.  To make that system more
+flexible, the initial release of Bitcoin introduced scripts that allow
+bitcoins to be received to scriptPubKeys and spent with scriptSigs.
+Later experience with contract protocols inspired allowing bitcoins to
+be received to witness programs and spent with witnesses.
+
+[cols="1,1,1"]
+|===
+| | **Authorization** | **Authentication**
+| **Whitepaper** | Public key | Signature
+| **Original (Legacy)** | scriptPubKey | scriptSig
+| **Segwit** | Witness program | Witness
+|===
+
+==== Witness Serialization
+
+Similar to the inputs and outputs fields, the witness field contains
+several other fields, so we'll start with a map of those bytes from
+Alice's transaction in <<alice_tx_witness_map>>:
+
+[[alice_tx_witness_map]]
+.A byte map of the witness from Alice's transaction
+image::../images/witness-byte-map.png["A byte map of the witness from Alice's transaction"]
+
+Unlike the inputs and outputs fields, the overall witness field doesn't
+start with any indication of the total number of elements it contains.
+Instead, this is implied by the inputs field--there's one witness
+element for every input in a transaction.
+
+The witness field for a particular input does start with a count of the
+number of elements they contain.  Those elements are called _stack
+items_.  We'll explore them in detail in
+<<c_authorization_authentication>>, but for now we need to know that
+each stack item is prefixed by a compactSize integer indicating its
+size.
+
+Legacy inputs don't contain any witness stack items so their witness
+consists entirely of a count of zero (0x00).
+
+Alice's transaction contains one input and one stack item.
+
+[[nlocktime]]
+=== nLockTime
+
+The final field in a serialized transaction is its _nLockTime_.  This
+field was part of Bitcoin's original serialization format but it was
+only initially enforced by Bitcoin's policy for choosing which
+transactions to mine.  Bitcoin's earliest known soft fork added a rule
+that, starting at block height 31,000, forbid the inclusion of a
+transaction in a block unless it satisfies one of the following rules:
+
+- The transaction indicates that it should be eligible for inclusion in
+  any block by setting its nLockTime to 0.
+
+- The transaction indicates that it wants to restrict which blocks it
+  can be included in by setting its nLockTime to a value less than
+  500,000,000.  In this case, the transaction can only be included in a
+  block that has a height equal to the nLockTime or higher.  For
+  example, a transaction with an nLockTime of 123,456 can be included in
+  block 123,456 or any later block.
+
+- The transaction indicates that it wants to restrict when it can be
+  included in the blockchain by setting its nLockTime to a value of
+  500,000,000 or greater.  In this case, the field is parsed as epoch
+  time (the number of seconds since 1970-01-01T00:00 UTC) and the
+  transaction can only be included in a block with a _Median Time Past_
+  (MTP) greater than the nLockTime.  MTP is normally about an hour or
+  two behind the current time.  The rules for MTP are described in
+  <<mtp>>.
+
+[[coinbase_transactions]]
+=== Coinbase Transactions
+
+The first transaction in each block is a special case.  Most older
+documentation calls this a _generation transaction_, but most newer
+documentation calls it a _coinbase transaction_ (not to be confused with
+transactions created by the company named "Coinbase").
+
+Coinbase transactions are created by the miner of the block that
+includes them and gives the miner the option to claim any fees paid by
+transactions in that block.  Additionally, up until block 6,720,000,
+miners are allowed to claim a subsidy consisting of bitcoins that have
+never previously been circulated, called the _block subsidy_.  The total
+amount a miner can claim for a block--the combination of fees and
+subsidy--is called the _block reward_.
+
+Some of the special rules for coinbase transactions include:
+
+- They may only have one input.
+
+- The single input must have outpoint with a null txid (consisting entirely
+  of zeroes) and a maximal output index (0xffffffff).  This prevents the
+  coinbase transaction from referencing a previous transaction output,
+  which would (at the very least) be confusing given that the coinbase
+  transaction spends fees and subsidy.
+
+- The field which would contain a scriptSig in a normal transaction is
+  called a _coinbase_.  It's this field that gives the coinbase
+  transaction its name.  The coinbase field must be at least two bytes
+  and not longer than 100 bytes.  This script is not executed but legacy
+  transaction limits on the number of signature-checking operations
+  (sigops) do apply to it, so any arbitrary data placed in it should be
+  prefixed by a data-pushing opcode.  Since a 2013 soft fork defined in
+  BIP34, the first few bytes of this field must follow additional rules
+  we'll describe in <<duplicate_transactions>>.
+
+- The sum of the outputs must not exceed the value of the fees collected
+  from all the transactions in that block plus the subsidy.  The subsidy
+  started at 50 BTC per block and halves every 210,000 blocks
+  (approximately every four years).  Subsidy values are rounded down to the
+  nearest satoshi.
+
+- Since the 2017 soft fork documented in BIP141, any block that contains
+  a transaction spending a segwit output must contain an output to the
+  coinbase transaction that commits to all of the transactions in the
+  block (including their witnesses).  We'll explore this commitment in
+  <<mining>>.
+
+A coinbase transaction can have any other outputs that would be valid in
+a normal transaction.  However, a transaction spending one of those
+outputs cannot be included in any block until after the coinbase
+transaction has received 100 confirmations.  This is called the
+_maturity rule_ and coinbase transaction outputs which don't yet have
+100 confirmations are called _immature_.  The maturity rule requires 100
+blocks to be built on top of a miner's block before that miner is able
+to spend their block reward.
+
+//TODO:stretch goal to describe the reason for the maturity rule and,
+//by extension the reason for no expiring timelocks
+
+Most Bitcoin software doesn't need to deal with coinbase transactions
+but their special nature does mean they can occasional be the cause of
+unusual problems in software that's not designed to expect them.
+
+// Useful content deleted
+// - no input amount in transactions
+// - no balances in transactions
+//   - UTXO model theory?
+// Coin selection
+// Change
+// Inability for SPV clients to get old UTXOs
+
+=== Weight and Vbytes
+
+Each Bitcoin block is limited in the amount of transaction data it can
+contain, so most Bitcoin software needs to be able to measure the
+transactions it creates or processes.  The modern unit of measurement
+for Bitcoin is called _weight_.  An alternative version of weight is
+_vbytes_, where four units of weight equal one vbyte, providing an easy
+comparison to the original _byte_ measurement unit used in legacy
+Bitcoin blocks.
+
+Blocks are limited to 4 million weight.  The block header takes up 240
+weight.  An additional field, the transaction count, uses either 4 or
+12 weight.  All of the remaining weight may be used for transaction
+data.
+
+To calculate the weight of a particular field in transaction, the size
+of that serialized field in bytes is multiplied by a factor.  To
+calculate the weight of a transaction, sum together the weights of all
+of its fields.  The factors for each of the fields in a transaction are
+shown in <<weight_factors>>.  To provide an example, we also calculate
+the weight of each field in this chapter's example transaction from
+Alice to Bob.
+
+The factors, and the fields to which they are applied, were chosen to
+reduce the weight used when spending a UTXO.  This helps discourage the
+creation of uneconomical outputs as described in
+<<uneconomical_outputs>>.
+
+[[weight_factors]]
+.Weight factors for all fields in a Bitcoin transaction
+[cols="1,1,1"]
+|===
+| **Field** | **Factor** | **Weight in Alice's Tx**
+| Version       | 4 | 16
+| Marker & Flag | 1 | 2
+| Inputs Count  | 4 | 4
+| Outpoint      | 4 | 144
+| scriptSig     | 4 | 4
+| nSequence     | 4 | 16
+| Outputs Count | 4 | 4
+| nValue        | 4 | 64 (2 outputs)
+| scriptPubKey  | 4 | 232 (2 outputs with different scripts)
+| Witness Count | 1 | 1
+| Witnesses     | 1 | 66
+| nLockTime     | 4 | 16
+| **Total**     | _N/A_ | **569**
+|===
+
+We can verify our weight calculation by getting the total for Alice's
+transaction from Bitcoin Core:
+
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177 2 | jq .weight
+569
+----
+
+Alice's transaction from <<alice_tx_serialized_reprint>> at the beginning of
+this chapter is shown represented in weight units in
+<<alice_tx_weight_map>>.  You can see the factor at work by comparing
+the difference in size between the various fields in the two images.
+
+[[alice_tx_weight_map]]
+.A byte map of Alice's transaction
+image::../images/tx-weight-map.png["A weight map of Alice's transaction"]
+
+[[legacy_serialization]]
+=== Legacy Serialization
+
+The serialization format described in this chapter is used for the
+majority of new Bitcoin transactions as of the writing of this book, but
+an older serialization format is still used for many transactions.  That
+older format, called _legacy serialization_, must be used on the Bitcoin
+P2P network for any transaction with an empty witness (which is only
+valid if the transaction doesn't spend any witness programs).
+
+Legacy serialization does not include the marker, flag, and witness
+fields.
+
+In this chapter, we looked at each of the fields in a transaction and
+discovered how they communicate to full nodes the details about the
+bitcoins to be transferred between users.  We only briefly looked at the
+scriptPubKey, scriptSig, and witness fields that allow specifying and
+satisfying conditions which restrict who can spend what bitcoins.
+Understanding how to construct and use these conditions is essential to
+ensuring that only Alice can spend her bitcoins, so they will be the
+subject of the next chapter.
