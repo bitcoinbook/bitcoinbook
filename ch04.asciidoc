@@ -23,7 +23,7 @@ that itself commits to Bob's public key and other transaction details.
 image::images/mbc2_abin01.png["Transaction chain from original Bitcoin paper"]
 
 We'll examine public keys, private keys, signatures, and hash functions
-in the following sections, and then use all of them together to describe
+in this chapter, and then use all of them together to describe
 the addresses used by modern Bitcoin software.
 
 === Public Key Cryptography
@@ -1087,7 +1087,7 @@ The "32" stands for the number of characters in the bech32 alphabet
   base58check.  For longer errors, it will fail to detect them less than
   one time in a billion, which is roughly the same reliability as
   base58check.  Even better, for an address typed with just a few
-  errors, it can tell the user where those errors occurred, allowing them
+  errors, it can tell the user where those errors occurred, allowing them to
   quickly correct minor transcription mistakes.  See <<bech32_typo_detection>>
   for an example of an address entered with errors.
 
@@ -1139,8 +1139,9 @@ algorithm just happened to make it very easy to add or remove the letter
 "p".  In those cases, you can also add or remove the letter "q" multiple
 times.  This will be caught by the checksum some of the time, but it
 will be missed far more often than the one-in-a-billion expectations for
-bech32's substitution errors.
+bech32's substitution errors.  For an example, see <<bech32_length_extension_example>>.
 
+[[bech32_length_extension_example]]
 .Extending the length of bech32 address without invalidating its checksum
 ====
 ----
@@ -1203,8 +1204,10 @@ Bitcoin wallets.
 
 Bech32m addresses start with a Human Readable Part (HRP).  There are
 rules in BIP173 for creating your own HRPs, but for Bitcoin you only
-need to know about the HRPs already chosen:
+need to know about the HRPs already chosen, shown in
+<<bech32_hrps_for_bitcoin>>.
 
+[[bech32_hrps_for_bitcoin]]
 .Bech32 HRPs for Bitcoin
 [cols="1,1"]
 |===
@@ -1259,7 +1262,8 @@ for Python].
 
 Let's start by generating four output scripts, one for each of the
 different segwit outputs in use at the time of publication, plus one for
-a future segwit version that doesn't yet have a defined meaning.
+a future segwit version that doesn't yet have a defined meaning.  The
+scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 
 // bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee
 // 2b626ed108ad00a944bb2922a309844611d25468
@@ -1273,6 +1277,7 @@ a future segwit version that doesn't yet have a defined meaning.
 // bc1sqqqqkfw08p
 // O_16 OP_PUSH2 0000
 
+[[scripts_for_diff_segwit_outputs]]
 .Scripts for different types of segwit outputs
 [cols="1,1"]
 |===
@@ -1399,7 +1404,7 @@ When implementing bech32m encoding or decoding, we very strongly
 recommend that you use the test vectors provided in BIP350.  We also ask
 that you ensure your code passes the test vectors related to paying future segwit
 versions that haven't been defined yet.  This will help make your
-software usable for many years to come even if you aren't able to add
+software is usable for many years to come even if you aren't able to add
 support for new Bitcoin features as soon as they become available.
 
 [[priv_formats]]
@@ -1739,3 +1744,13 @@ startref="Wpaper04")))((("", startref="paperw04")))
 [[paper_wallet_spw]]
 .An example of a paper wallet with additional copies of the keys on a backup "stub"
 image::images/mbc2_0412.png[]
+
+From the original public-key focused design of Bitcoin to modern addresses
+and scripts like bech32m and pay-to-taproot--and even addresses for
+future Bitcoin upgrades--you've learned how the Bitcoin protocol allows
+spenders to identify the wallets which should receive their payments.
+But when it's actually your wallet receiving the payments, you're going
+to want the assurance that you'll still have access to that money even
+if something happens to your wallet data.  In the next chapter, we'll
+look at how Bitcoin wallets are designed to protect their funds from a
+variety of threats.
