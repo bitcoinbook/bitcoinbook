@@ -259,21 +259,21 @@ Two new command-line options have been added in Bitcoin Core as of version 0.10.
 
 === Timelocks
 
-((("transactions", "advanced", "timelocks")))((("scripting", "timelocks", id="Stimelock07")))((("nLocktime field")))((("scripting", "timelocks", "uses for")))((("timelocks", "uses for")))Timelocks are restrictions on transactions or outputs that only allow spending after a point in time. Bitcoin has had a transaction-level timelock feature from the beginning. It is implemented by the +nLocktime+ field in a transaction. Two new timelock features were introduced in late 2015 and mid-2016 that offer UTXO-level timelocks. These are +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+.
+((("transactions", "advanced", "timelocks")))((("scripting", "timelocks", id="Stimelock07")))((("nLockTime field")))((("scripting", "timelocks", "uses for")))((("timelocks", "uses for")))Timelocks are restrictions on transactions or outputs that only allow spending after a point in time. Bitcoin has had a transaction-level timelock feature from the beginning. It is implemented by the +nLockTime+ field in a transaction. Two new timelock features were introduced in late 2015 and mid-2016 that offer UTXO-level timelocks. These are +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+.
 
 Timelocks are useful for postdating transactions and locking funds to a date in the future. More importantly, timelocks extend bitcoin scripting into the dimension of time, opening the door for complex multistep smart contracts.
 
 [[transaction_locktime_nlocktime]]
-==== Transaction Locktime (nLocktime)
+==== Transaction Locktime (nLockTime)
 
-((("scripting", "timelocks", "nLocktime")))((("timelocks", "nLocktime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLocktime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLocktime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLocktime+ specifying a future block or time must be held by the originating system and transmitted to the Bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLocktime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLocktime+ is equivalent to postdating a paper check.
+((("scripting", "timelocks", "nLockTime")))((("timelocks", "nLockTime")))From the beginning, bitcoin has had a transaction-level timelock feature. Transaction locktime is a transaction-level setting (a field in the transaction data structure) that defines the earliest time that a transaction is valid and can be relayed on the network or added to the blockchain. Locktime is also known as +nLockTime+ from the variable name used in the Bitcoin Core codebase. It is set to zero in most transactions to indicate immediate propagation and execution. If +nLockTime+ is nonzero and below 500 million, it is interpreted as a block height, meaning the transaction is not valid and is not relayed or included in the blockchain prior to the specified block height. If it is greater than or equal to 500 million, it is interpreted as a Unix Epoch timestamp (seconds since Jan-1-1970) and the transaction is not valid prior to the specified time. Transactions with +nLockTime+ specifying a future block or time must be held by the originating system and transmitted to the Bitcoin network only after they become valid. If a transaction is transmitted to the network before the specified +nLockTime+, the transaction will be rejected by the first node as invalid and will not be relayed to other nodes. The use of +nLockTime+ is equivalent to postdating a paper check.
 
 [[locktime_limitations]]
 ===== Transaction locktime limitations
 
-+nLocktime+ has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example.
++nLockTime+ has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example.
 
-((("use cases", "buying coffee", id="alicesseven")))Alice signs a transaction spending one of her outputs to Bob's address, and sets the transaction +nLocktime+ to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
+((("use cases", "buying coffee", id="alicesseven")))Alice signs a transaction spending one of her outputs to Bob's address, and sets the transaction +nLockTime+ to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
 
 * Bob cannot transmit the transaction to redeem the funds until 3 months have elapsed.
 * Bob may transmit the transaction after 3 months.
@@ -283,22 +283,22 @@ However:
 * Alice can create another transaction, double-spending the same inputs without a locktime. Thus, Alice can spend the same UTXO before the 3 months have elapsed.
 * Bob has no guarantee that Alice won't do that.
 
-It is important to understand the limitations of transaction +nLocktime+. The only guarantee is that Bob will not be able to redeem it before 3 months have elapsed. There is no guarantee that Bob will get the funds. To achieve such a guarantee, the timelock restriction must be placed on the UTXO itself and be part of the locking script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
+It is important to understand the limitations of transaction +nLockTime+. The only guarantee is that Bob will not be able to redeem it before 3 months have elapsed. There is no guarantee that Bob will get the funds. To achieve such a guarantee, the timelock restriction must be placed on the UTXO itself and be part of the locking script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
 
 ==== Check Lock Time Verify (CLTV)
 
-((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft fork upgrade. Based on a specification in BIP-65, a new script operator called _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLocktime+. This allows for much greater flexibility in the way timelocks are applied.
+((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time Verify (CLTV)")))((("bitcoin improvement proposals", "CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of timelock was introduced to bitcoin as a soft fork upgrade. Based on a specification in BIP-65, a new script operator called _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language. +CLTV+ is a per-output timelock, rather than a per-transaction timelock as is the case with +nLockTime+. This allows for much greater flexibility in the way timelocks are applied.
 
 In simple terms, by adding the +CLTV+ opcode in the redeem script of an output it restricts the output, so that it can only be spent after the specified time has elapsed.
 
 [TIP]
 ====
-While +nLocktime+ is a transaction-level timelock, +CLTV+ is an output-based timelock.
+While +nLockTime+ is a transaction-level timelock, +CLTV+ is an output-based timelock.
 ====
 
-+CLTV+ doesn't replace +nLocktime+, but rather restricts specific UTXO such that they can only be spent in a future transaction with +nLocktime+ set to a greater or equal value.
++CLTV+ doesn't replace +nLockTime+, but rather restricts specific UTXO such that they can only be spent in a future transaction with +nLockTime+ set to a greater or equal value.
 
-The +CLTV+ opcode takes one parameter as input, expressed as a number in the same format as +nLocktime+ (either a block height or Unix epoch time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode that halts execution of the script if the outcome is +FALSE+. If it results in TRUE, execution continues.
+The +CLTV+ opcode takes one parameter as input, expressed as a number in the same format as +nLockTime+ (either a block height or Unix epoch time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode that halts execution of the script if the outcome is +FALSE+. If it results in TRUE, execution continues.
 
 In order to lock an output with +CLTV+, you insert it into the redeem script of the output in the transaction that creates the output. For example, if Alice is paying Bob's address, the output would normally contain a P2PKH script like this:
 
@@ -314,26 +314,26 @@ To lock it to a time, say 3 months from now, the transaction would be a P2SH tra
 
 where +<now {plus} 3 months>+ is a block height or time value estimated 3 months from the time the transaction is mined: current block height {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000 (seconds). For now, don't worry about the +DROP+ opcode that follows +CHECKLOCKTIMEVERIFY+; it will be explained shortly.
 
-When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLocktime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the Bitcoin network.
+When Bob tries to spend this UTXO, he constructs a transaction that references the UTXO as an input. He uses his signature and public key in the unlocking script of that input and sets the transaction +nLockTime+ to be equal to or greater than the timelock in the +CHECKLOCKTIMEVERIFY+ Alice set. Bob then broadcasts the transaction on the Bitcoin network.
 
-Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal to the spending transaction's +nLocktime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
+Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+ parameter Alice set is less than or equal to the spending transaction's +nLockTime+, script execution continues (acts as if a &#x201c;no operation&#x201d; or NOP opcode was executed). Otherwise, script execution halts and the transaction is deemed invalid.
 
 More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking the transaction invalid if (source: BIP-65):
 
 1. the stack is empty; or
 2. the top item on the stack is less than 0; or
-3. the timelock type (height versus timestamp) of the top stack item and the +nLocktime+ field are not the same; or
-4. the top stack item is greater than the transaction's +nLocktime+ field; or
+3. the timelock type (height versus timestamp) of the top stack item and the +nLockTime+ field are not the same; or
+4. the top stack item is greater than the transaction's +nLockTime+ field; or
 5. the +nSequence+ field of the input is 0xffffffff.
 
 [NOTE]
 ====
-+CLTV+ and +nLocktime+ use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of +nLocktime+ must match that of +CLTV+ in the outputs&#x2014;they must both reference either block height or time in seconds.
++CLTV+ and +nLockTime+ use the same format to describe timelocks, either a block height or the time elapsed in seconds since Unix epoch. Critically, when used together, the format of +nLockTime+ must match that of +CLTV+ in the outputs&#x2014;they must both reference either block height or time in seconds.
 ====
 
 After execution, if +CLTV+ is satisfied, the time parameter that preceded it remains as the top item on the stack and may need to be dropped, with +DROP+, for correct execution of subsequent script opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in scripts for this reason.
 
-By using +nLocktime+ in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
+By using +nLockTime+ in conjunction with +CLTV+, the scenario described in <<locktime_limitations>> changes. Alice can no longer spend the money (because it's locked with Bob's key) and Bob cannot spend it before the 3-month locktime has expired.((("", startref="alicesseven")))
 
 By introducing timelock functionality directly into the scripting language, +CLTV+ allows us to develop some very interesting complex scripts.((("", startref="cltv07")))
 
@@ -341,7 +341,7 @@ The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0065.
 
 ==== Relative Timelocks
 
-+nLocktime+ and +CLTV+ are ((("timelocks", "relative timelocks", id="Trelative07")))((("scripting", "timelocks", "relative timelocks")))((("relative timelocks", id="relativetime07")))both _absolute timelocks_ in that they specify an absolute point in time. The next two timelock features we will examine are _relative timelocks_ in that they specify, as a condition of spending an output, an elapsed time from the confirmation of the output in the blockchain.
++nLockTime+ and +CLTV+ are ((("timelocks", "relative timelocks", id="Trelative07")))((("scripting", "timelocks", "relative timelocks")))((("relative timelocks", id="relativetime07")))both _absolute timelocks_ in that they specify an absolute point in time. The next two timelock features we will examine are _relative timelocks_ in that they specify, as a condition of spending an output, an elapsed time from the confirmation of the output in the blockchain.
 
 Relative timelocks are useful because they allow a chain of two or more interdependent transactions to be held off chain, while imposing a time constraint on one transaction that is dependent on the elapsed time from the confirmation of a previous transaction. In other words, the clock doesn't start counting until the UTXO is recorded on the blockchain. This functionality is especially useful in bidirectional state channels and Lightning Networks, as we will see in <<state_channels>>.
 
@@ -359,15 +359,15 @@ BIP-68 and BIP-112 were activated in May 2016 as a soft fork upgrade to the cons
 
 The +nSequence+ field was originally intended (but never properly implemented) to allow modification of transactions in the mempool. In that use, a transaction containing inputs with +nSequence+ value below 2^32^ - 1 (0xFFFFFFFF) indicated a transaction that was not yet "finalized." Such a transaction would be held in the mempool until it was replaced by another transaction spending the same inputs with a higher +nSequence+ value. Once a transaction was received whose inputs had an +nSequence+ value of 0xFFFFFFFF it would be considered "finalized" and mined.
 
-The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with +nLocktime+ or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
+The original meaning of +nSequence+ was never properly implemented and the value of +nSequence+ is customarily set to 0xFFFFFFFF in transactions that do not utilize timelocks. For transactions with +nLockTime+ or +CHECKLOCKTIMEVERIFY+, the +nSequence+ value must be set to less than 2^31^ for the timelock guards to have an effect, as explained below.
 
 ===== nSequence as a consensus-enforced relative timelock
 
-Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLocktime+, Opt-In-Replace-By-Fee, and other future developments.
+Since the activation of BIP-68, new consensus rules apply for any transaction containing an input whose +nSequence+ value is less than 2^31^ (bit 1<<31 is not set). Programmatically, that means that if the most significant bit (bit 1<<31) is not set, it is a flag that means "relative locktime." Otherwise (bit 1<<31 set), the +nSequence+ value is reserved for other uses such as enabling +CHECKLOCKTIMEVERIFY+, +nLockTime+, Opt-In-Replace-By-Fee, and other future developments.
 
 Transaction inputs with +nSequence+ values less than 2^31^ are interpreted as having a relative timelock. Such a transaction is only valid once the input has aged by the relative timelock amount. For example, a transaction with one input with an +nSequence+ relative timelock of 30 blocks is only valid when at least 30 blocks have elapsed from the time the UTXO referenced in the input was mined. Since +nSequence+ is a per-input field, a transaction may contain any number of timelocked inputs, all of which must have sufficiently aged for the transaction to be valid. A transaction can include both timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative timelock (+nSequence+ >= 2^31^).
 
-The +nSequence+ value is specified in either blocks or seconds, but in a slightly different format than we saw used in +nLocktime+. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type-flag is set in the 23rd least-significant bit (i.e., value 1<<22). If the type-flag is set, then the +nSequence+ value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the +nSequence+ value is interpreted as a number of blocks.
+The +nSequence+ value is specified in either blocks or seconds, but in a slightly different format than we saw used in +nLockTime+. A type-flag is used to differentiate between values counting blocks and values counting time in seconds. The type-flag is set in the 23rd least-significant bit (i.e., value 1<<22). If the type-flag is set, then the +nSequence+ value is interpreted as a multiple of 512 seconds. If the type-flag is not set, the +nSequence+ value is interpreted as a number of blocks.
 
 When interpreting +nSequence+ as a relative timelock, only the 16 least significant bits are considered. Once the flags (bits 32 and 23) are evaluated, the +nSequence+ value is usually "masked" with a 16-bit mask (e.g., +nSequence+ & 0x0000FFFF).
 
@@ -384,7 +384,7 @@ The standard is defined in https://github.com/bitcoin/bips/blob/master/bip-0068.
 
 ==== Relative Timelocks with CSV
 
-((("scripting", "timelocks", "relative timelocks with CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like CLTV and +nLocktime+, there is a script opcode for relative timelocks that leverages the +nSequence+ value in scripts. That opcode is +CHECKSEQUENCEVERIFY+, commonly referred to as +CSV+ for short.
+((("scripting", "timelocks", "relative timelocks with CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like CLTV and +nLockTime+, there is a script opcode for relative timelocks that leverages the +nSequence+ value in scripts. That opcode is +CHECKSEQUENCEVERIFY+, commonly referred to as +CSV+ for short.
 
 The +CSV+ opcode when evaluated in an UTXO's redeem script allows spending only in a transaction whose input +nSequence+ value is greater than or equal to the +CSV+ parameter. Essentially, this restricts spending the UTXO until a certain number of blocks or seconds have elapsed relative to the time the UTXO was mined.
 
@@ -405,7 +405,7 @@ To remove the incentive to lie and strengthen the security of timelocks, a BIP w
 
 Median-Time-Past is calculated by taking the timestamps of the last 11 blocks and finding the median. That median time then becomes consensus time and is used for all timelock calculations. By taking the midpoint from approximately two hours in the past, the influence of any one block's timestamp is reduced. By incorporating 11 blocks, no single miner can influence the timestamps in order to gain fees from transactions with a timelock that hasn't yet matured.
 
-Median-Time-Past changes the implementation of time calculations for +nLocktime+, +CLTV+, +nSequence+, and +CSV+. The consensus time calculated by Median-Time-Past is always approximately one hour behind wall clock time. If you create timelock transactions, you should account for it when estimating the desired value to encode in +nLocktime+, +nSequence+, +CLTV+, and +CSV+.
+Median-Time-Past changes the implementation of time calculations for +nLockTime+, +CLTV+, +nSequence+, and +CSV+. The consensus time calculated by Median-Time-Past is always approximately one hour behind wall clock time. If you create timelock transactions, you should account for it when estimating the desired value to encode in +nLockTime+, +nSequence+, +CLTV+, and +CSV+.
 
 Median-Time-Past is specified in https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki[BIP-113].
 
@@ -418,11 +418,11 @@ For example, let's say the highest block in existence is block  #100,000. If ins
 
 Today, this attack is not very lucrative, because block reward is much higher than total fees per block. But at some point in the future, transaction fees will be the majority of the mining reward (or even the entirety of the mining reward). At that time, this scenario becomes inevitable.
 
-To prevent "fee sniping," when Bitcoin Core creates transactions, it uses +nLocktime+ to limit them to the "next block," by default. In our scenario, Bitcoin Core would set +nLocktime+ to 100,001 on any transaction it created. Under normal circumstances, this +nLocktime+ has no effect&#x2014;the transactions could only be included in block #100,001 anyway; it's the next block.
+To prevent "fee sniping," when Bitcoin Core creates transactions, it uses +nLockTime+ to limit them to the "next block," by default. In our scenario, Bitcoin Core would set +nLockTime+ to 100,001 on any transaction it created. Under normal circumstances, this +nLockTime+ has no effect&#x2014;the transactions could only be included in block #100,001 anyway; it's the next block.
 
 But under a blockchain fork/double-spend attack, the miners would not be able to pull high-fee transactions from the mempool, because all those transactions would be timelocked to block #100,001. They can only remine #100,000 with whatever transactions were valid at that time, essentially gaining no new fees.
 
-To achieve this, Bitcoin Core sets the +nLocktime+ on all new transactions to <current block # + 1> and sets the +nSequence+ on all the inputs to 0xFFFFFFFE to enable +nLocktime+.((("", startref="Stimelock07")))
+To achieve this, Bitcoin Core sets the +nLockTime+ on all new transactions to <current block # + 1> and sets the +nSequence+ on all the inputs to 0xFFFFFFFE to enable +nLockTime+.((("", startref="Stimelock07")))
 
 === Scripts with Flow Control (Conditional Clauses)
 
