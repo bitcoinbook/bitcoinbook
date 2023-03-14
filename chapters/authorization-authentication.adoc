@@ -1,7 +1,25 @@
 [[c_authorization_authentication]]
-=== Authorization and Authentication with Scripts and Witnesses
+=== Authorization and Authentication
 
-FIXME
+When you receive bitcoins, you have to decide who will have permission
+to spend them, called _authorization_.  You also have to decide how full
+nodes will distinguish the authorized spenders from everyone else,
+called _authentication_.  Your authorization instructions and the
+spender proof of authentication will be checked by thousands of
+independent full nodes which all need to come to the same conclusion
+that a spend was authorized and authentic in order for the transaction
+containing it to be valid.
+
+The original description of Bitcoin used a public key for authorization.
+Alice paid Bob by putting his public key in the output of a transaction.
+Authentication came from Bob in the form a signature that committed to a
+spending transaction, such as from Bob to Carol.
+
+The actual version of Bitcoin that was originally released provided a
+more flexible mechanism for both authorization and authentication.
+Improvements since then have only increased that flexibility.  In this
+chapter, we'll explore those features and see how they're most commonly
+used.
 
 [[tx_script]]
 [role="pagebreak-before less_space_h1"]
@@ -9,32 +27,27 @@ FIXME
 
 ((("transactions", "scripts and Script language",
 id="Tsript06")))((("scripting", "transactions and",
-id="Stransact06")))The bitcoin transaction script language, called
-_Script_, is a Forth-like reverse-polish notation stack-based execution
-language. If that sounds like gibberish, you probably haven't studied
-1960s programming languages, but that's ok&#x2014;we will explain it all
-in this chapter. Both the locking script placed on an UTXO and the
-unlocking script are written in this scripting language. When a
-transaction is validated, the unlocking script in each input is executed
-alongside the corresponding locking script to see if it satisfies the
-spending condition.
+id="Stransact06")))The original version of Bitcoin introduced a new
+programming language called _Script_, a Forth-like stack-based
+language.  Both the scriptPubKey placed in an output and the legacy
+scriptSig used in a spending transaction are written in this scripting
+language.
 
-Script is a very simple language that was designed to be limited in
-scope and executable on a range of hardware, perhaps as simple as an
-embedded device. It requires minimal processing and cannot do many of
-the fancy things modern programming languages can do. For its use in
-validating programmable money, this is a deliberate security feature.
+Script is a very simple language.  It requires minimal processing and
+cannot easily do many of the fancy things modern programming languages
+can do.
 
-((("Pay-to-Public-Key-Hash (P2PKH)")))Today, most transactions processed
-through the Bitcoin network have the form "Payment to Bob's Bitcoin
-address" and are based on a script called a Pay-to-Public-Key-Hash
-script.  However, bitcoin transactions are not limited to the "Payment
-to Bob's Bitcoin address" script. In fact, locking scripts can be
-written to express a vast variety of complex conditions. In order to
-understand these more complex scripts, we must first understand the
-basics of transaction scripts and script language.
+((("Pay-to-Public-Key-Hash (P2PKH)")))When legacy transactions were the
+most commonly used type of transaction, the majority of transactions processed
+through the Bitcoin network had the form "Payment to Bob's Bitcoin
+address" and used a script called a Pay-to-Public-Key-Hash script.
+However, Bitcoin transactions are not limited to the "Payment to Bob's
+Bitcoin address" script. In fact, scripts can be written to express a
+vast variety of complex conditions. In order to understand these more
+complex scripts, we must first understand the basics of transaction
+scripts and Script language.
 
-In this section, we will demonstrate the basic components of the bitcoin
+In this section, we will demonstrate the basic components of the Bitcoin
 transaction scripting language and show how it can be used to express
 conditions for spending and how those conditions can be satisfied.
 
@@ -300,22 +313,6 @@ image::../images/mbc2_0605.png["Tx_Script_P2PubKeyHash_1"]
 
 [[P2PubKHash2]]
 .Evaluating a script for a P2PKH transaction (part 2 of 2)
-
-[[ch07_intro]]
-=== Introduction
-
-In the previous chapter, we introduced the basic elements of bitcoin
-transactions and looked at the most common type of transaction script,
-the P2PKH script. In this chapter we will look at more advanced
-scripting and how we can use it to build transactions with complex
-conditions.
-
-First, we will look at _multisignature_ scripts. Next, we will examine
-the second most common transaction script, _Pay-to-Script-Hash_, which
-opens up a whole world of complex scripts. Then, we will examine new
-script operators that add a time dimension to bitcoin, through
-_timelocks_. Finally, we will look at _Segregated Witness_, an
-architectural change to the structure of transactions.
 image::../images/mbc2_0606.png["Tx_Script_P2PubKeyHash_2"]
 
 [[multisig]]
