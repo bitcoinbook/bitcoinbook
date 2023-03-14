@@ -155,8 +155,8 @@ In <<simplemath_script>>, the script +2 3 OP_ADD 5 OP_EQUAL+
 demonstrates the arithmetic addition operator +OP_ADD+, adding two
 numbers and putting the result on the stack, followed by the conditional
 operator +OP_EQUAL+, which checks that the resulting sum is equal to
-+5+. For brevity, the +OP_+ prefix is omitted in the step-by-step
-example. For more details on the available script operators and
++5+. For brevity, the +OP_+ prefix may sometimes be omitted in examples
+in this book. For more details on the available script operators and
 functions, see <<tx_script_ops>>.
 
 Although most legacy scriptPubKeys refer to a public key hash (essentially, a
@@ -194,12 +194,14 @@ to know that the number 2 satisfies the script.
 [TIP]
 ====
 ((("transactions", "valid and invalid")))Transactions are valid if the
-top result on the stack is +TRUE+ (noted as ++&#x7b;0x01&#x7d;++), any
-other nonzero value, or if the stack is empty after script execution.
-Transactions are invalid if the top value on the stack is +FALSE+ (a
-zero-length empty value, noted as ++&#x7b;&#x7d;++) or if script
-execution is halted explicitly by an operator, such as +OP_VERIFY+,
-+OP_RETURN+, or a conditional terminator such as +OP_ENDIF+. See
+top result on the stack is +TRUE+, which is any
+non-zero value.
+Transactions are invalid if the top value on the stack is +FALSE+ (the
+value zero or an empty stack), the script
+execution is halted explicitly by an operator (such as +VERIFY+,
++OP_RETURN+), or the script was not semantically valid (such as
+containing an +OP_IF+ statement that was not terminated by an +OP_ENDIF+
+opcode). See
 <<tx_script_ops>> for details.
 ====
 
@@ -345,7 +347,7 @@ The general form of a scriptPubKey setting an M-of-N multisignature
 condition is:
 
 ----
-M <Public Key 1> <Public Key 2> ... <Public Key N> N CHECKMULTISIG
+M <Public Key 1> <Public Key 2> ... <Public Key N> N OP_CHECKMULTISIG
 ----
 
 where N is the total number of listed public keys and M is the threshold
@@ -355,7 +357,7 @@ A scriptPubKey setting a 2-of-3 multisignature condition looks like
 this:
 
 ----
-2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
+2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 The preceding scriptPubKey can be satisfied with a scriptSig
@@ -371,7 +373,7 @@ to the three listed public keys.
 The two scripts together would form the combined validation script:
 
 ----
-<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
+<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only
@@ -383,31 +385,31 @@ the three public keys set as an encumbrance.
 [[multisig_bug]]
 ===== A bug in CHECKMULTISIG execution
 
-((("scripting", "multisignature scripts", "CHECKMULTISIG
-bug")))((("CHECKMULTISIG bug workaround")))There is a bug in
-++CHECKMULTISIG++'s execution that requires a slight workaround. When
-+CHECKMULTISIG+ executes, it should consume M+N+2 items on the stack as
-parameters. However, due to the bug, +CHECKMULTISIG+ will pop an extra
+((("scripting", "multisignature scripts", "OP_CHECKMULTISIG
+bug")))((("OP_CHECKMULTISIG bug workaround")))There is a bug in
+++OP_CHECKMULTISIG++'s execution that requires a slight workaround. When
++OP_CHECKMULTISIG+ executes, it should consume M+N+2 items on the stack as
+parameters. However, due to the bug, +OP_CHECKMULTISIG+ will pop an extra
 value or one value more than expected.
 
 Let's look at this in greater detail using the previous validation
 example:
 
 ----
-<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
+<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
-First, +CHECKMULTISIG+ pops the top item, which is +N+ (in this example
+First, +OP_CHECKMULTISIG+ pops the top item, which is +N+ (in this example
 "3"). Then it pops +N+ items, which are the public keys that can sign.
 In this example, public keys A, B, and C. Then, it pops one item, which
 is +M+, the quorum (how many signatures are needed). Here M = 2. At this
-point, +CHECKMULTISIG+ should pop the final +M+ items, which are the
+point, +OP_CHECKMULTISIG+ should pop the final +M+ items, which are the
 signatures, and see if they are valid. However, unfortunately, a bug in
-the implementation causes +CHECKMULTISIG+ to pop one more item (M+1
+the implementation causes +OP_CHECKMULTISIG+ to pop one more item (M+1
 total) than it should. The extra item is disregarded when checking the
-signatures so it has no direct effect on +CHECKMULTISIG+ itself.
+signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
 However, an extra value must be present because if it is not present,
-when +CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a
+when +OP_CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a
 stack error and script failure (marking the transaction as invalid).
 Because the extra item is disregarded it can be anything, but
 customarily +0+ is used.
@@ -417,7 +419,7 @@ replicated forever. Therefore the correct script validation would look
 like this:
 
 ----
-0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
+0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 Thus the scriptSig actually used in multisig is not:
@@ -465,7 +467,7 @@ controls and protects against theft, embezzlement, or loss.
 The resulting script is quite long and looks like this:
 
 ----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 CHECKMULTISIG
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
 
 Although multisignature scripts are a powerful feature, they are
@@ -501,15 +503,15 @@ with P2SH.
 [[without_p2sh]]
 .Complex script without P2SH
 |=======
-| ScriptPubKey | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
+| ScriptPubKey | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
 | ScriptSig | Sig1 Sig2
 |=======
 
 [[with_p2sh]]
 .Complex script as P2SH
 |=======
-| RedeemScript | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
-| ScriptPubKey | HASH160 <20-byte hash of redeemScript> EQUAL
+| RedeemScript | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 OP_CHECKMULTISIG
+| ScriptPubKey | OP_HASH160 <20-byte hash of redeemScript> OP_EQUAL
 | ScriptSig | Sig1 Sig2 <redeemScript>
 |=======
 
@@ -528,7 +530,7 @@ First, the multisignature script that Mohammed's company uses for all
 incoming payments from customers:
 
 ----
-2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 CHECKMULTISIG
+2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
 
 If the placeholders are replaced by actual public keys (shown here as
@@ -537,7 +539,7 @@ very long:
 
 ----
 2
-04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C58704A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D99779650421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800 5 CHECKMULTISIG
+04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C58704A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D99779650421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800 5 OP_CHECKMULTISIG
 ----
 
 This entire script can instead be represented by a 20-byte cryptographic
@@ -575,7 +577,7 @@ A P2SH transaction locks the output to this hash instead of the longer
 redeemScript, using a special scriptPubKey template:
 
 ----
-HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
+OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
 
 which, as you can see, is much shorter. Instead of "pay to this 5-key
@@ -587,20 +589,20 @@ must present the original redeemScript (the one whose hash locked the
 UTXO) and the signatures necessary to unlock it, like this:
 
 ----
-<Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG>
+<Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG>
 ----
 
 The two scripts are combined in two stages. First, the redeemScript is
 checked against the scriptPubKey to make sure the hash matches:
 
 ----
-<2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG> HASH160 <redeemScript hash> EQUAL
+<2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG> OP_HASH160 <redeemScript hash> OP_EQUAL
 ----
 
 If the redeemScript hash matches, the redeemScript is executed:
 
 ----
-<Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG
+<Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 OP_CHECKMULTISIG
 ----
 
 ==== P2SH Addresses
@@ -667,9 +669,9 @@ scripts in outputs:
 
 You are not able to put a P2SH inside a P2SH redeemScript, because the
 P2SH specification is not recursive. Also, while it is technically
-possible to include +RETURN+ (see <<op_return>>) in a redeem script, as
+possible to include +OP_RETURN+ (see <<op_return>>) in a redeemScript, as
 nothing in the rules prevents you from doing so, it is of no practical
-use because executing +RETURN+ during validation will cause the
+use because executing +OP_RETURN+ during validation will cause the
 transaction to be marked invalid.
 
 Note that because the redeemScript is not presented to the network
@@ -690,10 +692,10 @@ spent.
 ====
 
 [[op_return]]
-=== Data Recording Output (RETURN)
+=== Data Recording Output (OP_RETURN)
 
 ((("transactions", "advanced", "data recording output")))((("scripting",
-"data recording output")))((("RETURN operator")))((("data recording
+"data recording output")))((("OP_RETURN operator")))((("data recording
 (nonpayment data)")))((("nonpayment data")))((("blockchain (the)",
 "nonpayment data recording")))((("digital notary services")))Bitcoin's
 distributed and timestamped ledger, the blockchain, has potential uses
@@ -724,21 +726,21 @@ These transactions that can never be spent are therefore never removed
 from the UTXO set and cause the size of the UTXO database to forever
 increase, or "bloat."
 
-In version 0.9 of the Bitcoin Core client, a compromise was reached with
-the introduction of the +RETURN+ operator. +RETURN+ allows developers to
-add 80 bytes of nonpayment data to a transaction output. However, unlike
-the use of "fake" UTXO, the +RETURN+ operator creates an explicitly
+A compromise was reached
+that allows the a scriptPubKey starting with +OP_RETURN+ to
+add nonpayment data to a transaction output. However, unlike
+the use of "fake" UTXO, the +OP_RETURN+ operator creates an explicitly
 _provably unspendable_ output, which does not need to be stored in the
-UTXO set. +RETURN+ outputs are recorded on the blockchain, so they
+UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they
 consume disk space and contribute to the increase in the blockchain's
 size, but they are not stored in the UTXO set and therefore do not bloat
 the UTXO memory pool and burden full nodes with the cost of more
 expensive database operations.
 
-+RETURN+ scripts look like this:
++OP_RETURN+ scripts look like this:
 
 ----
-RETURN <data>
+OP_RETURN <data>
 ----
 
 ((("Proof of Existence")))((("DOCPROOF prefix")))The data portion is
@@ -753,14 +755,14 @@ Keep in mind that there is no scriptSig that corresponds to
 +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The
 whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
 output, and therefore it does not need to be held in the UTXO set as
-potentially spendable—+RETURN+ is _provably unspendable_. +RETURN+ is
-usually an output with a zero bitcoin amount, because any bitcoin
-assigned to such an output is effectively lost forever. If a +RETURN+ is
+potentially spendable--+OP_RETURN+ is _provably unspendable_. +OP_RETURN+ is
+usually an output with a zero amount, because any bitcoins
+assigned to such an output is effectively lost forever. If an +OP_RETURN+ is
 referenced as an input in a transaction, the script validation engine
 will halt the execution of the validation script and mark the
-transaction as invalid. The execution of +RETURN+ essentially causes the
+transaction as invalid. The execution of +OP_RETURN+ essentially causes the
 script to "RETURN" with a +FALSE+ and halt. Thus, if you accidentally
-reference a +RETURN+ output as an input in a transaction, that
+reference a +OP_RETURN+ output as an input in a transaction, that
 transaction is invalid.
 
 [[locktime_limitations]]
@@ -780,36 +782,36 @@ However:
 
 It is important to understand the limitations of transaction +nLockTime+. The only guarantee is that Bob will not be able to redeem it before 3 months have elapsed. There is no guarantee that Bob will get the funds. To achieve such a guarantee, the timelock restriction must be placed on the UTXO itself and be part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
 
-==== Check Lock Time Verify (CLTV)
+==== Check Lock Time Verify (OP_CLTV)
 
-((("Check Lock Time Verify (CLTV)", id="cltv07")))((("timelocks", "Check
-Lock Time Verify (CLTV)")))((("scripting", "timelocks", "Check Lock Time
-Verify (CLTV)")))((("bitcoin improvement proposals",
-"CHECKLOCKTIMEVERIFY (BIP-65)")))In December 2015, a new form of
+((("Check Lock Time Verify (OP_CLTV)", id="cltv07")))((("timelocks", "Check
+Lock Time Verify (OP_CLTV)")))((("scripting", "timelocks", "Check Lock Time
+Verify (OP_CLTV)")))((("bitcoin improvement proposals",
+"OP_CHECKLOCKTIMEVERIFY (BIP65)")))In December 2015, a new form of
 timelock was introduced to Bitcoin as a soft fork upgrade. Based on a
-_CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
-+CLTV+ is a per-output timelock, rather than a per-transaction timelock
-as is the case with +nLocktime+. This allows for much greater
 specification in BIP65, a new script operator called
+_OP_CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
++OP_CLTV+ is a per-output timelock, rather than a per-transaction timelock
+as is the case with +nLockTime+. This allows for much greater
 flexibility in the way timelocks are applied.
 
-In simple terms, by adding the +CLTV+ opcode in the redeemScript of an
+In simple terms, by adding the +OP_CLTV+ opcode in the redeemScript of an
 output it restricts the output, so that it can only be spent after the
 specified time has elapsed.
 
 [TIP]
 ====
-While +nLocktime+ is a transaction-level timelock, +CLTV+ is an
+While +nLockTime+ is a transaction-level timelock, +OP_CLTV+ is an
 output-based timelock.
 ====
 
-+CLTV+ doesn't replace +nLocktime+, but rather restricts specific UTXO
++OP_CLTV+ doesn't replace +nLockTime+, but rather restricts specific UTXO
 such that they can only be spent in a future transaction with
 +nLockTime+ set to a greater or equal value.
 
-The +CLTV+ opcode takes one parameter as input, expressed as a number in
-the same format as +nLocktime+ (either a block height or Unix epoch
-time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode
+The +OP_CLTV+ opcode takes one parameter as input, expressed as a number in
+the same format as +nLockTime+ (either a block height or Unix epoch
+time). As indicated by the +VERIFY+ suffix, +OP_CLTV+ is the type of opcode
 that halts execution of the script if the outcome is +FALSE+. If it
 results in TRUE, execution continues.
 
@@ -819,21 +821,21 @@ example, if Alice is paying Bob's address, the output would normally
 contain a P2PKH script like this:
 
 ----
-DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY CHECKSIG
+OP_DUP OP_HASH160 <Bob's Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
 To lock it to a time, say 3 months from now, the transaction would be a
 P2SH transaction with a redeemScript like this:
 
 ----
-<now + 3 months> CHECKLOCKTIMEVERIFY DROP DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY CHECKSIG
+<now + 3 months> OP_CHECKLOCKTIMEVERIFY OP_DROP OP_DUP OP_HASH160 <Bob's Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
 where +<now {plus} 3 months>+ is a block height or time value estimated
 3 months from the time the transaction is mined: current block height
 {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000
-(seconds). For now, don't worry about the +DROP+ opcode that follows
-+CHECKLOCKTIMEVERIFY+; it will be explained shortly.
+(seconds). For now, don't worry about the +OP_DROP+ opcode that follows
++OP_CHECKLOCKTIMEVERIFY+; it will be explained shortly.
 
 When Bob tries to spend this UTXO, he constructs a transaction that
 references the UTXO as an input. He uses his signature and public key in
@@ -841,13 +843,13 @@ the scriptSig of that input and sets the transaction +nLockTime+
 to be equal or greater to the timelock in the +OP_CHECKLOCKTIMEVERIFY+
 Alice set. Bob then broadcasts the transaction on the Bitcoin network.
 
-Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+
+Bob's transaction is evaluated as follows. If the +OP_CHECKLOCKTIMEVERIFY+
 parameter Alice set is less than or equal the spending transaction's
-+nLocktime+, script execution continues (acts as if a &#x201c;no
-operation&#x201d; or NOP opcode was executed). Otherwise, script
++nLockTime+, script execution continues (acts as if a _no
+operation_ or OP_NOP opcode was executed). Otherwise, script
 execution halts and the transaction is deemed invalid.
 
-More precisely, +CHECKLOCKTIMEVERIFY+ fails and halts execution, marking
+More precisely, +OP_CHECKLOCKTIMEVERIFY+ fails and halts execution, marking
 the transaction invalid if (source: BIP65):
 
 1. the stack is empty; or
@@ -858,26 +860,26 @@ the transaction invalid if (source: BIP65):
 
 [NOTE]
 ====
-+CLTV+ and +nLocktime+ use the same format to describe timelocks, either
++OP_CLTV+ and +nLockTime+ use the same format to describe timelocks, either
 a block height or the time elapsed in seconds since Unix epoch.
-Critically, when used together, the format of +nLocktime+ must match
-that of +CLTV+ in the outputs&#x2014;they must both reference either
+Critically, when used together, the format of +nLockTime+ must match
+that of +OP_CLTV+ in the outputs--they must both reference either
 block height or time in seconds.
 ====
 
-After execution, if +CLTV+ is satisfied, the time parameter that
+After execution, if +OP_CLTV+ is satisfied, the parameter that
 preceded it remains as the top item on the stack and may need to be
-dropped, with +DROP+, for correct execution of subsequent script
-opcodes. You will often see +CHECKLOCKTIMEVERIFY+ followed by +DROP+ in
+dropped, with +OP_DROP+, for correct execution of subsequent script
+opcodes. You will often see +OP_CHECKLOCKTIMEVERIFY+ followed by +OP_DROP+ in
 scripts for this reason.
 
-By using nLocktime in conjunction with +CLTV+, the scenario described in
+By using nLockTime in conjunction with +OP_CLTV+, the scenario described in
 <<locktime_limitations>> changes. Alice can no longer spend the money
 (because it's locked with Bob's key) and Bob cannot spend it before the
 3-month locktime has expired.((("", startref="alicesseven")))
 
 By introducing timelock functionality directly into the scripting
-language, +CLTV+ allows us to develop some very interesting complex
+language, +OP_CLTV+ allows us to develop some very interesting complex
 scripts.((("", startref="cltv07")))
 
 The standard is defined in
@@ -886,7 +888,7 @@ https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki[BIP65
 
 ==== Relative Timelocks
 
-+nLocktime+ and +CLTV+ are ((("timelocks", "relative timelocks",
++nLockTime+ and +OP_CLTV+ are ((("timelocks", "relative timelocks",
 id="Trelative07")))((("scripting", "timelocks", "relative
 timelocks")))((("relative timelocks", id="relativetime07")))both
 _absolute timelocks_ in that they specify an absolute point in time. The
@@ -907,7 +909,7 @@ transaction-level feature and a script-level opcode. The
 transaction-level relative timelock is implemented as a consensus rule
 on the value of +nSequence+, a transaction field that is set in every
 transaction input. Script-level relative timelocks are implemented with
-the +CHECKSEQUENCEVERIFY+ (CSV) opcode.
+the +OP_CHECKSEQUENCEVERIFY+ (OP_CSV) opcode.
 
 ((("bitcoin improvement proposals", "Relative lock-time using
 consensus-enforced sequence numbers (BIP68)")))((("bitcoin improvement
@@ -921,23 +923,23 @@ OP_CHECKSEQUENCEVERIFY].
 BIP68 and BIP112 were activated in May 2016 as a soft fork upgrade to
 the consensus rules.
 
-==== Relative Timelocks with CSV
+==== Relative Timelocks with OP_CSV
 
 ((("scripting", "timelocks", "relative timelocks with
-CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like CLTV
-and +nLocktime+, there is a script opcode for relative timelocks that
+CHECKSEQUENCEVERIFY")))((("CHECKSEQUENCEVERIFY (CSV)")))Just like OP_CLTV
+and +nLockTime+, there is a script opcode for relative timelocks that
 leverages the +nSequence+ value in scripts. That opcode is
-+CHECKSEQUENCEVERIFY+, commonly referred to as +CSV+ for short.
++OP_CHECKSEQUENCEVERIFY+, commonly referred to as +OP_CSV+ for short.
 
-The +CSV+ opcode when evaluated in an UTXO's redeem script allows
+The +OP_CSV+ opcode when evaluated in an UTXO's script allows
 spending only in a transaction whose input +nSequence+ value is greater
-than or equal to the +CSV+ parameter. Essentially, this restricts
+than or equal to the +OP_CSV+ parameter. Essentially, this restricts
 spending the UTXO until a certain number of blocks or seconds have
 elapsed relative to the time the UTXO was mined.
 
-As with CLTV, the value in +CSV+ must match the format in the
-corresponding +nSequence+ value. If +CSV+ is specified in terms of
-blocks, then so must +nSequence+. If +CSV+ is specified in terms of
+As with CLTV, the value in +OP_CSV+ must match the format in the
+corresponding +nSequence+ value. If +OP_CSV+ is specified in terms of
+blocks, then so must +nSequence+. If +OP_CSV+ is specified in terms of
 seconds, then so must +nSequence+.
 
 Relative timelocks with +CSV+ are especially useful when several
@@ -976,14 +978,13 @@ thousands of possible execution paths. There is no limit to nesting, but
 consensus rules impose a limit on the maximum size, in bytes, of a
 script.
 
-Bitcoin implements flow control using the +IF+, +ELSE+, +ENDIF+, and
-+NOTIF+ opcodes. Additionally, conditional expressions can contain
-boolean operators such as +BOOLAND+, pass:[<span
-class="keep-together"><code>BOOLOR</code></span>], and +NOT+.
+Bitcoin implements flow control using the +OP_IF+, +OP_ELSE+, +OP_ENDIF+, and
++OP_NOTIF+ opcodes. Additionally, conditional expressions can contain
+boolean operators such as +OP_BOOLAND+, +OP_BOOLOR+, and +OP_NOT+.
 
 At first glance, you may find the bitcoin's flow control scripts
 confusing. That is because Bitcoin Script is a stack language. The same
-way that +1 {plus} 1+ looks "backward" when expressed as +1 1 ADD+, flow
+way that +1 {plus} 1+ looks "backward" when expressed as +1 1 OP_ADD+, flow
 control clauses in bitcoin also look "backward."
 
 In most traditional (procedural) programming languages, flow control
@@ -1006,9 +1007,9 @@ comes before the +IF+, which makes it look "backward," like this:
 condition
 IF
   code to run when condition is true
-ELSE
+OP_ELSE
   code to run when condition is false
-ENDIF
+OP_ENDIF
 code to run in either case
 ----
 
@@ -1031,9 +1032,9 @@ For example, the following script requires Bob's signature and a
 pre-image (secret) that produces a specific hash. Both conditions must
 be satisfied to unlock:
 
-.A redeem script with an +EQUALVERIFY+  guard clause.
+.A script with an +OP_EQUALVERIFY+  guard clause.
 ----
-HASH160 <expected hash> EQUALVERIFY <Bob's Pubkey> CHECKSIG
+OP_HASH160 <expected hash> OP_EQUALVERIFY <Bob's Pubkey> OP_CHECKSIG
 ----
 
 To spend this, Bob must present a
@@ -1048,14 +1049,14 @@ Without presenting the pre-image, Bob can't get to the part of the
 script that checks for his signature.
 
 [role="pagebreak-after"]
-This script can be written with an +IF+ instead:
+This script can be written with an +OP_IF+ instead:
 
-.A redeem script with an +IF+ guard clause
+.A script with an +IF+ guard clause
 ----
-HASH160 <expected hash> EQUAL
-IF
-   <Bob's Pubkey> CHECKSIG
-ENDIF
+OP_HASH160 <expected hash> OP_EQUAL
+OP_IF
+   <Bob's Pubkey> OP_CHECKSIG
+OP_ENDIF
 ----
 
 Bob's authentication data identical:
@@ -1065,14 +1066,13 @@ Bob's authentication data identical:
 <Bob's Sig> <hash pre-image>
 ----
 
-The script with +IF+ does the same thing as using an opcode with a
+The script with +OP_IF+ does the same thing as using an opcode with a
 +VERIFY+ suffix; they both operate as guard clauses. However, the
 +VERIFY+ construction is more efficient, using two fewer opcodes.
 
-So, when do we use +VERIFY+ and when do we use +IF+? If all we are
+So, when do we use +VERIFY+ and when do we use +OP_IF+? If all we are
 trying to do is to attach a precondition (guard clause), then +VERIFY+
 is better. If, however, we want to have more than one execution path
-(flow control), then we need an +IF...ELSE+ flow control clause.
 
 [TIP]
 ====
@@ -1083,6 +1083,7 @@ evaluation by subsequent opcodes. In contrast, the opcode +EQUALVERIFY+
 suffix does not leave anything on the stack. Opcodes that end in
 +VERIFY+ do not leave the result on the stack.
 ====
+(flow control), then we need an +OP_IF...OP_ELSE+ flow control clause.
 
 ==== Using Flow Control in Scripts
 
@@ -1093,15 +1094,15 @@ of redeeming the UTXO.
 ((("use cases", "buying coffee")))Let's look at a simple example, where
 we have two signers, Alice and Bob, and either one is able to redeem.
 With multisig, this would be expressed as a 1-of-2 multisig script. For
-the sake of demonstration, we will do the same thing with an +IF+
+the sake of demonstration, we will do the same thing with an +OP_IF+
 clause:
 
 ----
-IF
- <Alice's Pubkey> CHECKSIG
-ELSE
- <Bob's Pubkey> CHECKSIG
-ENDIF
+OP_IF
+ <Alice's Pubkey> OP_CHECKSIG
+OP_ELSE
+ <Bob's Pubkey> OP_CHECKSIG
+OP_ENDIF
 ----
 
 Looking at this redeemScript, you may be wondering: "Where is the
@@ -1113,47 +1114,49 @@ will be offered at spending time, allowing Alice and Bob to
 
 .Alice satisifies the above script:
 ----
-<Alice's Sig> 1
+<Alice's Sig> OP_TRUE
 ----
 
-The +1+ at the end serves as the condition (+TRUE+) that will make the
-+IF+ clause execute the first redemption path for which Alice has a
-signature.
+The +OP_TRUE+ at the end serves as the condition (+TRUE+) that will make the
++OP_IF+ clause execute the first redemption path for which Alice has a
+signature.  The +OP_TRUE+ opcode, also known as +OP_1+, will put the
+number 1 on the stack.
 
 For Bob to redeem this, he would have to choose the second execution
-path by giving a +FALSE+ value to the +IF+ clause:
+path in +OP_IF+ by giving a +FALSE+ value.  The +OP_FALSE+ opcode, also
+known as +OP_0+, pushes an empty byte array to the stack.
 
 ----
-<Bob's Sig> 0
+<Bob's Sig> OP_FALSE
 ----
 
-Bob's scriptSig puts a +0+ on the stack, causing the +IF+ clause
-to execute the second (+ELSE+) script, which requires Bob's signature.
+Bob's scriptSig puts a +0+ on the stack, causing the +OP_IF+ clause
+to execute the second (+OP_ELSE+) script, which requires Bob's signature.
 
 Since +OP_IF+ clauses can be nested, we can create a "maze" of execution
 paths. The scriptSig can provide a "map" selecting which
 execution path is actually executed:
 
 ----
-IF
-  script A
-ELSE
-  IF
-    script B
-  ELSE
-    script C
-  ENDIF
-ENDIF
+OP_IF
+  subscript A
+OP_ELSE
+  OP_IF
+    subscript B
+  OP_ELSE
+    subscript C
+  OP_ENDIF
+OP_ENDIF
 ----
 
 In this scenario, there are three execution paths (+subscript A+, +subscript
 B+, and +subscript C+). The scriptSig provides a path in the form of
 a sequence of +TRUE+ or +FALSE+ values. To select path +subscript B+, for
-example, the scriptSig must end in +1 0+ (+TRUE+, +FALSE+). These
+example, the scriptSig must end in +OP_1 OP_0+ (+TRUE+, +FALSE+). These
 values will be pushed onto the stack, so that the second value (+FALSE+)
-ends up at the top of the stack. The outer +IF+ clause pops the +FALSE+
-value and executes the first +ELSE+ clause. Then the +TRUE+ value moves
-to the top of the stack and is evaluated by the inner (nested) +IF+,
+ends up at the top of the stack. The outer +OP_IF+ clause pops the +FALSE+
+value and executes the first +OP_ELSE+ clause. Then the +TRUE+ value moves
+to the top of the stack and is evaluated by the inner (nested) +OP_IF+,
 selecting the +B+ execution path.
 
 Using this construct, we can build redeemScripts with tens or hundreds
@@ -1192,42 +1195,42 @@ number prefix as XX):
 
 .Variable Multi-Signature with Timelock
 ----
-01  IF
-02    IF
+01  OP_IF
+02    OP_IF
 03      2
-04    ELSE
-05      <30 days> CHECKSEQUENCEVERIFY DROP
-06      <Abdul the Lawyer's Pubkey> CHECKSIGVERIFY
+04    OP_ELSE
+05      <30 days> OP_CHECKSEQUENCEVERIFY OP_DROP
+06      <Abdul the Lawyer's Pubkey> OP_CHECKSIGVERIFY
 07      1
-08    ENDIF
-09    <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 CHECKMULTISIG
-10  ELSE
-11    <90 days> CHECKSEQUENCEVERIFY DROP
-12    <Abdul the Lawyer's Pubkey> CHECKSIG
-13  ENDIF
+08    OP_ENDIF
+09    <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 OP_CHECKMULTISIG
+10  OP_ELSE
+11    <90 days> OP_CHECKSEQUENCEVERIFY OP_DROP
+12    <Abdul the Lawyer's Pubkey> OP_CHECKSIG
+13  OP_ENDIF
 ----
 
 Mohammed's script implements three execution paths using nested
-+IF...ELSE+ flow control clauses.
++OP_IF...OP_ELSE+ flow control clauses.
 
 In the first execution path, this script operates as a simple 2-of-3
 multisig with the three partners. This execution path consists of lines
 3 and 9. Line 3 sets the quorum of the multisig to +2+ (2-of-3). This
-execution path can be selected by putting +TRUE TRUE+ at the end of the
+execution path can be selected by putting +OP_TRUE OP_TRUE+ at the end of the
 scriptSig:
 
 .Spending data for the first execution path (2-of-3 multisig)
 ----
-0 <Mohammed's Sig> <Zaira's Sig> TRUE TRUE
+OP_0 <Mohammed's Sig> <Zaira's Sig> OP_TRUE OP_TRUE
 ----
 
 
 [TIP]
 ====
-The +0+ at the beginning of this scriptSig is because of a bug in
+The +OP_0+ at the beginning of this scriptSig is because of a bug in
 +OP_CHECKMULTISIG+ that pops an extra value from the stack. The extra value
 is disregarded by the +OP_CHECKMULTISIG+, but it must be present or the
-script fails. Pushing +0+ is a workaround to the bug, as
+script fails. Pushing an empty byte array with +OP_0+ is a workaround to the bug, as
 described in <<multisig_bug>>.
 ====
 
@@ -1236,27 +1239,27 @@ from the creation of the UTXO. At that time, it requires the signature
 of Abdul the lawyer and one of the three partners (a 1-of-3 multisig).
 This is achieved by line 7, which sets the quorum for the multisig to
 +1+. To select this execution path, the scriptSig would end in
-+FALSE TRUE+:
++OP_FALSE OP_TRUE+:
 
 .Spending data for the second execution path (Lawyer + 1-of-3)
 ----
-0 <Saeed's Sig> <Abdul's Sig> FALSE TRUE
+0 <Saeed's Sig> <Abdul's Sig> OP_FALSE OP_TRUE
 ----
 
 [TIP]
 ====
-Why +FALSE TRUE+? Isn't that backward? Because the two values are pushed
+Why +OP_FALSE OP_TRUE+? Isn't that backward? Because the two values are pushed
 on to the stack, with +FALSE+ pushed first, then +TRUE+ pushed second.
-+TRUE+ is therefore popped _first_ by the first +IF+ opcode.
++TRUE+ is therefore popped _first_ by the first +OP_IF+ opcode.
 ====
 
 Finally, the third execution path allows Abdul the lawyer to spend the
 funds alone, but only after 90 days. To select this execution path, the
-scriptSig has to end in +FALSE+:
+scriptSig has to end in +OP_FALSE+:
 
 .ScriptSig for the third execution path (Lawyer only)
 ----
-<Abdul's Sig> FALSE
+<Abdul's Sig> OP_FALSE
 ----
 
 Try running the script on paper to see how it behaves on the stack.
@@ -1265,7 +1268,7 @@ A few more things to consider when reading this example. See if you can
 find the answers:
 
 - Why can't the lawyer redeem the third execution path at any time by
-  selecting it with +FALSE+ on the scriptSig?
+  selecting it with +OP_FALSE+ on the scriptSig?
 
 * How many execution paths can be used 5, 35, and 105 days,
 * respectively, after the UTXO is mined?
@@ -1276,9 +1279,9 @@ find the answers:
 * How do the partners "reset" the clock every 29 or 89 days to prevent
 * the lawyer from accessing the funds?
 
-* Why do some +CHECKSIG+ opcodes in this script have the +VERIFY+ suffix
-* while others don't?((("", startref="Scomplex07")))((("",
-* startref="mohamseventwo")))
+- Why do some +OP_CHECKSIG+ opcodes in this script have the +VERIFY+ suffix
+  while others don't?((("", startref="Scomplex07")))((("",
+  startref="mohamseventwo")))
 
 ==== Segregated Witness Output and Transaction Examples
 
@@ -1299,7 +1302,7 @@ scriptPubKey:
 
 .Example P2PKH scriptPubKey
 ----
-DUP HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 EQUALVERIFY CHECKSIG
+OP_DUP OP_HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 OP_EQUALVERIFY OP_CHECKSIG
 ----
 
 With Segregated Witness, Alice would create a
@@ -1389,7 +1392,7 @@ Mohammed's company were encoded with a script like this:
 
 .Example P2SH output script
 ----
-HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
+OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
 
 This P2SH script references the hash of a _redeemScript_ that defines a
@@ -1404,7 +1407,7 @@ satisfy that redeemScript, all inside the transaction input:
 “Vin” : [
 "txid": "abcdef12345...",
 "vout": 0,
-     	 "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”,
+     	 "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 OP_CHECKMULTISIG>”,
 ]
 ----
 
@@ -1451,7 +1454,7 @@ correct witness script and sufficient signatures to satisfy it. Both the
      	 "scriptSig": “”,
 ]
 [...]
-“witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 CHECKMULTISIG>”
+“witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 OP_CHECKMULTISIG>”
 [...]
 ----
 
@@ -1582,7 +1585,7 @@ Bitcoin address.
 
 To pay Bob, Alice's wallet would lock the output with a P2SH script:
 ----
-HASH160 3e0547268b3b19288b3adef9719ec8659f4b2b0b EQUAL
+OP_HASH160 3e0547268b3b19288b3adef9719ec8659f4b2b0b OP_EQUAL
 ----
 
 Even though Alice's wallet has no support for segwit, the payment it
@@ -1654,7 +1657,7 @@ lock the output with the following P2SH script:
 
 .P2SH script used to lock payments to Mohammed's multisig
 ----
-HASH160 86762607e8fe87c0c37740cddee880988b9455b2 EQUAL
+OP_HASH160 86762607e8fe87c0c37740cddee880988b9455b2 OP_EQUAL
 ----
 
 Mohammed's company can then construct segwit transactions to spend these
