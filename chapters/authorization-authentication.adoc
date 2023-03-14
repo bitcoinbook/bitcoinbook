@@ -65,7 +65,7 @@ validation mechanism from being used as a vulnerability.
 
 ==== Stateless Verification
 
-((("stateless verification")))The bitcoin transaction script language is
+((("stateless verification")))The Bitcoin transaction script language is
 stateless, in that there is no state prior to execution of the script,
 or state saved after execution of the script. All the
 information needed to execute a script is contained within the script
@@ -80,7 +80,7 @@ system.
 [[tx_lock_unlock]]
 ==== Script Construction
 
-Bitcoin's legacy transaction validation engine relies on two types of scripts
+Bitcoin's legacy transaction validation engine relies on two parts of scripts
 to validate transactions: a scriptPubKey and a scriptSig.
 
 A scriptPubKey is a spending condition placed on an output:
@@ -91,7 +91,7 @@ be authenticated.
 A scriptSig is a script that satisfies the
 conditions placed on an output by a scriptPubKey and allows the output
 to be spent. ScriptSigs are part of every transaction input. Most
-of the time they contain a digital signature produced by the user's
+of the time in legacy transactions they contain a digital signature produced by the user's
 wallet from his or her private key, but not all scriptSigs
 must contain signatures.
 
@@ -102,16 +102,16 @@ previous transaction output.  The input also contains a scriptSig.  The
 validation software will copy the scriptSig, retrieve the UTXO
 referenced by the input, and copy the scriptPubKey from that UTXO. The
 scriptSig and scriptPubKey are then executed in sequence. The input is
-valid if the scriptSig satisfies the scriptPubUey conditions
+valid if the scriptSig satisfies the scriptPubKey conditions
 (see <<script_exec>>). All the inputs are validated independently, as
 part of the overall validation of the transaction.
 
-Note that the UTXO is permanently recorded in the blockchain, and
-therefore is invariable and is unaffected by failed attempts to spend it
-by reference in a new transaction. Only a valid transaction that
-correctly satisfies the conditions of the output results in the output
-being considered as "spent" and removed from the set of unspent
-transaction outputs (UTXO set).
+Note that the steps above involve making copies of all data.  The
+original data in the previous output and current input is never changed.
+In particular, the previous output is invariable and unaffected by
+failed attempts to spend it.  Only a valid transaction that correctly
+satisfies the conditions of the scriptPubKey results in the output being
+considered as "spent".
 
 <<scriptSig_and_scriptPubKey>> is an example of the scriptPubKey and
 scriptSig for the most common type of legacy Bitcoin transaction (a
@@ -220,7 +220,7 @@ the next operator:
 ----
 
 Try validating the preceding script yourself using pencil and paper.
-When the script execution ends, you should be left with the value +TRUE+
+When the script execution ends, you should be left with a +TRUE+ value
 on the stack.
 
 [[script_exec]]
@@ -237,10 +237,10 @@ First, the scriptSig executed using the stack execution
 engine. If the scriptSig is executed without errors and has
 no operations left over, the stack is copied and the
 scriptPubKey is executed. If the result of executing scriptPubKey
-with the stack data copied from scriptSig is "TRUE,"
+with the stack data copied from scriptSig is +TRUE+,
 the scriptSig has succeeded in resolving the conditions imposed
 by the scriptPubKey and, therefore, the input is a valid authorization
-to spend the UTXO. If any result other than "TRUE" remains after
+to spend the UTXO. If any result other than +TRUE+ remains after
 execution of the combined script, the input is invalid because it has
 failed to satisfy the spending conditions placed on the output.
 
@@ -261,7 +261,7 @@ signature created by the corresponding private key (see
 OP_DUP OP_HASH160 <Key Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-The +Key Hash+ the data that would be encoded into a legacy Base58Check
+The +Key Hash+ is the data that would be encoded into a legacy Base58Check
 address.  Most applications would show the _public key hash_ in a script
 using hexadecimal encoding and not the familiar Bitcoin
 address Base58Check format that begins with a "1."
@@ -528,7 +528,7 @@ the use of complex scripts as easy as a payment to a Bitcoin address.
 With P2SH payments, the complex script is replaced with a
 commitment, the digest of a cryptographic hash. When a transaction attempting
 to spend the UTXO is presented later, it must contain the script that
-matches the commitment in addition to the data which satisifies the script. In simple terms,
+matches the commitment in addition to the data which satisfies the script. In simple terms,
 P2SH means "pay to a script matching this hash, a script that will be
 presented later when this output is spent."
 
@@ -671,10 +671,10 @@ Now, Mohammed can give this "address" to his customers and they can use
 almost any bitcoin wallet to make a simple payment, as if it were a
 Bitcoin address. The 3 prefix gives them a hint that this is a special
 type of address, one corresponding to a script instead of a public key,
-but otherwise it works in exactly the same way as a payment to a Bitcoin
+but otherwise it works in exactly the same way as a payment to any other Bitcoin
 address.
 
-P2SH addresses hide all of the complexity, so that the person making a
+P2SH addresses hide all of the complexity so that the person making a
 payment does not see the script.
 
 ==== Benefits of P2SH
@@ -751,14 +751,14 @@ transaction.
 ((("blockchain bloat")))((("bloat")))((("unspent transaction outputs
 (UTXO)")))((("UTXO sets")))The use of bitcoin's blockchain to store data
 unrelated to bitcoin payments is a controversial subject. Many
-developers consider such use abusive and want to discourage it. Others
+people consider such use abusive and want to discourage it. Others
 view it as a demonstration of the powerful capabilities of blockchain
 technology and want to encourage such experimentation. Those who object
 to the inclusion of nonpayment data argue that it causes "blockchain
 bloat," burdening those running full Bitcoin nodes with carrying the
 cost of disk storage for data that the blockchain was not intended to
 carry. Moreover, such transactions create UTXO that cannot be spent,
-using the destination Bitcoin address as a freeform 20-byte field.
+using the destination legacy Bitcoin address as a freeform 20-byte field.
 Because the address is used for data, it doesn't correspond to a private
 key and the resulting UTXO can _never_ be spent; it's a fake payment.
 These transactions that can never be spent are therefore never removed
@@ -768,7 +768,7 @@ increase, or "bloat."
 A compromise was reached
 that allows the a scriptPubKey starting with +OP_RETURN+ to
 add nonpayment data to a transaction output. However, unlike
-the use of "fake" UTXO, the +OP_RETURN+ operator creates an explicitly
+the use of "fake" UTXOs, the +OP_RETURN+ operator creates an explicitly
 _provably unspendable_ output, which does not need to be stored in the
 UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they
 consume disk space and contribute to the increase in the blockchain's
@@ -782,7 +782,7 @@ expensive database operations.
 OP_RETURN <data>
 ----
 
-((("Proof of Existence")))((("DOCPROOF prefix")))The data portion is
+((("Proof of Existence")))((("DOCPROOF prefix")))The data portion
 often represents a hash, such as the output
 from the SHA256 algorithm (32 bytes). Some applications put a prefix in
 front of the data to help identify the application. For example, the
@@ -794,7 +794,7 @@ Keep in mind that there is no scriptSig that corresponds to
 +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The
 whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
 output, and therefore it does not need to be held in the UTXO set as
-potentially spendable--+OP_RETURN+ is _provably unspendable_. +OP_RETURN+ is
+potentially spendable: +OP_RETURN+ is _provably unspendable_. +OP_RETURN+ is
 usually an output with a zero amount, because any bitcoins
 assigned to such an output is effectively lost forever. If an +OP_RETURN+ is
 referenced as an input in a transaction, the script validation engine
@@ -805,7 +805,7 @@ reference a +OP_RETURN+ output as an input in a transaction, that
 transaction is invalid.
 
 [[locktime_limitations]]
-===== Transaction locktime limitations
+==== Transaction locktime limitations
 
 +nLockTime+ has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example.
 
@@ -834,8 +834,8 @@ _OP_CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
 as is the case with +nLockTime+. This allows for much greater
 flexibility in the way timelocks are applied.
 
-In simple terms, by adding the +OP_CLTV+ opcode in the redeemScript of an
-output it restricts the output, so that it can only be spent after the
+In simple terms, by committing to the +OP_CLTV+ opcode in an
+output, that output is restricted so that it can only be spent after the
 specified time has elapsed.
 
 [TIP]
@@ -892,10 +892,10 @@ More precisely, +OP_CHECKLOCKTIMEVERIFY+ fails and halts execution, marking
 the transaction invalid if (source: BIP65):
 
 1. the stack is empty; or
-1. the top item on the stack is less than 0; or
-1. the lock-time type (height versus timestamp) of the top stack item and the +nLockTime+ field are not the same; or
-1. the top stack item is greater than the transaction's +nLockTime+ field; or
-1. the +nSequence+ field of the input is 0xffffffff.
+2. the top item on the stack is less than 0; or
+3. the lock-time type (height versus timestamp) of the top stack item and the +nLockTime+ field are not the same; or
+4. the top stack item is greater than the transaction's +nLockTime+ field; or
+5. the +nSequence+ field of the input is 0xffffffff.
 
 [[timelock_conflicts]]
 .Timelock conflicts
@@ -948,8 +948,8 @@ next two timelock features we will examine are _relative timelocks_ in
 that they specify, as a condition of spending an output, an elapsed time
 from the confirmation of the output in the blockchain.
 
-Relative timelocks are useful because they allow a chain of two or more
-interdependent transactions to be held off chain, while imposing a time
+Relative timelocks are useful because they allow
+imposing a time
 constraint on one transaction that is dependent on the elapsed time from
 the confirmation of a previous transaction. In other words, the clock
 doesn't start counting until the UTXO is recorded on the blockchain.
@@ -994,7 +994,6 @@ corresponding +nSequence+ value. If +OP_CSV+ is specified in terms of
 blocks, then so must +nSequence+. If +OP_CSV+ is specified in terms of
 seconds, then so must +nSequence+.
 
-Relative timelocks with +CSV+ are especially useful when several
 [[WARNING]]
 ====
 A script executing multiple +OP_CSV+ opcodes must only use the same
@@ -1004,8 +1003,10 @@ saw with +OP_CLTV+ in <<timelock_conflicts>>.  However, +OP_CSV+ allows
 any two valid inputs to be included in the same transaction, so the problem
 of interaction across inputs that occurs with +OP_CLTV+ doesn't affect +OP_CSV+.
 ====
-(chained) transactions are created and signed, but not propagated, when
-they're kept "off-chain." A child transaction cannot be used until the
+
+Relative timelocks with +OP_CSV+ are especially useful when several
+(chained) transactions are created and signed, but not propagated--that
+is, they're kept off the blockchain (_offchain_). A child transaction cannot be used until the
 parent transaction has been propagated, mined, and aged by the time
 specified in the relative timelock. One application of this use case can
 be seen in <<state_channels>> and <<lightning_network>>.((("",
@@ -1029,15 +1030,15 @@ the same construct.
 At a basic level, bitcoin conditional opcodes allow us to construct a
 script that has two ways of being unlocked, depending on a
 +TRUE+/+FALSE+ outcome of evaluating a logical condition. For example,
-if x is +TRUE+, the redeemScript is A and the ELSE redeemScript is B.
+if x is +TRUE+, the executed code path is A and the ELSE code path is B.
 
 Additionally, bitcoin conditional expressions can be "nested"
 indefinitely, meaning that a conditional clause can contain another
 within it, which contains another, etc. Bitcoin Script flow control can
-be used to construct very complex scripts with hundreds or even
-thousands of possible execution paths. There is no limit to nesting, but
-consensus rules impose a limit on the maximum size, in bytes, of a
-script.
+be used to construct very complex scripts with hundreds
+of possible execution paths. There is no limit to nesting, but
+consensus rules impose a limit on the maximum size of a
+script in bytes.
 
 Bitcoin implements flow control using the +OP_IF+, +OP_ELSE+, +OP_ENDIF+, and
 +OP_NOTIF+ opcodes. Additionally, conditional expressions can contain
@@ -1057,6 +1058,7 @@ if (condition):
   code to run when condition is true
 else:
   code to run when condition is false
+endif
 code to run in either case
 ----
 
@@ -1150,10 +1152,11 @@ clause:
 
 ----
 OP_IF
- <Alice's Pubkey> OP_CHECKSIG
+ <Alice's Pubkey>
 OP_ELSE
- <Bob's Pubkey> OP_CHECKSIG
+ <Bob's Pubkey>
 OP_ENDIF
+OP_CHECKSIG
 ----
 
 Looking at this redeemScript, you may be wondering: "Where is the
@@ -1163,13 +1166,14 @@ The condition is not part of the script. Instead, the condition
 will be offered at spending time, allowing Alice and Bob to
 "choose" which execution path they want.
 
-.Alice satisifies the above script:
+.Alice satisfies the above script:
 ----
 <Alice's Sig> OP_TRUE
 ----
 
 The +OP_TRUE+ at the end serves as the condition (+TRUE+) that will make the
-+OP_IF+ clause execute the first redemption path for which Alice has a
++OP_IF+ clause execute the first redemption path which puts the public
+key on the stack for which Alice has a
 signature.  The +OP_TRUE+ opcode, also known as +OP_1+, will put the
 number 1 on the stack.
 
@@ -1181,7 +1185,7 @@ known as +OP_0+, pushes an empty byte array to the stack.
 <Bob's Sig> OP_FALSE
 ----
 
-Bob's scriptSig puts a +0+ on the stack, causing the +OP_IF+ clause
+Bob's scriptSig causes the +OP_IF+ clause
 to execute the second (+OP_ELSE+) script, which requires Bob's signature.
 
 Since +OP_IF+ clauses can be nested, we can create a "maze" of execution
@@ -1242,7 +1246,7 @@ incapacitated for a while, they want the lawyer to be able to manage the
 account directly.
 
 Here's the redeemScript that Mohammed designs to achieve this (line
-number prefix as XX):
+number prefixed as XX):
 
 .Variable Multi-Signature with Timelock
 ----
@@ -1281,7 +1285,7 @@ OP_0 <Mohammed's Sig> <Zaira's Sig> OP_TRUE OP_TRUE
 The +OP_0+ at the beginning of this scriptSig is because of an oddity in
 +OP_CHECKMULTISIG+ that pops an extra value from the stack. The extra value
 is disregarded by the +OP_CHECKMULTISIG+, but it must be present or the
-script fails. Pushing an empty byte array with +OP_0+ is a workaround to the bug, as
+script fails. Pushing an empty byte array with +OP_0+ is a workaround to the oddity, as
 described in <<multisig_bug>>.
 ====
 
@@ -1321,14 +1325,14 @@ find the answers:
 - Why can't the lawyer redeem the third execution path at any time by
   selecting it with +OP_FALSE+ on the scriptSig?
 
-* How many execution paths can be used 5, 35, and 105 days,
-* respectively, after the UTXO is mined?
+- How many execution paths can be used 5, 35, and 105 days,
+  respectively, after the UTXO is mined?
 
-* Are the funds lost if the lawyer loses his key? Does your answer
-* change if 91 days have elapsed?
+- Are the funds lost if the lawyer loses his key? Does your answer
+  change if 91 days have elapsed?
 
-* How do the partners "reset" the clock every 29 or 89 days to prevent
-* the lawyer from accessing the funds?
+- How do the partners "reset" the clock every 29 or 89 days to prevent
+  the lawyer from accessing the funds?
 
 - Why do some +OP_CHECKSIG+ opcodes in this script have the +VERIFY+ suffix
   while others don't?((("", startref="Scomplex07")))((("",
@@ -1347,8 +1351,7 @@ inside a P2SH script.
 [[p2wpkh]]
 ===== Pay-to-Witness-Public-Key-Hash (P2WPKH)
 
-In <<spending_bitcoin>>, ((("use cases", "buying coffee",
-id="aliced")))Let's start by looking at the example of a P2PKH
+Let's start by looking at the example of a P2PKH
 scriptPubKey:
 
 .Example P2PKH scriptPubKey
@@ -1366,18 +1369,17 @@ to the same public key, it would look like this:
 ----
 
 As you can see, a P2WPKH scriptPubKey is much
-simpler than the P2PKH equivilent. It consists of two values that are
+simpler than the P2PKH equivalent. It consists of two values that are
 pushed on to the script evaluation stack. To an old (nonsegwit-aware)
 Bitcoin client, the two pushes would look like an output that anyone can
-spend and does not require a signature (or rather, can be spent with an
-empty signature). To a newer, segwit-aware client, the first number (0)
+spend. To a newer, segwit-aware client, the first number (0)
 is interpreted as a version number (the _witness version_) and the
 second part (20 bytes) is a
 _witness program_. The 20-byte witness program is simply the hash of the
 public key, as in a P2PKH script
 
 Now, let’s look at the corresponding transaction that Bob uses to spend
-this output. For the original script (nonsegwit), Bob’s transaction
+this output. For the original script, the spending transaction
 would have to include a signature within the transaction input:
 
 .Decoded transaction showing a P2PKH output being spent with a signature
@@ -1391,12 +1393,11 @@ would have to include a signature within the transaction input:
 [...]
 ----
 
-However, to spend the Segregated Witness output, the transaction has no
+However, to spend the P2PKH output, the transaction has no
 signature on that input. Instead, Bob’s transaction has an empty
-+scriptSig+ and includes a Segregated Witness, outside the transaction
-itself:
++scriptSig+ and includes a witness field:
 
-.Decoded transaction showing a P2WPKH output being spent with separate witness data
+.Decoded transaction showing a P2WPKH output being spent with a witness field
 ----
 [...]
 “Vin” : [
@@ -1411,7 +1412,7 @@ itself:
 
 ===== Wallet construction of P2WPKH
 
-It is extremely important to note that P2WPKH should only be created by
+It is extremely important to note that P2WPKH witness programs should only be created by
 the payee (recipient) and not converted by the sender from a known
 public key, P2PKH script, or address. The sender has no way of knowing
 if the recipient's wallet has the ability to construct segwit
@@ -1437,12 +1438,12 @@ witness script.
 ===== Pay-to-Witness-Script-Hash (P2WSH)
 
 The ((("use cases", "import/export", id="mohamappd")))second type of
-witness program corresponds to a Pay-to-Script-Hash (P2SH) script. We
+segwit v0 witness program corresponds to a Pay-to-Script-Hash (P2SH) script. We
 saw this type of script in <<p2sh>>. In that example, P2SH was used by
 Mohammed's company to express a multisignature script. Payments to
 Mohammed's company were encoded with a script like this:
 
-.Example P2SH output script
+.Example P2SH scriptPubKey
 ----
 OP_HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e OP_EQUAL
 ----
@@ -1463,41 +1464,39 @@ satisfy that redeemScript, all inside the transaction input:
 ]
 ----
 
-Now, let's look at how this entire example would be upgraded to segwit.
+Now, let's look at how this entire example would be upgraded to segwit v0.
 If Mohammed's customers were using a segwit-compatible wallet, they
 would make a payment, creating a Pay-to-Witness-Script-Hash (P2WSH)
 output that would look like this:
 
-.Example P2WSH output script
+.Example P2WSH scriptPubKey
 ----
 0 a9b7b38d972cabc7961dbfbcb841ad4508d133c47ba87457b4a0e8aae86dbb89
 ----
 
 Again, as with the example of P2WPKH, you can see that the Segregated
-Witness equivalent script is a lot simpler and omits the various script
-operands that you see in P2SH scripts. Instead, the Segregated Witness
-program consists of two values pushed to the stack: a witness version
+Witness equivalent script is a lot simpler and reduces the template
+overhead that you see in P2SH scripts. Instead, the Segregated Witness
+scriptPubKey consists of two values pushed to the stack: a witness version
 (0) and the 32-byte SHA256 hash of the witness script.
 
 [TIP]
 ====
 While P2SH uses the 20-byte +RIPEMD160(SHA256(script))+ hash, the P2WSH
 witness program uses a 32-byte +SHA256(script)+ hash. This difference in
-the selection of the hashing algorithm is deliberate and is used to
-differentiate between the two types of witness programs (P2WPKH and
-P2WSH) by the length of the hash and to provide stronger security to
-P2WSH (128 bits of security in P2WSH versus 80 bits of security in
-P2SH).
+the selection of the hashing algorithm is deliberate
+to provide stronger security to
+P2WSH in certain use cases (128 bits of security in P2WSH versus 80 bits
+of security in P2SH).  For details, see <<p2sh_collision_attacks>>.
 ====
 
-Mohammed's company can spend outputs the P2WSH output by presenting the
-redeem script and the signatures would be segregated _outside_ the
-spending transaction as part of the witness data. Within the transaction
-input, Mohammed's ((("", startref="mohamappd")))wallet would put an
-empty +scriptSig+:
+Mohammed's company can spend the P2WSH output by presenting the
 correct witness script and sufficient signatures to satisfy it. Both the
+witness script and the signatures would be
+included as part of the witness data. No data would be placed in the
+scriptSig.
 
-.Decoded transaction showing a P2WSH output being spent with separate witness data
+.Decoded transaction showing a P2WSH output being spent with witness data
 ----
 [...]
 “Vin” : [
@@ -1514,16 +1513,16 @@ correct witness script and sufficient signatures to satisfy it. Both the
 
 In the previous two sections, we demonstrated two types of witness
 programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs
-consist of a single byte version number followed by a longer hash. They
+consist of the same version number followed by a data push. They
 look very similar, but are interpreted very differently: one is
 interpreted as a public key hash, which is satisfied by a signature and
-critical difference between them is the length of the hash:
 the other as a script hash, which is satisfied by a witness script. The
+critical difference between them is the length of the witness program:
 
-- The public key hash in P2WPKH is 20 bytes
-- The script hash in P2WSH is 32 bytes
+- The witness program in P2WPKH is 20 bytes
+- The witness program in P2WSH is 32 bytes
 
-This is the one difference that allows a wallet to differentiate between
+This is the one difference that allows a full node to differentiate between
 the two types of witness programs. By looking at the length of the hash,
 a node can determine what type of witness program it is, P2WPKH or
 P2WSH.
@@ -1531,7 +1530,7 @@ P2WSH.
 ==== Upgrading to Segregated Witness
 
 As we can see from the previous examples, upgrading to Segregated
-Witness is a two-step process. First, wallets must create special segwit
+Witness is a two-step process. First, wallets must create segwit
 type outputs. Then, these outputs can be spent by wallets that know how
 to construct Segregated Witness transactions. In the examples, Alice's
 wallet is able to create outputs paying
@@ -1557,15 +1556,15 @@ important scenarios, which are addressed in the next section:
 
 Let's assume, for example, that Alice's wallet is not upgraded to
 segwit, but Bob's wallet is upgraded and can handle segwit transactions.
-Alice and Bob can use "old" non-segwit transactions. But Bob would
+Alice and Bob can use legacy non-segwit outputs. But Bob would
 likely want to use segwit to reduce transaction fees, taking advantage
-of the discount that applies to witness data.
+of the reduced cost of witness data.
 
 In this case Bob's wallet can construct a P2SH address that contains a
 segwit script inside it. Alice's wallet sees this as a "normal" P2SH
 address and can make payments to it without any knowledge of segwit.
 Bob's wallet can then spend this payment with a segwit transaction,
-taking full advantage of segwit and reducing transaction fees.
+taking advantage of segwit and reducing transaction fees.
 
 Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a
 P2SH address. The first is noted as nested P2WPKH and the second is noted
@@ -1617,8 +1616,7 @@ echo \
 37Lx99uaGn5avKBxiW26HjedQE3LrDCZru
 ----
 
-Now, Bob can display this address for customers to pay for their coffee.
-Alice's wallet can make a payment to
+Now, Alice's wallet can make a payment to
 +37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+, just as it would to any other
 Bitcoin address.
 
@@ -1668,7 +1666,7 @@ Next, the hashed redeemScript is turned into a P2WSH witness program:
 ----
 
 Then, the witness program itself is hashed with SHA256 and RIPEMD160,
-producing a new 20-byte hash, as used in traditional P2SH. Let's use
+producing a new 20-byte hash, as used in legacy P2SH. Let's use
 +bx+ on the command-line to do that:
 
 .The HASH160 of the P2WSH witness program
@@ -1690,8 +1688,8 @@ echo \
 3Dwz1MXhM6EfFoJChHCxh1jWHb8GQqRenG
 ----
 
-Now, Mohammed's clients can make payments to this address without any
-need to support segwit. To send a payment to Mohammed, a wallet would
+Now, Mohammed's clients can make payments to this address even if they
+don't support segwit. To send a payment to Mohammed, a wallet would
 lock the output with the following P2SH script:
 
 .P2SH script used to lock payments to Mohammed's multisig
