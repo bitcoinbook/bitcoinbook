@@ -36,8 +36,7 @@ basics of transaction scripts and script language.
 
 In this section, we will demonstrate the basic components of the bitcoin
 transaction scripting language and show how it can be used to express
-simple conditions for spending and how those conditions can be satisfied
-by unlocking scripts.
+conditions for spending and how those conditions can be satisfied.
 
 [TIP]
 ====
@@ -79,45 +78,31 @@ predictability of outcomes is an essential benefit of the Bitcoin
 system.
 
 [[tx_lock_unlock]]
-==== Script Construction (Lock + Unlock)
+==== Script Construction
 
-Bitcoin's transaction validation engine relies on two types of scripts
-to validate transactions: a locking script and an unlocking script.
+Bitcoin's legacy transaction validation engine relies on two types of scripts
+to validate transactions: a scriptPubKey and a scriptSig.
 
-((("locking scripts")))((("unlocking scripts")))((("scripting", "locking
-scripts")))A locking script is a spending condition placed on an output:
+A scriptPubKey is a spending condition placed on an output:
 it specifies the conditions that must be met to spend the output in the
-future. ((("scriptPubKey")))Historically, the locking script was called
-a _scriptPubKey_, because it usually contained a public key or Bitcoin
-address (public key hash). In this book we refer to it as a "locking
-script" to acknowledge the much broader range of possibilities of this
-scripting technology. In most bitcoin applications, what we refer to as
-a locking script will appear in the source code as +scriptPubKey+.
-((("witnesses")))((("cryptographic puzzles")))You will also see the
-locking script referred to as a _witness script_ (see <<segwit>>) or
-more generally as a _cryptographic puzzle_. These terms all mean the
-same thing, at different levels of abstraction.
+future, such as who is authorized to spend the output and how they will
+be authenticated.
 
-An unlocking script is a script that "solves," or satisfies, the
-conditions placed on an output by a locking script and allows the output
-to be spent. Unlocking scripts are part of every transaction input. Most
+A scriptSig is a script that satisfies the
+conditions placed on an output by a scriptPubKey and allows the output
+to be spent. ScriptSigs are part of every transaction input. Most
 of the time they contain a digital signature produced by the user's
-wallet from his or her private key. ((("scriptSig")))Historically, the
-unlocking script was called _scriptSig_, because it usually contained a
-digital signature. In most bitcoin applications, the source code refers
-to the unlocking script as +scriptSig+. You will also see the unlocking
-script referred to as a _witness_ (see <<segwit>>). In this book, we
-refer to it as an "unlocking script" to acknowledge the much broader
-range of locking script requirements, because not all unlocking scripts
+wallet from his or her private key, but not all scriptSigs
 must contain signatures.
 
 Every bitcoin validating node will validate transactions by executing
-the locking and unlocking scripts together. Each input contains an
-unlocking script and refers to a previously existing UTXO. The
-validation software will copy the unlocking script, retrieve the UTXO
-referenced by the input, and copy the locking script from that UTXO. The
-unlocking and locking script are then executed in sequence. The input is
-valid if the unlocking script satisfies the locking script conditions
+the scriptPubKey and scriptSig together.  As we saw in
+<<c_transactions>>, each input contains an outpoint which refers to a
+previous transaction output.  The input also contains a scriptSig.  The
+validation software will copy the scriptSig, retrieve the UTXO
+referenced by the input, and copy the scriptPubKey from that UTXO. The
+scriptSig and scriptPubKey are then executed in sequence. The input is
+valid if the scriptSig satisfies the scriptPubUey conditions
 (see <<script_exec>>). All the inputs are validated independently, as
 part of the overall validation of the transaction.
 
@@ -128,11 +113,11 @@ correctly satisfies the conditions of the output results in the output
 being considered as "spent" and removed from the set of unspent
 transaction outputs (UTXO set).
 
-<<scriptSig_and_scriptPubKey>> is an example of the unlocking and
-locking scripts for the most common type of bitcoin transaction (a
+<<scriptSig_and_scriptPubKey>> is an example of the scriptPubKey and
+scriptSig for the most common type of legacy Bitcoin transaction (a
 payment to a public key hash), showing the combined script resulting
-from the concatenation of the unlocking and locking scripts prior to
-script validation.
+from the concatenation of the scripts prior to
+validation.
 
 [[scriptSig_and_scriptPubKey]]
 .Combining scriptSig and scriptPubKey to evaluate a transaction script
@@ -174,29 +159,27 @@ operator +OP_EQUAL+, which checks that the resulting sum is equal to
 example. For more details on the available script operators and
 functions, see <<tx_script_ops>>.
 
-Although most locking scripts refer to a public key hash (essentially, a
-Bitcoin address), thereby requiring proof of ownership to spend the
+Although most legacy scriptPubKeys refer to a public key hash (essentially, a
+legacy Bitcoin address), thereby requiring proof of ownership to spend the
 funds, the script does not have to be that complex. Any combination of
-locking and unlocking scripts that results in a TRUE value is valid. The
+scriptPubKey and scriptSig that results in a TRUE value is valid. The
 simple arithmetic we used as an example of the scripting language is
-also a valid locking script that can be used to lock a transaction
-output.
+also a valid script.
 
-Use part of the arithmetic example script as the locking script:
+Use part of the arithmetic example script as the scriptPubKey:
 
 ----
 3 OP_ADD 5 OP_EQUAL
 ----
 
 which can be satisfied by a transaction containing an input with the
-unlocking script:
+scriptSig:
 
 ----
 2
 ----
 
-The validation software combines the locking and unlocking scripts and
-the resulting script is:
+The validation software combines the scripts:
 
 ----
 2 3 OP_ADD 5 OP_EQUAL
@@ -204,7 +187,7 @@ the resulting script is:
 
 As we saw in the step-by-step example in <<simplemath_script>>, when
 this script is executed, the result is +OP_TRUE+, making the transaction
-valid. Not only is this a valid transaction output locking script, but
+valid. Not only have we shown a valid transaction output scriptPubKey, but
 the resulting UTXO could be spent by anyone with the arithmetic skills
 to know that the number 2 satisfies the script.
 
@@ -239,23 +222,22 @@ When the script execution ends, you should be left with the value +TRUE+
 on the stack.
 
 [[script_exec]]
-===== Separate execution of unlocking and locking scripts
+===== Separate execution of scriptPubKey and scriptSig
 
-((("security", "locking and unlocking scripts")))In the original Bitcoin
-client, the unlocking and locking scripts were concatenated and executed
-in sequence. For security reasons, this was changed in 2010, because of
-a vulnerability that allowed a malformed unlocking script to push data
-onto the stack and corrupt the locking script. In the current
+In the original Bitcoin
+client, scriptPubKey and scriptSig were concatenated and executed
+in sequence. For security reasons, this was changed in 2010 because of
+a vulnerability known as the +1 OP_RETURN+ bug.  In the current
 implementation, the scripts are executed separately with the stack
 transferred between the two executions, as described next.
 
-First, the unlocking script is executed, using the stack execution
-engine. If the unlocking script is executed without errors (e.g., it has
-no "dangling" operators left over), the main stack is copied and the
-locking script is executed. If the result of executing the locking
-script with the stack data copied from the unlocking script is "TRUE,"
-the unlocking script has succeeded in resolving the conditions imposed
-by the locking script and, therefore, the input is a valid authorization
+First, the scriptSig executed using the stack execution
+engine. If the scriptSig is executed without errors and has
+no operations left over, the stack is copied and the
+scriptPubKey is executed. If the result of executing scriptPubKey
+with the stack data copied from scriptSig is "TRUE,"
+the scriptSig has succeeded in resolving the conditions imposed
+by the scriptPubKey and, therefore, the input is a valid authorization
 to spend the UTXO. If any result other than "TRUE" remains after
 execution of the combined script, the input is invalid because it has
 failed to satisfy the spending conditions placed on the UTXO.
@@ -264,18 +246,13 @@ failed to satisfy the spending conditions placed on the UTXO.
 [[p2pkh]]
 ==== Pay-to-Public-Key-Hash (P2PKH)
 
-((("Pay-to-Public-Key-Hash (P2PKH)")))The vast majority of transactions
-processed on the Bitcoin network spend outputs locked with a
-Pay-to-Public-Key-Hash or "P2PKH" script. These outputs contain a
-locking script that locks the output to a public key hash, more commonly
-known as a Bitcoin address. An output locked by a P2PKH script can be
-unlocked (spent) by presenting a public key and a digital signature
-created by the corresponding private key (see <<digital_sigs>>).
-
-((("use cases", "buying coffee")))For example, let's look at Alice's
-payment to Bob's Cafe again. Alice made a payment of 0.015 bitcoin to
-the cafe's Bitcoin address. That transaction output would have a locking
-script of the form:
+((("Pay-to-Public-Key-Hash (P2PKH)")))
+A Pay-to-Public-Key-Hash or "P2PKH" script uses a scriptPubKey that
+contains a hash which commits to a public key.  P2PKH is best known as a
+the basis for a legacy Bitcoin address. An P2PKH output can be spent by
+presenting a public key which matches the hash commitment and a digital
+signature created by the corresponding private key (see
+<<digital_sigs>>).  Let's look at an example of a P2PKH scriptPubKey:
 
 ----
 OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
@@ -286,7 +263,7 @@ cafe, without the Base58Check encoding. Most applications would show the
 _public key hash_ in hexadecimal encoding and not the familiar Bitcoin
 address Base58Check format that begins with a "1."
 
-The preceding locking script can be satisfied with an unlocking script
+The preceding scriptPubKey can be satisfied with a scriptSig
 of the form:
 
 ----
@@ -302,9 +279,9 @@ script:
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only
-if, the unlocking script matches the conditions set by the locking
-script. In other words, the result will be TRUE if the unlocking script
-has a valid signature from the cafe's private key that corresponds to
+if, the scriptSig matches the conditions set by the scriptPubKey.
+In other words, the result will be TRUE if the scriptSig
+has a valid signature from Bob's private key that corresponds to
 the public key hash set as an encumbrance.
 
 Figures pass:[<a data-type="xref" href="#P2PubKHash1"
@@ -347,7 +324,7 @@ scripts")))((("transactions", "advanced", id="Tadv07")))((("scripting",
 "multisignature scripts", id="Smulti07")))((("multisignature
 scripts")))Multisignature scripts set a condition where N public keys
 are recorded in the script and at least M of those must provide
-signatures to unlock the funds. This is also known as an M-of-N scheme,
+signatures to spend the funds. This is also known as an M-of-N scheme,
 where N is the total number of keys and M is the threshold of signatures
 required for validation. For example, a 2-of-3 multisignature is one
 where three public keys are listed as potential signers and at least two
@@ -365,7 +342,7 @@ multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script.
 P2SH multisignature scripts are limited to 15 keys, allowing for up to
 15-of-15 multisignature. We will learn about P2SH in <<p2sh>>.
 
-The general form of a locking script setting an M-of-N multisignature
+The general form of a scriptPubKey setting an M-of-N multisignature
 condition is:
 
 ----
@@ -375,14 +352,14 @@ M <Public Key 1> <Public Key 2> ... <Public Key N> N CHECKMULTISIG
 where N is the total number of listed public keys and M is the threshold
 of required signatures to spend the output.
 
-A locking script setting a 2-of-3 multisignature condition looks like
+A scriptPubKey setting a 2-of-3 multisignature condition looks like
 this:
 
 ----
 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
 ----
 
-The preceding locking script can be satisfied with an unlocking script
+The preceding scriptPubKey can be satisfied with a scriptSig
 containing pairs of signatures and public keys:
 
 ----
@@ -399,8 +376,8 @@ The two scripts together would form the combined validation script:
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only
-if, the unlocking script matches the conditions set by the locking
-script. In this case, the condition is whether the unlocking script has
+if, the scriptSig script matches the conditions set by the scriptPubKey.
+In this case, the condition is whether the scriptSig has
 a valid signature from the two private keys that correspond to two of
 the three public keys set as an encumbrance.
 
@@ -444,7 +421,7 @@ like this:
 0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 CHECKMULTISIG
 ----
 
-Thus the unlocking script actually used in multisig is not:
+Thus the scriptSig actually used in multisig is not:
 
 ----
 <Signature B> <Signature C>
@@ -456,7 +433,7 @@ but instead it is:
 0 <Signature B> <Signature C>
 ----
 
-From now on, if you see a multisig unlocking script, you should expect
+From now on, if you see a multisig script, you should expect
 to see an extra +0+ in the beginning, whose only purpose is as a
 workaround to a bug that accidentally became a consensus rule.((("",
 startref="Smulti07")))
@@ -503,45 +480,45 @@ than a simple payment transaction, because this script contains very
 long public keys. The burden of that extra-large transaction would be
 borne by the customer in the form of fees. Finally, a large transaction
 script like this would be carried in the UTXO set in RAM in every full
-node, until it was spent. All of these issues make using complex locking
-scripts difficult in practice.
+node, until it was spent. All of these issues make using complex scriptPubKeys
+difficult in practice.
 
 P2SH was developed to resolve these practical difficulties and to make
 the use of complex scripts as easy as a payment to a Bitcoin address.
-With P2SH payments, the complex locking script is replaced with its
-digital fingerprint, a cryptographic hash. When a transaction attempting
+With P2SH payments, the complex script is replaced with a
+commitment, the digest of a cryptographic hash. When a transaction attempting
 to spend the UTXO is presented later, it must contain the script that
-matches the hash, in addition to the unlocking script. In simple terms,
+matches the commitment in addition to the data which satisifies the script. In simple terms,
 P2SH means "pay to a script matching this hash, a script that will be
 presented later when this output is spent."
 
-((("redeem scripts")))((("scripting", "redeem scripts")))In P2SH
-transactions, the locking script that is replaced by a hash is referred
-to as the _redeem script_ because it is presented to the system at
-redemption time rather than as a locking script. <<without_p2sh>> shows
+((("redeemScripts")))((("scripting", "redeemScripts")))In P2SH
+transactions, the script that is replaced by a hash is referred
+to as the _redeemScript_ because it is presented to the system at
+redemption time rather than as a scriptPubKey. <<without_p2sh>> shows
 the script without P2SH and <<with_p2sh>> shows the same script encoded
 with P2SH.
 
 [[without_p2sh]]
 .Complex script without P2SH
 |=======
-| Locking Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
-| Unlocking Script | Sig1 Sig2
+| ScriptPubKey | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
+| ScriptSig | Sig1 Sig2
 |=======
 
 [[with_p2sh]]
 .Complex script as P2SH
 |=======
-| Redeem Script | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
-| Locking Script | HASH160 <20-byte hash of redeem script> EQUAL
-| Unlocking Script | Sig1 Sig2 <redeem script>
+| RedeemScript | 2 PubKey1 PubKey2 PubKey3 PubKey4 PubKey5 5 CHECKMULTISIG
+| ScriptPubKey | HASH160 <20-byte hash of redeemScript> EQUAL
+| ScriptSig | Sig1 Sig2 <redeemScript>
 |=======
 
 As you can see from the tables, with P2SH the complex script that
-details the conditions for spending the output (redeem script) is not
-presented in the locking script. Instead, only a hash of it is in the
-locking script and the redeem script itself is presented later, as part
-of the unlocking script when the output is spent. This shifts the burden
+details the conditions for spending the output (redeemScript) is not
+presented in the scriptPubKey. Instead, only a hash of it is in the
+scriptPubKey and the reedemScript itself is presented later, as part
+of the scriptSig when the output is spent. This shifts the burden
 in fees and complexity from the sender to the recipient (spender) of the
 transaction.
 
@@ -584,19 +561,19 @@ echo \
 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
 ----
 
-The series of commands above first encodes Mohammed's multisig redeem
-script as a serialized hex-encoded bitcoin Script. The next +bx+ command
+The series of commands above first encodes Mohammed's multisig
+redeemScript as a serialized hex-encoded bitcoin Script. The next +bx+ command
 calculates the SHA256 hash of that. The next +bx+ command hashes again
 with RIPEMD160, producing the final script-hash:
 
-The 20-byte hash of Mohammed's redeem script is:
+The 20-byte hash of Mohammed's redeemScript is:
 
 ----
 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
 ----
 
 A P2SH transaction locks the output to this hash instead of the longer
-redeem script, using the locking script:
+redeemScript, using a special scriptPubKey template:
 
 ----
 HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
@@ -605,32 +582,27 @@ HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
 which, as you can see, is much shorter. Instead of "pay to this 5-key
 multisignature script," the P2SH equivalent transaction is "pay to a
 script with this hash." A customer making a payment to Mohammed's
-company need only include this much shorter locking script in his
+company need only include this much shorter scriptPubKey in his
 payment. When Mohammed and his partners want to spend this UTXO, they
-must present the original redeem script (the one whose hash locked the
+must present the original redeemScript (the one whose hash locked the
 UTXO) and the signatures necessary to unlock it, like this:
 
 ----
 <Sig1> <Sig2> <2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG>
 ----
 
-The two scripts are combined in two stages. First, the redeem script is
-checked against the locking script to make sure the hash matches:
+The two scripts are combined in two stages. First, the redeemScript is
+checked against the scriptPubKey to make sure the hash matches:
 
 ----
-<2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG> HASH160 <redeem scriptHash> EQUAL
+<2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG> HASH160 <redeemScript hash> EQUAL
 ----
 
-If the redeem script hash matches, the unlocking script is executed on
-its own, to unlock the redeem script:
+If the redeemScript hash matches, the redeemScript is executed:
 
 ----
 <Sig1> <Sig2> 2 PK1 PK2 PK3 PK4 PK5 5 CHECKMULTISIG
 ----
-
-Almost all the scripts described in this chapter can only be implemented
-as P2SH scripts. They cannot be used directly in the locking script of
-an UTXO.((("", startref="mohamseven")))
 
 ==== P2SH Addresses
 
@@ -667,7 +639,10 @@ payment does not see the script.
 
 ==== Benefits of P2SH
 
-((("scripting", "Pay-to-Script-Hash", "benefits of")))((("Pay-to-Script-Hash (P2SH)", "benefits of")))The P2SH feature offers the following benefits compared to the direct use of complex scripts in locking outputs:
+((("scripting", "Pay-to-Script-Hash", "benefits
+of")))((("Pay-to-Script-Hash (P2SH)", "benefits of")))The P2SH feature
+offers the following benefits compared to the direct use of complex
+scripts in outputs:
 
 - Complex scripts are replaced by shorter fingerprints in the
   transaction output, making the transaction smaller.
@@ -686,50 +661,32 @@ payment does not see the script.
   present time (payment) to a future time (when it is spent).
 
 - P2SH shifts the transaction fee cost of a long script from the sender
-  to the recipient, who has to include the long redeem script to spend
+  to the recipient, who has to include the long redeemScript to spend
   it.
 
-==== Redeem Script and Validation
+==== RedeemScript and Validation
 
-((("scripting", "Pay-to-Script-Hash", "redeem scripts and
-validation")))((("Pay-to-Script-Hash (P2SH)", "redeem scripts and
-validation")))((("redeem scripts")))((("validation")))Prior to version
-0.9.2 of the Bitcoin Core client, Pay-to-Script-Hash was limited to the
-standard types of bitcoin transaction scripts, by the +IsStandard()+
-function. That means that the redeem script presented in the spending
-transaction could only be one of the standard types: P2PK, P2PKH, or
-multisig.
-
-As of version 0.9.2 of the Bitcoin Core client, P2SH transactions can
-contain any valid script, making the P2SH standard much more flexible
-and allowing for experimentation with many novel and complex types of
-transactions.
-
-You are not able to put a P2SH inside a P2SH redeem script, because the
+You are not able to put a P2SH inside a P2SH redeemScript, because the
 P2SH specification is not recursive. Also, while it is technically
 possible to include +RETURN+ (see <<op_return>>) in a redeem script, as
 nothing in the rules prevents you from doing so, it is of no practical
 use because executing +RETURN+ during validation will cause the
 transaction to be marked invalid.
 
-Note that because the redeem script is not presented to the network
-until you attempt to spend a P2SH output, if you lock an output with the
-hash of an invalid redeem script it will be processed regardless. The
-UTXO will be successfully locked. However, you will not be able to spend
-it because the spending transaction, which includes the redeem script,
+Note that because the redeemScript is not presented to the network
+until you attempt to spend a P2SH output, if you create an output with the
+hash of an invalid redeemScript, you will not be able to spend
+it.  The spending transaction, which includes the redeemScript,
 will not be accepted because it is an invalid script. This creates a
-risk, because you can lock bitcoin in a P2SH that cannot be spent later.
-The network will accept the P2SH locking script even if it corresponds
-to an invalid redeem script, because the script hash gives no indication
-of the script it represents.((("", startref="Spay07")))
+risk, because you can send bitcoin to a P2SH address that cannot be spent later.
 
 [WARNING]
 ====
-((("warnings and cautions", "accidental bitcoin locking")))P2SH locking
-scripts contain the hash of a redeem script, which gives no clues as to
-the content of the redeem script itself. The P2SH transaction will be
-considered valid and accepted even if the redeem script is invalid. You
-might accidentally lock bitcoin in such a way that it cannot later be
+((("warnings and cautions", "accidental bitcoin invalidation")))P2SH scriptPubKeys
+contain the hash of a redeemScript, which gives no clues as to
+the content of the redeemScript. The P2SH transaction will be
+considered valid and accepted even if the redeemScript is invalid. You
+might accidentally receive bitcoin in such a way that it cannot later be
 spent.
 ====
 
@@ -793,9 +750,9 @@ http://proofofexistence.com[Proof of Existence] digital notarization
 service uses the 8-byte prefix +DOCPROOF+, which is ASCII encoded as +44
 4f 43 50 52 4f 4f 46+ in hexadecimal.
 
-Keep in mind that there is no "unlocking script" that corresponds to
-+RETURN+ that could possibly be used to "spend" a +RETURN+ output. The
-whole point of +RETURN+ is that you can't spend the money locked in that
+Keep in mind that there is no scriptSig that corresponds to
++OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The
+whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
 output, and therefore it does not need to be held in the UTXO set as
 potentially spendable—+RETURN+ is _provably unspendable_. +RETURN+ is
 usually an output with a zero bitcoin amount, because any bitcoin
@@ -858,7 +815,7 @@ _CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
 as is the case with +nLocktime+. This allows for much greater
 flexibility in the way timelocks are applied.
 
-In simple terms, by adding the +CLTV+ opcode in the redeem script of an
+In simple terms, by adding the +CLTV+ opcode in the redeemScript of an
 output it restricts the output, so that it can only be spent after the
 specified time has elapsed.
 
@@ -878,8 +835,8 @@ time). As indicated by the +VERIFY+ suffix, +CLTV+ is the type of opcode
 that halts execution of the script if the outcome is +FALSE+. If it
 results in TRUE, execution continues.
 
-In order to lock an output with +CLTV+, you insert it into the redeem
-script of the output in the transaction that creates the output. For
+In order to use +OP_CLTV+, you insert it into the redeemScript of the
+output in the transaction that creates the output. For
 example, if Alice is paying Bob's address, the output would normally
 contain a P2PKH script like this:
 
@@ -888,7 +845,7 @@ DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY CHECKSIG
 ----
 
 To lock it to a time, say 3 months from now, the transaction would be a
-P2SH transaction with a redeem script like this:
+P2SH transaction with a redeemScript like this:
 
 ----
 <now + 3 months> CHECKLOCKTIMEVERIFY DROP DUP HASH160 <Bob's Public Key Hash> EQUALVERIFY CHECKSIG
@@ -902,8 +859,8 @@ where +<now {plus} 3 months>+ is a block height or time value estimated
 
 When Bob tries to spend this UTXO, he constructs a transaction that
 references the UTXO as an input. He uses his signature and public key in
-the unlocking script of that input and sets the transaction +nLocktime+
-to be equal or greater to the timelock in the +CHECKLOCKTIMEVERIFY+
+the scriptSig of that input and sets the transaction +nLockTime+
+to be equal or greater to the timelock in the +OP_CHECKLOCKTIMEVERIFY+
 Alice set. Bob then broadcasts the transaction on the Bitcoin network.
 
 Bob's transaction is evaluated as follows. If the +CHECKLOCKTIMEVERIFY+
@@ -1029,9 +986,9 @@ Bitcoin conditional clauses look a bit different, but are essentially
 the same construct.
 
 At a basic level, bitcoin conditional opcodes allow us to construct a
-redeem script that has two ways of being unlocked, depending on a
+script that has two ways of being unlocked, depending on a
 +TRUE+/+FALSE+ outcome of evaluating a logical condition. For example,
-if x is +TRUE+, the redeem script is A and the ELSE redeem script is B.
+if x is +TRUE+, the redeemScript is A and the ELSE redeemScript is B.
 
 Additionally, bitcoin conditional expressions can be "nested"
 indefinitely, meaning that a conditional clause can contain another
@@ -1101,10 +1058,10 @@ be satisfied to unlock:
 HASH160 <expected hash> EQUALVERIFY <Bob's Pubkey> CHECKSIG
 ----
 
-To redeem this, Bob must construct an unlocking script that presents a
+To spend this, Bob must present a
 valid pre-image and a signature:
 
-.An unlocking script to satisfy the above redeem script
+.Satisfying the above script
 ----
 <Bob's Sig> <hash pre-image>
 ----
@@ -1123,9 +1080,9 @@ IF
 ENDIF
 ----
 
-Bob's unlocking script is identical:
+Bob's authentication data identical:
 
-.An unlocking script to satisfy the above redeem script
+.Satisfying the above script
 ----
 <Bob's Sig> <hash pre-image>
 ----
@@ -1152,7 +1109,7 @@ suffix does not leave anything on the stack. Opcodes that end in
 ==== Using Flow Control in Scripts
 
 A very common use for flow control in Bitcoin Script is to construct a
-redeem script that offers multiple execution paths, each a different way
+script that offers multiple execution paths, each a different way
 of redeeming the UTXO.
 
 ((("use cases", "buying coffee")))Let's look at a simple example, where
@@ -1169,14 +1126,14 @@ ELSE
 ENDIF
 ----
 
-Looking at this redeem script, you may be wondering: "Where is the
+Looking at this redeemScript, you may be wondering: "Where is the
 condition? There is nothing preceding the +IF+ clause!"
 
-The condition is not part of the redeem script. Instead, the condition
-will be offered in the unlocking script, allowing Alice and Bob to
+The condition is not part of the script. Instead, the condition
+will be offered at spending time, allowing Alice and Bob to
 "choose" which execution path they want.
 
-Alice redeems this with the unlocking script:
+.Alice satisifies the above script:
 ----
 <Alice's Sig> 1
 ----
@@ -1192,11 +1149,11 @@ path by giving a +FALSE+ value to the +IF+ clause:
 <Bob's Sig> 0
 ----
 
-Bob's unlocking script puts a +0+ on the stack, causing the +IF+ clause
+Bob's scriptSig puts a +0+ on the stack, causing the +IF+ clause
 to execute the second (+ELSE+) script, which requires Bob's signature.
 
-Since +IF+ clauses can be nested, we can create a "maze" of execution
-paths. The unlocking script can provide a "map" selecting which
+Since +OP_IF+ clauses can be nested, we can create a "maze" of execution
+paths. The scriptSig can provide a "map" selecting which
 execution path is actually executed:
 
 ----
@@ -1211,19 +1168,19 @@ ELSE
 ENDIF
 ----
 
-In this scenario, there are three execution paths (+script A+, +script
-B+, and +script C+). The unlocking script provides a path in the form of
-a sequence of +TRUE+ or +FALSE+ values. To select path +script B+, for
-example, the unlocking script must end in +1 0+ (+TRUE+, +FALSE+). These
+In this scenario, there are three execution paths (+subscript A+, +subscript
+B+, and +subscript C+). The scriptSig provides a path in the form of
+a sequence of +TRUE+ or +FALSE+ values. To select path +subscript B+, for
+example, the scriptSig must end in +1 0+ (+TRUE+, +FALSE+). These
 values will be pushed onto the stack, so that the second value (+FALSE+)
 ends up at the top of the stack. The outer +IF+ clause pops the +FALSE+
 value and executes the first +ELSE+ clause. Then the +TRUE+ value moves
 to the top of the stack and is evaluated by the inner (nested) +IF+,
 selecting the +B+ execution path.
 
-Using this construct, we can build redeem scripts with tens or hundreds
+Using this construct, we can build redeemScripts with tens or hundreds
 of execution paths, each offering a different way to redeem the UTXO. To
-spend, we construct an unlocking script that navigates the execution
+spend, we construct an scriptSig that navigates the execution
 path by putting the appropriate +TRUE+ and +FALSE+ values on the stack
 at each flow control point.((("", startref="Sflow07")))((("",
 startref="flow07")))((("", startref="condition07")))
@@ -1252,7 +1209,7 @@ partner signatures. Finally, if all partners are unavailable or
 incapacitated for a while, they want the lawyer to be able to manage the
 account directly.
 
-Here's the redeem script that Mohammed designs to achieve this (line
+Here's the redeemScript that Mohammed designs to achieve this (line
 number prefix as XX):
 
 .Variable Multi-Signature with Timelock
@@ -1279,9 +1236,9 @@ In the first execution path, this script operates as a simple 2-of-3
 multisig with the three partners. This execution path consists of lines
 3 and 9. Line 3 sets the quorum of the multisig to +2+ (2-of-3). This
 execution path can be selected by putting +TRUE TRUE+ at the end of the
-unlocking script:
+scriptSig:
 
-.Unlocking script for the first execution path (2-of-3 multisig)
+.Spending data for the first execution path (2-of-3 multisig)
 ----
 0 <Mohammed's Sig> <Zaira's Sig> TRUE TRUE
 ----
@@ -1289,10 +1246,10 @@ unlocking script:
 
 [TIP]
 ====
-The +0+ at the beginning of this unlocking script is because of a bug in
-+CHECKMULTISIG+ that pops an extra value from the stack. The extra value
-is disregarded by the +CHECKMULTISIG+, but it must be present or the
-script fails. Pushing +0+ (customarily) is a workaround to the bug, as
+The +0+ at the beginning of this scriptSig is because of a bug in
++OP_CHECKMULTISIG+ that pops an extra value from the stack. The extra value
+is disregarded by the +OP_CHECKMULTISIG+, but it must be present or the
+script fails. Pushing +0+ is a workaround to the bug, as
 described in <<multisig_bug>>.
 ====
 
@@ -1300,10 +1257,10 @@ The second execution path can only be used after 30 days have elapsed
 from the creation of the UTXO. At that time, it requires the signature
 of Abdul the lawyer and one of the three partners (a 1-of-3 multisig).
 This is achieved by line 7, which sets the quorum for the multisig to
-+1+. To select this execution path, the unlocking script would end in
++1+. To select this execution path, the scriptSig would end in
 +FALSE TRUE+:
 
-.Unlocking script for the second execution path (Lawyer + 1-of-3)
+.Spending data for the second execution path (Lawyer + 1-of-3)
 ----
 0 <Saeed's Sig> <Abdul's Sig> FALSE TRUE
 ----
@@ -1317,9 +1274,9 @@ on to the stack, with +FALSE+ pushed first, then +TRUE+ pushed second.
 
 Finally, the third execution path allows Abdul the lawyer to spend the
 funds alone, but only after 90 days. To select this execution path, the
-unlocking script has to end in +FALSE+:
+scriptSig has to end in +FALSE+:
 
-.Unlocking script for the third execution path (Lawyer only)
+.ScriptSig for the third execution path (Lawyer only)
 ----
 <Abdul's Sig> FALSE
 ----
@@ -1329,8 +1286,8 @@ Try running the script on paper to see how it behaves on the stack.
 A few more things to consider when reading this example. See if you can
 find the answers:
 
-* Why can't the lawyer redeem the third execution path at any time by
-* selecting it with +FALSE+ on the unlocking script?
+- Why can't the lawyer redeem the third execution path at any time by
+  selecting it with +FALSE+ on the scriptSig?
 
 * How many execution paths can be used 5, 35, and 105 days,
 * respectively, after the UTXO is mined?
@@ -1363,7 +1320,7 @@ id="aliced")))Alice created a transaction to pay Bob for a cup of
 coffee. That transaction created a P2PKH output with a value of 0.015
 BTC that was spendable by Bob. The output’s script looks like this:
 
-.Example P2PKH output script
+.Example P2PKH scriptPubKey
 ----
 DUP HASH160 ab68025513c3dbd2f7b92a94e0581f5d50f654e7 EQUALVERIFY CHECKSIG
 ----
@@ -1376,14 +1333,14 @@ Pay-to-Witness-Public-Key-Hash (P2WPKH) script, which looks like this:
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-As you can see, a Segregated Witness output’s locking script is much
-simpler than a traditional output. It consists of two values that are
+As you can see, a P2WPKH scriptPubKey is much
+simpler than the P2PKH equivilent. It consists of two values that are
 pushed on to the script evaluation stack. To an old (nonsegwit-aware)
 Bitcoin client, the two pushes would look like an output that anyone can
 spend and does not require a signature (or rather, can be spent with an
 empty signature). To a newer, segwit-aware client, the first number (0)
 is interpreted as a version number (the _witness version_) and the
-second part (20 bytes) is the equivalent of a locking script known as a
+second part (20 bytes) is a
 _witness program_. The 20-byte witness program is simply the hash of the
 public key, as in a P2PKH script
 
@@ -1451,18 +1408,18 @@ The ((("use cases", "import/export", id="mohamappd")))second type of
 witness program corresponds to a Pay-to-Script-Hash (P2SH) script. We
 saw this type of script in <<p2sh>>. In that example, P2SH was used by
 Mohammed's company to express a multisignature script. Payments to
-Mohammed's company were encoded with a locking script like this:
+Mohammed's company were encoded with a script like this:
 
 .Example P2SH output script
 ----
 HASH160 54c557e07dde5bb6cb791c7a540e0a4796f5e97e EQUAL
 ----
 
-This P2SH script references the hash of a _redeem script_ that defines a
+This P2SH script references the hash of a _redeemScript_ that defines a
 2-of-3 multisignature requirement to spend funds. To spend this output,
-Mohammed's company would present the redeem script (whose hash matches
+Mohammed's company would present the redeemScript (whose hash matches
 the script hash in the P2SH output) and the signatures necessary to
-satisfy that redeem script, all inside the transaction input:
+satisfy that redeemScript, all inside the transaction input:
 
 .Decoded transaction showing a P2SH output being spent
 ----
@@ -1488,7 +1445,7 @@ Again, as with the example of P2WPKH, you can see that the Segregated
 Witness equivalent script is a lot simpler and omits the various script
 operands that you see in P2SH scripts. Instead, the Segregated Witness
 program consists of two values pushed to the stack: a witness version
-(0) and the 32-byte SHA256 hash of the redeem script.
+(0) and the 32-byte SHA256 hash of the witness script.
 
 [TIP]
 ====
@@ -1502,11 +1459,11 @@ P2SH).
 ====
 
 Mohammed's company can spend outputs the P2WSH output by presenting the
-correct redeem script and sufficient signatures to satisfy it. Both the
 redeem script and the signatures would be segregated _outside_ the
 spending transaction as part of the witness data. Within the transaction
 input, Mohammed's ((("", startref="mohamappd")))wallet would put an
 empty +scriptSig+:
+correct witness script and sufficient signatures to satisfy it. Both the
 
 .Decoded transaction showing a P2WSH output being spent with separate witness data
 ----
@@ -1528,8 +1485,8 @@ programs: <<p2wpkh>> and <<p2wsh>>. Both types of witness programs
 consist of a single byte version number followed by a longer hash. They
 look very similar, but are interpreted very differently: one is
 interpreted as a public key hash, which is satisfied by a signature and
-the other as a script hash, which is satisfied by a redeem script. The
 critical difference between them is the length of the hash:
+the other as a script hash, which is satisfied by a witness script. The
 
 - The public key hash in P2WPKH is 20 bytes
 - The script hash in P2WSH is 32 bytes
@@ -1630,7 +1587,7 @@ echo \
 3e0547268b3b19288b3adef9719ec8659f4b2b0b
 ----
 
-Next, the redeem script hash is converted to a Bitcoin address. Let's
+Next, the redeemScript hash is converted to a Bitcoin address. Let's
 use +bx+ on the command-line again:
 
 .P2SH address
@@ -1669,7 +1626,7 @@ company, regardless of whether their wallets are upgraded for segwit,
 Mohammed's wallet can embed the P2WSH witness program inside a P2SH
 script.
 
-First, Mohammed's wallet hashes the redeem script with SHA256 (just
+First, Mohammed's wallet hashes the redeemScript with SHA256 (just
 once). Let's use +bx+ to do that on the command-line:
 
 .Mohammed's wallet creates a P2WSH witness program
@@ -1685,7 +1642,7 @@ echo \
 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Next, the hashed redeem script is turned into a P2WSH witness program:
+Next, the hashed redeemScript is turned into a P2WSH witness program:
 
 ----
 0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
