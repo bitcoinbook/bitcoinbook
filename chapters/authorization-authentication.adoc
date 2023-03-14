@@ -240,7 +240,7 @@ the scriptSig has succeeded in resolving the conditions imposed
 by the scriptPubKey and, therefore, the input is a valid authorization
 to spend the UTXO. If any result other than "TRUE" remains after
 execution of the combined script, the input is invalid because it has
-failed to satisfy the spending conditions placed on the UTXO.
+failed to satisfy the spending conditions placed on the output.
 
 
 [[p2pkh]]
@@ -255,27 +255,26 @@ signature created by the corresponding private key (see
 <<digital_sigs>>).  Let's look at an example of a P2PKH scriptPubKey:
 
 ----
-OP_DUP OP_HASH160 <Cafe Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
+OP_DUP OP_HASH160 <Key Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-The +Cafe Public Key Hash+ is equivalent to the Bitcoin address of the
-cafe, without the Base58Check encoding. Most applications would show the
-_public key hash_ in hexadecimal encoding and not the familiar Bitcoin
+The +Key Hash+ the data that would be encoded into a legacy Base58Check
+address.  Most applications would show the _public key hash_ in a script
+using hexadecimal encoding and not the familiar Bitcoin
 address Base58Check format that begins with a "1."
 
 The preceding scriptPubKey can be satisfied with a scriptSig
 of the form:
 
 ----
-<Cafe Signature> <Cafe Public Key>
+<Signature> <Public Key>
 ----
 
 The two scripts together would form the following combined validation
 script:
 
 ----
-<Cafe Signature> <Cafe Public Key> OP_DUP OP_HASH160
-<Cafe Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
+<Sig> <Pubkey> OP_DUP OP_HASH160 <Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
 When executed, this combined script will evaluate to TRUE if, and only
@@ -1316,9 +1315,8 @@ inside a P2SH script.
 ===== Pay-to-Witness-Public-Key-Hash (P2WPKH)
 
 In <<spending_bitcoin>>, ((("use cases", "buying coffee",
-id="aliced")))Alice created a transaction to pay Bob for a cup of
-coffee. That transaction created a P2PKH output with a value of 0.015
-BTC that was spendable by Bob. The output’s script looks like this:
+id="aliced")))Let's start by looking at the example of a P2PKH
+scriptPubKey:
 
 .Example P2PKH scriptPubKey
 ----
