@@ -896,13 +896,26 @@ the transaction invalid if (source: BIP65):
 1. the top stack item is greater than the transaction's +nLockTime+ field; or
 1. the +nSequence+ field of the input is 0xffffffff.
 
-[NOTE]
+[[timelock_conflicts]]
+.Timelock conflicts
+[WARNING]
 ====
 +OP_CLTV+ and +nLockTime+ use the same format to describe timelocks, either
 a block height or the time elapsed in seconds since Unix epoch.
 Critically, when used together, the format of +nLockTime+ must match
 that of +OP_CLTV+ in the outputs--they must both reference either
 block height or time in seconds.
+
+The above implies that a script can never be valid if it must execute
+two different calls to +OP_CLTV+, one which uses a height and one which
+uses a time.  It can be easy to make this mistake when writing advanced
+scripts, so be sure to thoroughly test your scripts on a test network or
+use a tool designed to prevent this issue, like a Miniscript compiler.
+
+An additional implication is that only one variety of +OP_CLTV+ can be
+used in any of the scripts of a transaction.  If the script for one
+input uses the height variety and a different script for a different
+input uses the time variety, there is no way to construct a valid transaction.
 ====
 
 After execution, if +OP_CLTV+ is satisfied, the parameter that
@@ -981,6 +994,15 @@ blocks, then so must +nSequence+. If +OP_CSV+ is specified in terms of
 seconds, then so must +nSequence+.
 
 Relative timelocks with +CSV+ are especially useful when several
+[[WARNING]]
+====
+A script executing multiple +OP_CSV+ opcodes must only use the same
+variety, either time-based or height-based.  Mixing varieties will
+produce an invalid script that can never be spent, the same problem we
+saw with +OP_CLTV+ in <<timelock_conflicts>>.  However, +OP_CSV+ allows
+any two valid inputs to be included in the same transaction, so the problem
+of interaction across inputs that occurs with +OP_CLTV+ doesn't affect +OP_CSV+.
+====
 (chained) transactions are created and signed, but not propagated, when
 they're kept "off-chain." A child transaction cannot be used until the
 parent transaction has been propagated, mined, and aged by the time
