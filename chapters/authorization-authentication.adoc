@@ -324,33 +324,40 @@ image::../images/mbc2_0606.png["Tx_Script_P2PubKeyHash_2"]
 scripts")))((("transactions", "advanced", id="Tadv07")))((("scripting",
 "multisignature scripts", id="Smulti07")))((("multisignature
 scripts")))Multisignature scripts set a condition where N public keys
-are recorded in the script and at least M of those must provide
-signatures to spend the funds. This is also known as an M-of-N scheme,
-where N is the total number of keys and M is the threshold of signatures
+are recorded in the script and at least K of those must provide
+signatures to spend the funds. This is also known as a K-of-N scheme,
+where N is the total number of keys and K is the threshold of signatures
 required for validation. For example, a 2-of-3 multisignature is one
 where three public keys are listed as potential signers and at least two
 of those must be used to create signatures for a valid transaction to
 spend the funds.
 
-At this time, _standard_ multisignature scripts are limited to at most 3
+[TIP]
+====
+Some Bitcoin documentation, including earlier editions of this book,
+uses the term M-of-N for traditional multisignature.  However, it's hard
+to tell "M" and "N" apart when they're spoken, so we use the alternative
+K-of-N.  Both phrases refer to the same type of signature scheme.
+====
+
+At this time, _standard_ multisignature scriptPubKeys are limited to at most 3
 listed public keys, meaning you can do anything from a 1-of-1 to a
-3-of-3 multisignature or any combination within that range. The
-limitation to 3 listed keys might be lifted by the time this book is
-published, so check the +IsStandard()+ function to see what is currently
+3-of-3 multisignature or any combination within that range.
+You may want to check the +IsStandard()+ function to see what is currently
 accepted by the network. Note that the limit of 3 keys applies only to
 standard (also known as "bare") multisignature scripts, not to
 multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script.
 P2SH multisignature scripts are limited to 15 keys, allowing for up to
 15-of-15 multisignature. We will learn about P2SH in <<p2sh>>.
 
-The general form of a scriptPubKey setting an M-of-N multisignature
+The general form of a scriptPubKey setting an K-of-N multisignature
 condition is:
 
 ----
-M <Public Key 1> <Public Key 2> ... <Public Key N> N OP_CHECKMULTISIG
+K <Public Key 1> <Public Key 2> ... <Public Key N> N OP_CHECKMULTISIG
 ----
 
-where N is the total number of listed public keys and M is the threshold
+where N is the total number of listed public keys and K is the threshold
 of required signatures to spend the output.
 
 A scriptPubKey setting a 2-of-3 multisignature condition looks like
@@ -388,7 +395,7 @@ the three public keys set as an encumbrance.
 ((("scripting", "multisignature scripts", "OP_CHECKMULTISIG
 bug")))((("OP_CHECKMULTISIG bug workaround")))There is a bug in
 ++OP_CHECKMULTISIG++'s execution that requires a slight workaround. When
-+OP_CHECKMULTISIG+ executes, it should consume M+N+2 items on the stack as
++OP_CHECKMULTISIG+ executes, it should consume K+N+2 items on the stack as
 parameters. However, due to the bug, +OP_CHECKMULTISIG+ will pop an extra
 value or one value more than expected.
 
@@ -402,10 +409,10 @@ example:
 First, +OP_CHECKMULTISIG+ pops the top item, which is +N+ (in this example
 "3"). Then it pops +N+ items, which are the public keys that can sign.
 In this example, public keys A, B, and C. Then, it pops one item, which
-is +M+, the quorum (how many signatures are needed). Here M = 2. At this
-point, +OP_CHECKMULTISIG+ should pop the final +M+ items, which are the
+is +K+, the quorum (how many signatures are needed). Here M = 2. At this
+point, +OP_CHECKMULTISIG+ should pop the final +K+ items, which are the
 signatures, and see if they are valid. However, unfortunately, a bug in
-the implementation causes +OP_CHECKMULTISIG+ to pop one more item (M+1
+the implementation causes +OP_CHECKMULTISIG+ to pop one more item (K+1
 total) than it should. The extra item is disregarded when checking the
 signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
 However, an extra value must be present because if it is not present,
