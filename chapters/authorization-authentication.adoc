@@ -390,13 +390,13 @@ a valid signature from the two private keys that correspond to two of
 the three public keys set as an encumbrance.
 
 [[multisig_bug]]
-===== A bug in CHECKMULTISIG execution
+==== An oddity in CHECKMULTISIG execution
 
 ((("scripting", "multisignature scripts", "OP_CHECKMULTISIG
-bug")))((("OP_CHECKMULTISIG bug workaround")))There is a bug in
+oddity")))((("OP_CHECKMULTISIG oddity workaround")))There is an oddity in
 ++OP_CHECKMULTISIG++'s execution that requires a slight workaround. When
 +OP_CHECKMULTISIG+ executes, it should consume K+N+2 items on the stack as
-parameters. However, due to the bug, +OP_CHECKMULTISIG+ will pop an extra
+parameters. However, due to the oddity, +OP_CHECKMULTISIG+ will pop an extra
 value or one value more than expected.
 
 Let's look at this in greater detail using the previous validation
@@ -411,22 +411,24 @@ First, +OP_CHECKMULTISIG+ pops the top item, which is +N+ (in this example
 In this example, public keys A, B, and C. Then, it pops one item, which
 is +K+, the quorum (how many signatures are needed). Here M = 2. At this
 point, +OP_CHECKMULTISIG+ should pop the final +K+ items, which are the
-signatures, and see if they are valid. However, unfortunately, a bug in
+signatures, and see if they are valid. However, unfortunately, an oddity in
 the implementation causes +OP_CHECKMULTISIG+ to pop one more item (K+1
-total) than it should. The extra item is disregarded when checking the
+total) than it should. The extra item is called the _dummy stack
+element_ and it is disregarded when checking the
 signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
-However, an extra value must be present because if it is not present,
+However, the dummy element must be present because, if it is not present,
 when +OP_CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a
 stack error and script failure (marking the transaction as invalid).
-Because the extra item is disregarded it can be anything, but
-customarily +0+ is used.
+Because the dummy element is disregarded it can be anything, but
+it became the custom early on to use +OP_0+, which later became a
+relay policy rule and eventually a consensus rule (with the enforcement of BIP147).
 
-Because this bug became part of the consensus rules, it must now be
+Because popping the dummy element is part of the consensus rules, it must now be
 replicated forever. Therefore the correct script validation would look
 like this:
 
 ----
-0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
 ----
 
 Thus the scriptSig actually used in multisig is not:
@@ -438,12 +440,41 @@ Thus the scriptSig actually used in multisig is not:
 but instead it is:
 
 ----
-0 <Signature B> <Signature C>
+OP_0 <Signature B> <Signature C>
 ----
 
+Some people believe this oddity was a bug in the original code for
+Bitcoin, but a plausible alternative explanation exists.  Verifying
+K-of-N signatures can require many more than K or N signature checking
+operations.  Let's consider a simple example of 1-in-3, with the
+following combined script:
+
+----
+<dummy> <Sig4> 1 <key0> <key1> <key2> <key3> <key4> 5 OP_CHECKMULTISIG
+----
+
+The signature is checked first against +key0+, then +key1+, and then
+the other keys before it is finally compared to its corresponding
++key4+.  That means five signature checking operations need to be
+performed even though there's only one signature.  One way to eliminate
+this redundancy would have been to provide OP_CHECKMULTISIG a map
+indicating which provided signature corresponds to which public key,
+allowing the OP_CHECKMULTISIG operation to only perform exactly K
+signature-checking operations.  It's possible that Bitcoin's original
+developer added the extra element (which we now call the dummy stack
+element) in the original version of Bitcoin so that they could add the
+feature for allowing a map to be passed in a later soft fork.  However,
+that feature was never implemented and the BIP147 update to the
+consensus rules in 2017 makes it impossible to add that feature in the
+future.
+
+Only Bitcoin's original developer could tell us whether the dummy stack
+element was the result of a bug or a plan for a future upgrade.  In this
+book, we simply call it an oddity.
+
 From now on, if you see a multisig script, you should expect
-to see an extra +0+ in the beginning, whose only purpose is as a
-workaround to a bug that accidentally became a consensus rule.((("",
+to see an extra +OP_0+ in the beginning, whose only purpose is as a
+workaround to an oddity in the consensus rules.((("",
 startref="Smulti07")))
 
 [[p2sh]]
@@ -1234,7 +1265,7 @@ OP_0 <Mohammed's Sig> <Zaira's Sig> OP_TRUE OP_TRUE
 
 [TIP]
 ====
-The +OP_0+ at the beginning of this scriptSig is because of a bug in
+The +OP_0+ at the beginning of this scriptSig is because of an oddity in
 +OP_CHECKMULTISIG+ that pops an extra value from the stack. The extra value
 is disregarded by the +OP_CHECKMULTISIG+, but it must be present or the
 script fails. Pushing an empty byte array with +OP_0+ is a workaround to the bug, as
