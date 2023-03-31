@@ -36,7 +36,16 @@ Let's retrieve the transaction containing that payment again.
 .Alice's serialized transaction
 [listing]
 ----
-include::../snippets/getrawtransaction-alice.txt[]
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177
+
+01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da13569
+8679268041c54a0100000000ffffffff02204e0000000000002251203b41daba
+4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068f8240100
+000000001600147752c165ea7be772b2c0acb7f4d6047ae6f4768e0141cf5efe
+2d8ef13ed0af21d4f4cb82422d6252d70324f6f4576b727b7d918e521c00b51b
+e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
+0000
 ----
 
 There's nothing special about Bitcoin Core's serialization format.
@@ -144,7 +153,7 @@ If the transaction includes a witness field (which we'll describe in
 non-zero.  In the current P2P protocol, the flag should always be one
 (0x01); alternative flags are reserved for later protocol upgrades.
 
-If the transaction doesn't need a witness, the marker and flag most not
+If the transaction doesn't need a witness, the marker and flag must not
 be present.  This is compatible with the original version of Bitcoin's
 transaction serialization format, now called _legacy serialization_.
 For details, see <<legacy_serialization>>.
@@ -159,7 +168,7 @@ future.
 [[inputs]]
 === Inputs
 
-The inputs field contains several other fields, so let's start by with a
+The inputs field contains several other fields, so let's start by showing a
 map of those bytes in <<alice_tx_input_map>>.
 
 [[alice_tx_input_map]]
@@ -275,7 +284,7 @@ pieces of information from it:
   One of Bitcoin's consensus rules forbids any output from being spent
   more than once within a valid blockchain.  This is the rule against
   _double spending_--Alice can't use the same previous output to pay
-  both Bob and Carol.  Two transactions which each try to the spend the
+  both Bob and Carol.  Two transactions which each try to spend the
   same previous output are called _conflicting transactions_ because
   only one of them can be included in a valid blockchain.
 
@@ -388,7 +397,7 @@ output:
 
 - Alice wins the first round of the card game, so the second version of
   the transaction, with nSequence 1, increases the amount of money paid
-  to Alice and decreases Bob's share.  The both sign the updated
+  to Alice and decreases Bob's share.  They both sign the updated
   transaction.  Again, they don't need to broadcast this version of the
   transaction unless there's a problem.
 
@@ -548,7 +557,7 @@ image::../images/output-byte-map.png["A byte map of the outputs field from Alice
 
 ==== Outputs Count
 
-Identical to the start of the input section of transaction, the output
+Identical to the start of the input section of a transaction, the output
 field begins with a count indicating the number of outputs in this
 transaction.  It's a compactSize integer and must be greater than zero.
 
@@ -582,8 +591,8 @@ A zero-value output is always an uneconomical output; it wouldn't
 contribute any value to a transaction spending it even if the
 transaction's fee rate was zero.  However, many other outputs with low
 values can be uneconomical as well, even unintentionally.  For example,
-at the feerates prevelant on the network today, an output might add more
-value to a transaction than it costs to spend--but, tomorrow, feerates
+at a typical fee rate on the network today, an output might add more
+value to a transaction than it costs to spend--but, tomorrow, fee rates
 might rise and make the output uneconomical.
 
 The need for full nodes to keep track of all unspent transaction outputs
@@ -713,7 +722,7 @@ protected by the following script:
 
 Obviously, allowing your bitcoins to be spent by anyone who can solve a
 simple equation wouldn't be secure.  As we'll see in <<c_signatures>>, an
-unforgable digital signature scheme uses an equation that can only be
+unforgeable digital signature scheme uses an equation that can only be
 solved by someone in possession of certain data which they're able to
 keep secret.  They're able to reference that secret data using a public
 identifier.  That public identifier is called a _public key_ and a
@@ -922,7 +931,7 @@ An empty scriptSig keeps witnesses from affecting the txid, eliminating
 circular dependencies, third-party transaction malleability, and
 second-party transaction malleability.  But, with no ability to put
 data in a scriptSig, users of segwit scriptPubKey templates need a
-new field.  That field is called is called the _witness_.
+new field.  That field is called the _witness_.
 
 The introduction of witnesses and witness programs complicates Bitcoin,
 but it follows an existing trend of increasing abstraction.  Recall from
@@ -937,6 +946,7 @@ bitcoins to be received to scriptPubKeys and spent with scriptSigs.
 Later experience with contract protocols inspired allowing bitcoins to
 be received to witness programs and spent with witnesses.
 
+.Terms used for authorization and authentication data in different parts of Bitcoin
 [cols="1,1,1"]
 |===
 | | **Authorization** | **Authentication**
@@ -1062,7 +1072,7 @@ to spend their block reward.
 //by extension the reason for no expiring timelocks
 
 Most Bitcoin software doesn't need to deal with coinbase transactions
-but their special nature does mean they can occasional be the cause of
+but their special nature does mean they can occasionally be the cause of
 unusual problems in software that's not designed to expect them.
 
 // Useful content deleted
