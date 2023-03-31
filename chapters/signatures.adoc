@@ -228,12 +228,31 @@ of signature, the uneconomical UTXOs can be donated for anyone to aggregate and
 spend whenever they want.
 
 ((("Bitmask Sighash Modes")))There are some proposals to modify or
-expand the +SIGHASH+ system. One such proposal is _Bitmask Sighash
-Modes_ by Blockstream's Glenn Willen, as part of the Elements project.
-This aims to create a flexible replacement for +SIGHASH+ types that
-allows "arbitrary, miner-rewritable bitmasks of inputs and outputs" that
-can express "more complex contractual precommitment schemes, such as
-signed offers with change in a distributed asset exchange."
+expand the +SIGHASH+ system.  The most widely discussed proposal as of
+this writing is BIP118, which proposes to add two
+new sighash flags.  A signature using +SIGHASH_ANYPREVOUT+ would not
+commit to an input's outpoint field, allowing it to be used to spend any
+previous output for a particular witness program.  For example, if Alice
+receives two outputs for the same amount to the same witness program
+(e.g. requiring a single signature from her wallet), a
++SIGHASH_ANYPREVOUT+ signature for spending either one of those outputs
+could be copied and used to spend the other output to the same
+destination.
+
+A signature using +SIGHASH_ANYPREVOUTANYSCRIPT+ would not
+commit to the outpoint, the amount, the witness program, or that
+tapleaf_hash used, allowing it to be used to spend any previous output
+which the signature could satisfy.  For example, if Alice received two
+outputs for different amounts and different witness programs (e.g. one
+requiring a single signature and another require her signature plus some
+other data), a +SIGHASH_ANYPREVOUTANYSCRIPT+ signature for spending
+either one of those outputs could be copied and used to spend the other
+output to the same destination (assuming the extra data for the second
+output was known).
+
+The main expected use for the two SIGHASH_ANYPREVOUT opcodes is improved
+payment channels, such as those used in the Lightning Network, although
+several other uses have been described.
 
 [NOTE]
 ====
