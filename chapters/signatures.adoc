@@ -364,6 +364,7 @@ See if you can decode Alice's serialized (DER-encoded) signature using
 this list. The important numbers are +R+ and +S+; the rest of the data
 is part of the DER encoding scheme.
 
+[[nonce_warning]]
 === The Importance of Randomness in Signatures
 
 ((("digital signatures", "randomness in")))As we saw in <<ecdsa_math>>,
@@ -392,15 +393,25 @@ generator.
 ((("random numbers", "random number generation")))((("entropy", "random
 number generation")))((("deterministic initialization")))To avoid this
 vulnerability, the industry best practice is to not generate _k_ with a
-random-number generator seeded with entropy, but instead to use a
-deterministic-random process seeded with the transaction data itself.
+random-number generator seeded only with entropy, but instead to use a
+process seeded in part with the transaction data itself.
 This ensures that each transaction produces a different _k_. The
-industry-standard algorithm for deterministic initialization of _k_ is
-defined in https://tools.ietf.org/html/rfc6979[RFC 6979], published by
-the Internet Engineering Task Force.
+industry-standard algorithm for deterministic initialization of _k_ for
+ECDSA is defined in https://tools.ietf.org/html/rfc6979[RFC6979], published by
+the Internet Engineering Task Force.  For schnorr signatures, BIP340
+recommends a default signing algorithm.
 
-If you are implementing an algorithm to sign transactions in bitcoin,
-you _must_ use RFC 6979 or a similarly deterministic-random algorithm to
+BIP340 and RFC6979 can generate _k_ entirely deterministically, meaning the same
+transaction data will always produce the same _k_.  Many wallets do this
+because it makes it easy to write tests to verify their safety-critical
+signing code is producing _k_ values correctly.  RFC6979 also allows
+including additional data in the calculation.  If that data is entropy,
+then a different _k_ will be produced even if the exact same transaction
+data is signed.  This can increase protection against sidechannel and
+fault-injection attacks.
+
+If you are implementing an algorithm to sign transactions in Bitcoin,
+you _must_ use BIP340, RFC6979, or a similar algorithm to
 ensure you generate a different _k_ for each transaction.((("",
 startref="Tdigsig06")))
 
