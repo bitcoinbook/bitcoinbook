@@ -1,9 +1,5 @@
 [[c_signatures]]
-=== Signatures
-
-FIXME
-[[digital_sigs]]
-=== Digital Signatures (ECDSA)
+== Digital Signatures
 
 [[sighashes]]
 === Signature Hashes (Sighashes)
@@ -14,14 +10,15 @@ proof of ownership of a private key without revealing that private key.
 
 FIXME
 ((("digital signatures", "algorithm used")))((("Elliptic Curve Digital
-Signature Algorithm (ECDSA)")))The digital signature algorithm used in
-bitcoin is the _Elliptic Curve Digital Signature Algorithm_, or _ECDSA_.
-ECDSA is the algorithm used for digital signatures based on elliptic
+Signature Algorithm (ECDSA)")))Two signature algorithms are currently
+used in Bitcoin, the _schnorr signature algorithm_ and the _Elliptic
+Curve Digital Signature Algorithm_ (_ECDSA_).
+These algorithms are used for digital signatures based on elliptic
 curve private/public key pairs, as described in <<elliptic_curve>>.
-ECDSA is used by the script functions +OP_CHECKSIG+,
+They are used by the script functions +OP_CHECKSIG+,
 +OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+, and +OP_CHECKMULTISIGVERIFY+.
-Any time you see those in a locking script, the unlocking script must
-contain an ECDSA signature.
+Any time one of those is executed in a script, a signature must be
+provided.
 
 ((("digital signatures", "purposes of")))A digital signature serves
 three purposes in bitcoin (see the following sidebar). First, the
@@ -70,7 +67,7 @@ public key.
 
 ===== Creating a digital signature
 
-In bitcoin's implementation of the ECDSA algorithm, the "message" being
+In Bitcoin's implementation of digital signature algorithms, the "message" being
 signed is the transaction, or more accurately a hash of a specific
 subset of the data in the transaction (see <<sighash_types>>). The
 signing key is the user's private key. The result is the signature:
@@ -85,35 +82,32 @@ where:
 * _F_~_sig_~ is the signing algorithm
 * _Sig_ is the resulting signature
 
-More details on the mathematics of ECDSA can be found in <<ecdsa_math>>.
+More details on the mathematics of schnorr and ECDSA signatures can be found in <<signature_math>>.
 
-The function _F_~_sig_~ produces a signature +Sig+ that is composed of
-two values, commonly referred to as +R+ and +S+:
+In both schnorr and ECDSA signatures, the function _F_~_sig_~ produces a signature +Sig+ that is composed of
+two values.  There are differences between the two values in the
+different algorithms, which we'll explore later.
 
-----
-Sig = (R, S)
-----
+((("Distinguished Encoding Rules (DER)")))After the two values
+are calculated, they are serialized into a byte-stream.  For ECDSA
+signatures, the encoding uses an international standard encoding scheme
+called the
+_Distinguished Encoding Rules_, or _DER_.  For schnorr signatures, a
+simpler serialization format is used.
 
-((("Distinguished Encoding Rules (DER)")))Now that the two values +R+
-and +S+ have been calculated, they are serialized into a byte-stream
-using an international standard encoding scheme called the
-_Distinguished Encoding Rules_, or _DER_.
+[[serialization_of_signatures_der]]
+===== Serialization of ECDSA signatures (DER)
 
-[[seralization_of_signatures_der]]
-===== Serialization of signatures (DER)
-
-Let's look at the transaction Alice ((("use cases", "buying coffee",
-id="alicesixtwo")))created again. In the transaction input there is an
-unlocking script that contains the following DER-encoded signature from
-Alice's wallet:
+Let's look at
+the following DER-encoded signature:
 
 ----
 3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
 ----
 
 That signature is a serialized byte-stream of the +R+ and +S+ values
-produced by Alice's wallet to prove she owns the private key authorized
-to spend that output. The serialization format consists of nine elements
+produced by to prove control of the private key authorized
+to spend an output. The serialization format consists of nine elements
 as follows:
 
 * +0x30+&#x2014;indicating the start of a DER sequence
@@ -133,15 +127,15 @@ is part of the DER encoding scheme.
 ==== Verifying the Signature
 
 ((("digital signatures", "verifying")))To verify the signature, one must
-have the signature (+R+ and +S+), the serialized transaction, and the
-public key (that corresponds to the private key used to create the
+have the signature, the serialized transaction, some data about the
+output being spend, and the public key (that corresponds to the private key used to create the
 signature). Essentially, verification of a signature means "Only the
 owner of the private key that generated this public key could have
 produced this signature on this transaction."
 
 The signature verification algorithm takes the message (a hash of the
-transaction or parts of it), the signer's public key and the signature
-(+R+ and +S+ values), and returns TRUE if the signature is valid for
+transaction or parts of it), the signer's public key and the signature,
+and returns TRUE if the signature is valid for
 this message and public key.
 
 [[sighash_types]]
@@ -151,7 +145,7 @@ this message and public key.
 types")))((("commitment")))Digital signatures are applied to messages,
 which in the case of bitcoin, are the transactions themselves. The
 signature implies a _commitment_ by the signer to specific transaction
-data. In the simplest form, the signature applies to the entire
+data. In the simplest form, the signature applies to almost the entire
 transaction, thereby committing all the inputs, outputs, and other
 transaction fields. However, a signature can commit to only a subset of
 the data in a transaction, which is useful for a number of scenarios as
@@ -160,7 +154,8 @@ we will see in this section.
 ((("SIGHASH flags")))Bitcoin signatures have a way of indicating which
 part of a transaction's data is included in the hash signed by the
 private key using a +SIGHASH+ flag. The +SIGHASH+ flag is a single byte
-that is appended to the signature. Every signature has a +SIGHASH+ flag
+that is appended to the signature. Every signature has either an
+explicit or implicit +SIGHASH+ flag
 and the flag can be different from input to input. A transaction with
 three signed inputs may have three signatures with different +SIGHASH+
 flags, each signature signing (committing) different parts of the
@@ -171,7 +166,7 @@ a result, a transaction that contains several inputs may have signatures
 with different +SIGHASH+ flags that commit different parts of the
 transaction in each of the inputs. Note also that bitcoin transactions
 may contain inputs from different "owners," who may sign only one input
-in a partially constructed (and invalid) transaction, collaborating with
+in a partially constructed transaction, collaborating with
 others to gather all the necessary signatures to make a valid
 transaction. Many of the +SIGHASH+ flag types only make sense if you
 think of multiple participants collaborating outside the Bitcoin network
@@ -210,13 +205,13 @@ in <<sighash_types_with_modifiers>>.
 
 The way +SIGHASH+ flags are applied during signing and verification is
 that a copy of the transaction is made and certain fields within are
-truncated (set to zero length and emptied). The resulting transaction is
-serialized. The +SIGHASH+ flag is added to the end of the serialized
-transaction and the result is hashed. The hash itself is the "message"
+either omitted or truncated (set to zero length and emptied). The resulting transaction is
+serialized. The +SIGHASH+ flag is included in the serialized
+transaction data and the result is hashed. The hash digest itself is the "message"
 that is signed. Depending on which +SIGHASH+ flag is used, different
-parts of the transaction are truncated. The resulting hash depends on
+parts of the transaction are included. The resulting hash depends on
 different subsets of the data in the transaction. By including the
-+SIGHASH+ as the last step before hashing, the signature commits the
++SIGHASH+ flag itself, the signature commits the
 +SIGHASH+ type as well, so it can't be changed (e.g., by a miner).
 
 [NOTE]
@@ -227,10 +222,10 @@ itself is appended to the transaction before it is signed, so that it
 can't be modified once signed.
 ====
 
-In the example of Alice's transaction (see the list in
-<<seralization_of_signatures_der>>), we saw that the last part of the
-DER-encoded signature was +01+, which is the +SIGHASH_ALL+ flag. This
-locks the transaction data, so Alice's signature is committing the state
+In
+<<serialization_of_signatures_der>>, we saw that the last part of the
+DER-encoded signature was +01+, which is the +SIGHASH_ALL+ flag for ECDSA signatures. This
+locks the transaction data, so Alice's signature is committing to the state
 of all inputs and outputs. This is the most common signature form.
 
 Let's look at some of the other +SIGHASH+ types and how they can be used
@@ -251,14 +246,14 @@ entire goal amount is raised.
 +NONE+ :: This construction can be used to create a "bearer check" or
 "blank check" of a specific amount. It commits to the input, but allows
 the output locking script to be changed. Anyone can write their own
-Bitcoin address into the output locking script and redeem the
-transaction. However, the output value itself is locked by the
-signature.
+Bitcoin address into the output scriptPubKey. However, the output value
+itself cannot be changed.
 
 +NONE|ANYONECANPAY+ :: This construction can be used to build a "dust
-collector." Users who have tiny UTXO in their wallets can't spend these
-without the cost in fees exceeding the value of the dust. With this type
-of signature, the dust UTXO can be donated for anyone to aggregate and
+collector." Users who have tiny UTXOs in their wallets can't spend these
+without the cost in fees exceeding the value of the UTXO, see
+<<uneconomical_outputs>>. With this type
+of signature, the uneconomical UTXOs can be donated for anyone to aggregate and
 spend whenever they want.
 
 ((("Bitmask Sighash Modes")))There are some proposals to modify or
@@ -271,12 +266,12 @@ signed offers with change in a distributed asset exchange."
 
 [NOTE]
 ====
-You will not see +SIGHASH+ flags presented as an option in a user's
-wallet application. With few exceptions, wallets construct P2PKH scripts
-and sign with +SIGHASH_ALL+ flags. To use a different +SIGHASH+ flag,
-you would have to write software to construct and sign transactions.
-More importantly, +SIGHASH+ flags can be used by special-purpose bitcoin
-applications that enable novel uses.
+You will not often see +SIGHASH+ flags presented as an option in a user's
+wallet application.  Simple wallet applications
+sign with +SIGHASH_ALL+ flags.  More sophisticated applications, such as
+Lightning Network nodes, may use alternative +SIGHASH+ flags, but they
+use protocols that have been extensively reviewed to understand the
+influence of the alternative flags.
 ====
 
 [[ecdsa_math]]
@@ -284,8 +279,9 @@ applications that enable novel uses.
 
 ((("Elliptic Curve Digital Signature Algorithm (ECDSA)")))As mentioned
 previously, signatures are created by a mathematical function _F_~_sig_~
-that produces a signature composed of two values _R_ and _S_. In this
-section we look at the function _F_~_sig_~ in more detail.
+that produces a signature composed of two values.  In ECDSA, those two
+values are _R_ and _S_. In this
+section we look at the function _F_~_sig_~ for ECDSA in more detail.
 
 ((("public and private keys", "key pairs", "ephemeral")))The signature
 algorithm first generates an _ephemeral_ (temporary) private public key
@@ -361,7 +357,7 @@ private key can be calculated and exposed to the world!
 
 This is not just a theoretical possibility. We have seen this issue lead
 to exposure of private keys in a few different implementations of
-transaction-signing algorithms in bitcoin. People have had funds stolen
+transaction-signing algorithms in Bitcoin. People have had funds stolen
 because of inadvertent reuse of a _k_ value. The most common reason for
 reuse of a _k_ value is an improperly initialized random-number
 generator.
@@ -383,8 +379,8 @@ startref="Tdigsig06")))
 
 ==== Segregated Witness' New Signing Algorithm
 
-Segregated Witness modifies the semantics of the four signature
-verification functions (+CHECKSIG+, +CHECKSIGVERIFY+, +CHECKMULTISIG+,
+Segregated Witness modified the semantics of the four signature
+verification functions from legacy Bitcoin Script (+CHECKSIG+, +CHECKSIGVERIFY+, +CHECKMULTISIG+,
 and +CHECKMULTISIGVERIFY+), changing the way a transaction commitment
 hash is calculated.
 
