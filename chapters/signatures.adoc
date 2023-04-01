@@ -272,8 +272,525 @@ use protocols that have been extensively reviewed to understand the
 influence of the alternative flags.
 ====
 
+[[schnorr_signatures]]
+=== Schnorr signatures
+
+In 1989, Claus Schnorr published a paper describing the signature
+algorithm that's become eponymous with him.  The algorithm isn't
+specific to the Elliptic Curve Cryptography (ECC) that Bitcoin and many
+other applications use, although it is perhaps most strongly associated
+with ECC today.  Schnorr signatures have a number of nice properties:
+
+Provable security::
+  A mathematical proof of the security of schnorr signatures depends on
+  only the difficulty of solving the Discrete Logarithm Problem (DLP),
+  particularly for Elliptic Curves (EC) for Bitcoin, and the ability of
+  a hash function (like the SHA256 function used in Bitcoin) to produce
+  unpredictable values, called the Random Oracle Model (ROM).  Other
+  signature algorithms have additional dependencies or require much
+  larger public keys or signatures for equivalent security to
+  ECC-Schnorr (when the threat is defined as classical computers; other
+  algorithms may provide more efficient security against quantum
+  computers).
+
+Linearity::
+  Schnorr signatures have a property that mathematicians call
+  _linearity_, which applies to functions with two particular
+  properties.  The first property is that summing together two or more
+  variables and then running a function on that sum will produce the
+  same value as running the function on each of the variables
+  independently and then summing together the results, e.g.
+  +f(x + y + z) = f(x) + f(y) + f(z)+; this property is called
+  _additivity_.  The second property is that multiplying a variable and
+  then running a function on that product will produce the same value as
+  running the function on the variable and then multiplying it by the
+  same amount, e.g. +f(a * x) = a * f(x)+; this property is called
+  _homogeneity of degree 1_.
++
+In cryptographic operations, some of the functions may be private (such
+  as functions involving private keys or secret nonces), so being able
+  to get the same result whether performing an operation inside or
+  outside of a function makes it easy for multiple parties to coordinate
+  and cooperate without sharing their secrets.  We'll see some of the
+  specific benefits of linearity in schnorr signature in
+  <<schnorr_multisignatures>> and <<schnorr_threshold_signatures>>.
+
+Batch Verification::
+  When used in a certain way (which Bitcoin does), one consequence of
+  schnorr's linearity is that it's relatively straightforward to verify
+  more than one schnorr signature at the same time in less time than it
+  would take to verify each signature independently.  The more
+  signatures that are verified in a batch, the greater the speed up.
+  For the typical number of signatures in a block, it's possible to
+  batch verify them in about half the amount of time it would take to
+  verify each signature independently.
+
+Later in this chapter, we'll describe the schnorr signature algorithm
+exactly as it's used in Bitcoin, but we're going to start with a
+simplified version of it and work our way towards the actual protocol in
+stages.
+
+Alice starts by chooses a large random number (+x+), which we call her
+_private key_.  She also knows a public point on Bitcoin's Elliptic
+Curve (EC) called the Generator (+G+) (see <<public_key_derivation>>).  Alice uses EC
+multiplication to multiply +G+ by her private key +x+, in which case +x+
+is called a _scalar_ because it scales up +G+.  The result is +xG+,
+which we call Alice's _public key_.  Alice gives her public key to Bob.
+Even though Bob also knows +G+, the Discrete Logarithm Problem (DLP)
+prevents Bob from being able to divide +xG+ by +G+ to derive Alice's
+private key.
+
+At some later time, Bob wants Alice to identify herself by proving
+that she knows the scalar +x+ for the public key (+xG+) that Bob
+received earlier.  Alice can't give Bob +x+ directly because that would
+allow him to identify as her to other people, so she needs to prove
+her knowledge of +x+ without revealing +x+ to Bob, called a
+_zero-knowledge proof_.  For that, we begin the schnorr identity
+process:
+
+1. Alice chooses another large random number (+k+), which we call the
+  _private nonce_.  Again she uses it as a scalar, multiplying it by +G+
+  to produce +kG+, which we call the _public nonce_.  She gives the
+  public nonce to Bob.
+
+2. Bob chooses a large random number of his own, +e+, which we call the
+  _challenge scalar_.  We say "challenge" because it's used to challenge
+  Alice to prove that she knows the private key (+x+) for the public key
+  (+xG+) she previously gave Bob; we say "scalar" because it will later
+  be used to multiply an EC point.
+
+3. Alice now has the numbers (scalars) +x+, +k+, and +e+.  She combines
+  them together to produce a final scalar +s+ using the formula:
+  +s = k + ex+.  She gives +s+ to Bob.
+
+4. Bob now knows the scalars +s+ and +e+, but not +x+ or +k+.  However,
+  Bob does know +xG+ and +kG+, and he can compute for himself +sG+ and
+  +exG+.  That means he can check the equality of a scaled-up version of
+  the operation Alice performed: +sG == kG + exG+.  If that is equal,
+  then Bob can be sure that Alice knew +x+ when she generated +s+.
+
+.Schnorr identity protocol with integers instead of vectors
+====
+It might be easier to understand the interactive schnorr identity
+protocol if you oversimplify by substituting each of the values above
+(including +G+) with simple integers instead of vectors like EC points.
+For example, we'll use the prime numbers starting with 3:
+
+Setup: Alice chooses +x=3+ as her private key.  She multiplies it by the
+generator +G=5+ to get her public key +xG=15+.  She gives Bob +15+.
+
+1. Alice chooses the private nonce +k=7+ and generates the public nonce
+  +kG=35+.  She gives Bob +35+.
+
+2. Bob chooses +e=11+ and gives it to Alice.
+
+3. Alice generates +s = 40 = 7 + 11*3+.  She gives Bob +40+.
+
+4. Bob derives +sG = 200 = 40 * 5+ and +exG = 165 = 11 * 15+.  He then
+  verifies that +200 == 35 + 165+.  Note that this is the same operation
+  that Alice performed but all of the values have been scaled up by +5+
+  (the value of +G+).
+
+Of course, this is an oversimplified example.  When working with simple
+integers, we can divide products by the generator +G+ to get the
+underlying scalar, which isn't secure.  This is why a critical property
+of the Elliptic Curve Cryptography (ECC) used in Bitcoin is that
+multiplication is easy but division is impractical.  Also, with numbers
+this small, finding underlying values (or valid substitutes) through
+brute force is easy; the numbers used in Bitcoin are much larger.
+====
+
+Let's discuss some of the features of the interactive schnorr
+identity protocol that make it secure:
+
+- The nonce (+k+).  In step 1, Alice chooses a number that Bob doesn't
+  know and can't guess and gives him the scaled form of that number,
+  +kG+.  At that point, Bob also already has her public key (+xG+),
+  which is the scaled form of +x+.  That means when Bob is working on
+  the final equation (+sG = kG + exG+), there are two independent
+  variables that Bob doesn't know (+xG+ and +kG+).  It's possible to use
+  simple algebra to solve an equation with one unknown variable but not
+  two independent unknown variables, so the presence of Alice's nonce
+  prevents Bob from being able to derive her private key.  It's critical
+  to note that this protection depends on nonces being unguessable in
+  any way.  If there's anything predictable about Alice's nonce, Bob may
+  be able to leverage that into figuring out Alice's private key.  See
+  <<nonce_warning>> for more details.
+
+- The challenge scalar (+e+).  Bob waits to receive Alice's public nonce
+  and then proceeds in step 2 to giver her a number (the challenge
+  scalar) that Alice didn't previously know and couldn't have guessed.
+  It's critical that Bob only give her the challenge scalar after she
+  commits to her public nonce.  Consider what could happen if someone
+  who didn't know +x+ wanted to impersonate Alice, and Bob accidentally
+  gave them the challenge scalar +e+ before they told him the public
+  nonce +kG+.  This allows them to change parameters on both sides of
+  the equation that Bob will use for verification, +sG == kG + exG+,
+  specifically they can change both +sG+ and +kG+.  Think about a
+  simplified form of that expression: x = y + a.  If you can change both
+  +x+ and +y+, you can cancel out +a+ using +x = (x - a) + a+.  Any
+  value you choose for +x+ will now satisfy the equation.  For the
+  actual equation they simply choose a random number for +s+, generate
+  +sG+, and then use EC subtraction to select a +kG+ that equals +kG =
+  sG - exG+.  They give Bob their calculated +kG+ and later their random
+  +sG+, and Bob thinks that's valid because +sG == (sG - exG) + exG+.
+  This explains why the order of operations in the protocol is
+  essential: Bob must only give Alice the challenge scalar after Alice
+  has committed to her public nonce.
+
+The interactive identity protocol described matches part of Claus
+Schnorr's original description, but it lacks two essential features we
+need for the decentralized Bitcoin network.  The first of these is that
+it relies on Bob waiting for Alice to commit to her public nonce and
+then Bob giving her a random challenge scalar.  In Bitcoin, the spender
+of every transaction needs to be authenticated by thousands of Bitcoin
+full nodes--including future nodes that haven't been started yet but
+whose operators will one day want to ensure the bitcoins they receive
+came from a chain of transfers where every transaction was valid.  Any
+Bitcoin node that is unable to communicate with Alice, today or in the
+future, will be unable to authenticate her transaction and will be in
+disagreement with every other node that did authenticate it.  That's not
+acceptable for a consensus system like Bitcoin.  For Bitcoin to work, we
+need a protocol that doesn't require interaction between Alice and each
+node that wants to authenticate her.
+
+A simple technique, known as the Fiat-Shamir transform after its
+discoverers, can turn the schnorr interactive identity protocol
+into a non-interactive digital signature scheme.  Recall the importance
+of steps 1 and 2--including that they be performed in order.  Alice must
+commit to an unpredictable nonce; Bob must give Alice an unpredictable
+challenge scalar only after he has received her commitment.  Recall also
+the properties of secure cryptographic hash functions we've used
+elsewhere in this book: it will always produce the same output when
+given the same input but it will produce a value indistinguishable from
+random data when given a different input.
+
+This allows Alice to choose her private nonce, derive her public nonce,
+and then hash the public nonce to get the challenge scalar.  Because
+Alice can't predict the output of the hash function (the challenge), and
+because it's always the same for the same input (the nonce), this
+ensures that Alice gets a random challenge even though she chooses the nonce
+and hashes it herself.  We no longer need interaction from Bob.  She can
+simply publish her public nonce +kG+ and the scalar +s+, and each of the
+thousands of full nodes (past and future) can hash +kG+ to produce +e+,
+use that to produce +exG+, and then verify +sG == kG + exG+.  Written
+explicitly, the verification equation becomes +sG == kG + hash(kG) * xG+.
+
+We need one other thing to finish converting the interactive schnorr
+identity protocol into a digital signature protocol useful for
+Bitcoin.  We don't just want Alice to prove that she knows her private
+key; we also want to give her the to ability to commit to a message.  Specifically,
+we want her to commit to the data related to the Bitcoin transaction she
+wants to send.  With the Fiat-Shamir transform in place, we already
+have a commitment, so we can simply have it additionally commit to the
+message.  Instead of +hash(kG)+, we now also commit to to the message
++m+ using +hash(kG || m)+, where +||+ stands for concatenation.
+
+We've now defined a version of the schnorr signature protocol, but
+there's one more thing we need to do to address a Bitcoin-specific
+concern.  In BIP32 key derivation, as described in
+<<public_child_key_derivation>>, the algorithm for unhardened derivation
+takes a public key and adds to it a non-secret value to produce a
+derived public key.  That means it's also possible to add that
+non-secret value to a valid signature for one key to produce a signature
+for a related key that's valid but which wasn't authorized by someone
+possessing the private key.  To protect BIP32 unhardened derivation and
+also support several protocols people wanted to build on top of schnorr
+signatures, Bitcoin's version of schnorr signatures, called _BIP340
+schnorr signatures for secp256k1_, also commits to the public key being
+used in addition to the public nonce and the message.  That makes the
+full commitment +hash(kG || xG || m)+.
+
+Now that we've described each part of the BIP340 schnorr signature
+algorithm and explained what it does for us, we can define the protocol.
+
+Setup: Alice chooses a large random number (+x+) as her private key
+(either directly or by using a protocol like BIP32 to deterministically
+generate a private key from a large random seed value).  She uses the
+parameters defined in secp256k1 (see <<elliptic_curve>>) to multiply the
+generator +G+ by her scalar +x+, producing +xG+ (her public key).  She
+gives her public key to everyone who will later authenticate her Bitcoin
+transactions (e.g. by having +xG+ included in a transaction output).  When
+she's ready to spend, she begins generating her signature:
+
+1. Alice chooses a large random private nonce +k+ and derives the public
+   nonce +kG+.
+
+2. She chooses her message +m+ (e.g. transaction data) and generates the
+   challenge scalar +e = hash(kG || xG || m)+.
+
+3. She produces the scalar +s = k + ex+.  The two values +kG+ and +s+
+   are her signature.  She gives this signature to everyone who wants to
+   verify that signature; she also needs to ensure everyone receives her
+   message +m+.  In Bitcoin, this is done by including her signature in
+   the witness of her spending transaction and then relaying that
+   transaction to full nodes.
+
+4. The verifiers (e.g. full nodes) use +s+ to derive +sG+ and then
+   verify that +sG == kG + hash(kG || xG || m)*xG+.  If the equation is
+   valid, Alice proved that she knows her private key +x+ (without
+   revealing it) and committed to the message +m+ (containing the
+   transaction data).
+
+==== Serialization of schnorr signatures
+
+A schnorr signature consists of two values, +kG+ and +s+.  The value
++kG+ is a point on Bitcoin's elliptic curve (called secp256k1) and so
+would normally be represented by two 32-byte coordinates, e.g. +(x,y)+.
+However, only the x coordinate is needed, so only that value is
+included.  When you see +kG+ below, note that it's only that point's x
+coordinate.
+
+The value +s+ is a scalar (a number meant to multiply other numbers).  For
+Bitcoin's secp256k1 curve, it can never be more than 32 bytes long.
+
+Although both +kG+ and +s+ can sometimes be values that can be
+represented with fewer than 32 bytes, it's improbable that they'd be
+much smaller than 32 bytes, and so they're serialized as two 32 byte
+values (i.e., values smaller than 32 bytes have leading zeroes).
+They're serialized in the order of +kG+ and then +s+, producing exactly
+64 bytes.
+
+The taproot soft fork, also called v1 segwit, introduced schnorr signatures
+to Bitcoin and is the only way they are used as of this writing.  When
+used with either taproot keypath or scriptpath spending, a 64-byte
+schnorr signature is considered to use a default signature hash (sighash)
+that is +SIGHASH_ALL+.  If an alternative sighash is used, or if the
+spender wants to waste space to explicitly specify +SIGHASH_ALL+, a
+single additional byte is appended to the signature that specifies the
+signature hash, making the signature 65 bytes.
+
+As we'll see, either 64 or 65 bytes is considerably more efficient that
+the serialization used for ECDSA signatures described in
+<<serialization_of_signatures_der>>.
+
+[[schnorr_multisignatures]]
+==== Schnorr-based scriptless multisignatures
+
+In the single-signature schnorr protocol described in <<schnorr_signatures>>, Alice
+uses a signature (+kG+, +s+) to publicly prove her knowledge of her
+private key, which in this case we'll call +y+.  Imagine if Bob also has
+a private key (+z+) and he's willing to work with Alice to prove that
+together they know +x = y + z+ without either of them revealing their
+private key to each other or anyone else.  Let's go through the BIP340
+schnorr signature protocol again.
+
+[WARNING]
+====
+The simple protocol we are about to describe is not secure for the
+reasons we will explain shortly.  We use it only to demonstrate the
+mechanics of schnorr multisignatures before describing related protocols
+that are believed to be secure.
+====
+
+Alice and Bob need to derive the public key for +x+, which is +xG+.
+Since it's possible to use Elliptic Curve (EC) operations to add two EC
+points together, they start by Alice deriving +yG+ and Bob deriving
++zG+.  Then then add them together to create +xG = yG + zG+.  The point
++xG+ is their _aggregated public key_.  To create a signature, they begin the
+simple multisignature protocol:
+
+1. They each individually choose a large random private nonce, +a+ for
+   Alice and +b+ for Bob.  The also individually derive the corresponding
+   public nonce +aG+ and +bG+.  Together, they produce an aggregated
+   public nonce +kG = aG + bG+.
+
+2. They agree on the message to sign, +m+ (e.g. a transaction), and
+   each generate a copy of the challenge scalar: +e = hash(kG || xG || m)+.
+
+3. Alice produces the scalar +q = a + ey+.  Bob produces the scalar
+   +r = b + ez+.  They add the scalars together to produce
+   +s = q + r+.  Their signature is the two values +kG+ and +s+.
+
+4. The verifiers check their public key and signature using the normal
+   equation: +sG == kG + hash(kG || xG || m)*xG+.
+
+Alice and Bob have proven that they know the sum of their private keys without
+either one of them revealing their private key to the other or anyone
+else.  The protocol can be extended to any number of participants, e.g.
+a million people could prove they knew the sum of their million
+different keys.
+
+The protocol above has several security problems.  Most notable is that one
+party might learn the public keys of the other parties before committing
+to their own public key.  For example, Alice generates her public key
++yG+ honestly and shares it with Bob.  Bob generates his public key
+using +zG - yG+.  When their two keys are combined (+yG + zG - yG+), the
+positive and negative +yG+ terms cancel out so the public key only represents
+the private key for +z+, i.e. Bob's private key.  Now Bob can create a
+valid signature without any assistance from Alice.  This is called a
+_key cancellation attack_.
+
+There are various was to solve to the key cancellation attack.  The
+simplest scheme would be to require each participant commit to their
+part of the public key before sharing anything about that key with all
+of the other participants.  For example, Alice and Bob each individually
+hash their public keys and share their digests with each other.  When
+they both have the other's digest, they can share their keys.  They
+individually check that the other's key hashes to the previously
+provided digest and then proceed with the protocol normally.  This prevents
+either one of them from choosing a public key that cancels out the keys
+of the other participants.  However, it's easy to fail to implement this
+scheme correctly, such as using it in a naive way with unhardened
+BIP32 public key derivation.  Additionally, it adds an extra step for
+communication between the participants, which may be undesirable in many
+cases.  More complex schemes have been proposed that address these
+shortcomings.
+
+In addition to the key cancellation attack, there are a number of
+attacks possible against nonces.  Recall that the purpose of the nonce
+is prevent anyone from being able to use their knowledge of other values
+in the signature verification equation to solve for your private key,
+determining its value.  To effectively accomplish that, you must use a
+different nonce every time you sign a different message or change other
+signature parameters.  The different nonces must not be related in any
+way.  For a multisignature, every participant must follow these rules or
+it could compromise the security of other participants.  In addition,
+cancellation and other attacks need to be prevented.  Different
+protocols that accomplish these aims make different tradeoffs, so
+there's no single multisignature protocol to recommend in all cases.
+Instead, we'll note three from the MuSig family of protocols:
+
+MuSig::
+  Also called _MuSig1_, this protocol requires three rounds of
+  communication during the signing process, making it similar to the
+  process we described above.  MuSig1's greatest advantage is its
+  simplicity.
+
+MuSig2::
+  This only requires two rounds of communication and can sometimes allow
+  one of the rounds to be combined with key exchange.  This can
+  significantly speed up signing for certain protocols, such as how
+  scriptless multisignatures are planned to be used in the Lightning
+  Network.  MuSig2 is specified in BIP327 (the only scriptless
+  multisignature protocol that has a BIP as of this writing).
+
+MuSig-DN::
+  DN stands for Deterministic Nonce, which eliminates as a concern a
+  problem known as the _repeated session attack_.  It can't be combined
+  with key exchange and it's significantly more complex to implement
+  than MuSig or Musig2.
+
+For most applications, MuSig2 is the best multisignature protocol
+available at the time of writing.
+
+[[schnorr_threshold_signatures]]
+==== Schnorr-based scriptless threshold signatures
+
+Scriptless multisignature protocols only work for n-of-n signing.
+Everyone with a partial public key that becomes part of the aggregated
+public key must contribute a partial signature and partial nonce to the
+final signature.  Sometimes, though, the participants want to allow a
+subset of them to sign, such as k-of-n where k participants can sign for
+a key constructed by n participants.  That type of signature is called a
+_threshold signature_.
+
+We saw script-based threshold signatures in
+<<multisig>>.  But just as
+scriptless multisignatures save space and increase privacy compared to
+scripted multisigantures, _scriptless threshold signatures_ save space and
+increase privacy compared to _scripted threshold signatures_.  To anyone
+not involved in the signing, a _scriptless threshold signatures_ looks
+like any other signature which could've been created by a single-sig
+user or through a scriptless multisignature protocol.
+
+Various methods are known for generating scriptless threshold
+signatures, with the simplest being a slight modification of how we
+created scriptless multisignatures previously.  This protocol also
+depends on verifiable secret sharing (which itself depends on secure
+secret sharing).
+
+Basic secret sharing can work through simple splitting.  Alice has a
+secret number that she splits into three equal-length parts and shares
+with Bob, Carol, and Dan.  Those three can combine the partial numbers
+they received (called _shares_) in the correct order to reconstruct
+Alice's secret.  A more sophisticated scheme would involve Alice adding
+on some additional information to each share, called a correction code,
+that allows any two of them to recover the number.  This scheme is not
+secure because each share gives its holder partial knowledge of Alice's
+secret, making it easier for the participant to guess Alice's secret
+than a non-participant who didn't have a share.
+
+A secure secret sharing scheme prevents participants from learning
+anything about the secret unless they combine the minimum threshold
+number of shares.  For example, Alice can choose a threshold (_k_) of
++2+ if she wants any two of Bob, Carol, and Dan to be able to
+reconstruct her secret.  The best known secure secret sharing algorithm
+is _Shamir's Secret Sharing Scheme_, commonly abbreviated SSSS and named
+after its discoverer, one of the same discovers of the Fiat-Shamir
+transform we saw in <<schnorr_signatures>>.
+
+In some cryptographic protocols, such as the scriptless threshold signature
+schemes we're working towards, it's critical for Bob, Carol, and Dan to
+know that Alice followed her side of the protocol correctly.  They need
+know that the shares she create all derive from the same secret, that
+she used the threshold value she claims, and that she gave each one of
+them a different share.  A protocol that can accomplish all of that,
+and still be a secure secret sharing scheme, is a _verifiable secret
+sharing scheme_.
+
+To see how multisignatures and verifiable secret sharing works for
+Alice, Bob, and Carol, imagine they each wish to receive funds that can
+be spent by any two of them.  They collaborate as described in
+<<schnorr_multisignatures>> to produce a regular multisignature public
+key to accept the funds (n-of-n).  Then each participant derives two
+secret shares from their private key--one for each of two the other
+participants. The shares allow any two of them to reconstruct the
+originating partial private key for the multisignature. Each participant
+distributes one of their secret shares to the other two participants,
+resulting in each participant storing their own partial private key and
+one share for every other participant. Subsequently, each participant
+verifies the authenticity and uniqueness of the shares they received
+compared to the shares given to the other participants.
+
+Later on, when (for example) Alice and Bob want to generate a scriptless
+threshold signature without Carol's involvement, they exchange the two
+shares they possess for Carol. This enables them to reconstruct Carol's
+partial private key.  Alice and Bob also have their private keys,
+allowing them to create a scriptless multisignature with all three
+necessary keys.
+
+In other words, the scriptless threshold signature scheme described
+above is the same as a scriptless multisignature scheme except that
+a threshold number of participants have the ability to reconstruct the
+partial private keys of any other participants who are unable or
+unwilling to sign.
+
+This does point to a few things to be aware about when considering a
+scriptless threshold signature protocol:
+
+1. No accountability: because Alice and Bob reconstruct Carol's partial
+private key, there can be no fundamental difference between a scriptless
+multisignature produced by a process that involved Carol and one that
+didn't.  Even if Alice, Bob, or Carol claim that they didn't sign,
+there's no absolutely guaranteed way for them to prove that they didn't
+help produce the signature.  If it's important to know which members of
+the group signed, you will need to use scripted threshold signatures.
+
+2. Manipulation attacks: imagine that Bob tells Alice that Carol is
+unavailable, so they work together to reconstruct Carol's partial
+private key.  Then Bob tells Carol that Alice is unavailable, so they
+work together to reconstruct Alice's partial private key.  Now Bob has
+his own partial private key plus the keys of Alice and Carol, allowing
+him to spend the funds himself without their involvement.  This attack can
+be addressed if all of the participants agree to only communicate using a
+scheme that allows any one of them to see all of the other's messages,
+e.g. if Bob tells Alice that Carol is unavailable, Carol is able to see
+that message before she begins working with Bob.  Other solutions,
+possibly more robust solutions, to this problem were being researched at
+the time of writing.
+
+No scriptless threshold signature protocol has been proposed as a BIP
+yet, although significant research into the subject has been performed
+by multiple Bitcoin contributors and we expect peer-reviewed solutions
+will become available after the publication of this book.
+
 [[ecdsa_math]]
 ==== ECDSA Math
+
+Unfortunately for the future development of Bitcoin and many other
+applications, Schnorr patented the algorithm and effectively prevented
+its use for almost two decades.
 
 ((("Elliptic Curve Digital Signature Algorithm (ECDSA)")))As mentioned
 previously, signatures are created by a mathematical function _F_~_sig_~
