@@ -95,35 +95,6 @@ called the
 _Distinguished Encoding Rules_, or _DER_.  For schnorr signatures, a
 simpler serialization format is used.
 
-[[serialization_of_signatures_der]]
-===== Serialization of ECDSA signatures (DER)
-
-Let's look at
-the following DER-encoded signature:
-
-----
-3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
-----
-
-That signature is a serialized byte-stream of the +R+ and +S+ values
-produced by to prove control of the private key authorized
-to spend an output. The serialization format consists of nine elements
-as follows:
-
-* +0x30+&#x2014;indicating the start of a DER sequence
-* +0x45+&#x2014;the length of the sequence (69 bytes)
-  * +0x02+&#x2014;an integer value follows
-  * +0x21+&#x2014;the length of the integer (33 bytes)
-  * +R+&#x2014;++00884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb++
-  * +0x02+&#x2014;another integer follows
-  * +0x20+&#x2014;the length of the integer (32 bytes)
-  * +S+&#x2014;++4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813++
-* A suffix (+0x01+) indicating the type of hash used (+SIGHASH_ALL+)
-
-See if you can decode Alice's serialized (DER-encoded) signature using
-this list. The important numbers are +R+ and +S+; the rest of the data
-is part of the DER encoding scheme.
-
 ==== Verifying the Signature
 
 ((("digital signatures", "verifying")))To verify the signature, one must
@@ -337,7 +308,36 @@ online take you through it step by step: search for "ECDSA explained" or
 try this one: http://bit.ly/2r0HhGB[].
 ====
 
-==== The Importance of Randomness in Signatures
+[[serialization_of_signatures_der]]
+==== Serialization of ECDSA signatures (DER)
+
+Let's look at
+the following DER-encoded signature:
+
+----
+3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301
+----
+
+That signature is a serialized byte-stream of the +R+ and +S+ values
+produced by to prove control of the private key authorized
+to spend an output. The serialization format consists of nine elements
+as follows:
+
+* +0x30+&#x2014;indicating the start of a DER sequence
+* +0x45+&#x2014;the length of the sequence (69 bytes)
+  * +0x02+&#x2014;an integer value follows
+  * +0x21+&#x2014;the length of the integer (33 bytes)
+  * +R+&#x2014;++00884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb++
+  * +0x02+&#x2014;another integer follows
+  * +0x20+&#x2014;the length of the integer (32 bytes)
+  * +S+&#x2014;++4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813++
+* A suffix (+0x01+) indicating the type of hash used (+SIGHASH_ALL+)
+
+See if you can decode Alice's serialized (DER-encoded) signature using
+this list. The important numbers are +R+ and +S+; the rest of the data
+is part of the DER encoding scheme.
+
+=== The Importance of Randomness in Signatures
 
 ((("digital signatures", "randomness in")))As we saw in <<ecdsa_math>>,
 the signature generation algorithm uses a random key _k_, as the basis
