@@ -785,15 +785,54 @@ yet, although significant research into the subject has been performed
 by multiple Bitcoin contributors and we expect peer-reviewed solutions
 will become available after the publication of this book.
 
-[[ecdsa_math]]
-==== ECDSA Math
+[[ecdsa_signatures]]
+=== ECDSA signatures
 
 Unfortunately for the future development of Bitcoin and many other
-applications, Schnorr patented the algorithm and effectively prevented
-its use for almost two decades.
+applications, Claus Schnorr patented the algorithm he discovered and
+prevented its use in open standards and open source software for almost
+two decades.  Cryptographers in the early 1990s who were blocked from
+using the schnorr signature scheme developed an alternative construction
+called the _Digital Signature Algorithm_ (DSA), with a version adapted
+to Elliptic Curves called ECDSA.
 
-((("Elliptic Curve Digital Signature Algorithm (ECDSA)")))As mentioned
-previously, signatures are created by a mathematical function _F_~_sig_~
+The ECDSA scheme and standardized parameters for curves it could be used
+with were widely implemented in cryptographic libraries by the time
+development on Bitcoin began in 2007.  This was almost certainly the
+reason why ECDSA was the only digital signature protocol that Bitcoin
+supported from its first release version until the activation of the
+taproot soft fork in 2021.  ECDSA remains supported today for all
+non-taproot transactions.  Some of the differences compared to schnorr
+signatures include:
+
+More complex::
+  As we'll see, ECDSA requires more operations to create or verify a
+  signature than the schnorr signature protocol.  It's not significantly
+  more complex from an implementation standpoint, but that extra
+  complexity makes ECDSA less flexible, less performant, and harder to
+  prove secure.
+
+Less provable security::
+  The interactive schnorr signature identification protocol depends only
+  on the strength of the Elliptic Curve Discrete Logarithm Problem
+  (ECDLP).  The non-interactive authentication protocol used in Bitcoin
+  also relies on the Random Oracle Model (ROM).  However, ECDSA's extra
+  complexity has prevented a complete proof of its security being
+  published (to the best of our knowledge).  We are not experts in
+  proving cryptographic algorithms, but it seems unlikely after 30 years
+  that ECDSA will be proven to only require the same two assumptions as
+  schnorr.
+
+Non-linear::
+  ECDSA signatures cannot be easily combined to create scriptless
+  multisignatures or used in related advanced applications such as
+  multi-party signature adaptors.  There are workarounds for this
+  problem, but they involve additional extra complexity which
+  significantly slows down operations and which, in some cases, has
+  resulted in software accidentally leaking private keys.
+
+Looking at the math of ECDSA,
+signatures are created by a mathematical function _F_~_sig_~
 that produces a signature composed of two values.  In ECDSA, those two
 values are _R_ and _S_. In this
 section we look at the function _F_~_sig_~ for ECDSA in more detail.
@@ -884,7 +923,7 @@ is part of the DER encoding scheme.
 [[nonce_warning]]
 === The Importance of Randomness in Signatures
 
-((("digital signatures", "randomness in")))As we saw in <<ecdsa_math>>,
+((("digital signatures", "randomness in")))As we saw in <<schnorr_signatures>> and <<ecdsa_signatures>>,
 the signature generation algorithm uses a random key _k_, as the basis
 for an ephemeral private/public key pair. The value of _k_ is not
 important, _as long as it is random_. If the same value _k_ is used to
