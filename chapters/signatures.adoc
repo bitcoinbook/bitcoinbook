@@ -71,12 +71,12 @@ signed is the transaction, or more accurately a hash of a specific
 subset of the data in the transaction (see <<sighash_types>>). The
 signing key is the user's private key. The result is the signature:
 
-latexmath:[\(Sig = F_{sig}(F_{hash}(m), dA)\)]
+latexmath:[\(Sig = F_{sig}(F_{hash}(m), x)\)]
 
 where:
 
-* _dA_ is the signing private key
-* _m_ is the transaction (or parts of it)
+* _x_ is the signing private key
+* _m_ is the message to sign (such as parts of a transaction)
 * _F_~_hash_~ is the hashing function
 * _F_~_sig_~ is the signing algorithm
 * _Sig_ is the resulting signature
@@ -834,47 +834,45 @@ Non-linear::
 Looking at the math of ECDSA,
 signatures are created by a mathematical function _F_~_sig_~
 that produces a signature composed of two values.  In ECDSA, those two
-values are _R_ and _S_. In this
-section we look at the function _F_~_sig_~ for ECDSA in more detail.
+values are _R_ and _S_.
 
 ((("public and private keys", "key pairs", "ephemeral")))The signature
-algorithm first generates an _ephemeral_ (temporary) private public key
-pair. This temporary key pair is used in the calculation of the _R_ and
+algorithm first generates a private nonce (_k_) and derives from it a public
+nonce (_K_). These are used in the calculation of the _R_ and
 _S_ values, after a transformation involving the signing private key and
 the transaction hash.
 
-The temporary key pair is based on a random number _k_, which is used as
-the temporary private key. From _k_, we generate the corresponding
-temporary public key _P_ (calculated as _P = k*G_, in the same way
+From _k_, we generate the corresponding
+public nonce _K_ (calculated as _K = k*G_, in the same way
 bitcoin public keys are derived; see <<public_key_derivation>>). The _R_ value of the
 digital signature is then the x coordinate of the ephemeral public key
-_P_.
+_K_.
 
 From there, the algorithm calculates the _S_ value of the signature,
 such that:
 
-_S_ = __k__^-1^ (__Hash__(__m__) + __dA__ * __R__) _mod p_
+_S_ = __k__^-1^ (__Hash__(__m__) + __x__ * __R__) _mod p_
 
 where:
 
-* _k_ is the ephemeral private key
-* _R_ is the x coordinate of the ephemeral public key
-* _dA_ is the signing private key
-* _m_ is the transaction data
+* _k_ is the private nonce
+* _R_ is the x coordinate of the public nonce
+* _x_ is the Alice's private key
+* _m_ is the message (transaction data)
 * _p_ is the prime order of the elliptic curve
 
 Verification is the inverse of the signature generation function, using
 the _R_, _S_ values and the public key to calculate a value _P_, which
-is a point on the elliptic curve (the ephemeral public key used in
+is a point on the elliptic curve (the public nonce used in
 signature creation):
 
-_P_ = __S__^-1^ * __Hash__(__m__) * _G_ + __S__^-1^ * _R_ * _Qa_
+_P_ = __S__^-1^ * __Hash__(__m__) * _G_ + __S__^-1^ * _R_ * _X_
 
 where:
 
 - _R_ and _S_ are the signature values
-- _Qa_ is Alice's public key
-- _m_ is the transaction data that was signed
+- _X_ is Alice's public key
+- _m_ is the message (the transaction data that was signed)
 - _G_ is the elliptic curve generator point
 
 If the x coordinate of the calculated point _P_ is equal to _R_, then
@@ -925,7 +923,7 @@ is part of the DER encoding scheme.
 
 ((("digital signatures", "randomness in")))As we saw in <<schnorr_signatures>> and <<ecdsa_signatures>>,
 the signature generation algorithm uses a random key _k_, as the basis
-for an ephemeral private/public key pair. The value of _k_ is not
+for a private/public nonce pair. The value of _k_ is not
 important, _as long as it is random_. If the same value _k_ is used to
 produce two signatures on different messages (transactions), then the
 signing _private key_ can be calculated by anyone. Reuse of the same
