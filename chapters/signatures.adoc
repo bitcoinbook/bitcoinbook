@@ -1,33 +1,32 @@
 [[c_signatures]]
 == Digital Signatures
 
-[[sighashes]]
-=== Signature Hashes (Sighashes)
 ((("transactions", "digital signatures and", id="Tdigsig06")))So far, we
 have not delved into any detail about "digital signatures." In this
-section we look at how digital signatures work and how they can present
-proof of ownership of a private key without revealing that private key.
+chapter we look at how digital signatures work and how they can present
+proof of control of a private key without revealing that private key.
 
-FIXME
 ((("digital signatures", "algorithm used")))((("Elliptic Curve Digital
 Signature Algorithm (ECDSA)")))Two signature algorithms are currently
 used in Bitcoin, the _schnorr signature algorithm_ and the _Elliptic
 Curve Digital Signature Algorithm_ (_ECDSA_).
 These algorithms are used for digital signatures based on elliptic
 curve private/public key pairs, as described in <<elliptic_curve>>.
-They are used by the script functions +OP_CHECKSIG+,
-+OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+, and +OP_CHECKMULTISIGVERIFY+.
-Any time one of those is executed in a script, a signature must be
+They are used for spending segwit v0 P2WPKH outputs, segwit v1 P2TR
+keypath spending, and by the script functions +OP_CHECKSIG+,
++OP_CHECKSIGVERIFY+, +OP_CHECKMULTISIG+, +OP_CHECKMULTISIGVERIFY+, and
++OP_CHECKSIGADD+.
+Any time one of those is executed, a signature must be
 provided.
 
 ((("digital signatures", "purposes of")))A digital signature serves
-three purposes in bitcoin (see the following sidebar). First, the
-signature proves that the owner of the private key, who is by
+three purposes in Bitcoin (see the following sidebar). First, the
+signature proves that the controller of a private key, who is by
 implication the owner of the funds, has _authorized_ the spending of
 those funds. Secondly, the proof of authorization is _undeniable_
-(nonrepudiation). Thirdly, the signature proves that the transaction (or
-specific parts of the transaction) have not and _cannot be modified_ by
-anyone after it has been signed.
+(nonrepudiation). Thirdly, the signature proves that specific parts of
+the transaction have not and _cannot be modified_ by
+anyone besides the signer.
 
 Note that each transaction input is signed independently. This is
 critical, as neither the signatures nor the inputs have to belong to or
@@ -37,7 +36,7 @@ privacy.
 
 [NOTE]
 ====
-Each transaction input and any signature it may contain is _completely_
+Each transaction input and any signatures it may contain is _completely_
 independent of any other input or signature. Multiple parties can
 collaborate to construct transactions and sign only one input each.
 ====
@@ -56,7 +55,7 @@ to believe that the message was created by a known sender
 _Source: https://en.wikipedia.org/wiki/Digital_signature_
 ****
 
-==== How Digital Signatures Work
+=== How Digital Signatures Work
 
 ((("digital signatures", "how they work")))A digital signature is a
 _mathematical scheme_ that consists of two parts. The first part is an
@@ -65,7 +64,7 @@ key), from a message (the transaction). The second part is an algorithm
 that allows anyone to verify the signature, given also the message and a
 public key.
 
-===== Creating a digital signature
+==== Creating a digital signature
 
 In Bitcoin's implementation of digital signature algorithms, the "message" being
 signed is the transaction, or more accurately a hash of a specific
@@ -82,7 +81,8 @@ where:
 * _F_~_sig_~ is the signing algorithm
 * _Sig_ is the resulting signature
 
-More details on the mathematics of schnorr and ECDSA signatures can be found in <<signature_math>>.
+More details on the mathematics of schnorr and ECDSA signatures can be found in <<schnorr_signatures>>
+and <<ecdsa_signatures>>.
 
 In both schnorr and ECDSA signatures, the function _F_~_sig_~ produces a signature +Sig+ that is composed of
 two values.  There are differences between the two values in the
@@ -99,13 +99,13 @@ simpler serialization format is used.
 
 ((("digital signatures", "verifying")))To verify the signature, one must
 have the signature, the serialized transaction, some data about the
-output being spend, and the public key (that corresponds to the private key used to create the
-signature). Essentially, verification of a signature means "Only the
-owner of the private key that generated this public key could have
+output being spent, and the public key that corresponds to the private key used to create the
+signature. Essentially, verification of a signature means "Only the
+controller of the private key that generated this public key could have
 produced this signature on this transaction."
 
-The signature verification algorithm takes the message (a hash of the
-transaction or parts of it), the signer's public key and the signature,
+The signature verification algorithm takes the message (a hash of
+parts of the transaction and related data), the signer's public key and the signature,
 and returns TRUE if the signature is valid for
 this message and public key.
 
@@ -114,7 +114,7 @@ this message and public key.
 
 ((("digital signatures", "signature hash
 types")))((("commitment")))Digital signatures are applied to messages,
-which in the case of bitcoin, are the transactions themselves. The
+which in the case of Bitcoin, are the transactions themselves. The
 signature implies a _commitment_ by the signer to specific transaction
 data. In the simplest form, the signature applies to almost the entire
 transaction, thereby committing all the inputs, outputs, and other
@@ -135,7 +135,7 @@ transaction.
 Remember, each input may contain one or more signatures. As
 a result, an input may have signatures
 with different +SIGHASH+ flags that commit different parts of the
-transaction. Note also that bitcoin transactions
+transaction. Note also that Bitcoin transactions
 may contain inputs from different "owners," who may sign only one input
 in a partially constructed transaction, collaborating with
 others to gather all the necessary signatures to make a valid
@@ -194,7 +194,7 @@ can't be modified once signed.
 ====
 
 In
-<<serialization_of_signatures_der>>, we saw that the last part of the
+<<serialization_of_signatures_der>>, we will see that the last part of the
 DER-encoded signature was +01+, which is the +SIGHASH_ALL+ flag for ECDSA signatures. This
 locks the transaction data, so Alice's signature is committing to the state
 of all inputs and outputs. This is the most common signature form.
@@ -212,13 +212,21 @@ it by adding an input of their own, as a donation. They sign their own
 input with +ALL|ANYONECANPAY+. Unless enough inputs are gathered to
 reach the value of the output, the transaction is invalid. Each donation
 is a "pledge," which cannot be collected by the fundraiser until the
-entire goal amount is raised.
+entire goal amount is raised.  Unfortunately, this protocol can be
+circumvented by the fundraiser adding an input of their own (or from
+someone who lends them funds), allowing them to collect the donations
+even if they haven't reached the specified value.
 
 +NONE+ :: This construction can be used to create a "bearer check" or
 "blank check" of a specific amount. It commits to the input, but allows
-the output locking script to be changed. Anyone can write their own
+the output script to be changed. Anyone can write their own
 Bitcoin address into the output scriptPubKey. However, the output value
-itself cannot be changed.
+itself cannot be changed.  By itself, this allows any miner to change
+the output destination and claim the funds for themselves, but if other
+required signatures in the transaction use +SIGHASH_ALL+ or another type
+that commits to the output, it allows those spenders to change the
+destination without allowing any third-parties (like miners) to modify
+the outputs.
 
 +NONE|ANYONECANPAY+ :: This construction can be used to build a "dust
 collector." Users who have tiny UTXOs in their wallets can't spend these
@@ -240,7 +248,7 @@ could be copied and used to spend the other output to the same
 destination.
 
 A signature using +SIGHASH_ANYPREVOUTANYSCRIPT+ would not
-commit to the outpoint, the amount, the witness program, or that
+commit to the outpoint, the amount, the witness program, or the
 tapleaf_hash used, allowing it to be used to spend any previous output
 which the signature could satisfy.  For example, if Alice received two
 outputs for different amounts and different witness programs (e.g. one
@@ -396,7 +404,7 @@ you _must_ use RFC 6979 or a similarly deterministic-random algorithm to
 ensure you generate a different _k_ for each transaction.((("",
 startref="Tdigsig06")))
 
-==== Segregated Witness' New Signing Algorithm
+=== Segregated Witness's New Signing Algorithm
 
 Segregated Witness modified the semantics of the four signature
 verification functions from legacy Bitcoin Script (+CHECKSIG+, +CHECKSIGVERIFY+, +CHECKMULTISIG+,
