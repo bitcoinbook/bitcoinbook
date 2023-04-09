@@ -4,7 +4,48 @@
 [[mtp]]
 === Median Time Past (MTP)
 
-FIXME
+((("scripting", "timelocks",
+"Median-Tme-Past")))((("Median-Tme-Past")))((("timelocks",
+"Median-Tme-Past")))As part of the activation of relative timelocks,
+there was also a change in the way "time" is calculated for timelocks
+(both absolute and relative). In bitcoin there is a subtle, but very
+significant, difference between wall time and consensus time. Bitcoin is
+a decentralized network, which means that each participant has his or
+her own perspective of time. Events on the network do not occur
+instantaneously everywhere. Network latency must be factored into the
+perspective of each node. Eventually everything is synchronized to
+create a common ledger. Bitcoin reaches consensus every 10 minutes about
+the state of the ledger as it existed in the _past_.
+
+The timestamps set in block headers are set by the miners. There is a
+certain degree of latitude allowed by the consensus rules to account for
+differences in clock accuracy between decentralized nodes. However, this
+creates an unfortunate incentive for miners to lie about the time in a
+block so as to earn extra fees by including timelocked transactions that
+are not yet mature. See the following section for more information.
+
+To remove the incentive to lie and strengthen the security of timelocks,
+a BIP was proposed and activated at the same time as the BIPs for
+relative timelocks. This is BIP-113, which defines a new consensus
+measurement of time called _Median-Time-Past_.
+
+Median-Time-Past is calculated by taking the timestamps of the last 11
+blocks and finding the median. That median time then becomes consensus
+time and is used for all timelock calculations. By taking the midpoint
+from approximately two hours in the past, the influence of any one
+block's timestamp is reduced. By incorporating 11 blocks, no single
+miner can influence the timestamps in order to gain fees from
+transactions with a timelock that hasn't yet matured.
+
+Median-Time-Past changes the implementation of time calculations for
++nLocktime+, +CLTV+, +nSequence+, and +CSV+. The consensus time
+calculated by Median-Time-Past is always approximately one hour behind
+wall clock time. If you create timelock transactions, you should account
+for it when estimating the desired value to encode in +nLocktime+,
++nSequence+, +CLTV+, and +CSV+.
+
+Median-Time-Past is specified in
+https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki[BIP-113].
 
 [[duplicate_transactions]]
 === Preventing Duplicate Transactions
