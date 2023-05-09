@@ -1,11 +1,6 @@
 [[c_signatures]]
 == Digital Signatures
 
-((("transactions", "digital signatures and", id="Tdigsig06")))So far, we
-have not delved into any detail about "digital signatures." In this
-chapter we look at how digital signatures work and how they can present
-proof of control of a private key without revealing that private key.
-
 ((("digital signatures", "algorithm used")))((("Elliptic Curve Digital
 Signature Algorithm (ECDSA)")))Two signature algorithms are currently
 used in Bitcoin, the _schnorr signature algorithm_ and the _Elliptic
@@ -54,6 +49,10 @@ to believe that the message was created by a known sender
 
 _Source: https://en.wikipedia.org/wiki/Digital_signature_
 ****
+
+In this chapter we look at how digital signatures work and how they can
+present proof of control of a private key without revealing that private
+key.
 
 === How Digital Signatures Work
 
@@ -249,10 +248,10 @@ destination.
 
 A signature using +SIGHASH_ANYPREVOUTANYSCRIPT+ would not
 commit to the outpoint, the amount, the witness program, or the
-tapleaf_hash used, allowing it to be used to spend any previous output
+tapleaf_hash used, allowing it to spend any previous output
 which the signature could satisfy.  For example, if Alice received two
 outputs for different amounts and different witness programs (e.g. one
-requiring a single signature and another require her signature plus some
+requiring a single signature and another requiring her signature plus some
 other data), a +SIGHASH_ANYPREVOUTANYSCRIPT+ signature for spending
 either one of those outputs could be copied and used to spend the other
 output to the same destination (assuming the extra data for the second
@@ -312,7 +311,7 @@ In cryptographic operations, some of the functions may be private (such
   to get the same result whether performing an operation inside or
   outside of a function makes it easy for multiple parties to coordinate
   and cooperate without sharing their secrets.  We'll see some of the
-  specific benefits of linearity in schnorr signature in
+  specific benefits of linearity in schnorr signatures in
   <<schnorr_multisignatures>> and <<schnorr_threshold_signatures>>.
 
 Batch Verification::
@@ -330,7 +329,7 @@ exactly as it's used in Bitcoin, but we're going to start with a
 simplified version of it and work our way towards the actual protocol in
 stages.
 
-Alice starts by chooses a large random number (+x+), which we call her
+Alice starts by choosing a large random number (+x+), which we call her
 _private key_.  She also knows a public point on Bitcoin's Elliptic
 Curve (EC) called the Generator (+G+) (see <<public_key_derivation>>).  Alice uses EC
 multiplication to multiply +G+ by her private key +x+, in which case +x+
@@ -370,7 +369,7 @@ process:
   then Bob can be sure that Alice knew +x+ when she generated +s+.
 
 .Schnorr identity protocol with integers instead of vectors
-====
+****
 It might be easier to understand the interactive schnorr identity
 protocol if you oversimplify by substituting each of the values above
 (including +G+) with simple integers instead of vectors like EC points.
@@ -398,7 +397,7 @@ of the Elliptic Curve Cryptography (ECC) used in Bitcoin is that
 multiplication is easy but division is impractical.  Also, with numbers
 this small, finding underlying values (or valid substitutes) through
 brute force is easy; the numbers used in Bitcoin are much larger.
-====
+****
 
 Let's discuss some of the features of the interactive schnorr
 identity protocol that make it secure:
@@ -591,7 +590,7 @@ points together, they start by Alice deriving +yG+ and Bob deriving
 simple multisignature protocol:
 
 1. They each individually choose a large random private nonce, +a+ for
-   Alice and +b+ for Bob.  The also individually derive the corresponding
+   Alice and +b+ for Bob.  They also individually derive the corresponding
    public nonce +aG+ and +bG+.  Together, they produce an aggregated
    public nonce +kG = aG + bG+.
 
@@ -621,7 +620,7 @@ the private key for +z+, i.e. Bob's private key.  Now Bob can create a
 valid signature without any assistance from Alice.  This is called a
 _key cancellation attack_.
 
-There are various was to solve to the key cancellation attack.  The
+There are various ways to solve to the key cancellation attack.  The
 simplest scheme would be to require each participant commit to their
 part of the public key before sharing anything about that key with all
 of the other participants.  For example, Alice and Bob each individually
@@ -639,7 +638,7 @@ shortcomings.
 
 In addition to the key cancellation attack, there are a number of
 attacks possible against nonces.  Recall that the purpose of the nonce
-is prevent anyone from being able to use their knowledge of other values
+is to prevent anyone from being able to use their knowledge of other values
 in the signature verification equation to solve for your private key,
 determining its value.  To effectively accomplish that, you must use a
 different nonce every time you sign a different message or change other
@@ -722,8 +721,8 @@ transform we saw in <<schnorr_signatures>>.
 
 In some cryptographic protocols, such as the scriptless threshold signature
 schemes we're working towards, it's critical for Bob, Carol, and Dan to
-know that Alice followed her side of the protocol correctly.  They need
-know that the shares she create all derive from the same secret, that
+know that Alice followed her side of the protocol correctly.  They need to
+know that the shares she creates all derive from the same secret, that
 she used the threshold value she claims, and that she gave each one of
 them a different share.  A protocol that can accomplish all of that,
 and still be a secure secret sharing scheme, is a _verifiable secret
@@ -763,7 +762,7 @@ scriptless threshold signature protocol:
 private key, there can be no fundamental difference between a scriptless
 multisignature produced by a process that involved Carol and one that
 didn't.  Even if Alice, Bob, or Carol claim that they didn't sign,
-there's no absolutely guaranteed way for them to prove that they didn't
+there's no guaranteed way for them to prove that they didn't
 help produce the signature.  If it's important to know which members of
 the group signed, you will need to use scripted threshold signatures.
 
