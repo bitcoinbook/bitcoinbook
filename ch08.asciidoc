@@ -102,50 +102,171 @@ protocols. These other protocol nodes are mostly pool mining nodes (see
 <<mining>>) and lightweight wallet clients, which do not carry a full
 copy of the blockchain.
 
-=== Bitcoin Relay Networks
 
-((("Bitcoin network", "Bitcoin Relay Networks")))((("relay
-networks")))While the Bitcoin P2P network serves the general needs of a
-broad variety of node types, it exhibits too high network latency for
-the specialized needs of Bitcoin mining nodes.
+=== Compact Block Relay
 
-((("propagation", "relay networks and")))Bitcoin miners are engaged in a
-time-sensitive competition to solve the Proof-of-Work problem and extend
-the blockchain (see <<mining>>). While participating in this
-competition, Bitcoin miners must minimize the time between the
-propagation of a winning block and the beginning of the next round of
-competition. In mining, network latency is directly related to profit
-margins.
+When a miner finds a new block, they announce it to the Bitcoin network
+(which includes other miners).  The miner who found that block can start
+building on top of it immediately; all other miners who haven't learned
+about the block yet will continue building on top of the previous block
+until they do learn about it (and, ideally, they also validate it).
 
-A _Bitcoin Relay Network_ is a network that attempts to minimize the
-latency in the transmission of blocks between miners. The original
+If, before they learn about the new block, one of those other
+miners creates a block, their block will be in competition with the
+first miner's new block.  Only one of the blocks will ever be included
+in the blockchain used by all full nodes, and miners only get paid for
+blocks that are widely accepted.
+
+Whichever block has a second block built on top of it first wins (unless
+there's another near-tie), which is called a _block-finding race_.
+Block-finding races give the advantage to the largest miners, so they
+act in opposition to Bitcoin's essential decentralization.  To prevent
+block-finding races and allow miners of any size to participate equally
+in the lottery that is Bitcoin mining, it's extremely useful to minimize
+the time between when one miner announces a new block and when other
+miners receive that block.
+
+.A blockchain fork requiring a mining race
+image::images/race1.dot.png["Mining race"]
+
+In 2015, a new version of Bitcoin Core added a feature called
+_compact block relay_ (specified in BIP152) that allows transferring new
+blocks both faster and with less bandwidth.
+
+As background, full nodes that relay unconfirmed transactions also store
+many of those transactions in their mempools (see <<mempool>>).  When
+some of those transactions are confirmed in a new block, the node
+doesn't need to receive a second copy of those transactions.
+
+Instead of receiving redundant unconfirmed transactions, compact blocks
+allows a peer that believes your node already has a transaction in that
+block to instead send a short 6-byte identifier for that transaction.
+When your node receives a compact block with one or more identifiers, it
+checks its mempool for those transactions and uses them if they are
+found.  For any transaction that isn't found in your local node's
+mempool, your node can send a request to the peer for a copy.
+
+Conversely, if the remote peer believes your node's mempool doesn't have
+some of transactions that appear in the block, it can include a copy of
+those transaction in the compact block.
+
+If the remote peer guesses correctly about what transactions your node
+has in its mempool, and which it does not, it will send a block nearly
+as efficiently as is theoretically possible (for a typical block, it'll
+be between 97% to 99% efficient).
+
+[TIP]
+====
+Compact block relay does not decrease the size of blocks.  It just
+prevents the redundant transfer of information that a node already has.
+When a node doesn't previously have information about a block, for
+example when a node is first started, it must receive complete copies of
+each block.
+====
+
+There are two modes that Bitcoin Core currently implements for sending
+compact blocks:
+
+Low-bandwidth mode::
+  When your node requests that a peer use low-bandwidth mode (the default),
+  that peer will tell your node the 32-byte identifier (header hash) of a
+  new block but will not send your node any details about it.  If your
+  node acquires that block first from another source, this avoids
+  wasting any more of your bandwidth acquiring a redundant copy of that
+  block.  If your node does need the block, it will request a compact
+  block.
+
+High-bandwidth mode::
+  When your node requests that a peer use high-bandwidth mode, that peer
+  will send your node a compact block for a new block even before it has
+  fully verified that the block is valid.  The only validation the peer
+  will perform is ensuring that the block's header contains the correct
+  amount of proof of work.  Since proof of work is expensive to generate
+  (about $150,000 USD at the time of writing), it's unlikely that a
+  miner would fake it just to waste the bandwidth of relay nodes.
+  Skipping validation before relay allows new blocks to travel across
+  the network with minimal delays at each hop.
++
+The downside of high-bandwidth node is that your node is likely to
+receive redundant information from each high-bandwidth peer it chooses.
+As of this writing, Bitcoin Core currently only asks three peers to use
+high-bandwidth mode (and it tries to choose peers that have a history of
+quickly announcing blocks).
+
+// released into the public domain by Nicolas Dorier
+.BIP152 modes compared (from BIP152)
+image::images/bip152.png["BIP152"]
+
+The names of the two methods (which are taken from BIP152) can be a bit
+confusing.  Low-bandwidth mode saves bandwidth by not sending blocks in
+most cases.  High-bandwidth mode uses more bandwidth than low-bandwidth
+mode but, in most cases, much less bandwidth than was used for block
+relay before compact blocks were implemented.
+
+=== Private Block Relay Networks
+
+Although compact blocks go a long way towards minimizing the latency
+of block propagation, it's possible to minimize latency further.  Unlike
+compact blocks, though, the other solutions involve tradeoffs that
+make them unavailable or unsuitable for the public P2P relay network.
+For that reason, there has been experimentation with private relay
+networks for blocks.
+
+One simple technique is to pre-select a route between endpoints.  For
+example, a relay network with servers running in datacenters near major
+trans-oceanic fiber optic lines might be able to forward new blocks
+faster than waiting for the block to arrive at the node run by some home
+user many kilometers away from the fiber optic line.
+
+Another, more complex technique, is Forward Error Correction (FEC).
+This allows a compact block message to be split into several parts, with
+each part having extra data appended.  If any of the parts isn't
+received, that part can be reconstructed from the parts that are
+received.  Depending on the settings, up to several parts may be
+reconstructed if they are lost.
+
+FEC avoids the problem of a compact block (or some parts of it) not
+arriving due to problems with the underlying network connection.
+Those problems frequently occur but we mostly don't notice them
+because we mostly use protocols that automatically re-request the
+missing data.  However, requesting missing data triples the time to
+receive it.  For example:
+
+1. Alice sends some data to Bob
+2. Bob doesn't receive the data (or it is damaged).   Bob re-requests
+   the data from Alice
+3. Alice sends the data again
+
+A third technique is to assume all nodes receiving the data have
+almost all of the same transactions in their mempool, so they can all
+accept the same compact block.  That not only saves us time computing
+a compact block at each hop but it means that all each hop can simply
+relay the FEC packets to the next hop even before validating them.
+
+The tradeoff for each of the above methods is that they work well with
+centralization but not in a decentralized network where individual nodes
+can't trust other nodes.  Servers in datacenters cost money and can
+often be accessed by operators of the datacenter, making them less
+trustworthy than a secure home computer.  Relaying data before
+validating makes it easy to waste bandwidth, so it can only reasonably
+be used on a private network where there's some level of trust and
+accountability between parties.
+
+The original
 http://www.bitcoinrelaynetwork.org[Bitcoin Relay Network] was created by
-core developer Matt Corallo in 2015 to enable fast synchronization of
+developer Matt Corallo in 2015 to enable fast synchronization of
 blocks between miners with very low latency. The network consisted of
-several specialized nodes hosted on the Amazon Web Services
+several Virtual Private Servers (VPSes) hosted on
 infrastructure around the world and served to connect the majority of
 miners and mining pools.
 
 ((("Fast Internet Bitcoin Relay Engine (FIBRE)")))((("Compact Block
 optimization")))The original Bitcoin Relay Network was replaced in 2016
 with the introduction of the _Fast Internet Bitcoin Relay Engine_ or
-http://bitcoinfibre.org[_FIBRE_], also created by core developer Matt
+http://bitcoinfibre.org[_FIBRE_], also created by developer Matt
 Corallo. FIBRE is a UDP-based relay network that relays blocks within a
-network of nodes. FIBRE implements _compact block_ optimization to
+network of nodes. FIBRE implements FEC and the _compact block_ optimization to
 further reduce the amount of data transmitted and the network latency.
-
-((("Falcon Relay Network")))Another relay network (still in the proposal
-phase) is http://www.falcon-net.org/about[_Falcon_], based on research
-at Cornell University. Falcon uses "cut-through-routing" instead of
-"store-and-forward" to reduce latency by propagating parts of blocks as
-they are received rather than waiting until a complete block is
-received.
-
-Relay networks are not replacements for Bitcoin's P2P network. Instead
-they are overlay networks that provide additional connectivity between
-nodes with specialized needs. Like freeways are not replacements for
-rural roads, but rather shortcuts between two points with heavy traffic,
-you still need small roads to connect to the freeways.
 
 === Network Discovery
 
