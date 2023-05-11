@@ -527,23 +527,21 @@ an extended period of time.
 [[spv_nodes]]
 === Simplified Payment Verification (SPV) Nodes
 
-((("bitcoin network", "SPV nodes", id="BNspvnodes08")))((("bitcoin
-nodes", "SPV nodes", id="BNospv08")))((("simple-payment-verification
-(SPV)", id="simple08")))Not all nodes have the ability to store the full
-blockchain. Many Bitcoin clients are designed to run on space- and
+((("bitcoin network", "SPV clients", id="BNspvnodes08")))((("bitcoin
+nodes", "SPV clients", id="BNospv08")))((("simple-payment-verification
+(SPV)", id="simple08")))Many Bitcoin clients are designed to run on space- and
 power-constrained devices, such as smartphones, tablets, or embedded
 systems. For such devices, a _simplified payment verification_ (SPV)
-method is used to allow them to operate without storing the full
+method is used to allow them to operate without validating the full
 blockchain. These types of clients are called SPV clients or lightweight
-clients. As Bitcoin adoption surges, the SPV node is becoming the most
-common form of Bitcoin node, especially for Bitcoin wallets.
+clients.
 
-SPV nodes download only the block headers and do not download the
+SPV clients download only the block headers and do not download the
 transactions included in each block. The resulting chain of blocks,
-without transactions, is 1,000 times smaller than the full blockchain.
-SPV nodes cannot construct a full picture of all the UTXOs that are
+without transactions, is about 10,000 times smaller than the full blockchain.
+SPV clients cannot construct a full picture of all the UTXOs that are
 available for spending because they do not know about all the
-transactions on the network. SPV nodes verify transactions using a
+transactions on the network. SPV clients verify transactions using a
 slightly different method that relies on peers to provide partial views
 of relevant parts of the blockchain on demand.
 
@@ -567,7 +565,7 @@ database of UTXO, establishing the validity of the transaction by
 confirming that the UTXO remains unspent. An SPV node cannot validate
 whether the UTXO is unspent. Instead, the SPV node will establish a link
 between the transaction and the block that contains it, using a _merkle
-path_ (see <<merkle_trees>>). Then, the SPV node waits until it sees the
+path_ (see <<merkle_trees>>). Then, the SPV client waits until it sees the
 six blocks 300,001 through 300,006 piled on top of the block containing
 the transaction and verifies it by establishing its depth under blocks
 300,006 to 300,001. The fact that other nodes on the network accepted
@@ -575,24 +573,24 @@ block 300,000 and then did the necessary work to produce six more blocks
 on top of it is proof, by proxy, that the transaction was not a
 double-spend.
 
-An SPV node cannot be persuaded that a transaction exists in a block
-when the transaction does not in fact exist. The SPV node establishes
+An SPV client cannot be persuaded that a transaction exists in a block
+when the transaction does not in fact exist. The SPV client establishes
 the existence of a transaction in a block by requesting a merkle path
 proof and by validating the Proof-of-Work in the chain of blocks.
-However, a transaction's existence can be "hidden" from an SPV node. An
-SPV node can definitely prove that a transaction exists but cannot
+However, a transaction's existence can be "hidden" from an SPV client. An
+SPV client can definitely prove that a transaction exists but cannot
 verify that a transaction, such as a double-spend of the same UTXO,
 doesn't exist because it doesn't have a record of all transactions. This
 vulnerability can be used in a denial-of-service attack or for a
-double-spending attack against SPV nodes. To defend against this, an SPV
-node needs to connect randomly to several nodes, to increase the
+double-spending attack against SPV clients. To defend against this, an SPV
+client needs to connect randomly to several clients, to increase the
 probability that it is in contact with at least one honest node. This
-need to randomly connect means that SPV nodes also are vulnerable to
+need to randomly connect means that SPV clients also are vulnerable to
 network partitioning attacks or Sybil attacks, where they are connected
 to fake nodes or fake networks and do not have access to honest nodes or
 the real Bitcoin network.
 
-For most practical purposes, well-connected SPV nodes are secure enough,
+For most practical purposes, well-connected SPV clients are secure enough,
 striking a balance between resource needs, practicality, and security.
 For infallible security, however, nothing beats running a full
 blockchain node.
@@ -601,36 +599,36 @@ blockchain node.
 ====
 A full blockchain node verifies a transaction by checking the entire
 chain of thousands of blocks below it in order to guarantee that the
-UTXO is not spent, whereas an SPV node checks how deep the block is
+UTXO is not spent, whereas an SPV client checks how deep the block is
 buried by a handful of blocks above it.
 ====
 
-To get the block headers, SPV nodes use a +getheaders+ message instead
+To get the block headers, SPV clients use a +getheaders+ message instead
 of +getblocks+. The responding peer will send up to 2,000 block headers
 using a single +headers+ message. The process is otherwise the same as
-that used by a full node to retrieve full blocks. SPV nodes also set a
+that used by a full node to retrieve full blocks. SPV clients also set a
 filter on the connection to peers, to filter the stream of future blocks
 and transactions sent by the peers. Any transactions of interest are
 retrieved using a +getdata+ request. The peer generates a +tx+ message
 containing the transactions, in response. <<spv_synchronization>> shows
 the synchronization of block headers.
 
-Because SPV nodes need to retrieve specific transactions in order to
+Because SPV clients need to retrieve specific transactions in order to
 selectively verify them, they also create a privacy risk. Unlike full
 blockchain nodes, which collect all transactions within each block, the
-SPV node's requests for specific data can inadvertently reveal the
+SPV client's requests for specific data can inadvertently reveal the
 addresses in their wallet. For example, a third party monitoring a
 network could keep track of all the transactions requested by a wallet
-on an SPV node and use those to associate Bitcoin addresses with the
+on an SPV client and use those to associate Bitcoin addresses with the
 user of that wallet, destroying the user's privacy.
 
 [[spv_synchronization]]
-.SPV node synchronizing the block headers
+.SPV client synchronizing the block headers
 image::images/mbc2_0807.png["SPVSynchronization"]
 
-Shortly after the introduction of SPV/lightweight nodes, Bitcoin
+Shortly after the introduction of SPV/lightweight clients, Bitcoin
 developers added a feature called _bloom filters_ to address the privacy
-risks of SPV nodes. Bloom filters allow SPV nodes to receive a subset of
+risks of SPV clients. Bloom filters allow SPV clients to receive a subset of
 the transactions without revealing precisely which addresses they are
 interested in, through a filtering mechanism that uses probabilities
 rather than fixed patterns.((("", startref="BNspvnodes08")))((("",
@@ -645,7 +643,7 @@ id="privacy08")))((("security", "maintaining privacy",
 id="Sprivacy08")))A bloom filter is a probabilistic search filter, a way
 to describe a desired pattern without specifying it exactly. Bloom
 filters offer an efficient way to express a search pattern while
-protecting privacy. They are used by SPV nodes to ask their peers for
+protecting privacy. They are used by SPV clients to ask their peers for
 transactions matching a specific pattern, without revealing exactly
 which addresses, keys, or transactions they are searching for.
 
@@ -664,13 +662,13 @@ more possible addresses and better privacy, but many of the results are
 irrelevant. If she asks for a very specific pattern, she gets fewer
 results but loses privacy.
 
-Bloom filters serve this function by allowing an SPV node to specify a
+Bloom filters serve this function by allowing an SPV client to specify a
 search pattern for transactions that can be tuned toward precision or
 privacy. A more specific bloom filter will produce accurate results, but
-at the expense of revealing what patterns the SPV node is interested in,
+at the expense of revealing what patterns the SPV client is interested in,
 thus revealing the addresses owned by the user's wallet. A less specific
 bloom filter will produce more data about more transactions, many
-irrelevant to the node, but will allow the node to maintain better
+irrelevant to the client, but will allow the client to maintain better
 privacy.
 
 ==== How Bloom Filters Work
@@ -679,7 +677,7 @@ Bloom filters are implemented as a variable-size array of N binary
 digits (a bit field) and a variable number of M hash functions. The hash
 functions are designed to always produce an output that is between 1 and
 N, corresponding to the array of binary digits. The hash functions are
-generated deterministically, so that any node implementing a bloom
+generated deterministically, so that any client implementing a bloom
 filter will always use the same hash functions and get the same results
 for a specific input. By choosing different length (N) bloom filters and
 a different number (M) of hash functions, the bloom filter can be tuned,
@@ -761,23 +759,23 @@ pattern is definitely not a match.
 .Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
 image::images/mbc2_0812.png[]
 
-=== How SPV Nodes Use Bloom Filters
+=== How SPV clients Use Bloom Filters
 
 Bloom filters are used to filter the transactions (and blocks containing
-them) that an SPV node receives from its peers, selecting only
-transactions of interest to the SPV node without revealing which
+them) that an SPV client receives from its peers, selecting only
+transactions of interest to the SPV client without revealing which
 addresses or keys it is interested in.
 
-((("transaction IDs (txid)")))An SPV node will initialize a bloom filter
+((("transaction IDs (txid)")))An SPV client will initialize a bloom filter
 as "empty"; in that state the bloom filter will not match any patterns.
-The SPV node will then make a list of all the addresses, keys, and
+The SPV client will then make a list of all the addresses, keys, and
 hashes that it is interested in. It will do this by extracting the
 public key hash and script hash and transaction IDs from any UTXO
-controlled by its wallet. The SPV node then adds each of these to the
+controlled by its wallet. The SPV client then adds each of these to the
 bloom filter, so that the bloom filter will "match" if these patterns
 are present in a transaction, without revealing the patterns themselves.
 
-((("Bitcoin nodes", "full nodes")))The SPV node will then send a
+((("Bitcoin nodes", "full nodes")))The SPV client will then send a
 +filterload+ message to the peer, containing the bloom filter to use on
 the connection. On the peer, bloom filters are checked against each
 incoming transaction. The full node checks several parts of the
@@ -795,15 +793,15 @@ script.
 
 After a filter is established, the peer will then test each
 transaction's outputs against the bloom filter. Only transactions that
-match the filter are sent to the node.
+match the filter are sent to the client.
 
-In response to a +getdata+ message from the node, peers will send a
+In response to a +getdata+ message from the client, peers will send a
 +merkleblock+ message that contains only block headers for blocks
 matching the filter and a merkle path (see <<merkle_trees>>) for each
 matching transaction. The peer will then also send +tx+ messages
 containing the transactions matched by the filter.
 
-As the full node sends transactions to the SPV node, the SPV node
+As the full node sends transactions to the SPV client, the SPV client
 discards any false positives and uses the correctly matched transactions
 to update its UTXO set and wallet balance. As it updates its own view of
 the UTXO set, it also modifies the bloom filter to match any future
@@ -811,26 +809,26 @@ transactions referencing the UTXO it just found. The full node then uses
 the new bloom filter to match new transactions and the whole process
 repeats.
 
-The node setting the bloom filter can interactively add patterns to the
+The client setting the bloom filter can interactively add patterns to the
 filter by sending a +filteradd+ message. To clear the bloom filter, the
-node can send a +filterclear+ message. Because it is not possible to
-remove a pattern from a bloom filter, a node has to clear and resend a
+client can send a +filterclear+ message. Because it is not possible to
+remove a pattern from a bloom filter, a client has to clear and resend a
 new bloom filter if a pattern is no longer desired.
 
-The network protocol and bloom filter mechanism for SPV nodes is defined
+The network protocol and bloom filter mechanism for SPV clients is defined
 in http://bit.ly/1x6qCiO[BIP-37 (Peer Services)].((("",
 startref="BNebloom08")))((("", startref="bloom08")))
 
-=== SPV Nodes and Privacy
+=== SPV Clients and Privacy
 
-Nodes that implement SPV have weaker privacy than a full node. A full
+Clients that implement SPV have weaker privacy than a full node. A full
 node receives all transactions and therefore reveals no information
-about whether it is using some address in its wallet. An SPV node
+about whether it is using some address in its wallet. An SPV client
 receives a filtered list of transactions related to the addresses that
 are in its wallet. As a result, it reduces the privacy of the owner.
 
 Bloom filters are a way to reduce the loss of privacy. Without them, an
-SPV node would have to explicitly list the addresses it was interested
+SPV client would have to explicitly list the addresses it was interested
 in, creating a serious breach of privacy. However, even with bloom
 filters, an adversary monitoring the traffic of an SPV client or
 connected to it directly as a node in the P2P network can collect enough
@@ -844,7 +842,7 @@ connections")))((("encryption")))((("authentication")))Most new users of
 Bitcoin assume that the network communications of a Bitcoin node are
 encrypted. In fact, the original implementation of bitcoin communicates
 entirely in the clear. While this is not a major privacy concern for
-full nodes, it is a big problem for SPV nodes.
+full nodes, it is a big problem for SPV clients.
 
 As a way to increase the privacy and security of the Bitcoin P2P
 network, there are two solutions that provide encryption of the
