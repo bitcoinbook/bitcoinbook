@@ -833,6 +833,302 @@ For both of those reasons, Bitcoin Core eventually limited support for
 bloom filters to only clients on IP addresses that were explicitly
 allowed by the node operator.  This meant that an alternative method for
 helping SPV cients find their transactions was needed.
+
+=== Compact Block Filters
+
+// https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012636.html
+
+An idea was posted to the Bitcoin-Dev mailing list by an anonymous
+developer in 2016 of reversing the bloom filter process.  With a BIP37
+bloom filter, each client hashes their addresses to create a bloom
+filter and nodes hash parts of each transaction to attempt to match
+that filter.  In the new proposal, nodes hash parts of each transaction
+in a block to create a bloom filter and clients hash their addresses to
+attempt to match that filter.  If a client finds a match, they download
+the entire block.
+
+[NOTE]
+====
+Despite the similarities in names, BIP152 _compact blocks_ and
+BIP157/158 _compact block filters_ are unrelated
+====
+
+This allows nodes to create a single filter for every block, which they
+can save to disk and serve over and over, eliminating the
+denial-of-service vulnerabilities with BIP37.  Clients don't give full
+nodes any information about their past or future addresses.  They only
+download blocks, which may contain thousands of transactions that
+weren't created by the client.  They can even download each matching
+block from a different peer, making it harder for full nodes to connect
+transactions belonging to a single client across multiple blocks.
+
+This idea for server-generated filters doesn't offer perfect privacy and
+it still places some costs on full nodes (and it does require SPV
+clients use more bandwidth for the block download), but it is much more
+private and reliable than BIP37 client-requested bloom filters.
+
+After the description of the original idea based on bloom filters,
+developers realized there was a better data structure for
+server-generated filters, called Golomb-Rice Coded Sets (GCS).
+
+==== Golomb-Rice Coded Sets (GCS)
+
+Imagine that Alice wants to send a list of numbers to Bob.  The simple
+way to do that is to just send him the entire list of numbers:
+
+----
+849
+653
+476
+900
+379
+----
+
+But there's a more efficient way.  First, Alice puts the list in
+numerical order:
+
+----
+379
+476
+653
+849
+900
+----
+
+Then, Alice sends the first number.  For the remaining numbers, she
+sends the difference between that number and the preceding number.  For
+example, for the second number, she sends 97 (476 - 379); for the third
+number, she sends 177 (653 - 476); and so on:
+
+----
+379
+97
+177
+196
+51
+----
+
+We can see that the differences between two numbers in an ordered list
+produces numbers that are shorter than the original numbers.  Upon
+receiving this list, Bob can reconstruct the original list by simply
+adding each number with its predecessor.  That means we save space
+without losing any information, which is called _lossless encoding_.
+
+If we randomly select numbers within a fixed range of values, then the
+more numbers we select, the smaller the average (mean) size of the
+differences.  That means the amount of data we need to transfer doesn't
+increase as fast as the length of our list increases (up to a point).
+
+Even more usefully, the length of the randomly-selected numbers in a
+list of differences is naturally biased towards smaller lengths.
+Consider selecting two random numbers from 1 to 6; this is the same
+as rolling two dice.  There are 36 distinct combinations of two dice:
+
+[cols="1,1,1,1,1,1"]
+|===
+| 1 1 | 1 2 | 1 3 | 1 4 | 1 5 | 1 6
+| 2 1 | 2 2 | 2 3 | 2 4 | 2 5 | 2 6
+| 3 1 | 3 2 | 3 3 | 3 4 | 3 5 | 3 6
+| 4 1 | 4 2 | 4 3 | 4 4 | 4 5 | 4 6
+| 5 1 | 5 2 | 5 3 | 5 4 | 5 5 | 5 6
+| 6 1 | 6 2 | 6 3 | 6 4 | 6 5 | 6 6
+|===
+
+Let's find the difference between the larger of the numbers and the
+smaller of the numbers:
+
+[cols="1,1,1,1,1,1"]
+|===
+| 0 | 1 | 2 | 3 | 4 | 5 
+| 1 | 0 | 1 | 2 | 3 | 4
+| 2 | 1 | 0 | 1 | 2 | 3
+| 3 | 2 | 1 | 0 | 1 | 2
+| 4 | 3 | 2 | 1 | 0 | 1
+| 5 | 4 | 3 | 2 | 1 | 0 
+|===
+
+If we count the frequency of each difference occurring, we see that the
+small differences are much more likely to occur that the large
+differences:
+
+[cols="1,1"]
+|===
+| Difference | Occurrences
+| 0 | 6
+| 1 | 10
+| 2 | 8
+| 3 | 6
+| 4 | 4
+| 5 | 2
+|===
+
+If we know that we might need to store large numbers (because large
+differences can happen, even if they are rare) but we'll most often need
+to store small numbers, we can encode each number using a system that
+uses less space for small numbers and extra space for large numbers.
+On average, that system will perform better than using the same amount
+of space for every number.
+
+Golomb coding provides that facility.  Rice coding is a subset of Golomb
+coding that's more convenient to use in some situations, including the
+application of Bitcoin block filters.
+
+==== What data to include in a block filter
+
+Our primary goal is to allow wallets to learn whether a block contains a
+transaction affecting that wallet.  For a wallet to be effective, it
+needs to learn two types of information:
+
+1. When it has received money.  Specifically, when a transaction
+   output contains a scriptPubKey that the wallet controls (such as by
+   controlling the authorized private key).
+
+2. When it has spent money.  Specifically, when a transaction input
+   references a previous transaction output that the wallet controlled.
+
+A secondary goal during the design of compact block filters was to allow
+the wallet receiving the filter to verify that it received an accurate
+filter from a peer.  For example, if the wallet downloaded the block
+from which the filter was created, the wallet could generate its own
+filter.  It could then compare its filter to the peer's filter and
+verify that they were identical, proving the peer had generated an
+accurate filter.
+
+For both the primary and secondary goals to be met, a filter would need
+to reference two types of information:
+
+1. The scriptPubKey for every output in every transaction in a block.
+
+2. The outpoint for every input in every transaction in a block.
+
+An early design for compact block filters included both of those pieces
+of information, but it was realized that there was a more efficient way
+to accomplish the primary goal if we sacrificed the secondary goal.  In
+the new design, a block filter would still references two types of
+information, but they'd be more closely related:
+
+1. As before, the scriptPubKey for every output in every transaction in a
+block.
+
+2. In a change, it would also reference the scriptPubKey of the output
+referenced by the outpoint for every input in every transaction in a
+block.  In other words, the scriptPubKey being spent.
+
+This had several advantages.  First, it meant that wallets didn't need
+to track outpoints; they could instead just scan for the the
+scriptPubKeys to which they expected to receive money. Second, any time a
+later transaction in a block spends the output of an earlier
+transaction in the same block, they'll both reference the same
+scriptPubKey.  More than one reference to the same scriptPubKey is
+redundant in a compact block filter, so the redundant copies can be
+removed, shrinking the size of the filters.
+
+When full nodes validate a block, they need access to the scriptPubKeys
+for both the current transaction outputs in a block and the transaction
+outputs from previous blocks that are being referenced in inputs, so
+they're able to build compact block filters in this simplified model.
+But a block itself doesn't include the scriptPubKeys from transactions
+included in previous blocks, so there's no convenient way for a client
+to verify a block filter was built correctly.  However, there is an
+alternative that can help a client detect if a peer is lying to it:
+obtaining the same filter from multiple peers.
+
+==== Downloading block filters from multiple peers
+
+A peer can provide a wallet with an inaccurate filter.  There's two ways
+to create an inaccurate filter.  The peer can create a filter that
+references transactions that don't actually appear in the associated
+block (a false positive).  Alternatively, the peer can crate a filter
+that doesn't reference transactions that do actually appear in the
+associated block (a false negative).
+
+The first protection against an inaccurate filter is for a client to
+obtain a filter from multiple peers.  The BIP157 protocol allows a
+client to download just a short 32-byte commitment to a filter to
+determine whether each peer is advertising the same filter as all of the
+client's other peers.  That minimizes the amount of bandwidth the client
+must expend to query many different peers for their filters, if all of
+those peers agree.
+
+If two or more different peers have different filters for the same
+block, the client can download all of them.  It can then also download
+the associated block.  If the block contains any transaction related to
+the wallet that is not part of one of the filters, then the wallet can
+be sure that whichever peer created that filter was
+inaccurate--Golomb-Rice Coded Sets (GCSes) will always include a
+potential match.
+
+Alternatively, if the block doesn't contain a transaction that the
+filter said might match the wallet, that isn't proof that the filter was
+inaccurate.  To minimize the size of a GCS, we allow a certain number of
+false positives.  What the wallet can do is continue downloading
+additional filters from the peer, either randomly or when they indicate
+a match, and then track the client's false positive rate.  If it
+differs significantly from the false positive rate that filters were
+designed to use, the wallet can stop using that peer.  In most cases,
+the only consequence of the inaccurate filter is that the wallet uses
+more bandwidth than expected.
+
+==== Reducing bandwidth with lossy encoding
+
+The data about the transactions in a block that we want to communicate
+is a scriptPubKey.  ScriptPubKeys vary in length and follow patterns,
+which means the differences between them won't be evenly distributed
+like we want.  However, we've already seen in many places in this book
+that we can use a hash function to create a commitment to some data and
+also produce a value that looks like a randomly selected number.
+
+In other places in this book, we've used a cryptographically secure hash
+function that provides assurances about the strength of its commitment
+and how indistinguishable from random its output is.  However, there are
+faster and more configurable non-cryptographic hash functions, such as
+the SipHash function we'll use for compact block filters.
+
+The details of the algorithm used are described in BIP158, but the gist
+is that each scriptPubKey is reduced to a 64 bit commitment using
+SipHash and some arthritic operations.  You can think of this as
+taking a set of large numbers and truncating them to shorter numbers, a
+process that loses data (so it's called _lossy encoding_).  By losing
+some information, we don't need to store as much information later,
+which saves space.  In this case, we go from a typical scriptPubKey
+that's 160 bits or longer down to just 64 bits.
+
+==== Using compact block filters
+
+The 64 bit value for every commitment to a scriptPubKey in a block are
+sorted, duplicate entries are removed, and the GCS is constructed by
+finding the differences (deltas) between each entry.  That compact block
+filter is then distributed by peers to their clients (such as wallets).
+
+A client uses the deltas to reconstruct the original commitments.  The
+client such as a wallet also takes all the scriptPubKeys it is
+monitoring for and generates commitments in the same way as BIP158.  It
+checks whether any of its generated commitments match the commitments in
+the filter.
+
+Recall our example of the lossiness of compact block filters being
+similar to truncating a number.  Imagine a client is looking for a block
+that contains the number 123456 and that an an accurate (but lossy)
+compact block filter contains the number 1234.  When a client sees that
+1234, it will download the associated block.
+
+There's a 100% guarantee that an accurate filter containing 1234 will
+allow a client to learn about a block containing 123456, called a _true
+positive_.  However, there's also chance that the block might contain
+123400, 123401, or almost a hundred other entries that are not when the
+client is looking for (in this example), called a _false positive_.
+
+A 100% true positive match rate is great.  It means that a wallet can
+depend on compact block filters to find every transaction affecting that
+wallet.  A non-zero false positive rate means that the wallet will end
+up downloading some blocks that don't contain transactions interesting
+to the wallet.  The main consequence of this is that the client will use
+extra bandwidth, which is not a huge problem.  The actual
+false-positive rate for BIP158 compact block filters is very low, so
+it's not a major problem.  A false positive rate can also help improve a
+client's privacy, as it does with bloom filters, although anyone wanting
+the best possible privacy should still use their own full node.
+
 === SPV Clients and Privacy
 
 Clients that implement SPV have weaker privacy than a full node. A full
