@@ -616,10 +616,108 @@ In early 2017, testnet3 supports all the features of mainnet, including
 Segregated Witness (see <<segwit>>). Therefore, testnet3 can also be
 used to test Segregated Witness features.((("", startref="testnet09")))
 
+===== Problems With Testnet
 
+Testnet doesn't just use the same data structures as Bitcoin, it also
+uses almost exactly the same Proof-of-Work (PoW) security mechanism as
+Bitcoin.  The notable differences for testnet are that it's minimum
+difficulty is half that of Bitcoin and that it's allowed to include a
+block at the minimum difficulty if that block's timestamp is more than
+20 minutes after the previous block.
 
+Unfortunately, Bitcoin's PoW security mechanism was designed to depend
+on economic incentives--incentives which don't exist in a test
+blockchain that is forbidden from having value.  On mainnet, miners are
+incentivized to include user transactions in their blocks because those
+transactions pay fees.  On testnet, transactions still contain something
+called fees, but those fees don't have any economic value.  That means
+the only incentive for a testnet miner to include transactions is
+because they want to help users and developers to test their software.
 
+Alas, people who like to disrupt systems often feel a stronger
+incentive, at least in the short term.  Because PoW mining is designed
+to be permissionless, anyone can mine, whether their intention is good
+or not.  That means disruptive miners can create many blocks in a row on
+testnet without including any user transactions.  When those attacks
+happen, testnet becomes unusable for users and developers.
 
+==== Signet: The Proof of Authority Testnet
+
+There's no known way for a system dependent on permissionless PoW to
+provide a highly usable blockchain without introducing economic
+incentives, so Bitcoin protocol developers began considering
+alternatives.  The primary goal was to preserve as much of the structure of
+Bitcoin as possible so that software could run on a testnet with minimal
+changes---but to also provide an environment that would remain useful.
+A secondary goal was to produce a reusable design that would allow
+developers of new software to easily create their own test networks.
+
+The solution implemented in Bitcoin Core and other software is called
+_signet_, as defined by BIP325.  A signet is a test network where each
+block must contain proof (such as a signature) that the creation of that
+block was sanctioned by a trusted authority.
+
+Whereas mining in Bitcoin is permissionless--anyone can do it--mining on
+signet is fully permissioned.  Only those with permission can do it.
+This would be a completely unacceptable change to Bitcoin's mainnet--no
+user would accept it--but it's acceptable on a testnet where coins have
+no value and the only purpose is testing software and systems.
+
+BIP325 signets are designed to make it very easy to create your own.  If
+you disagree with how someone else is running their signet, you can
+start your own signet and connect your software to it.
+
+===== The Default Signet and Custom Signets
+
+Bitcoin Core supports a default signet, which we believe to be the most
+widely used signet at the time of writing.  It is currently operated by
+two contributors to that project.  If you start Bitcoin Core with the
++-signet+ parameter and no other signet-related parameters, this is the
+signet you will be using.
+
+As of this writing, the default signet has about 150,000 blocks and is
+about a gigabyte in size.  It supports all of the same features as
+Bitcoin's mainnet and is also used for testing proposed upgrades through
+the Bitcoin Inquisition project, which is a software fork of Bitcoin
+Core that's only designed to run on signet.
+
+If you want to use a different signet, called a _custom signet_, you
+will need to know the script used to determine when a block is
+authorized, called the _challenge_ script.  This is a standard Bitcoin
+script, so it can use features such as multisig to allow multiple people
+to authorize blocks.  You may also need to connect to a seed node that
+will provide you with the addresses of peers on the custom signet.  For
+example:
+
+----
+bitcoind -signet -signetchallenge=0123...cdef -signetseednode=example.com:1234
+----
+
+As of this writing, we generally recommend that the public testing of
+mining software occur on testnet3 and that all other public testing of
+Bitcoin software occur on the default signet.
+
+To interact with your chosen signet, you can use the +-signet+ parameter
+with +bitcoin-cli+, similar to how you used testnet.  For example:
+
+----
+$ bitcoin-cli -signet getblockchaininfo
+{
+  "chain": "signet",
+  "blocks": 143619,
+  "headers": 143619,
+  "bestblockhash": "000000c46cb3505ddd29653720686b6a3565ad1c5768e2908439382447572a93",
+  "difficulty": 0.003020638517858618,
+  "time": 1684530244,
+  "mediantime": 1684526116,
+  "verificationprogress": 0.999997961940662,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000000000000000019ab37d2194",
+  "size_on_disk": 769525915,
+  "pruned": false,
+  "warnings": ""
+}
+----
 
 ==== Regtest&#x2014;The Local Blockchain
 
