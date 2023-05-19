@@ -488,33 +488,33 @@ bytes. With merkle trees, a node can download just the block headers (80
 bytes per block) and still be able to identify a transaction's inclusion
 in a block by retrieving a small merkle path from a full node, without
 storing or transmitting the vast majority of the blockchain, which might
-be several gigabytes in size. Nodes that do not maintain a full
-blockchain, called simplified payment verification (SPV) nodes, use
+be several gigabytes in size. Clients that do not maintain a full
+blockchain, called simplified payment verification (SPV) client, use
 merkle paths to verify transactions without downloading full blocks.
 
 === Merkle Trees and Simplified Payment Verification (SPV)
 
 ((("simple-payment-verification (SPV)")))((("bitcoin nodes", "SPV
-nodes")))Merkle trees are used extensively by SPV nodes. SPV nodes don't
+clients")))Merkle trees are used extensively by SPV clients. SPV clients don't
 have all transactions and do not download full blocks, just block
 headers. In order to verify that a transaction is included in a block,
 without having to download all the transactions in the block, they use
 an authentication path, or merkle path.
 
-Consider, for example, an SPV node that is interested in incoming
-payments to an address contained in its wallet. The SPV node will
+Consider, for example, an SPV client that is interested in incoming
+payments to an address contained in its wallet. The SPV client will
 establish a bloom filter (see <<bloom_filters>>) on its connections to
 peers to limit the transactions received to only those containing
 addresses of interest. When a peer sees a transaction that matches the
 bloom filter, it will send that block using a +merkleblock+ message. The
 +merkleblock+ message contains the block header as well as a merkle path
 that links the transaction of interest to the merkle root in the block.
-The SPV node can use this merkle path to connect the transaction to the
+The SPV client can use this merkle path to connect the transaction to the
 block and verify that the transaction is included in the block. The SPV
-node also uses the block header to link the block to the rest of the
+client also uses the block header to link the block to the rest of the
 blockchain. The combination of these two links, between the transaction
 and block, and between the block and blockchain, proves that the
-transaction is recorded in the blockchain. All in all, the SPV node will
+transaction is recorded in the blockchain. All in all, the SPV client will
 have received less than a kilobyte of data for the block header and
 merkle path, an amount of data that is more than a thousand times less
 than a full block (about 1 megabyte currently).((("",
