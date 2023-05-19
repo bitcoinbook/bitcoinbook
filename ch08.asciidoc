@@ -611,10 +611,19 @@ using a single +headers+ message.  See the illustration in
 .SPV client synchronizing the block headers
 image::images/mbc2_0807.png["SPVSynchronization"]
 
+Block headers allow an SPV client to verify that any individual block
+belongs to the blockchain with the most proof of work, but they don't
+tell the client which blocks contain transactions that are interesting to
+its wallet.  The client could download every block and check, but that
+would use a large fraction of the resources it would take to run a full
+node, so developers have looked for other ways to solve the problem.
+
 Shortly after the introduction of SPV/lightweight clients, Bitcoin
-developers added a feature called _bloom filters_ to address the privacy
-risks of SPV clients. Bloom filters allow SPV clients to receive a subset of
-the transactions without revealing precisely which addresses they are
+developers added a feature called _bloom filters_ in an attempt to 
+reduce the bandwdith that SPV clients needed to use to learn about their
+incoming and outgoing transactions.
+Bloom filters allow SPV clients to receive a subset of
+the transactions without directloy revealing precisely which addresses they are
 interested in, through a filtering mechanism that uses probabilities
 rather than fixed patterns.((("", startref="BNspvnodes08")))((("",
 startref="simple08")))
@@ -748,7 +757,7 @@ image::images/mbc2_0812.png[]
 
 Bloom filters are used to filter the transactions (and blocks containing
 them) that an SPV client receives from its peers, selecting only
-transactions of interest to the SPV client without revealing which
+transactions of interest to the SPV client without revealing exactly which
 addresses or keys it is interested in.
 
 ((("transaction IDs (txid)")))An SPV client will initialize a bloom filter
@@ -804,6 +813,26 @@ The network protocol and bloom filter mechanism for SPV clients is defined
 in http://bit.ly/1x6qCiO[BIP-37 (Peer Services)].((("",
 startref="BNebloom08")))((("", startref="bloom08")))
 
+Unfortunately, after the deployment of bloom filters, it became clear
+that they didn't offer very much privacy.  A full node receiving a bloom
+filter from a peer could apply that filter to the entire blockchain to
+find all of the client's transactions (plus false positives).  It could
+then look for patterns and relationships between the transactions.
+Randomly-selected false positive transactions would be unlikely to have
+a parent-child relationship from output to input, but transactions from
+the user's wallet would be very likely to have that relationship.  If
+all of the related tranactions have certain characteristics, such as
+at least one P2PKH output, then transactions without that characteristic
+can be assumed not to belong to the wallet.
+
+It was also discovered that specially-constructed filters could force
+the full nodes that processed them to perform a large amount of work,
+which could lead to denial-of-service attacks.
+
+For both of those reasons, Bitcoin Core eventually limited support for
+bloom filters to only clients on IP addresses that were explicitly
+allowed by the node operator.  This meant that an alternative method for
+helping SPV cients find their transactions was needed.
 === SPV Clients and Privacy
 
 Clients that implement SPV have weaker privacy than a full node. A full
