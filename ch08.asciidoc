@@ -555,23 +555,22 @@ a dozen other "23 Church Street" addresses in the city and whether this
 is the right one. The mapless tourist's best chance is to ask enough
 people and hope some of them are not trying to mug him.
 
-SPV verifies transactions by reference to their _depth_ in the blockchain instead of their _height_. Whereas a full blockchain node will construct a fully verified chain of thousands of blocks and transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the chain of all blocks (but not all transactions) and link that chain to the transaction of interest.
+SPV verifies transactions by reference to their _depth_ in the blockchain instead of their _height_. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
 
-For example, when examining a transaction in block 300,000, a full node
-links all 300,000 blocks down to the genesis block and builds a full
-database of UTXO, establishing the validity of the transaction by
-confirming that the UTXO remains unspent. An SPV node cannot validate
-whether the UTXO is unspent. Instead, the SPV node will establish a link
+For example, when examining a transaction in block 800,000, a full node
+verifies all 800,000 blocks down to the genesis block and builds a full
+database of UTXOs, establishing the validity of the transaction by
+confirming that the transaction exists and its output remains unspent. A SPV client can
+only verify that the transaction exists. The client establishes a link
 between the transaction and the block that contains it, using a _merkle
 path_ (see <<merkle_trees>>). Then, the SPV client waits until it sees the
-six blocks 300,001 through 300,006 piled on top of the block containing
+six blocks 800,001 through 800,006 piled on top of the block containing
 the transaction and verifies it by establishing its depth under blocks
-300,006 to 300,001. The fact that other nodes on the network accepted
-block 300,000 and then did the necessary work to produce six more blocks
-on top of it is proof, by proxy, that the transaction was not a
-double-spend.
+800,006 to 800,001. The fact that other nodes on the network accepted
+block 800,000 and that miners did the necessary work to produce six more blocks
+on top of it is proof, by proxy, that the transaction actually exists.
 
-An SPV client cannot be persuaded that a transaction exists in a block
+An SPV client cannot normally be persuaded that a transaction exists in a block
 when the transaction does not in fact exist. The SPV client establishes
 the existence of a transaction in a block by requesting a merkle path
 proof and by validating the Proof-of-Work in the chain of blocks.
@@ -588,37 +587,25 @@ network partitioning attacks or Sybil attacks, where they are connected
 to fake nodes or fake networks and do not have access to honest nodes or
 the real Bitcoin network.
 
-For most practical purposes, well-connected SPV clients are secure enough,
+For many practical purposes, well-connected SPV clients are secure enough,
 striking a balance between resource needs, practicality, and security.
 For infallible security, however, nothing beats running a full
-blockchain node.
+node.
 
 [TIP]
 ====
-A full blockchain node verifies a transaction by checking the entire
-chain of thousands of blocks below it in order to guarantee that the
-UTXO is not spent, whereas an SPV client checks how deep the block is
+A full node verifies a transaction by checking the entire chain of
+thousands of blocks below it in order to guarantee that the UTXO exists
+and is not spent, whereas an SPV client only proves that a transaction
+exists and checks how deep the block containing that transaction is
 buried by a handful of blocks above it.
 ====
 
-To get the block headers, SPV clients use a +getheaders+ message instead
-of +getblocks+. The responding peer will send up to 2,000 block headers
-using a single +headers+ message. The process is otherwise the same as
-that used by a full node to retrieve full blocks. SPV clients also set a
-filter on the connection to peers, to filter the stream of future blocks
-and transactions sent by the peers. Any transactions of interest are
-retrieved using a +getdata+ request. The peer generates a +tx+ message
-containing the transactions, in response. <<spv_synchronization>> shows
-the synchronization of block headers.
-
-Because SPV clients need to retrieve specific transactions in order to
-selectively verify them, they also create a privacy risk. Unlike full
-blockchain nodes, which collect all transactions within each block, the
-SPV client's requests for specific data can inadvertently reveal the
-addresses in their wallet. For example, a third party monitoring a
-network could keep track of all the transactions requested by a wallet
-on an SPV client and use those to associate Bitcoin addresses with the
-user of that wallet, destroying the user's privacy.
+To get the block headers it needs to verify a transaction is part of the
+chain, SPV clients use a +getheaders+ message.
+The responding peer will send up to 2,000 block headers
+using a single +headers+ message.  See the illustration in
+<<spv_synchronization>>.
 
 [[spv_synchronization]]
 .SPV client synchronizing the block headers
