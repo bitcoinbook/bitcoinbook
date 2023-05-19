@@ -1188,20 +1188,20 @@ You can find more instructions on running Bitcoin Core as a Tor hidden
 service in the Bitcoin Core documentation (_docs/tor.md_) and various
 online tutorials.
 
-
-=== Transaction Pools
+[[mempool]]
+=== Mempools and orphan pools
 
 ((("Bitcoin network", "transaction pools")))((("transaction
 pools")))((("memory pools (mempools)")))Almost every node on the Bitcoin
 network maintains a temporary list of unconfirmed transactions called
-the _memory pool_, _mempool_, or _transaction pool_. Nodes use this pool
+the _memory pool_ (_mempool_). Nodes use this pool
 to keep track of transactions that are known to the network but are not
 yet included in the blockchain. For example, a wallet node will use the
-transaction pool to track incoming payments to the user's wallet that
+mempool to track incoming payments to the user's wallet that
 have been received on the network but are not yet confirmed.
 
 As transactions are received and verified, they are added to the
-transaction pool and relayed to the neighboring nodes to propagate on
+mempool and relayed to the neighboring nodes to propagate on
 the network.
 
 ((("orphan pools")))((("transactions", "orphaned")))Some node
@@ -1210,10 +1210,10 @@ If a transaction's inputs refer to a transaction that is not yet known,
 such as a missing parent, the orphan transaction will be stored
 temporarily in the orphan pool until the parent transaction arrives.
 
-When a transaction is added to the transaction pool, the orphan pool is
+When a transaction is added to the mempool, the orphan pool is
 checked for any orphans that reference this transaction's outputs (its
 children). Any matching orphans are then validated. If valid, they are
-removed from the orphan pool and added to the transaction pool,
+removed from the orphan pool and added to the mempool,
 completing the chain that started with the parent transaction. In light
 of the newly added transaction, which is no longer an orphan, the
 process is repeated recursively looking for any further descendants,
@@ -1222,26 +1222,25 @@ of a parent transaction triggers a cascade reconstruction of an entire
 chain of interdependent transactions by re-uniting the orphans with
 their parents all the way down the chain.
 
-Both the transaction pool and orphan pool (where implemented) are stored
+Both the mempool and orphan pool (where implemented) are stored
 in local memory and are not saved on persistent storage; rather, they
 are dynamically populated from incoming network messages. When a node
 starts, both pools are empty and are gradually populated with new
 transactions received on the network.
 
-Some implementations of the Bitcoin client also maintain an UTXO
-database or pool, which is the set of all unspent outputs on the
-blockchain. Although the name "UTXO pool" sounds similar to the
-transaction pool, it represents a different set of data. Unlike the
-transaction and orphan pools, the UTXO pool is not initialized empty but
-instead contains millions of entries of unspent transaction outputs,
+Some implementations of the Bitcoin also maintain an UTXO
+database, which is the set of all unspent outputs on the
+blockchain. This represents a different set of data from the mempool. Unlike the
+mempool and orphan pools, the UTXO database
+contains millions of entries of unspent transaction outputs,
 everything that is unspent from all the way back to the genesis block.
-The UTXO pool may be housed in local memory or as an indexed database
+The UTXO database is stored as a
 table on persistent storage.
 
-Whereas the transaction and orphan pools represent a single node's local
+Whereas the mempool and orphan pools represent a single node's local
 perspective and might vary significantly from node to node depending
-upon when the node was started or restarted, the UTXO pool represents
+upon when the node was started or restarted, the UTXO database represents
 the emergent consensus of the network and therefore will vary little
-between nodes. Furthermore, the transaction and orphan pools only
-contain unconfirmed transactions, while the UTXO pool only contains
+between nodes. Furthermore, the mempool and orphan pools only
+contain unconfirmed transactions, while the UTXO database only contains
 confirmed outputs.
