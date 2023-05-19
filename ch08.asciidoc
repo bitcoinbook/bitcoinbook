@@ -5,7 +5,7 @@
 (P2P)")))Bitcoin is structured as a peer-to-peer network architecture on
 top of the internet. The term peer-to-peer, or P2P, means that the
 full nodes which participate in the network are peers to each other, that
-they can all equal, and that there are no "special" nodes.
+they can all perform the same functions, and that there are no "special" nodes.
 The network nodes
 interconnect in a mesh network with a "flat" topology. There is no
 server, no centralized service, and no hierarchy within the network.
@@ -44,20 +44,17 @@ protocols in this chapter in addition to the base Bitcoin P2P protocol.
 id="BNnode08")))((("Bitcoin nodes", "types and roles",
 id="BNtype08")))Although full nodes (peers) in the Bitcoin P2P network are equal to each other,
 they may take on different roles depending on the functionality they are
-supporting. A Bitcoin node is a collection of several functions: validation,
-routing, mining, and wallet services.
-
-All full nodes include the validation function and
-might include other functionality.
+supporting. A Bitcoin full node validates blocks and may contain other
+functions, such as routing, mining, and wallet services.
 
 Some nodes, called _archival full nodes_, also maintain a
 complete and up-to-date copy of the blockchain. Full nodes can
 autonomously and authoritatively verify any transaction without external
 reference. ((("simple-payment-verification (SPV)")))  Those nodes can
-serve data to clients that stor
+serve data to clients that store
 only a subset of the blockchain and verify transactions using a method
 called _simplified payment verification_, or SPV. ((("lightweight
-clients")))These nodes are known as lightweight clients.
+clients")))These clients are known as lightweight clients or SPV clients.
 
 ((("Bitcoin nodes", "mining nodes")))((("mining and consensus", "mining
 nodes")))((("Proof-of-Work algorithm")))((("mining and consensus",
@@ -99,7 +96,6 @@ servers and protocol gateways that connect nodes running other
 protocols. These other protocol nodes are mostly pool mining nodes (see
 <<mining>>) and lightweight wallet clients, which do not carry a full
 copy of the blockchain.
-
 
 === Compact Block Relay
 
@@ -302,7 +298,7 @@ acknowledge the +version+ message and establish a connection by sending
 a +verack+.
 
 How does a new node find peers? The first method is to query DNS using a
-number of "DNS seeds," which are DNS servers that provide a list of IP
+number of _DNS seeds_, which are DNS servers that provide a list of IP
 addresses of Bitcoin nodes. Some of those DNS seeds provide a static
 list of IP addresses of stable Bitcoin listening nodes. Some of the DNS
 seeds are custom implementations of BIND (Berkeley Internet Name Daemon)
@@ -434,7 +430,7 @@ startref="BNextend08")))((("", startref="BNodiscover08")))
 === Full Nodes
 
 Full nodes are nodes that verify every transaction in every block on the
-valid block chain with the most proof of work.
+valid blockchain with the most proof of work.
 
 ((("blocks", "genesis block")))((("genesis block")))((("blockchain
 (the)", "genesis block")))Full nodes
@@ -445,7 +441,7 @@ verify any transaction without recourse or reliance on any other node or
 source of information. The full node relies on the network to
 receive updates about new blocks of transactions, which it then verifies
 and incorporates into its local view of which scripts control which
-Bitcoins, called the set of _unspent transaction outputs_ (UTXOs).
+bitcoins, called the set of _unspent transaction outputs_ (UTXOs).
 
 ((("Bitcoin nodes", "full nodes")))Running a full node gives
 you the pure Bitcoin experience: independent verification of all
@@ -501,7 +497,7 @@ will then receive an +headers+ message from its peers containing the headers
 of the next 2,000 blocks in the chain. It will start requesting blocks
 from all of its connected peers, keeping a queue of up to 1,024 blocks.
 Blocks need to be validated in order, so if the oldest block in the
-queue--the block the node next needs to validate--hasn't been received 
+queue--the block the node next needs to validate--hasn't been received
 yet, the node drops the connection to the peer that was supposed to
 provide that block.  It then finds a new peer that may be able to
 provide one block before all of the node's other peers are able to
@@ -514,13 +510,7 @@ process continues until the node catches up to the rest of the network.
 
 This process of comparing the local blockchain with the peers and
 retrieving any missing blocks happens any time a node goes offline for
-an extended period of time. 
-
-//FIXME?
-//[[inventory_synchronization]]
-//[role="smallerfifty"]
-//.Node synchronizing the blockchain by retrieving blocks from a peer
-//image::images/mbc2_0806.png["InventorySynchronization"]
+an extended period of time.
 
 [[spv_nodes]]
 === Simplified Payment Verification (SPV) Nodes
@@ -619,11 +609,11 @@ would use a large fraction of the resources it would take to run a full
 node, so developers have looked for other ways to solve the problem.
 
 Shortly after the introduction of SPV/lightweight clients, Bitcoin
-developers added a feature called _bloom filters_ in an attempt to 
+developers added a feature called _bloom filters_ in an attempt to
 reduce the bandwdith that SPV clients needed to use to learn about their
 incoming and outgoing transactions.
 Bloom filters allow SPV clients to receive a subset of
-the transactions without directloy revealing precisely which addresses they are
+the transactions without directly revealing precisely which addresses they are
 interested in, through a filtering mechanism that uses probabilities
 rather than fixed patterns.((("", startref="BNspvnodes08")))((("",
 startref="simple08")))
@@ -821,7 +811,7 @@ then look for patterns and relationships between the transactions.
 Randomly-selected false positive transactions would be unlikely to have
 a parent-child relationship from output to input, but transactions from
 the user's wallet would be very likely to have that relationship.  If
-all of the related tranactions have certain characteristics, such as
+all of the related transactions have certain characteristics, such as
 at least one P2PKH output, then transactions without that characteristic
 can be assumed not to belong to the wallet.
 
@@ -832,7 +822,7 @@ which could lead to denial-of-service attacks.
 For both of those reasons, Bitcoin Core eventually limited support for
 bloom filters to only clients on IP addresses that were explicitly
 allowed by the node operator.  This meant that an alternative method for
-helping SPV cients find their transactions was needed.
+helping SPV clients find their transactions was needed.
 
 === Compact Block Filters
 
@@ -939,12 +929,12 @@ smaller of the numbers:
 
 [cols="1,1,1,1,1,1"]
 |===
-| 0 | 1 | 2 | 3 | 4 | 5 
+| 0 | 1 | 2 | 3 | 4 | 5
 | 1 | 0 | 1 | 2 | 3 | 4
 | 2 | 1 | 0 | 1 | 2 | 3
 | 3 | 2 | 1 | 0 | 1 | 2
 | 4 | 3 | 2 | 1 | 0 | 1
-| 5 | 4 | 3 | 2 | 1 | 0 
+| 5 | 4 | 3 | 2 | 1 | 0
 |===
 
 If we count the frequency of each difference occurring, we see that the
