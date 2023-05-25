@@ -394,83 +394,41 @@ relays new transactions just like any other node. Unlike other nodes,
 however, Jing's node will then aggregate these transactions into a
 _candidate block_.
 
-Let's follow the blocks that were created during the time Alice bought a
-cup of coffee from Bob's Cafe (see <<spending_bitcoin>>). Alice's
-transaction was included in block 277,316. For the purpose of
+Let's follow the blocks that were created during the time Alice made a
+purchase from Bob (see <<spending_bitcoin>>). Alice's
+transaction was included in a block. For the purpose of
 demonstrating the concepts in this chapter, let's assume that block was
 mined by Jing's mining system and follows Alice's transaction as it
 becomes part of this new block.
 
 Jing's mining node maintains a local copy of the blockchain. By the time
 ((("use cases", "buying coffee")))Alice buys the cup of coffee, Jing's
-node has assembled a chain up to block 277,314. Jing's node is listening
+node has assembled the chain of blocks with the most proof-of-work. Jing's node is listening
 for transactions, trying to mine a new block and also listening for
 blocks discovered by other nodes. As Jing's node is mining, it receives
-block 277,315 through the Bitcoin network. The arrival of this block
-signifies the end of the competition for block 277,315 and the beginning
-of the competition to create block 277,316.
+a new block through the Bitcoin network. The arrival of this block
+signifies the end of the competition for that block and the beginning
+of the competition to create the next block.
 
-During the previous 10 minutes, while Jing's node was searching for a
-solution to block 277,315, it was also collecting transactions in
-preparation for the next block. By now it has collected a few hundred
-transactions in the memory pool. Upon receiving block 277,315 and
+During the previous several minutes, while Jing's node was searching for a
+solution to the previous block, it was also collecting transactions in
+preparation for the next block. By now it has collected a few thousand
+transactions in the memory pool. Upon receiving the new block and
 validating it, Jing's node will also compare it against all the
 transactions in the memory pool and remove any that were included in
-block 277,315. Whatever transactions remain in the memory pool are
+block that block. Whatever transactions remain in the memory pool are
 unconfirmed and are waiting to be recorded in a new block.
 
 ((("Proof-of-Work algorithm")))((("mining and consensus", "Proof-of-Work
-algorithm")))Jing's node immediately constructs a new empty block, a
-candidate for block 277,316. This block is called a _candidate block_
+algorithm")))Jing's node immediately constructs a new partial block, a
+candidate for the next block. This block is called a _candidate block_
 because it is not yet a valid block, as it does not contain a valid
-Proof-of-Work. The block becomes valid only if the miner succeeds in
-finding a solution to the Proof-of-Work algorithm.
+proof-of-work. The block becomes valid only if the miner succeeds in
+finding a solution according to the proof-of-work algorithm.
 
 When Jing's node aggregates all the transactions from the memory pool,
-the new candidate block has 418 transactions with total transaction fees
-of 0.09094928 bitcoin. You can see this block in the blockchain using
-the Bitcoin Core client command-line interface, as shown in
-<<block277316>>.
-
-[[block277316]]
-.Using the command line to retrieve block 277,316
-====
-[source,bash]
-----
-$ bitcoin-cli getblockhash 277316
-
-0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
-
-$ bitcoin-cli getblock 0000000000000001b6b9a13b095e96db41c4a928b97ef2d9\
-44a9b31b2cc7bdc4
-----
-
-
-[source,json]
-----
-{
-    "hash" : "0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4",
-    "confirmations" : 35561,
-    "size" : 218629,
-    "height" : 277316,
-    "version" : 2,
-    "merkleroot" : "c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e",
-    "tx" : [
-        "d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f",
-        "b268b45c59b39d759614757718b9918caf0ba9d97c56f3b91956ff877c503fbe",
-
-        ... 417 more transactions ...
-
-       ],
-    "time" : 1388185914,
-    "nonce" : 924591752,
-    "bits" : "1903a30c",
-    "difficulty" : 1180923195.25802612,
-    "chainwork" : "000000000000000000000000000000000000000000000934695e92aaf53afa1a",
-    "previousblockhash" : "0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569"
-}
-----
-====
+the new candidate block has several thousand transactions that pays him
+their total transaction fees.
 
 ==== The Coinbase Transaction
 
@@ -480,88 +438,37 @@ block is a special transaction, called a _coinbase transaction_. This
 transaction is constructed by Jing's node and contains his _reward_ for
 the mining effort.
 
-[NOTE]
-====
-When block 277,316 was mined, the reward was 25 bitcoin per block. Since
-then, one "halving" period has elapsed. The block reward changed to 12.5
-bitcoin in July 2016. It will be halved again in 210,000 blocks, in the
-year 2020.
-====
-
 Jing's node creates the coinbase transaction as a payment to his own
-wallet: "Pay Jing's address 25.09094928 bitcoin." The total amount of
+wallet. The total amount of
 reward that Jing collects for mining a block is the sum of the coinbase
-reward (25 new bitcoin) and the transaction fees (0.09094928) from all
-the transactions included in the block as shown in
-<<generation_tx_example>>.
-
-
-[[generation_tx_example]]
-.Coinbase transaction
-====
-----
-$ bitcoin-cli getrawtransaction d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f 1
-----
-
-[source,json]
-[role="c_less_space"]
-----
-{
-    "hex" : "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0f03443b0403858402062f503253482fffffffff0110c08d9500000000232102aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21ac00000000",
-    "txid" : "d5ada064c6417ca25c4308bd158c34b77e1c0eca2a73cda16c737e7424afba2f",
-    "version" : 1,
-    "locktime" : 0,
-    "vin" : [
-        {
-            "coinbase" : "03443b0403858402062f503253482f",
-            "sequence" : 4294967295
-        }
-    ],
-    "vout" : [
-        {
-            "value" : 25.09094928,
-            "n" : 0,
-            "scriptPubKey" : {
-                "asm" : "02aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21OP_CHECKSIG",
-                "hex" : "2102aa970c592640d19de03ff6f329d6fd2eecb023263b9ba5d1b81c29b523da8b21ac",
-                "reqSigs" : 1,
-                "type" : "pubkey",
-                "addresses" : [
-                    "1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N"
-                ]
-            }
-        }
-    ]
-}
-----
-====
+reward (6.25 new bitcoin in 2023) and the transaction fees from all
+the transactions included in the block.
 
 Unlike regular transactions, the coinbase transaction does not consume
 (spend) UTXO as inputs. Instead, it has only one input, called the
 _coinbase_, which creates bitcoin from nothing. The coinbase transaction
-has one output, payable to the miner's own Bitcoin address. The output
-of the coinbase transaction sends the value of 25.09094928 bitcoin to
-the miner's Bitcoin address; in this case it is
-+1MxTkeEP2PmHSMze5tUZ1hAV3YTKu2Gh1N+.
+must have at least one output and may have as many outputs as will fit
+in the block.  It's common for coinbase transactions in 2023 to have two
+outputs: one of these is a zero-value output that uses +OP_RETURN+ to
+commit to all of the witnesses for segregated witness (segwit)
+transactions in the block.  The other output pays the miner their
+reward.
 
 ==== Coinbase Reward and Fees
 
 ((("coinbase transactions", "rewards and fees")))((("fees", "transaction
 fees")))((("mining and consensus", "rewards and fees")))To construct the
 coinbase transaction, Jing's node first calculates the total amount of
-transaction fees by adding all the inputs and outputs of the 418
+transaction fees by adding all the inputs and outputs of the
 transactions that were added to the block. The fees are calculated as:
 
 ----
 Total Fees = Sum(Inputs) - Sum(Outputs)
 ----
 
-In block 277,316, the total transaction fees are 0.09094928 bitcoin.
-
 Next, Jing's node calculates the correct reward for the new block. The
 reward is calculated based on the block height, starting at 50 bitcoin
-per block and reduced by half every 210,000 blocks. Because this block
-is at height 277,316, the correct reward is 25 bitcoin.
+per block and reduced by half every 210,000 blocks.
 
 The calculation can be seen in function +GetBlockSubsidy+ in the Bitcoin
 Core client, as shown in <<getblocksubsidy_source>>.
@@ -593,8 +500,7 @@ The initial subsidy is calculated in satoshis by multiplying 50 with the
 
 ((("halvings")))Next, the function calculates the number of +halvings+
 that have occurred by dividing the current block height by the halving
-interval (+SubsidyHalvingInterval+). In the case of block 277,316, with
-a halving interval every 210,000 blocks, the result is 1 halving.
+interval (+SubsidyHalvingInterval+).
 
 The maximum number of halvings allowed is 64, so the code imposes a zero
 reward (returns only the fees) if the 64 halvings is exceeded.
@@ -624,9 +530,9 @@ only gets to spend the reward if the block is accepted by everyone.
 
 ((("coinbase transactions", "structure of")))With these calculations,
 Jing's node then constructs the coinbase transaction to pay himself
-25.09094928 bitcoin.
+the block reward.
 
-As you can see in <<generation_tx_example>>, the coinbase transaction
+The coinbase transaction
 has a special format. Instead of a transaction input specifying a
 previous UTXO to spend, it has a "coinbase" input. We examined
 transaction inputs in <<inputs>>. Let's compare a regular transaction
@@ -685,37 +591,6 @@ The first few bytes of the coinbase used to be arbitrary, but that is no
 longer the case. As per BIP34, version-2 blocks (blocks with the
 version field set to 2) must contain the block height index as a script
 "push" operation in the beginning of the coinbase field.
-
-In block 277,316 we see that the coinbase (see
-<<generation_tx_example>>), which is in the unlocking script or
-+scriptSig+ field of the transaction input, contains the hexadecimal
-value +03443b0403858402062f503253482f+. Let's decode this value.
-
-The first byte, +03+, instructs the script execution engine to push the
-next three bytes onto the script stack (see
-<<tx_script_ops_table_pushdata>>). The next three bytes, +0x443b04+, are
-the block height encoded in little-endian format (backward,
-least-significant byte first). Reverse the order of the bytes and the
-result is +0x043b44+, which is 277,316 in decimal.
-
-The next few hexadecimal digits (+0385840206+) are used to encode an
-extra _nonce_ (see <<extra_nonce>>), or random value, used to find a
-suitable Proof-of-Work solution.
-
-((("bitcoin improvement proposals", "Pay to Script Hash
-(BIP16)")))((("bitcoin improvement proposals", "CHECKHASHVERIFY
-(BIP17)")))((("CHECKHASHVERIFY (CHV)")))((("Pay-to-Script-Hash (P2SH)",
-"coinbase data")))The final part of the coinbase data (+2f503253482f+)
-is the ASCII-encoded string pass:[<span
-class="keep-together"><code>/P2SH/</code></span>], which indicates that
-the mining node that mined this block supports the P2SH improvement
-defined in BIP16. The introduction of the P2SH capability required
-signaling by miners to endorse either BIP16 or BIP17. Those endorsing
-the BIP16 implementation were to include +/P2SH/+ in their coinbase
-data. Those endorsing the BIP17 implementation of P2SH were to include
-the string +p2sh/CHV+ in their coinbase data. The BIP16 was elected as
-the winner, and many miners continued including the string +/P2SH/+ in
-their coinbase to indicate support for this feature.
 
 <<satoshi_words>> uses the libbitcoin library introduced in
 <<alt_libraries>> to extract the coinbase data from the genesis block,
@@ -793,14 +668,9 @@ read its documentation to determine how it is using VersionBits.
 
 ((("blocks", "parent blocks")))((("parent blocks")))Next, the mining
 node needs to add the "Previous Block Hash" (also known as +prevhash+).
-That is the hash of the block header of block 277,315, the previous
-block received from the network, which Jing's node has accepted and
-selected as the _parent_ of the candidate block 277,316. The block
-header hash for block 277,315 is:
-
-----
-0000000000000002a7bbd25a417c0374cc55261021e8a9ca74442b01284f0569
-----
+That is the hash of the block header of the previous block
+received from the network, which Jing's node has accepted and
+selected as the _parent_ of his candidate block.
 
 [TIP]
 ====
@@ -814,25 +684,20 @@ longest-difficulty valid chain.
 ((("merkle trees")))((("blockchain (the)", "merkle trees")))The next
 step is to summarize all the transactions with a merkle tree, in order
 to add the merkle root to the block header. The coinbase transaction is
-listed as the first transaction in the block. Then, 418 more
-transactions are added after it, for a total of 419 transactions in the
-block. As we saw in the <<merkle_trees>>, there must be an even number
-of "leaf" nodes in the tree, so the last transaction is duplicated,
-creating 420 nodes, each containing the hash of one transaction. The
+listed as the first transaction in the block. Then, the user-generated
+transactions are added after it.
+As we saw in the <<merkle_trees>>, there must be an even number
+of "leaf" nodes in the tree, so the last transaction is duplicated if
+necessary, creating nodes that each containing the hash of one transaction. The
 transaction hashes are then combined, in pairs, creating each level of
 the tree, until all the transactions are summarized into one node at the
 "root" of the tree. The root of the merkle tree summarizes all the
-transactions into a single 32-byte value, which you can see listed as
-"merkle root" in <<block277316>>, and here:
-
-----
-c91c008c26e50763e9f548bb8b2fc323735f73577effbc55502c51eb4cc7cf2e
-----
+transactions into a single 32-byte value, which is the
+"merkle root".
 
 Jing's mining node will then add a 4-byte timestamp, encoded as a Unix
 "epoch" timestamp, which is based on the number of seconds elapsed from
-January 1, 1970, midnight UTC/GMT. The time +1388185914+ is equal to
-Friday, 27 Dec 2013, 23:11:54 UTC/GMT.
+January 1, 1970, midnight UTC/GMT.
 
 Jing's node then fills in the target, which defines the required
 Proof-of-Work to make this a valid block. The target is stored in the
@@ -1137,23 +1002,6 @@ million hash attempts to find a nonce that produces a hash with 26
 leading bits as zero. Even at a speed of more than 120,000 hashes per
 second, it still requires 10 minutes on a laptop to find this solution.
 
-At the time of writing, the network is attempting to find a block whose
-header hash is less than:
-
-----
-0000000000000000029AB9000000000000000000000000000000000000000000
-----
-
-As you can see, there are a lot of zeros at the beginning of that
-target, meaning that the acceptable range of hashes is much smaller,
-hence it's more difficult to find a valid hash. It will take on average
-more than 1.8 zeta-hashes (thousand billion billion hashes) per second
-for the network to discover the next block. That seems like an
-impossible task, but fortunately the network is bringing 3 exa-hashes
-per second (EH/sec) of processing power to bear, which will be able to
-find a block in about 10 minutes on average.((("",
-startref="Cproof10")))((("", startref="proof10")))
-
 [[target_bits]]
 ==== Target Representation
 
@@ -1348,27 +1196,16 @@ the mining hardware changes the block header (adjusting the coinbase
 extra nonce space or timestamp) and resets the nonce counter, testing
 new combinations.
 
-Almost 11 minutes after starting to mine block 277,316, one of the
+Almost 11 minutes after starting to mine a particular block, one of the
 hardware mining machines finds a solution and sends it back to the
 mining node.
-
-When inserted into the block header, the nonce 924,591,752 produces a
-block hash of:
-
-----
-0000000000000001b6b9a13b095e96db41c4a928b97ef2d944a9b31b2cc7bdc4
-----
-
-which is less than the target:
-
-----
-0000000000000003A30C00000000000000000000000000000000000000000000
-----
+When inserted into the block header, the nonce produces a block hash
+which is less than the target.
 
 Immediately, Jing's mining node transmits the block to all its peers.
 They receive, validate, and then propagate the new block. As the block
 ripples out across the network, each node adds it to its own copy of the
-blockchain, extending it to a new height of 277,316 blocks. As mining
+blockchain, extending it to a new height. As mining
 nodes receive and validate the block, they abandon their efforts to find
 a block at the same height and immediately start computing the next
 block in the chain, using Jing's block as the "parent." By building on
@@ -1463,11 +1300,7 @@ existing blockchain. The node will look at the block's "previous block
 hash" field, which is the reference to the block's parent. Then, the
 node will attempt to find that parent in the existing blockchain. Most
 of the time, the parent will be the "tip" of the best chain, meaning
-this new block extends the best chain. For example, the new block
-277,316 has a reference to the hash of its parent block 277,315. Most
-nodes that receive 277,316 will already have block 277,315 as the tip of
-their best chain and will therefore link the new block and extend that
-chain.
+this new block extends the best chain.
 
 Sometimes, as we will see in <<forks>>, the new block extends a chain
 that is not the best chain. In that case, the node will attach the new
