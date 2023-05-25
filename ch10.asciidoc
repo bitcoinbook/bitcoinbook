@@ -790,7 +790,7 @@ as listed in <<block_header_structure_ch10>>.
 [options="header"]
 |=======
 |Size| Field | Description
-| 4 bytes | Version | A version number to track software/protocol upgrades
+| 4 bytes | Version | A multipurpose bitfield
 | 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
 | 32 bytes | Merkle Root | A hash of the root of the merkle tree of this block's transactions
 | 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
@@ -798,9 +798,25 @@ as listed in <<block_header_structure_ch10>>.
 | 4 bytes | Nonce | A counter used for the Proof-of-Work algorithm
 |=======
 
-At the time that block 277,316 was mined, the version number describing
-the block structure is version 2, which is encoded in little-endian
-format in 4 bytes as +0x02000000+.
+The version field was originally a integer field and was used in three
+upgrades to the Bitcoin network, those defined in BIPs 34, 66, and 65.
+Each time, the version number was incremented.  Later upgrades defined
+the version field as a bitfield, called _VersionBits_, allowing up to 29
+upgrades to be in progress simultaneously; see <<bip9>> for details.
+Even later, miners began using some of the versionbits as an auxiliary
+nonce field.
+
+[TIP]
+====
+The protocol upgrades defined in BIPs 34, 66, and 65 occured in that
+order--with BIP66 (strict DER) occuring before BIP65
+(+OP_CHECKTIMELOCKVERIFY+)--so Bitcoin developers often list them in
+that order rather than sorted numerically.
+====
+
+Today, VersionBits field has no meaning unless there's an attempt to
+upgrade the consensus protocol underway, in which case you will need to
+read its documentation to determine how it is using VersionBits.
 
 ((("blocks", "parent blocks")))((("parent blocks")))Next, the mining
 node needs to add the "Previous Block Hash" (also known as +prevhash+).
