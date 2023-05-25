@@ -668,9 +668,9 @@ structure of the coinbase transaction's input.
 |Size| Field | Description
 | 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
-| 1&#x2013;9 bytes (VarInt) | Unlocking-Script Size | Unlocking-Script length in bytes, to follow
-| Variable | Unlocking-Script | A script that fulfills the conditions of the UTXO locking script
-| 4 bytes | Sequence Number | Currently disabled Tx-replacement feature, set to 0xFFFFFFFF
+| 1&#x2013;9 bytes (VarInt) | Script Size | Script length in bytes, to follow
+| Variable | ScriptSig | A script that fulfills the conditions of the UTXO scriptPubKey
+| 4 bytes | Sequence Number | Multipurpose field used for BIP68 time locks and transaction replacement signaling
 |=======
 
 [[table_8-2]]
@@ -688,14 +688,14 @@ structure of the coinbase transaction's input.
 In a coinbase transaction, the first two fields are set to values that
 do not represent a UTXO reference. Instead of a "transaction hash," the
 first field is filled with 32 bytes all set to zero. The "output index"
-is filled with 4 bytes all set to 0xFF (255 decimal). The "Unlocking
-Script" (+scriptSig+) is replaced by coinbase data, a data field used by
+is filled with 4 bytes all set to 0xFF (255 decimal). The
++scriptSig+ is replaced by coinbase data, a data field used by
 the miners, as we will see next.
 
 ==== Coinbase Data
 
 ((("coinbase transactions", "coinbase data")))Coinbase transactions do
-not have an unlocking script (aka, +scriptSig+) field. Instead, this
+not have a +scriptSig+ field. Instead, this
 field is replaced by coinbase data, which must be between 2 and 100
 bytes. Except for the first few bytes, the rest of the coinbase data can
 be used by miners in any way they want; it is arbitrary data.
