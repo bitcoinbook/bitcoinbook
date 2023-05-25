@@ -1450,21 +1450,21 @@ selection of the chain with the most Proof-of-Work. Once a node has
 validated a new block, it will then attempt to assemble a chain by
 connecting the block to the existing blockchain.
 
-Nodes maintain three sets of blocks: those connected to the main
-blockchain, those that form branches off the main blockchain (secondary
-chains), and finally, blocks that do not have a known parent in the
+Nodes maintain three sets of blocks: those connected to the best
+blockchain, those that form branches off the best blockchain (stale
+blocks), and finally, blocks that do not have a known parent in the
 known chains (orphans). Invalid blocks are rejected as soon as any one
 of the validation criteria fails and are therefore not included in any
 chain.
 
-The "main chain" at any time is whichever _valid_ chain of blocks has
+The "best blockchain" at any time is whichever _valid_ chain of blocks has
 the most cumulative Proof-of-Work associated with it. Under most
 circumstances this is also the chain with the most blocks in it, unless
 there are two equal-length chains and one has more Proof-of-Work. The
-main chain will also have branches with blocks that are "siblings" to
-the blocks on the main chain. These blocks are valid but not part of the
-main chain. They are kept for future reference, in case one of those
-chains is extended to exceed the main chain in work. In the next section
+best chain will also have branches with blocks that are "siblings" to
+the blocks on the best chain. These blocks are valid but not part of the
+best chain. They are kept for future reference, in case one of those
+chains is extended to exceed the best chain in work. In the next section
 (<<forks>>), we will see how secondary chains occur as a result of an
 almost simultaneous mining of blocks at the same height.
 
@@ -1472,20 +1472,20 @@ When a new block is received, a node will try to slot it into the
 existing blockchain. The node will look at the block's "previous block
 hash" field, which is the reference to the block's parent. Then, the
 node will attempt to find that parent in the existing blockchain. Most
-of the time, the parent will be the "tip" of the main chain, meaning
-this new block extends the main chain. For example, the new block
+of the time, the parent will be the "tip" of the best chain, meaning
+this new block extends the best chain. For example, the new block
 277,316 has a reference to the hash of its parent block 277,315. Most
 nodes that receive 277,316 will already have block 277,315 as the tip of
-their main chain and will therefore link the new block and extend that
+their best chain and will therefore link the new block and extend that
 chain.
 
 Sometimes, as we will see in <<forks>>, the new block extends a chain
-that is not the main chain. In that case, the node will attach the new
+that is not the best chain. In that case, the node will attach the new
 block to the secondary chain it extends and then compare the work of the
-secondary chain to the main chain. If the secondary chain has more
-cumulative work than the main chain, the node will _reconverge_ on the
+secondary chain to the best chain. If the secondary chain has more
+cumulative work than the best chain, the node will _reconverge_ on the
 secondary chain, meaning it will select the secondary chain as its new
-main chain, making the old main chain a secondary chain. If the node is
+best chain, making the old best chain a secondary chain. If the node is
 a miner, it will now construct a block extending this new, longer,
 chain.
 
@@ -1548,12 +1548,12 @@ Each node has its own perspective of the global blockchain. As each node
 receives blocks from its neighbors, it updates its own copy of the
 blockchain, selecting the greatest-cumulative-work chain. For
 illustration purposes, each node contains a shape that represents the
-block that it believes is currently the tip of the main chain. So, if
+block that it believes is currently the tip of the best chain. So, if
 you see a star shape in the node, that means that the star block is the
-tip of the main chain, as far as that node is concerned.
+tip of the best chain, as far as that node is concerned.
 
 In the first diagram (<<fork1>>), the network has a unified perspective
-of the blockchain, with the star block as the tip of the main chain.
+of the blockchain, with the star block as the tip of the best chain.
 
 [[fork1]]
 [role="smallereighty"]
@@ -1611,7 +1611,7 @@ image::images/mbc2_1004.png["Visualization of a blockchain fork event: two block
 
 In the diagram, a randomly chosen "Node X" received the triangle block
 first and extended the star chain with it. Node X selected the chain
-with "triangle" block as the main chain. Later, Node X also received the
+with "triangle" block as the best chain. Later, Node X also received the
 "upside-down triangle" block. Since it was received second, it is
 assumed to have "lost" the race. Yet, the "upside-down triangle" block
 is not discarded. It is linked to the "star" block parent and forms a
@@ -1634,11 +1634,11 @@ Mining nodes whose perspective resembles Node X will immediately begin
 mining a candidate block that extends the chain with "triangle" as its
 tip. By linking "triangle" as the parent of their candidate block, they
 are voting with their hashing power. Their vote supports the chain that
-they have elected as the main chain.
+they have elected as the best chain.
 
 Any mining node whose perspective resembles Node Y will start building a
 candidate node with "upside-down triangle" as its parent, extending the
-chain that they believe is the main chain. And so, the race begins
+chain that they believe is the best chain. And so, the race begins
 again.
 
 Forks are almost always resolved within one block. While part of the
@@ -1658,7 +1658,7 @@ will simply extend the chain one more block. The nodes that chose
 star-triangle-rhombus and star-upside-down-triangle. The chain
 star-triangle-rhombus is now longer (more cumulative work) than the
 other chain. As a result, those nodes will set the chain
-star-triangle-rhombus as the main chain and change the
+star-triangle-rhombus as the best chain and change the
 star-upside-down-triangle chain to a secondary chain, as shown in
 <<fork5>>. This is a chain reconvergence, because those nodes are forced
 to revise their view of the blockchain to incorporate the new evidence
@@ -1667,7 +1667,7 @@ star-upside-down-triangle will now stop that work because their
 candidate block is an "orphan," as its parent "upside-down-triangle" is
 no longer on the longest chain. The transactions within
 "upside-down-triangle" that are not within "triangle" are re-inserted in
-the mempool for inclusion in the next block to become a part of the main
+the mempool for inclusion in the next block to become a part of the best
 chain. The entire network reconverges on a single blockchain
 star-triangle-rhombus, with "rhombus" as the last block in the chain.
 All miners immediately start working on candidate blocks that reference
