@@ -2412,6 +2412,87 @@ The standard is defined in
 https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki[BIP9
 (Version bits with timeout and delay)].
 
+=== BIP8: mandatory lock-in with early activation
+
+After BIP9 was successfully used for the CSV-related soft fork, the next
+implementation of a soft fork consensus change also attempted to use it
+for miner-enforced activation.  However, some people opposed that soft
+fork proposal, called _segwit_, and very few miners signaled readiness
+to enforce segwit for several months.
+
+It was later discovered that some miners, especially miners associated
+with the dissenters, may have been using hardware that gave them a
+hidden advantage over other miners using a feature called _covert
+ASICBoost_.  Unintentionally, segwit interferred with the ability to use
+covert ASICBoost---if segwit was activated, the miners would lose their
+hidden advantage.
+
+After the community discovered this conflict of interest, some users
+decided they wanted to exercise their power not to accept blocks from
+miners unless those blocks followed certain rules.  The rules the users
+ultimately wanted were the new rules added by segwit, but the users
+wanted to multiply their efforts by taking advantage of the large
+numbers of nodes that planned to enforce the rules of segwit if enough
+miners signaled readiness for it.  A pseudonymous developer proposed
+BIP148, which required any node implementing it to reject all blocks
+that didn't signal for segwit starting on a certain date and continuing
+until segwit activated.
+
+Although only a limited number of users actually ran that code, many
+other users seemed to agree with the sentiment and may have been
+prepared to commit to BIP148.  A few days before BIP148 was due to go
+into effect, almost all miners began signaling their readiness to
+enforce segwit's rules.  Segwit reach its lock-in threshold about two
+weeks later and activated about two weeks after that.
+
+Many users came to believe that it was a flaw in BIP9 that miners could
+prevent an activation attempt from being successful by not signaling for
+a year.  They wanted a mechanism that would ensure a soft fork was
+activated by a particular block height but which also allowed miners to
+signal they were ready to lock it in earlier.
+
+The method developed for that was BIP8, which is similar to BIP9 except
+that it defines a +MUST_SIGNAL+ period where miners must signal that
+they are ready to enforce the soft fork proposal.
+
+Software was published that used BIP8 to attempt to activate the
+taproot proposal in 2021, and there was evidence that at least a
+small number of users ran that software.  Some of those users also claim
+that their willingness to use BIP8 to force miners to activate taproot
+was the reason it did eventually activate.  They claim that, if taproot
+had not been activated quickly, other users would have also begun
+running BIP8.  Unfortunately, there's no way to prove what would have
+happened, and so we can't say for sure how much BIP8 contributed to the
+activation of taproot.
+
+=== Speedy trial: fail fast or succeed eventually
+
+Although BIP9 by itself did not seem to result in the activation of
+segwit despite widespread support for the proposal, it was unclear to
+many protocol developers that BIP9 was itself a failure.  As mentioned,
+the failure of miners to initially signal support for segwit may have
+been largely the result of a one-time conflict of interest that wouldn't
+apply in the future.  To some, it seemed worth trying BIP9 again.
+Others disagree and wanted to use BIP8.
+
+After months of discussions between those who were the most interested
+in specific activation ideas, a compromise was suggested in order to
+activate taproot.  A modified version of BIP9 was suggested that would
+only give miners a very short amount of time to signal their intention
+to enforce taproot rules.  If signaling was unsuccessful, a different
+activation mechanism could be used (or, potentially, the idea could be
+abandoned).  If signaling was successful, enforcement would begin about
+six months later at a specified block height.  This mechanism was named
+_speedy trial_ by one of the people who helped promote it.
+
+Speedy trial activation was tried, miners quickly signaled their
+willingness to enforce the rules of taproot, and taproot was successful
+activated about six months later.  To proponents of speedy trial, it was
+a clear success.  Others were still disapointed that BIP8 wasn't used.
+
+It's not clear whether or not speedy trial will be used again for a
+future attempt to activate a soft fork.
+
 === Consensus Software Development
 
 ((("mining and consensus", "consensus software
