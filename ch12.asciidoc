@@ -8,10 +8,10 @@ of Bitcoin. The term is often misused and applied to many things that
 fail to deliver the primary features that Bitcoin's blockchain delivers.
 
 In this chapter we will look at the features offered by the Bitcoin
-blockchain, as an application platform. We will consider the application
+blockchain as an application platform. We will consider the application
 building _primitives_, which form the building blocks of any blockchain
 application. We will look at several important applications that use
-these primitives, such as colored coins, payment (state) channels, and
+these primitives, such as client-side validation, payment channels, and
 routed payment channels (Lightning Network).
 
 === Introduction
@@ -22,12 +22,12 @@ However, most of its functionality is derived from much lower-level
 constructs that can be used for much broader applications. Bitcoin
 wasn't built with components such as accounts, users, balances, and
 payments. Instead, it uses a transactional scripting language with
-low-level cryptographic functions, as we saw in <<transactions>>. Just
+low-level cryptographic functions, as we saw in <<c_transactions>>. Just
 as the higher-level concepts of accounts, balances, and payments can be
 derived from these basic primitives, so can many other complex
 applications. Thus, the Bitcoin blockchain can become an application
 platform offering trust services to applications, such as smart
-contracts, far surpassing the original purpose of digital currency and
+contracts, surpassing the original purpose of digital currency and
 payments.
 
 === Building Blocks (Primitives)
@@ -39,25 +39,26 @@ used as building blocks to create applications. These include:
 
 No Double-Spend:: The most fundamental guarantee of Bitcoin's
 decentralized consensus algorithm ensures that no UTXO can be spent
-twice.
+twice in the same valid chain of blocks.
 
 Immutability:: Once a transaction is recorded in the blockchain and
 sufficient work has been added with subsequent blocks, the transaction's
-data becomes immutable. Immutability is underwritten by energy, as
+data becomes practically immutable. Immutability is underwritten by energy, as
 rewriting the blockchain requires the expenditure of energy to produce
 Proof-of-Work. The energy required and therefore the degree of
 immutability increases with the amount of work committed on top of the
 block containing a transaction.
 
 Neutrality:: The decentralized Bitcoin network propagates valid
-transactions regardless of the origin or content of those transactions.
+transactions regardless of the origin of those transactions.
 This means that anyone can create a valid transaction with sufficient
 fees and trust they will be able to transmit that transaction and have
 it included in the blockchain at any time.
 
 Secure Timestamping:: The consensus rules reject any block whose
-timestamp is too far in the past or future. This ensures that timestamps
-on blocks can be trusted. The timestamp on a block implies an
+timestamp is too far in the future and attempt to prevent blocks with
+timestamps too far in the past. This ensures that timestamps
+on blocks can be trusted to a certain degree. The timestamp on a block implies an
 unspent-before guarantee for the inputs of all included transactions.
 
 Authorization:: Digital signatures, validated in a decentralized
@@ -113,8 +114,8 @@ with exponentially decreasing likelihood, based on the depth at which
 they are recorded. Once deeply recorded, the computation and energy
 required to change makes change practically infeasible.
 
-Recording External State:: A transaction can commit a data value, via
-+OP_RETURN+, representing a state transition in an external state
+Recording External State:: A transaction can commit to a data value, via
++OP_RETURN+ or pay-to-contract, representing a state transition in an external state
 machine.
 
 Predictable Issuance:: Less than 21 million bitcoin will be issued, at a
@@ -131,10 +132,10 @@ compose applications. Here are some examples of applications that exist
 today and the building blocks they use:
 
 Proof-of-Existence (Digital Notary):: ((("digital notary
-services")))((("Proof of Existence")))Immutability + Timestamp +
-Durability. A digital fingerprint can be committed with a transaction to
-the blockchain, proving that a document existed (Timestamp) at the time
-it was recorded. The fingerprint cannot be modified ex-post-facto
+services")))((("Proof of Existence")))Immutability + Timestamp + Durability.
+A transaction on the blockchain can commit to a value,
+proving that a piece of data existed (Timestamp) at the time
+it was recorded. The commitment cannot be modified ex-post-facto
 (Immutability) and the proof will be stored permanently (Durability).
 
 Kickstarter (Lighthouse):: Consistency + Atomicity + Integrity. If you
@@ -143,8 +144,8 @@ others can contribute to the fundraiser but it cannot be spent
 (Atomicity) until the goal (output value) is funded (Consistency).
 
 Payment Channels:: ((("payment (state) channels", "building blocks
-(primitives) used in")))Quorum of Control + Timelock + No Double Spend +
-Nonexpiration + Censorship Resistance + Authorization. A multisig 2-of-2
+(primitives) used in")))Quorum of Control + Timelock + No Double Spend + Nonexpiration
++ Censorship Resistance + Authorization. A multisig 2-of-2
 (Quorum) with a timelock (Timelock) used as the "settlement" transaction
 of a payment channel can be held (Nonexpiration) and spent at any time
 (Censorship Resistance) by either party (Authorization). The two parties
@@ -158,7 +159,7 @@ id="BCAcoins12")))((("colored coins", id="color12")))The first
 blockchain application we will discuss is _colored coins_.
 
 ((("extrinsic asset management")))Colored coins refers to a set of
-similar technologies that use bitcoin transactions to record the
+similar technologies that use Bitcoin transactions to record the
 creation, ownership, and transfer of extrinsic assets other than
 bitcoin. By "extrinsic" we mean assets that are not stored directly on
 the bitcoin blockchain, as opposed to bitcoin itself, which is an asset
@@ -375,10 +376,10 @@ channels", id="BCApayment12")))((("payment (state) channels",
 "defined")))are a trustless mechanism for exchanging Bitcoin
 transactions between two parties, outside of the Bitcoin blockchain.
 These transactions, which would be valid if settled on the Bitcoin
-blockchain, are held off-chain instead, acting as _promissory notes_ for
+blockchain, are held off-chain instead, waiting for
 eventual batch settlement. Because the transactions are not settled,
 they can be exchanged without the usual settlement latency, allowing
-extremely high transaction throughput, low (submillisecond) latency, and
+extremely high transaction throughput, low latency, and
 fine (satoshi-level) granularity.
 
 Actually, the term _channel_ is a metaphor. State channels are virtual
@@ -429,15 +430,15 @@ valid transactions in that they _could_ be submitted for settlement by
 either party, but instead are held off-chain by each party pending the
 channel closure. State updates can be created as fast as each party can
 create, sign, and transmit a transaction to the other party. In practice
-this means that thousands of transactions per second can be exchanged.
+this means that dozens of transactions per second can be exchanged.
 
-When exchanging commitment transactions the two parties also invalidate
-the previous states, so that the most up-to-date commitment transaction
-is always the only one that can be redeemed. This prevents either party
-from cheating by unilaterally closing the channel with an expired prior
+When exchanging commitment transactions the two parties also discourage
+use of the previous states, so that the most up-to-date commitment transaction
+is always the best one to be redeemed. This discourages either party
+from cheating by unilaterally closing the channel with a prior
 state that is more favorable to them than the current state. We will
-examine the various mechanisms that can be used to invalidate prior
-state in the rest of this chapter.
+examine the various mechanisms that can be used to discourage
+publication of prior states in the rest of this chapter.
 
 Finally, the channel can be closed either cooperatively, by submitting a
 final _settlement transaction_ to the blockchain, or unilaterally, by
@@ -493,7 +494,7 @@ paid for by the second.
 To set up the payment channel, Emma and Fabian establish a 2-of-2
 multisignature address, with each of them holding one of the keys. From
 Emma's perspective, the software in her browser presents a QR code with
-a P2SH address (starting with "3"), and asks her to submit a "deposit"
+the address, and asks her to submit a "deposit"
 for up to 1 hour of video. The address is then funded by Emma. Emma's
 transaction, paying to the multisignature address, is the funding or
 anchor transaction for the payment channel.
@@ -645,10 +646,6 @@ needs nothing more than absolute transaction-level timelocks
 +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+, can be used to
 construct more flexible, useful, and sophisticated state channels.
 
-The first form of unidirectional payment channel was demonstrated as a
-prototype video streaming application in 2015 by an Argentinian team of
-developers. You can still see it at pass:[<a href="https://streamium.io/" class="orm:hideurl"><em>streamium.io</em></a>].
-
 Timelocks are not the only way to invalidate prior commitment
 transactions. In the next sections we will see how a revocation key can
 be used to achieve the same result. Timelocks are effective but they
@@ -674,10 +671,25 @@ creating a very high burden for the channel participants who have to be
 vigilant, remain online and watching, and be ready to transmit the right
 commitment transaction at any time.
 
+In the above example of a single-direction channel, it's easy to
+eliminate the per-commitment timelock.  After Emma receives the
+signature on the timelocked refund transaction from Fabian, no timelocks
+are placed on the commitment transactions.  Instead, Emma sends her
+signature on each commitment transaction to Fabian but Fabian doesn't
+send her any of his signatures on the commitment transactions.  That
+means only Fabian has both signatures for a commitment transaction, so
+only he can broadcast one of those commitments.  When Emma finishes
+streaming video, Fabian will always prefer to broadcast the transaction
+that pays him the most---which will be the latest state.  This
+construction in called a Spillman-style payment channel, which was first
+described and implemented in 2013, although they are only safe to use
+with witness (segwit) transactions, which didn't become available until
+2017.
+
 Now that we understand how timelocks can be used to invalidate prior
 commitments, we can see the difference between closing the channel
 cooperatively and closing it unilaterally by broadcasting a commitment
-transaction. All commitment transactions are timelocked, therefore
+transaction. All commitment transactions in our prior example were timelocked, therefore
 broadcasting a commitment transaction will always involve waiting until
 the timelock has expired. But if the two parties agree on what the final
 balance is and know they both hold commitment transactions that will
@@ -697,7 +709,7 @@ to wait for their funds too.((("", startref="PSCtrust12")))
 ==== Asymmetric Revocable Commitments
 
 ((("payment (state) channels", "asymmetric revocable commitments",
-id="PSCaymetric12")))A better way to handle the prior commitment states
+id="PSCaymetric12")))Another way to handle the prior commitment states
 is to explicitly revoke them. However, this is not easy to achieve. A
 key characteristic of Bitcoin is that once a transaction is valid, it
 remains valid and does not expire. The only way to cancel a transaction
@@ -758,7 +770,7 @@ Input: 2-of-2 funding output, signed by Irene
 Output 0 <5 bitcoin>:
     <Irene's Public Key> CHECKSIG
 
-Output 1:
+Output 1 <5 bitcoin>:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
@@ -777,7 +789,7 @@ Input: 2-of-2 funding output, signed by Hitesh
 Output 0 <5 bitcoin>:
     <Hitesh's Public Key> CHECKSIG
 
-Output 1:
+Output 1 <5 bitcoin>:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
@@ -907,7 +919,7 @@ Asymmetric revocable commitments with relative time locks (+CSV+) are a
 much better way to implement payment channels and a very significant
 innovation in this technology.  With this construct, the channel can
 remain open indefinitely and can have billions of intermediate
-commitment transactions. In prototype implementations of Lightning
+commitment transactions. In implementations of Lightning
 Network, the commitment state is identified by a 48-bit index, allowing
 more than 281 trillion (2.8 x 10^14^) state transitions in any single
 channel!((("", startref="PSCaymetric12")))
@@ -929,7 +941,7 @@ then calculate the hash of this secret +H+:
 H = Hash(R)
 ----
 
-This produces a hash +H+ that can be included in an output's locking
+This produces a hash +H+ that can be included in an output's
 script. Whoever knows the secret can use it to redeem the output. The
 secret +R+ is also referred to as a _preimage_ to the hash function. The
 preimage is just the data that is used as input to a hash function.
@@ -963,7 +975,7 @@ This is a basic implementation of an HTLC. This type of HTLC can be
 redeemed by _anyone_ who has the secret +R+. An HTLC can take many
 different forms with slight variations to the script. For example,
 adding a +CHECKSIG+ operator and a public key in the first clause
-restricts redemption of the hash to a named recipient, who must also
+restricts redemption of the hash to a particular recipient, who must also
 know the secret +R+.((("", startref="BCApayment12")))
 
 [[lightning_network]]
@@ -985,16 +997,10 @@ channel network, which has now been implemented by at least five
 different open source teams. ((("Basics of Lightning Technology
 (BOLT)")))The independent implementations are coordinated by a set of
 interoperability standards described in the
-http://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ paper].
+http://bit.ly/2rBHeoL[_Basics of Lightning Technology (BOLT)_ repository].
 
-Prototype implementations of the Lightning Network have been released by
-several teams. For now, these implementations can only be run on testnet
-because they use segwit, which is not activated on the main bitcoin
-blockchain (mainnet).
-
-The Lightning Network is one possible way of implementing routed payment
-channels. There are several other designs that aim to achieve similar
-goals, such as Teechan and Tumblebit.
+Implementations of the Lightning Network have been released by
+several teams.
 
 ==== Basic Lightning Network Example
 
@@ -1124,15 +1130,12 @@ construct a _path_ through the network by connecting payment channels
 with sufficient capacity. Nodes advertise routing information, including
 what channels they have open, how much capacity each channel has, and
 what fees they charge to route payments. The routing information can be
-shared in a variety of ways and different routing protocols are likely
-to emerge as Lightning Network technology advances. Some Lightning
-Network implementations use the IRC protocol as a convenient mechanism
-for nodes to announce routing information. Another implementation of
-route discovery uses a P2P model where nodes propagate channel
+shared in a variety of ways and different routing protocols have
+emerged as Lightning Network technology has advanced.
+Current implementations of
+route discovery use a P2P model where nodes propagate channel
 announcements to their peers, in a "flooding" model, similar to how
-Bitcoin propagates transactions. Future plans include a proposal called
-http://bit.ly/2r5TACm[Flare], which is a hybrid routing model with local
-node "neighborhoods" and longer-range beacon nodes.
+Bitcoin propagates transactions.
 
 In our previous example, Alice's node uses one of these route discovery
 mechanisms to find one or more paths connecting her node to Eric's node.
@@ -1247,11 +1250,8 @@ expanding its operating parameters significantly.
 Of course, as mentioned previously, the Lightning Network protocol is
 not the only way to implement routed payment channels. Other proposed
 systems include Tumblebit and Teechan. At this time, however, the
-Lightning Network has already been deployed on testnet. Several
-different teams have developed competing implementations of LN and are
-working toward a common interoperability standard (called BOLT). It is
-likely that Lightning Network will be the first routed payment channel
-network to be deployed in production.((("", startref="BCAlightning12")))
+Lightning Network has already been deployed and has tens of thousands of
+users.
 
 === Conclusion
 
