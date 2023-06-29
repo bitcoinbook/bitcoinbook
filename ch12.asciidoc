@@ -185,13 +185,187 @@ _EPOBC_, assigned extrinsic assets to a 1-satoshi output. In this way,
 it was a true "colored coin," as each asset was added as an attribute
 (color) of a single satoshi.
 
-More recent implementations of colored coins use the +OP_RETURN+ script
-opcode to store metadata in a transaction, in conjunction with external
-data stores that associate the metadata to specific assets.
+More recent implementations of colored coins use other mechanisms
+to attach metadata with a transaction, in conjunction with external
+data stores that associate the metadata to specific assets.  The three
+main mechanisms used as of this writing are single-use seals,
+pay-to-contract, and client-side validation.
 
-=== RGB
+==== Single-use seals
 
-//FIXME
+Single-use seals originate in physical security.  Someone shipping an
+item through a third party needs a way to detect tampering, so they
+secure their package with a special mechanism that will become clearly
+damaged if the package is opened.  If the package arrives with the seal
+intact, the sender and receiver can be confident that the package wasn't
+opened in transit.
+
+In the context of colored coins, single-use seals refer to a data
+structure than can only be associated with another data structure once.
+In Bitcoin, this definition is fulfilled by Unspent Transaction Outputs
+(UTXOs).  A UTXO can only be spent once within a valid blockchain, and
+the process of spending them associates them with the data in the
+spending transaction.
+
+This provides part of the basis for the modern transfer for colored
+coins.  One or more colored coins are received to a UTXO.  When that
+UTXO is spent, the spending transaction must describe how the colored
+coins are to be spent.  That brings us to _Pay-to-Contract (P2C)_.
+
+[[p2c_for_colored_coins]]
+==== Pay-to-Contract (P2C)
+
+We previously learned about P2C in <<pay_to_contract>>, where it became
+part of the basis for the taproot upgrade to Bitcoin's consensus rules.
+As a short reminder, P2C allows a spender (Bob) and receiver (Alice) to
+agree on some data, such as a contract, and then tweak Alice's public
+key so that it commits to the contract.  At any time, Bob can reveal
+Alice's underlying key and the tweak used to commit to the contract,
+proving that she received the funds.  If Alice spends the funds, that
+fully proves that she knew about the contract, since the only way she
+could spend the funds received to a P2C tweaked key is by knowing the
+tweak (the contract).
+
+A powerful attribute of P2C tweaked keys is that they look like any
+other public keys to everyone besides Alice and Bob, unless they choose
+to reveal the contract used to tweak the keys.  Nothing is publicly
+revealed about the contract--not even that a contract between them
+exists.
+
+A P2C contract can arbitrary long and detailed, the terms can be written
+in any language, and it can reference anything the participants want
+because the contract is not validated by full nodes and only the public
+key with the commitment is published to the blockchain.
+
+In the context of colored coins, Bob can open the single-use seal
+containing his colored coins by spending the associated UTXO.  In the
+transaction spending that UTXO, he can commit to a contract indicating
+the terms that the next owner (or owners) of the colored coins must
+fulfill in order to further spend the coins.  The new owner doesn't need
+to be Alice, even though Alice is the one receiving the UTXO that Bob
+spends and Alice has tweaked her public key by the contract terms.
+
+Because full nodes don't (and can't) validate that the contract is
+followed correctly, we need to figure out who is responsible for
+validation.  That brings us to _client-side validation._
+
+==== Client-side validation
+
+Bob had some colored coins associated with a UTXO.  He spent that UTXO
+in a way that committed to a contract which indicated how the next
+receiver (or receivers) of the colored coins will prove their ownership
+over the coins in order to further spend them.
+
+In practice, Bob's P2C contract likely simply committed to one or more
+unique identifiers for the UTXOs that will be used as single-use seals
+for deciding when the colored coins are next spent.  For example, Bob's
+contract may have indicated that the UTXO that Alice received to her P2C
+tweaked public key now controls half of his colored coins, with the
+other half of his colored coins now being assigned to a different UTXO
+that may have nothing to do with the transaction between Alice and Bob.
+This provides significant privacy against blockchain surveillance.
+
+When Alice later wants to spend her colored coins to Dan, she first
+needs to prove to Dan that she controls the colored coins.  Alice can do
+this by revealing to Dan her underlying P2C public key and the P2C contract
+terms chosen by Bob.  Alice also reveals to Dan the UTXO that Bob used
+as the single-use seal and any information that Bob gave her about the
+previous owners of the colored coins.  In short, Alice gives Dan a
+complete set of history about every previous transfer of the colored
+coins, with each step anchored in the Bitcoin blockchain (but not
+storing any special data in the chain--just regular public keys).  That
+history is a lot like the history of regular Bitcoin transactions that
+we call the blockchain, but the colored history is completely invisible
+to other users of the blockchain.
+
+Dan validates this history using his software, called _client-side
+validation_.  Notably, Dan only needs to receive and validate the parts
+of history that pertain to the colored coins he wants to receive.  He
+doesn't need information about what happened to other people's colored
+coins--for example, he'll never need to know what happened to the other
+half of Bob's coins, the ones that Bob didn't transfer to Alice.  This
+helps enhance the privacy of the colored coin protocol.
+
+Now that we've learned about single-use seals, pay-to-contract, and
+client-side validation, we can look at the two main protocols that use
+them as of this writing, RGB and Taproot Assets.
+
+==== RGB
+
+Developers of the RGB protocol pioneered many of the ideas used in
+modern Bitcoin-based colored coin protocols.  A primary requirement of
+the design for RGB was making the protocol compatible with offchain
+payment channels (see <<state_channels>>), such as those used in
+Lightning Network.  That's accomplished at each layer of the RGB
+protocol:
+
+- Single-use seals: to create a payment channel, Bob assigns his colored
+  coins to a UTXO that requires signatures from both him and Alice to
+  spend.  Their mutual control over that UTXO serves as the single-use
+  seal for future transfers.
+
+- Pay-to-Contract (P2C): Alice and Bob can now sign multiple versions of
+  a P2C contract.  The enforcement mechanism of the underlying payment
+  channel ensures that both parties are incentivized to only publish the
+  latest version of the contract onchain.
+
+- Client-side validation: to ensure that neither Alice nor Bob needs to
+  trust each other, they each check all previous transfers of the
+  colored coins back to their creation to ensure all contract rules were
+  followed correctly.
+
+The developers of RGB have described other uses for their protocol, such
+as creating identity tokens that can be periodically updated to protect
+against private key compromise.
+
+==== Taproot Assets
+
+Formerly called Taro, Taproot Assets are a colored coin protocol that is
+heavily influenced by RGB.  Compared to RGB, Taproot Assets use a form
+of P2C contracts that is very similar to the version used by taproot for
+enabling MAST functionality (see <<mast>>).  The claimed advantage of
+Taproot Assets over RGB is that its similarity to the widely used
+taproot protocol makes it simpler for wallets and other software to
+implement.  One downside is that it may not be as flexible as the RGB
+protocol, especially when it comes to implementing non-asset features
+such as identity tokens.
+
+[NOTE]
+====
+_Taproot_ is part of the Bitcoin protocol.  _Taproot Assets_ is not,
+despite the similar name.  Both RGB and Taproot Assets are protocols
+built on top of the Bitcoin protocol.  The only asset natively supported
+by Bitcoin is bitcoin.
+====
+
+Even more than RGB, Taproot Assets has been designed to be compatible
+with Lightning Network.  One challenge with forwarding non-bitcoin assets
+over Lightning Network is that there are two ways to accomplish the
+sending, each with a different set of tradeoffs:
+
+Native forwarding::
+  Every hop in the path between the spender and the receiver must know
+  about the particular asset (type of colored coin) and have a
+  sufficient balance of it to support forwarding a payment.
+
+Translated forwarding::
+  The hop next to the spender and the hop next to the receiver must know
+  about the particular asset and have a sufficient balance of it to
+  support forwarding a payment, but every other hop only needs to
+  support forwarding bitcoin payments.
+
+Native forwarding is conceptually simpler but essentially requires a
+separate Lightning Network for every asset.  Translated forwarding
+allows building on the economies of scale of the Bitcoin Lightning
+Network but it may be vulnerable to a problem called the _free American
+call option_, where a receiver may selectively accept or reject certain
+payments depending on recent changes to the exchange rate in order to
+siphon money from the hop next to them.  Although there's no known
+perfect solution to the free American call option, there may be
+practical solutions that limit its harm.
+
+Taproot Assets is specifically designed around translated forwarding,
+whereas RGB can technically support both.
 
 [[state_channels]]
 === Payment Channels and State Channels
