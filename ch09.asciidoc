@@ -1,8 +1,15 @@
 [[blockchain]]
 == The Blockchain
 
+The blockchain is the history of every confirmed Bitcoin transaction.
+It's what allows every full node to indepdently determine what keys and
+scripts control which bitcoins.  In this chapter, we'll look at the
+structure of the blockchain and see how it uses cryptographic
+commitments and other clever tricks to make every part of it easy for
+full nodes (and sometimes light clients) to validate.
+
 ((("blockchain (the)", "overview of")))The blockchain data structure is
-an ordered, back-linked list of blocks of transactions. The blockchain
+an ordered, back-linked list of blocks of transactions.The blockchain
 can be stored as a flat file, or in a simple database.
 Blocks are linked "back," each referring to the previous block in the
 chain. ((("blocks", "block height")))The blockchain is often visualized
@@ -309,6 +316,11 @@ chain, making the blockchain longer with a new height of 277,315.
 <<chain_of_blocks>> shows the chain of three blocks, linked by
 references in the +previousblockhash+ field.
 
+[[chain_of_blocks]]
+[role="smallerfourtyfive"]
+.Blocks linked in a chain by reference to the previous block header hash
+image::images/mbc2_0901.png[]
+
 [[merkle_trees]]
 === Merkle Trees
 
@@ -324,11 +336,6 @@ is used in computer science to describe a branching data structure, but
 these trees are usually displayed upside down with the "root" at the top
 and the "leaves" at the bottom of a diagram, as you will see in the
 examples that follow.
-
-[[chain_of_blocks]]
-[role="smallerfourtyfive"]
-.Blocks linked in a chain by reference to the previous block header hash
-image::images/mbc2_0901.png[]
 
 Merkle trees are used in bitcoin to summarize all the transactions in a
 block, producing an overall commitment to the entire set of
@@ -418,7 +425,7 @@ image::images/mbc2_0904.png["merkle_tree_large"]
 In <<merkle_tree_path>>, a node can prove that a transaction K is
 included in the block by producing a merkle path that is only four
 32-byte hashes long (128 bytes total). The path consists of the four
-hashes (shown with a shaded background in <<merkle_tree_path>>) H~L~,
+hashes (shown with a shaded background H~L~,
 H~IJ~, H~MNOP~, and H~ABCDEFGH~. With those four hashes provided as an
 authentication path, any node can prove that H~K~ (with a black
 background at the bottom of the diagram) is included in the merkle root
@@ -811,3 +818,9 @@ expected, switch to +mainnet+ to deploy it in production. As you make
 changes, improvements, bug fixes, etc., start the pipeline again,
 deploying each change first on +regtest+, then on +signet+ or +testnet+, and finally
 into production.((("", startref="BCTtest09")))
+
+Now that we know what data the blockchain contains and how cryptographic
+commitments securely tie the various parts together, we will look at the
+specical commitment that both provides computational security and
+ensures no block can be changed without invalidating all other blocks
+built on top of it: Bitcoin's mining function.

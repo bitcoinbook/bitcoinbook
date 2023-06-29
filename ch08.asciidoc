@@ -112,7 +112,8 @@ in the blockchain used by all full nodes, and miners only get paid for
 blocks that are widely accepted.
 
 Whichever block has a second block built on top of it first wins (unless
-there's another near-tie), which is called a _block-finding race_.
+there's another near-tie), which is called a _block-finding race_ and is
+illustrated in <<mining_race>>.
 Block-finding races give the advantage to the largest miners, so they
 act in opposition to Bitcoin's essential decentralization.  To prevent
 block-finding races and allow miners of any size to participate equally
@@ -120,6 +121,7 @@ in the lottery that is Bitcoin mining, it's extremely useful to minimize
 the time between when one miner announces a new block and when other
 miners receive that block.
 
+[[mining_race]]
 .A blockchain fork requiring a mining race
 image::images/race1.dot.png["Mining race"]
 
@@ -141,8 +143,8 @@ found.  For any transaction that isn't found in your local node's
 mempool, your node can send a request to the peer for a copy.
 
 Conversely, if the remote peer believes your node's mempool doesn't have
-some of transactions that appear in the block, it can include a copy of
-those transaction in the compact block.
+some of the transactions that appear in the block, it can include a copy of
+those transactions in the compact block.
 
 If the remote peer guesses correctly about what transactions your node
 has in its mempool, and which it does not, it will send a block nearly
@@ -159,7 +161,7 @@ each block.
 ====
 
 There are two modes that Bitcoin Core currently implements for sending
-compact blocks:
+compact blocks, illustrated in <<bip152_illustration>>:
 
 Low-bandwidth mode::
   When your node requests that a peer use low-bandwidth mode (the default),
@@ -181,13 +183,14 @@ High-bandwidth mode::
   Skipping validation before relay allows new blocks to travel across
   the network with minimal delays at each hop.
 +
-The downside of high-bandwidth node is that your node is likely to
+The downside of high-bandwidth mode is that your node is likely to
 receive redundant information from each high-bandwidth peer it chooses.
 As of this writing, Bitcoin Core currently only asks three peers to use
 high-bandwidth mode (and it tries to choose peers that have a history of
 quickly announcing blocks).
 
 // released into the public domain by Nicolas Dorier
+[[bip152_illustration]]
 .BIP152 modes compared (from BIP152)
 image::images/bip152.png["BIP152"]
 
@@ -199,8 +202,9 @@ relay before compact blocks were implemented.
 
 === Private Block Relay Networks
 
-Although compact blocks go a long way towards minimizing the latency
-of block propagation, it's possible to minimize latency further.  Unlike
+Although compact blocks go a long way towards minimizing the time it
+takes for blocks to propagate across the network,
+it's possible to minimize latency further.  Unlike
 compact blocks, though, the other solutions involve tradeoffs that
 make them unavailable or unsuitable for the public P2P relay network.
 For that reason, there has been experimentation with private relay
@@ -221,7 +225,7 @@ reconstructed if they are lost.
 
 FEC avoids the problem of a compact block (or some parts of it) not
 arriving due to problems with the underlying network connection.
-Those problems frequently occur but we mostly don't notice them
+Those problems frequently occur but we don't often notice them
 because we mostly use protocols that automatically re-request the
 missing data.  However, requesting missing data triples the time to
 receive it.  For example:
@@ -938,7 +942,7 @@ smaller of the numbers:
 |===
 
 If we count the frequency of each difference occurring, we see that the
-small differences are much more likely to occur that the large
+small differences are much more likely to occur than the large
 differences:
 
 [cols="1,1"]
@@ -1234,3 +1238,8 @@ the emergent consensus of the network and therefore will vary little
 between nodes. Furthermore, the mempool and orphan pools only
 contain unconfirmed transactions, while the UTXO database only contains
 confirmed outputs.
+
+Now that we have a understanding of many of the data types and
+structures used by nodes and clients to send data across the Bitcoin
+network, it's time to look at the software that's responsible for
+keeping the network secure and operational.
