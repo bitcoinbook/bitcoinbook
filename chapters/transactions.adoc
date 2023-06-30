@@ -83,7 +83,7 @@ in the transaction and describe any additional fields that they contain.
 .A byte map of Alice's transaction
 image::../images/tx-map-1.png["A byte map of Alice's transaction"]
 
-[[nVersion]]
+[[version]]
 === Version
 
 The first four bytes of a serialized Bitcoin transaction are its
@@ -94,7 +94,7 @@ described throughout this book.
 
 Version 2 Bitcoin transactions were introduced in the BIP68 soft fork
 change to Bitcoin's consensus rules.  BIP68 places additional
-constraints on the nSequence field, but those constraints only apply to
+constraints on the sequence field, but those constraints only apply to
 transactions with version 2 or higher.  Version 1 transactions are
 unaffected.  BIP112, which was part of the same soft fork as BIP68,
 upgraded an opcode (OP_CHECKSEQUENCEVERIFY) which will now fail if it is
@@ -116,7 +116,7 @@ Network, depend on pre-signed transactions.
 
 This creates a challenge for protocol developers when they assist users
 in upgrading the Bitcoin consensus protocol.  Adding new
-constraints--such as BIP68 did to the nSequence field--may invalidate
+constraints--such as BIP68 did to the sequence field--may invalidate
 some pre-signed transactions.  If there's no way to create a new
 signature for an equivalent transaction, then the money being spent in
 the pre-signed transaction is permanently lost.
@@ -125,7 +125,7 @@ This problem is solved by reserving some transaction features for
 upgrades, such as version numbers.  Anyone creating pre-signed
 transactions prior to BIP68 should have been using version 1
 transactions, so only applying BIP68's additional constraints on
-nSequence to transactions v2 or higher should not invalidate any
+sequence to transactions v2 or higher should not invalidate any
 pre-signed transactions.
 
 If you implement a protocol that uses pre-signed transactions, ensure
@@ -150,8 +150,8 @@ part of the Segregated Witness (segwit) soft fork change to Bitcoin's
 consensus rules.  The rules were changed according to BIPs 141 and 143,
 but the _extended serialization format_ is defined in BIP144.
 
-If the transaction includes a witness field (which we'll describe in
-<<witnesses>>), the marker must be zero (0x00) and the flag must be
+If the transaction includes a witness structure (which we'll describe in
+<<witness_structure>>), the marker must be zero (0x00) and the flag must be
 non-zero.  In the current P2P protocol, the flag should always be one
 (0x01); alternative flags are reserved for later protocol upgrades.
 
@@ -177,9 +177,9 @@ map of those bytes in <<alice_tx_input_map>>.
 .Map of bytes in the input field of Alice's transaction
 image::../images/input-byte-map.png["map of bytes in the input field of Alice's transaction"]
 
-==== Inputs Count
+==== Length of transaction input list
 
-The input field starts with an integer indicating the number of inputs
+The transaction input list starts with an integer indicating the number of inputs
 in the transaction.  The minimum value is one.  There's no explicit
 maximum value, but restrictions on the maximum size of a transaction
 effectively limit transactions to a few thousand inputs.  The number is
@@ -210,7 +210,8 @@ For numbers from 0 to 252, compactSize unsigned integers are identical
 to the C-language data type +uint8_t+, which is probably the native
 encoding familiar to any programmer.  For other numbers up to
 0xffffffffffffffff, a byte is prefixed to the number to indicate its
-length—but otherwise the numbers look like regular unsigned integers.
+length—but otherwise the numbers look like regular C-language encoded
+unsigned integers.
 
 [cols="1,1,1"]
 |===
@@ -226,9 +227,9 @@ Each input in a transaction must contain three fields:
 
 - An _outpoint_ field
 
-- A length-prefixed _scriptSig_ field
+- A length-prefixed _input script_ field
 
-- An _nSequence_
+- A _sequence_
 
 We'll look at each of those fields in the following sections.  Some
 inputs also include a witness, but this is serialized at the end of a
@@ -252,7 +253,7 @@ This txid is in Bitcoin's internal byte order for hashes, see
 
 Because transactions may contain multiple outputs, Alice also needs to
 identify which particular output from that transaction to use, called
-its output vector (_vout_).  Output vectors are four-byte unsigned
+its _output index_.  Output indices are four-byte unsigned
 integers indexed from zero.
 
 When a full node encounters an outpoint, it uses that information to
@@ -348,14 +349,14 @@ _little-endian byte order_ for the internal version and _big-endian byte
 order_ for the display version.
 ****
 
-==== ScriptSig
+==== Input script
 
-The scriptSig field is a remnant of the legacy transaction format.  Our
+The input script field is a remnant of the legacy transaction format.  Our
 example transaction input spends a native segwit output which doesn't
-require any data in the scriptSig, so the length prefix for the
-scriptSig is set to zero (0x00).
+require any data in the input script, so the length prefix for the
+input script is set to zero (0x00).
 
-For an example of a length-prefixed scriptSig that spends a legacy
+For an example of a length-prefixed input script that spends a legacy
 output, we use one from an arbitrary transaction in the most recent
 block as of this writing:
 
@@ -367,23 +368,23 @@ fa2580bb664b020220366060ea8203d766722ed0a02d1599b99d3c95b97dab8e
 ----
 
 The length prefix is a compactSize unsigned integer indicating the
-length of the serialized scriptSig field.  In this case, it's a single
-byte (0x6b) indicating the scriptSig is 107 bytes.  We'll cover parsing
+length of the serialized input script field.  In this case, it's a single
+byte (0x6b) indicating the input script is 107 bytes.  We'll cover parsing
 and using scripts in detail in the next chapter,
 <<c_authorization_authentication>>.
 
-[[nsequence]]
-==== nSequence
+[[sequence]]
+==== Sequence
 
-The final four bytes of an input are its sequence number, called
-_nSequence_.  The use and meaning of this field has changed over time.
+The final four bytes of an input are its _sequence_ number.
+The use and meaning of this field has changed over time.
 
 [[original_tx_replacement]]
-===== Original nSequence-based Transaction Replacement
+===== Original Sequence-Based Transaction Replacement
 
-The +nSequence+ field was originally intended to allow creation of
+The sequence field was originally intended to allow creation of
 multiple versions of the same transaction, with later versions replacing
-earlier versions as candidates for confirmation.  The nSequence number
+earlier versions as candidates for confirmation.  The sequence number
 tracked the version of the transaction.
 
 For example, imagine Alice and Bob want to bet on a game of cards.  They
@@ -399,27 +400,27 @@ output:
   the transaction at this time.  They only need it if there's a problem.
 
 - Alice wins the first round of the card game, so the second version of
-  the transaction, with nSequence 1, increases the amount of money paid
+  the transaction, with sequence 1, increases the amount of money paid
   to Alice and decreases Bob's share.  They both sign the updated
   transaction.  Again, they don't need to broadcast this version of the
   transaction unless there's a problem.
 
-- Bob wins the second round, so the nSequence is incremented to 2,
+- Bob wins the second round, so the sequence is incremented to 2,
   Alice's share is decreased, and Bob's share is increased.  They again
   sign but don't broadcast.
 
-- After many more rounds where the nSequence is incremented, the
+- After many more rounds where the sequence is incremented, the
   funds redistributed, and the resulting transaction is signed but not
   broadcast, they decide to finalize the transaction.  Creating a
-  transaction with the final balance of funds, they set nSequence to its
+  transaction with the final balance of funds, they set sequence to its
   maximum value (0xffffffff), finalizing the transaction.  They broadcast
   this version of the transaction, it's relayed across the network, and
   eventually confirmed by miners.
 
-We can see the replacement rules for nSequence at work if we consider
+We can see the replacement rules for sequence at work if we consider
 alternative scenarios:
 
-- Imagine that Alice broadcasts the final transaction, with an nSequence of
+- Imagine that Alice broadcasts the final transaction, with a sequence of
   0xffffffff, and then Bob broadcasts one of the earlier transactions
   where his balance was higher.  Because Bob's version of the
   transaction has a lower sequence number, full nodes using the original
@@ -429,7 +430,7 @@ alternative scenarios:
 - In another scenario, imagine that Bob broadcasts an earlier version of
   the transaction a few seconds before Alice broadcasts the final
   version.  Nodes will relay Bob's version and miners will attempt to
-  mine it, but when Alice's version with its higher nSequence number
+  mine it, but when Alice's version with its higher sequence number
   arrives, nodes will also relay it and miners using the original
   Bitcoin code will try to mine it instead of Bob's version.  Unless Bob
   got lucky and a block was discovered before Alice's version arrived,
@@ -442,7 +443,7 @@ the protocol to support them.  We'll learn about several of those other
 features later and also discover how modern versions of payment channels
 are increasingly being used in Bitcoin today.
 
-There were a few problems with purely nSequence-based payment channels.
+There were a few problems with purely sequence-based payment channels.
 The first was that the rules for replacing a lower-sequence transaction
 with a higher-sequence transaction were only a matter of software
 policy.  There was no direct incentive for miners to prefer one version
@@ -465,27 +466,27 @@ need to pay any costs for the enormous burden they placed on full node
 operators.
 
 To eliminate the risk of this attack, the original type of
-nSequence-based transaction replacement was disabled in an early version
+sequence-based transaction replacement was disabled in an early version
 of the Bitcoin software.  For several years, Bitcoin full nodes would
 not allow an unconfirmed transaction containing a particular input (as
 indicated by its outpoint) to be replaced by a different transaction
 containing the same input.  However, that situation didn't last forever.
 
-[[nsequence-bip125]]
+[[sequence-bip125]]
 ===== Opt-in Transaction Replacement Signaling
 
-After the original nSequence-based transaction replacement was disabled
+After the original sequence-based transaction replacement was disabled
 due to the potential for abuse, a solution was proposed: programming
 Bitcoin Core and other relaying full node software to allow a
 transaction that paid a higher transaction fee rate to replace a
 conflicting transaction that paid a lower fee rate.  This is called
 _Replace-By-Fee_, or _RBF_ for short.  Some users and businesses
 objected to adding support for transaction replacement back into Bitcoin
-Core, so a compromise was reached that once again used the nSequence
+Core, so a compromise was reached that once again used the sequence
 field in support of replacement.
 
 As documented in BIP125, an unconfirmed transaction with any input that
-has an nSequence set to a value below 0xfffffffe (i.e., at least 2 below
+has an sequence set to a value below 0xfffffffe (i.e., at least 2 below
 the maximum value) signals to the network that its signer wants it to be
 replaceable by a conflicting transaction paying a higher fee rate.
 Bitcoin Core allowed those unconfirmed transactions to be replaced and
@@ -495,56 +496,56 @@ ignore unconfirmed transactions containing the BIP125 signal until they
 became confirmed.
 
 There's more to modern transaction replacement policies than fee rates
-and nSequence signals, which we'll see in <<rbf>>.
+and sequence signals, which we'll see in <<rbf>>.
 
 [[relative_timelocks]]
-===== nSequence as a consensus-enforced relative timelock
+===== Sequence as a consensus-enforced relative timelock
 
-In the <<nVersion>> section, we learned that the BIP68 soft fork added
+In the <<version>> section, we learned that the BIP68 soft fork added
 a new constraint to transactions with version numbers 2 or higher.  That
-constraint applies to the nSequence field.
+constraint applies to the sequence field.
 
-Transaction inputs with +nSequence+ values less than 2^31^ are
+Transaction inputs with sequence values less than 2^31^ are
 interpreted as having a relative timelock. Such a transaction may only
 be included in the blockchain once the previous output (referenced by the
 outpoint) has aged by the relative timelock amount. For example, a
 transaction with one input with a relative timelock of 30 blocks can
 only be confirmed after least 30 blocks have elapsed from the time the
 previous output was confirmed in a block on the current blockchain.
-Since +nSequence+ is a per-input field, a transaction may contain any
+Since sequence is a per-input field, a transaction may contain any
 number of timelocked inputs, all of which must have sufficiently aged
 for the transaction to be valid. A transaction can include both
-timelocked inputs (+nSequence+ < 2^31^) and inputs without a relative
-timelock (+nSequence+ >= 2^31^).
+timelocked inputs (sequence < 2^31^) and inputs without a relative
+timelock (sequence >= 2^31^).
 
-The +nSequence+ value is specified in either blocks or seconds.
+The sequence value is specified in either blocks or seconds.
 A type-flag
 is used to differentiate between values counting blocks and values
 counting time in seconds. The type-flag is set in the 23rd
 least-significant bit (i.e., value 1<<22). If the type-flag is set, then
-the +nSequence+ value is interpreted as a multiple of 512 seconds. If
-the type-flag is not set, the +nSequence+ value is interpreted as a
+the sequence value is interpreted as a multiple of 512 seconds. If
+the type-flag is not set, the sequence value is interpreted as a
 number of blocks.
 
 
-When interpreting +nSequence+ as a relative timelock, only the 16 least
+When interpreting sequence as a relative timelock, only the 16 least
 significant bits are considered. Once the flags (bits 32 and 23) are
-evaluated, the +nSequence+ value is usually "masked" with a 16-bit mask
-(e.g., +nSequence+ & 0x0000FFFF).  The multiple of 512 seconds is
+evaluated, the sequence value is usually "masked" with a 16-bit mask
+(e.g., +sequence+ & 0x0000FFFF).  The multiple of 512 seconds is
 roughly equal to the average amount of time between blocks, so the
 maximum relative timelock in both blocks and seconds from 16 bits
 (2^16^) is about one year.
 
-<<bip_68_def_of_nseq>> shows the binary layout of the +nSequence+ value,
+<<bip_68_def_of_nseq>> shows the binary layout of the sequence value,
 as defined by BIP68.
 
 [[bip_68_def_of_nseq]]
-.BIP68 definition of nSequence encoding (Source: BIP68)
-image::../images/mbc2_0701.png["BIP68 definition of nSequence encoding"]
+.BIP68 definition of sequence encoding (Source: BIP68)
+image::../images/mbc2_0701.png["BIP68 definition of sequence encoding"]
 
-Note that any transaction which sets a relative timelock using nSequence
+Note that any transaction which sets a relative timelock using sequence
 also sends the signal for opt-in replace-by-fee as described in
-<<nsequence-bip125>>.
+<<sequence-bip125>>.
 
 === Outputs
 
@@ -566,10 +567,10 @@ transaction.  It's a compactSize integer and must be greater than zero.
 
 The example transaction has two outputs.
 
-==== nValue
+==== Amount
 
-The first field of a specific output is its value, also called
-_nValue_ in Bitcoin Core.  This is an eight-byte signed integer indicating
+The first field of a specific output is its _amount_, also called
+"value" in Bitcoin Core.  This is an eight-byte signed integer indicating
 the number of _satoshis_ to transfer.  A satoshi is the smallest unit of
 bitcoin that can be represented in an onchain Bitcoin transaction.
 There are 100 million satoshis in a bitcoin.
@@ -639,39 +640,39 @@ use Utreexo.
 ====
 
 Bitcoin Core's policy rules about dust do have one exception: output
-scriptPubKeys starting with +OP_RETURN+, called _data carrier outputs_,
+scripts starting with +OP_RETURN+, called _data carrier outputs_,
 can have a value of zero.  The OP_RETURN opcode causes the script to
 immediately fail no matter what comes after it, so these outputs can
 never be spent.  That means full nodes don't need to keep track of them,
 a feature Bitcoin Core takes advantage of to allow users to store small
 amounts of arbitrary data in the blockchain without increasing the size
 of its UTXO database.  Since the outputs are unspendable, they aren't
-uneconomical--any satoshis in nValue assigned to them becomes
-permanently unspendable--so allowing the nValue to be zero ensures
+uneconomical--any satoshis assigned to them becomes
+permanently unspendable--so allowing the amount to be zero ensures
 satoshis aren't being destroyed.
 
-==== ScriptPubKey
+==== Output scripts
 
 The output amount is followed by a compactSize integer indicating the
-length of the output's _scriptPubKey_, the script that contains the
+length of the _output script_, the script that contains the
 conditions which will need to be fulfilled in order to spend the
 bitcoins, the _spending authorization_.  According to Bitcoin's
-consensus rules, the minimum size of a scriptPubKey is zero.
+consensus rules, the minimum size of an output script is zero.
 
-The consensus maximum allowed size of a scriptPubKey varies depending on
-when it's being checked.  There's no explicit limit on the size of a
-scriptPubKey in the output of a transaction, but a later transaction can
-only spend a previous output with a scriptPubKey of 10,000 bytes or
-smaller.  Implicitly, a scriptPubKey can be almost as large as the
+The consensus maximum allowed size of an outputs script varies depending on
+when it's being checked.  There's no explicit limit on the size of an
+output script in the output of a transaction, but a later transaction can
+only spend a previous output with a script of 10,000 bytes or
+smaller.  Implicitly, an output script can be almost as large as the
 transaction containing it, and a transaction can be almost as large as
 the block containing it.
 
 [[anyone-can-spend]]
 [TIP]
 ====
-A scriptPubKey with zero length can be spent by a scriptSig containing
-OP_TRUE.  Anyone can create that scriptSig, which means anyone
-can spend an empty scriptPubKey.  There are an essentially unlimited
+An output script with zero length can be spent by a input script containing
+OP_TRUE.  Anyone can create that input script, which means anyone
+can spend an empty output script.  There are an essentially unlimited
 number of scripts which anyone can spend and they are known to Bitcoin
 protocol developers as _anyone can spends_.  Upgrades to Bitcoin's
 script language often take an existing anyone-can-spend script and add
@@ -683,7 +684,7 @@ future upgrades don't accidentally interfere with your system.
 ====
 
 Bitcoin Core's policy for relaying and mining transactions effectively
-limits scriptPubKeys to just a few templates, called _standard
+limits output scripts to just a few templates, called _standard
 transaction outputs_.  This was originally implemented after the
 discovery of several early bugs in Bitcoin related to the Script
 language and is retained in modern Bitcoin Core to support
@@ -694,8 +695,8 @@ segwit v2 (taproot) tapscripts.
 We'll look at each of the current standard transaction templates and
 learn how to parse scripts in <<c_authorization_authentication>>.
 
-[[witnesses]]
-=== Witnesses
+[[witness_structure]]
+=== Witness structure
 
 In court, a witness is someone who testifies that they saw something
 important happen.  Human witnesses aren't always reliable, so courts
@@ -743,10 +744,10 @@ Witnesses, the values used to solve the math problems that protect
 bitcoins, need to be included in the transactions where they're used in
 order for full nodes to verify them.  In the legacy transaction format
 used for all early Bitcoin transactions, signatures and other data are
-placed in the scriptSig field.  However, when developers started to
+placed in the input script field.  However, when developers started to
 implement contract protocols on Bitcoin, such as we saw in
 <<original_tx_replacement>>, they discovered several significant
-problems with placing witnesses in the scriptSig field.
+problems with placing witnesses in the input script field.
 
 ==== Circular Dependencies
 
@@ -758,7 +759,7 @@ other person becomes unresponsive.  A simple solution is to sign
 transactions out of order.
 
 - Tx~0~ pays money from Alice and money from Bob into an output with a
-  scriptPubKey that requries signatures from both Alice and Bob to spend
+  script that requries signatures from both Alice and Bob to spend
 
 - Tx~1~ spends the previous output to two outputs, one refunding Alice
   her money and one refunding Bob his money (minus a small amount for
@@ -770,7 +771,7 @@ transactions out of order.
   protocol_.
 
 A problem with this construction in the legacy transaction format is
-that every field, including the scriptSig field which contains
+that every field, including the input script field which contains
 signatures, is used to build a transaction's identifier (txid).  The
 txid for Tx~0~ is part of the input's outpoint in Tx~1~.  That means
 there's no way for Alice and Bob to construct Tx~1~ until both
@@ -784,13 +785,13 @@ _circular dependency_.
 A more complex series of transactions can sometimes eliminate a circular
 dependency, but many protocols will then encounter a new concern: it's
 often possible to solve the same script in different ways.  For example,
-consider our simple script from <<witnesses>>:
+consider our simple script from <<witness_structure>>:
 
 ----
 2 OP_ADD 4 OP_EQUAL
 ----
 
-We can make this script pass by providing the value _2_ in a scriptSig,
+We can make this script pass by providing the value _2_ in a input script,
 but there are several ways to put that value on the stack in Bitcoin.
 Here are just a few:
 
@@ -811,7 +812,7 @@ OP_PUSHDATA4 0x000000020002
 ...
 ----
 
-Each alternative encoding of the number _2_ in a scriptSig will produce
+Each alternative encoding of the number _2_ in an input script will produce
 a slightly different transaction with a completely different txid.  Each
 different version of the transaction spends the same inputs (outpoints)
 as every other version of the transaction, making them all _conflict_
@@ -819,7 +820,7 @@ with each other.  Only one version of a set of conflicting transactions
 can be contained within a valid blockchain.
 
 Imagine Alice creates one version of the transaction with +OP_2+ in the
-scriptSig and an output that pays Bob.  Bob then immediately spends that
+input script and an output that pays Bob.  Bob then immediately spends that
 output to Carol.  Anyone on the network can replace +OP_2+ with
 +OP_PUSH1 0x02+, creating a conflict with Alice's original version.  If
 that conflicting transaction is confirmed, then there's no way to
@@ -855,7 +856,7 @@ that person could generate alternative signatures and so change the txid.
 
 For example, Alice and Bob have deposited their money into a script
 requiring a signature from both of them to spend.  They've also created
-a refund transaction that allows each of the to get their money back at
+a refund transaction that allows each of them to get their money back at
 any time.  Alice decides she wants to spend just some of the
 money, so she cooperates with Bob to create a chain of transactions.
 
@@ -892,9 +893,9 @@ mutation is called _unwanted second-party transaction malleability_.
 As early as https://bitcointalk.org/index.php?topic=40627.msg494697[2011],
 protocol developers knew how to solve the problems of circular
 dependence, third-party malleability, and second-party malleability.  The
-idea was to avoid including the scriptSig in the calculation that
+idea was to avoid including the input script in the calculation that
 produces a transaction's txid.  Recall that an abstract name for the data
-held by a scriptSig is a _witness_.  The idea of separating the rest of
+held by a input script is a _witness_.  The idea of separating the rest of
 the data in a transaction from its witness for the purpose of generating
 a txid is called _segregated witness_ (segwit).
 
@@ -915,28 +916,28 @@ explore the details of upgrading Bitcoin's consensus rules in
 <<mining>>).
 
 The soft fork segwit approach is based on anyone-can-spend
-scriptPubKeys.  A script which starts with any of the numbers 0 to 16
+output scripts.  A script which starts with any of the numbers 0 to 16
 and followed by 2 to 40 bytes of data is defined as a segwit
-scriptPubKey template.  The number indicates its version (e.g. 0 is
+output script template.  The number indicates its version (e.g. 0 is
 segwit version 0, or _segwit v0_).  The data is called a _native witness
 program_.  It's also possible to wrap the segwit template in a P2SH
 commitment, called a _P2SH witness program_, but we won't deal with that
 here.
 
-From the perspective of old nodes, these scriptPubKey templates can be
-spent with an empty scriptSig.  From the perspective of a new node which
-is aware of the new segwit rules, any payment to a segwit scriptPubKey
-template must only be spent with an empty scriptSig.  Notice the
-difference here: old nodes _allow_ an empty scriptSig; new nodes
-_require_ an empty scriptSig.
+From the perspective of old nodes, these output script templates can be
+spent with an empty input script.  From the perspective of a new node which
+is aware of the new segwit rules, any payment to a segwit output script
+template must only be spent with an empty input script.  Notice the
+difference here: old nodes _allow_ an empty input script; new nodes
+_require_ an empty input script.
 
-An empty scriptSig keeps witnesses from affecting the txid, eliminating
+An empty input script keeps witnesses from affecting the txid, eliminating
 circular dependencies, third-party transaction malleability, and
 second-party transaction malleability.  But, with no ability to put
-data in a scriptSig, users of segwit scriptPubKey templates need a
-new field.  That field is called the _witness_.
+data in an input script, users of segwit output script templates need a
+new field.  That field is called the _witness structure_.
 
-The introduction of witnesses and witness programs complicates Bitcoin,
+The introduction of witness programs and the witness structure complicates Bitcoin,
 but it follows an existing trend of increasing abstraction.  Recall from
 <<ch04_keys_addresses>> that the original Bitcoin whitepaper describes a system
 where bitcoins were received to public keys (pubkeys) and spent with
@@ -945,50 +946,50 @@ the bitcoins (whoever controlled the corresponding private key) and the
 signature provided _authentication_ that the spending transaction came
 from someone who controlled the private key.  To make that system more
 flexible, the initial release of Bitcoin introduced scripts that allow
-bitcoins to be received to scriptPubKeys and spent with scriptSigs.
+bitcoins to be received to output scripts and spent with input scripts.
 Later experience with contract protocols inspired allowing bitcoins to
-be received to witness programs and spent with witnesses.
+be received to witness programs and spent with the witness structure.
 
 .Terms used for authorization and authentication data in different parts of Bitcoin
 [cols="1,1,1"]
 |===
 | | **Authorization** | **Authentication**
 | **Whitepaper** | Public key | Signature
-| **Original (Legacy)** | scriptPubKey | scriptSig
-| **Segwit** | Witness program | Witness
+| **Original (Legacy)** | Output script | Input script
+| **Segwit** | Witness program | Witness structure
 |===
 
-==== Witness Serialization
+==== Witness Structure Serialization
 
-Similar to the inputs and outputs fields, the witness field contains
-several other fields, so we'll start with a map of those bytes from
+Similar to the inputs and outputs fields, the witness structure contains
+other fields, so we'll start with a map of those bytes from
 Alice's transaction in <<alice_tx_witness_map>>:
 
 [[alice_tx_witness_map]]
-.A byte map of the witness from Alice's transaction
+.A byte map of the witness structure from Alice's transaction
 image::../images/witness-byte-map.png["A byte map of the witness from Alice's transaction"]
 
-Unlike the inputs and outputs fields, the overall witness field doesn't
-start with any indication of the total number of elements it contains.
+Unlike the inputs and outputs fields, the overall witness structure doesn't
+start with any indication of the total number of witness stacks it contains.
 Instead, this is implied by the inputs field--there's one witness
-element for every input in a transaction.
+stack for every input in a transaction.
 
-The witness field for a particular input does start with a count of the
-number of elements they contain.  Those elements are called _stack
+The witness structure for a particular input does start with a count of the
+number of elements they contain.  Those elements are called _witness
 items_.  We'll explore them in detail in
 <<c_authorization_authentication>>, but for now we need to know that
-each stack item is prefixed by a compactSize integer indicating its
+each witness item is prefixed by a compactSize integer indicating its
 size.
 
-Legacy inputs don't contain any witness stack items so their witness
+Legacy inputs don't contain any witness items so their witness stack
 consists entirely of a count of zero (0x00).
 
 Alice's transaction contains one input and one stack item.
 
-[[nlocktime]]
-=== nLockTime
+[[lock_time]]
+=== Lock Time
 
-The final field in a serialized transaction is its _nLockTime_.  This
+The final field in a serialized transaction is its lock time.  This
 field was part of Bitcoin's original serialization format but it was
 only initially enforced by Bitcoin's policy for choosing which
 transactions to mine.  Bitcoin's earliest known soft fork added a rule
@@ -996,21 +997,21 @@ that, starting at block height 31,000, forbid the inclusion of a
 transaction in a block unless it satisfies one of the following rules:
 
 - The transaction indicates that it should be eligible for inclusion in
-  any block by setting its nLockTime to 0.
+  any block by setting its lock time to 0.
 
 - The transaction indicates that it wants to restrict which blocks it
-  can be included in by setting its nLockTime to a value less than
+  can be included in by setting its lock time to a value less than
   500,000,000.  In this case, the transaction can only be included in a
-  block that has a height equal to the nLockTime or higher.  For
-  example, a transaction with an nLockTime of 123,456 can be included in
+  block that has a height equal to the lock time or higher.  For
+  example, a transaction with a lock time of 123,456 can be included in
   block 123,456 or any later block.
 
 - The transaction indicates that it wants to restrict when it can be
-  included in the blockchain by setting its nLockTime to a value of
+  included in the blockchain by setting its lock time to a value of
   500,000,000 or greater.  In this case, the field is parsed as epoch
   time (the number of seconds since 1970-01-01T00:00 UTC) and the
   transaction can only be included in a block with a _Median Time Past_
-  (MTP) greater than the nLockTime.  MTP is normally about an hour or
+  (MTP) greater than the lock time.  MTP is normally about an hour or
   two behind the current time.  The rules for MTP are described in
   <<mtp>>.
 
@@ -1040,7 +1041,7 @@ Some of the special rules for coinbase transactions include:
   which would (at the very least) be confusing given that the coinbase
   transaction spends fees and subsidy.
 
-- The field which would contain a scriptSig in a normal transaction is
+- The field which would contain a input script in a normal transaction is
   called a _coinbase_.  It's this field that gives the coinbase
   transaction its name.  The coinbase field must be at least two bytes
   and not longer than 100 bytes.  This script is not executed but legacy
@@ -1123,14 +1124,14 @@ creation of uneconomical outputs as described in
 | Marker & Flag | 1 | 2
 | Inputs Count  | 4 | 4
 | Outpoint      | 4 | 144
-| scriptSig     | 4 | 4
-| nSequence     | 4 | 16
+| Input script  | 4 | 4
+| Sequence      | 4 | 16
 | Outputs Count | 4 | 4
-| nValue        | 4 | 64 (2 outputs)
-| scriptPubKey  | 4 | 232 (2 outputs with different scripts)
+| Amout         | 4 | 64 (2 outputs)
+| Output script | 4 | 232 (2 outputs with different scripts)
 | Witness Count | 1 | 1
-| Witnesses     | 1 | 66
-| nLockTime     | 4 | 16
+| Witness items | 1 | 66
+| Lock time     | 4 | 16
 | **Total**     | _N/A_ | **569**
 |===
 
@@ -1162,13 +1163,13 @@ older format, called _legacy serialization_, must be used on the Bitcoin
 P2P network for any transaction with an empty witness (which is only
 valid if the transaction doesn't spend any witness programs).
 
-Legacy serialization does not include the marker, flag, and witness
+Legacy serialization does not include the marker, flag, and witness structure
 fields.
 
 In this chapter, we looked at each of the fields in a transaction and
 discovered how they communicate to full nodes the details about the
 bitcoins to be transferred between users.  We only briefly looked at the
-scriptPubKey, scriptSig, and witness fields that allow specifying and
+output script, input script, and witness structure that allow specifying and
 satisfying conditions which restrict who can spend what bitcoins.
 Understanding how to construct and use these conditions is essential to
 ensuring that only Alice can spend her bitcoins, so they will be the

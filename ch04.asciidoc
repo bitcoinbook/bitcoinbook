@@ -388,21 +388,21 @@ library] to do the elliptic curve math.
 .Elliptic curve cryptography: visualizing the multiplication of a point G by an integer k on an elliptic curve
 image::images/mbc2_0404.png["ecc_illustrated"]
 
-=== ScriptPubKey and ScriptSig
+=== Output and Input Scripts
 
 Although the illustration from the original Bitcoin paper, <<pay-to-pure-pubkey>>,
 shows public keys (pubkeys) and signatures (sigs) being used directly,
 the first version of Bitcoin instead had payments sent to a field called
-_scriptPubKey_ and had them authorized by a field called _scriptSig_.
+_output script_ and had spends of those bitcoins authorized by a field called _input script_.
 These fields allow additional operations to be performed in addition to
 (or instead of) verifying that a signature corresponds to a public key.
-For example, a scriptPubKey can contain two public keys and require two
-corresponding signatures be placed in the spending scriptSig.
+For example, an output script can contain two public keys and require two
+corresponding signatures be placed in the spending input script.
 
 Later, in <<tx_script>>, we'll learn about scripts in detail.  For now,
-all we need to understand is that bitcoins are received to a
-scriptPubKey which acts like a public key, and bitcoin spending is
-authorized by a scriptSig which acts like a signature.
+all we need to understand is that bitcoins are received to an
+output script which acts like a public key, and bitcoin spending is
+authorized by a input script which acts like a signature.
 
 [[p2pk]]
 === IP Addresses: The Original Address For Bitcoin (P2PK)
@@ -439,21 +439,21 @@ looking at the blockchain and noticing that all of the transactions paid
 the same public key.
 
 Using the public key her node received from Bob's node, Alice's wallet
-would construct a transaction output paying a very simple scriptPubKey:
+would construct a transaction output paying a very simple output script:
 
 ----
 <Bob's public key> OP_CHECKSIG
 ----
 
-Bob would later be able to spend that output with a scriptSig consisting
+Bob would later be able to spend that output with an input script consisting
 entirely of his signature:
 
 ----
 <Bob's signature>
 ----
 
-To figure out what a scriptPubKey and scriptSig are doing, you can
-combine them together (scriptSig first) and then note that each piece of
+To figure out what an output and input script are doing, you can
+combine them together (input script first) and then note that each piece of
 data (shown in angle brackets) is placed at the top of a list of items,
 called a stack.  When an operation code (opcode) is encountered, it uses
 items from the stack, starting with the topmost items.  Let's look at
@@ -564,13 +564,13 @@ where _K_ is the public key and _A_ is the resulting commitment.
 
 Now that we understand how to make a commitment to a public key, we need
 to figure out how to use it in a transaction.  Consider the following
-scriptPubKey:
+output script:
 
 ----
 OP_DUP OP_HASH160 <Bob's commitment> OP_EQUAL OP_CHECKSIG
 ----
 
-And also the following scriptSig:
+And also the following input script:
 
 ----
 <Bob's signature> <Bob's public key>
@@ -592,8 +592,8 @@ so now the top of the stack is a hash of Bob's public key.  Next, the
 commitment to Bob's public key is added to the top of the stack.  The
 +OP_EQUALVERIFY+ operation consumes the top two items and verifies that
 they are equal; that should be the case if the public key Bob provided
-in the scriptSig is the same public key used to create the commitment in
-the scriptPubKey that Alice paid.  If +OP_EQUALVERIFY+ fails, the whole
+in the input script is the same public key used to create the commitment in
+the output script that Alice paid.  If +OP_EQUALVERIFY+ fails, the whole
 script fails.  Finally, we're left with a stack containing just Bob's
 signature and his public key; the +OP_CHECKSIG+ opcode verifies they
 correspond with each other and that the signature commits to the
@@ -664,7 +664,7 @@ To convert data (a number) into a base58check format, we first add a
 prefix to the data, called the "version byte," which serves to easily
 identify the type of data that is encoded. For example, the prefix zero
 (0x00 in hex) indicates that the data should be used as the commitment (hash) in
-a legacy P2PKH scriptPubKey.  A list of common version prefixes is shown
+a legacy P2PKH output script.  A list of common version prefixes is shown
 in <<base58check_versions>>.
 
 Next, we compute the "double-SHA" checksum, meaning we apply the SHA256
@@ -866,14 +866,14 @@ compressed public keys.
 
 As we've seen in preceding sections, someone receiving Bitcoins (like
 Bob) can require payments to him contain certain constraints in their
-scriptPubKeys.  Bob will need to fulfill those constraints using a
-scriptSig when he spends those bitcoins.  In <<p2pk>>, the constraint
-was simply that the scriptSig needed to provide an appropriate
+output script.  Bob will need to fulfill those constraints using an
+input script when he spends those bitcoins.  In <<p2pk>>, the constraint
+was simply that the input script needed to provide an appropriate
 signature.  In <<addresses_for_p2pkh>>, an appropriate public key also needed to be
 provided.
 
 In order for a spender (like Alice) to place the constraints Bob wants
-in the scriptPubKey she uses to pay him, Bob needs to communicate those
+in the output script she uses to pay him, Bob needs to communicate those
 constraints to her.  This is similar to the problem of Bob needing to
 communicate his public key to her.  Like that problem, where
 public keys can be fairly large, the constraints Bob uses can also be
@@ -883,22 +883,22 @@ for which she needs to pay transaction fees every time she wants to spend
 money to Bob.  However, the solution of using hash functions to create
 small commitments to large amounts of data also applies here.
 
-The BIP16 upgrade to the Bitcoin protocol in 2013 allows a
-scriptPubKey to commit to a _redemption script_ (_redeemScript_).  When
-Bob spends his bitcoins, his scriptSig need to provide a redeemScript
+The BIP16 upgrade to the Bitcoin protocol in 2013 allows an
+output script to commit to a _redemption script_ (_redeem script_).  When
+Bob spends his bitcoins, his input script need to provide a redeem script
 that matches the commitment and also any data necessary to satisfy the
-redeemScript (such as signatures).  Let's start by imagining Bob wants
+redeem script (such as signatures).  Let's start by imagining Bob wants
 to require two signatures to spend his bitcoins, one signature from his
 desktop wallet and one from a hardware signing device.  He puts those
-conditions into a redeemScript:
+conditions into a redeem script:
 
 ----
 <public key 1> OP_CHECKSIGVERIFY <public key 2> OP_CHECKSIG
 ----
 
-He then creates a commitment to the redeemScript using the same
+He then creates a commitment to the redeem script using the same
 HASH160 mechanism used for P2PKH commitments, +RIPEMD160(SHA256(script))+.
-That commitment is placed into the scriptPubKey using a special
+That commitment is placed into the output script using a special
 template:
 
 ----
@@ -908,24 +908,24 @@ OP_HASH160 <commitment> OP_EQUAL
 [WARNING]
 ====
 Payments to Script Hashes (P2SH) must use the specific P2SH template
-with no extra data or conditions in the scriptPubKey.  If the
-scriptPubKey is not exactly +OP_HASH160 <20 bytes> OP_EQUAL+, the
-redeemScript will not be used and any bitcoins may either be unspendable
+with no extra data or conditions in the output script.  If the
+output script is not exactly +OP_HASH160 <20 bytes> OP_EQUAL+, the
+redeem script will not be used and any bitcoins may either be unspendable
 or spendable by anyone (meaning anyone can take them).
 ====
 
 When Bob goes to spend the payment he received to the commitment for his
-script, he uses a scriptSig that includes the redeemScript, with it
+script, he uses an input script that includes the redeem script, with it
 serialized as a single data element.  He also provides the signatures
-he needs to satisfy the redeemScript, putting them in the order that
+he needs to satisfy the redeem script, putting them in the order that
 they will be consumed by the opcodes:
 
 ----
-<signature2> <signature1> <redeemScript>
+<signature2> <signature1> <redeem script>
 ----
 
 When Bitcoin full nodes receive Bob's spend, they'll verify that the
-serialized redeemScript will hash to the same value as the commitment.
+serialized redeem script will hash to the same value as the commitment.
 Then they'll replace it on the stack with its deserialized value:
 
 ----
@@ -968,7 +968,7 @@ Legacy addresses were supplanted by the bech32 family of addresses.
 .P2SH collision attacks
 ****
 All addresses based on hash functions are theoretically vulnerable to an
-attacker finding two different inputs (e.g. redeemScripts) that produce
+attacker finding two different inputs (e.g. redeem scripts) that produce
 the same hash function output (commitment).  For addresses created
 entirely by a single party, the chance of an attacker generating a
 different input for an existing commitment is proportional to the
@@ -1363,7 +1363,7 @@ With the checksum created, each 5-bit character in the data part
 (including the witness version, witness program, and checksum) is
 converted to alphanumeric characters.
 
-For decoding back into a scriptPubKey, we work in reverse.  First let's
+For decoding back into an output script, we work in reverse.  First let's
 use the reference library to decode two of our addresses:
 
 ----
@@ -1378,7 +1378,7 @@ decode(hrp, addr)
 ----
 
 We get back both the witness version and the witness program.  Those can
-be inserted into the template for our scriptPubKey:
+be inserted into the template for our output script:
 
 ----
 <version> <program>

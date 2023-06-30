@@ -581,7 +581,7 @@ to fix those:
   commitment that is in her favor.
 
 Both of these problems can be solved with timelocks&#x2014;let's look at
-how we could use transaction-level timelocks (+nLocktime+).
+how we could use transaction-level time locks.
 
 Emma cannot risk funding a 2-of-2 multisig unless she has a guaranteed
 refund. To solve this problem, Emma constructs the funding and refund
@@ -591,7 +591,7 @@ transaction to Fabian and obtains his signature.
 
 The refund transaction acts as the first commitment transaction and its
 timelock establishes the upper bound for the channel's life. In this
-case, Emma could set the +nLocktime+ to 30 days or 4320 blocks into the
+case, Emma could set the lock time to 30 days or 4320 blocks into the
 future. All subsequent commitment transactions must have a shorter
 timelock, so that they can be redeemed before the refund transaction.
 
@@ -604,7 +604,7 @@ Every commitment transaction the parties exchange during the life of the
 channel will be timelocked into the future. But the delay will be
 slightly shorter for each commitment so the most recent commitment can
 be redeemed before the prior commitment it invalidates. Because of the
-nLockTime, neither party can successfully propagate any of the
+lock time, neither party can successfully propagate any of the
 commitment transactions until their timelock expires. If all goes well,
 they will cooperate and close the channel gracefully with a settlement
 transaction, making it unnecessary to transmit an intermediate
@@ -641,8 +641,8 @@ commitments. Thus, the most recent commitment transaction can be
 transmitted, spending the inputs and invalidating prior commitment
 transactions. The enforcement of smart contracts with absolute timelocks
 protects against cheating by one of the parties. This implementation
-needs nothing more than absolute transaction-level timelocks
-(+nLocktime+). Next, we will see how script-level timelocks,
+needs nothing more than absolute transaction-level lock time.
+Next, we will see how script-level timelocks,
 +CHECKLOCKTIMEVERIFY+ and +CHECKSEQUENCEVERIFY+, can be used to
 construct more flexible, useful, and sophisticated state channels.
 
@@ -959,7 +959,7 @@ IF
     HASH160 <H> EQUALVERIFY
 ELSE
     # Refund after timeout.
-    <locktime> CHECKLOCKTIMEVERIFY DROP
+    <lock time> CHECKLOCKTIMEVERIFY DROP
     <Payer Public Key> CHECKSIG
 ENDIF
 ----
@@ -1194,7 +1194,7 @@ startref="alicetwelve")))
 
 Each element of the path contains information on the HTLC that must be
 extended to the next hop, the amount that is being sent, the fee to
-include, and the CLTV locktime (in blocks) expiration of the HTLC. As
+include, and the CLTV lock time (in blocks) expiration of the HTLC. As
 the route information propagates, the nodes make HTLC commitments
 forward to the next hop.
 

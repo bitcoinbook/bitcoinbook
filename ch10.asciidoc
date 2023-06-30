@@ -273,8 +273,8 @@ criteria:
 - Each output value, as well as the total, must be within the allowed
   range of values (zero or more, but less than 21m coins).
 
-- +nLocktime+ is equal to +INT_MAX+, or +nLocktime+ and +nSequence+
-  values are satisfied according to the locktime and BIP68 rules.
+- Lock time is equal to +INT_MAX+, or lock time and sequence
+  values are satisfied according to the lock time and BIP68 rules.
 
 - The number of signature operations (SIGOPS) contained in the
   transaction is less than the signature operation limit.
@@ -492,7 +492,7 @@ structure of the coinbase transaction's input.
 | 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
 | 1&#x2013;9 bytes (VarInt) | Script Size | Script length in bytes, to follow
-| Variable | ScriptSig | A script that fulfills the conditions of the UTXO scriptPubKey
+| Variable | Input script | A script that fulfills the conditions of the UTXO output script
 | 4 bytes | Sequence Number | Multipurpose field used for BIP68 time locks and transaction replacement signaling
 |=======
 
@@ -512,14 +512,14 @@ In a coinbase transaction, the first two fields are set to values that
 do not represent a UTXO reference. Instead of a "transaction hash," the
 first field is filled with 32 bytes all set to zero. The "output index"
 is filled with 4 bytes all set to 0xFF (255 decimal). The
-+scriptSig+ is replaced by coinbase data, a data field used by
+input script is replaced by coinbase data, a data field used by
 the miners, as we will see next.
 
 [[duplicate_transactions]]
 ==== Coinbase Data
 
 ((("coinbase transactions", "coinbase data")))Coinbase transactions do
-not have a +scriptSig+ field. Instead, this
+not have an input script field. Instead, this
 field is replaced by coinbase data, which must be between 2 and 100
 bytes. Except for the first few bytes, the rest of the coinbase data can
 be used by miners in any way they want; it is arbitrary data.
@@ -1169,11 +1169,11 @@ miner can influence the timestamps in order to gain fees from
 transactions with a timelock that hasn't yet matured.
 
 Median time past changes the implementation of time calculations for
-+nLocktime+, +CLTV+, +nSequence+, and +CSV+. The consensus time
+lock time, +CLTV+, sequence, and +CSV+. The consensus time
 calculated by median time past is usually about one hour behind
 wall clock time. If you create timelock transactions, you should account
-for it when estimating the desired value to encode in +nLocktime+,
-+nSequence+, +CLTV+, and +CSV+.
+for it when estimating the desired value to encode in lock time,
+sequence, +CLTV+, and +CSV+.
 
 === Successfully Mining the Block
 
@@ -2173,7 +2173,7 @@ effect. Execution continues after the NOP opcode as if it wasn't there.
 A soft fork therefore can modify the semantics of a NOP code to give it
 new meaning. For example, BIP65 (+CHECKLOCKTIMEVERIFY+) reinterpreted
 the NOP2 opcode. Clients implementing BIP65 interpret NOP2 as
-+OP_CHECKLOCKTIMEVERIFY+ and impose an absolute locktime consensus rule
++OP_CHECKLOCKTIMEVERIFY+ and impose an absolute lock time consensus rule
 on UTXOs that contain this opcode in their locking scripts. This change
 is a soft fork because a transaction that is valid under BIP65 is also
 valid on any client that is not implementing (ignorant of) BIP65. To
