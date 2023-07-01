@@ -1,2 +1,0 @@
-// FIXME
-- [ ] s/mnemonic/seed/
