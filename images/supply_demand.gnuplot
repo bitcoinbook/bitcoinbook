@@ -96,7 +96,6 @@ plot price(x) title '' with lines lc rgb 'black' lw 4, \
 #######################
 
 set output 'fee-patience.png'
-#set title "Wait Times for Different Feerates"
 
 unset label 1
 unset label 2

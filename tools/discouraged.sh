@@ -36,3 +36,4 @@ BIP [0-9]
 \<nValue\>
 witness field
 witness element
+feerate
