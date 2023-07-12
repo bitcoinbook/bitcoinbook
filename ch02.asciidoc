@@ -32,7 +32,6 @@ application that operates as a bitcoin search engine, in that it allows
 you to search for addresses, transactions, and blocks and see the
 relationships and flows between them.
 
-//FIXME: priv key to P2PKH address
 [[bitcoin-overview]]
 .Bitcoin overview
 image::images/mbc2_0201.png["Bitcoin Overview"]
@@ -235,8 +234,6 @@ change.
 @enddittaa
 ////
 
-//FIXME: clarify that these aren't the same transactions as described in
-//the text
 [[transaction-chain]]
 .A chain of transactions, where the output of one transaction is the input of the next transaction
 image::images/transaction-chain.png["Transaction chain"]
@@ -280,6 +277,14 @@ otherwise look identical, preventing any third party from determining
 which outputs are change and which are payments.  However, for
 illustration purposes, we've added shading to the change outputs in
 <<transaction-chain>>.
+
+Not every transaction has a change output.  Those that don't are called
+_changeless transactions_ and they can have only a single output.
+Changeless transaction are only a practical option if the amount being
+spent is roughly the same as the amount available in the transaction
+inputs minus the anticipated transaction fee.  In <<transaction-chain>>
+we see Bob creating Tx3 as a changeless transaction that spends the
+output he received in Tx2.
 
 ==== Coin selection
 
@@ -590,7 +595,6 @@ block and announced it to the network. After each other miner
 validates the winning block, they start a new lottery to generate the next
 block.
 
-//FIXME:Murch CH2 feedback about most-PoW chain
 Jing's winning block containing Alice's transaction became part of the
 blockchain. The block containing Alice's transaction is counted as one
 "confirmation" of that transaction.  After the block containing Alice's
@@ -598,8 +602,11 @@ transaction has propagated through the network, creating an alternative
 block with a different version of Alice's transaction (such as a
 transaction that doesn't pay Bob) would require performing the same
 amount of work as it will take all Bitcoin miners to create an entirely
-new block.  For the entire network to accept an alternative block, an
-additional new block would need to be mined on top of the alternative.
+new block.  When there are multiple alternative blocks to choose from,
+Bitcoin full nodes choose the chain of valid blocks with the most total
+Proof-of-Work, called the _best blockchain_.  For the entire network to
+accept an alternative block, an additional new block would need to be
+mined on top of the alternative.
 
 That means miners have a choice.  They can work with Alice on an
 alternative version of the transaction where she pays Bob, perhaps with
