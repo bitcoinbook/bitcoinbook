@@ -1,7 +1,7 @@
 [[ch04_keys_addresses]]
 == Keys and Addresses
 
-Alice wants to pay Bob, but the the thousands of Bitcoin full nodes who
+Alice wants to pay Bob, but the thousands of Bitcoin full nodes who
 will verify her transaction don't know who Alice or Bob are--and we want
 to keep it that way to protect their privacy.  Alice needs to
 communicate that Bob should receive some of her bitcoins without tying
@@ -649,7 +649,7 @@ shows the full base58 alphabet.
 ====
 
 To add extra security against typos or transcription errors, base58check
-adds an error-checking code to the base58 alphabet. The checksum is an additional four bytes
+uses the base58 alphabet to also include a _checksum_. The checksum is an additional four bytes
 added to the end of the data that is being encoded. The checksum is
 derived from the hash of the encoded data and can therefore be used to
 detect transcription and typing errors. When presented with
@@ -713,7 +713,7 @@ version prefixes and the resulting base58 characters are shown in
 |=======
 
 Putting together public keys, hash-based commitments, and base58check
-encocding, we can see the illustration of the conversion of a public key
+encoding, we can see the illustration of the conversion of a public key
 into a Bitcoin address in <<pubkey_to_address>>.
 
 [[pubkey_to_address]]
@@ -739,7 +739,8 @@ wrapper
 }
 ----
 
-The result contains the key as payload, the WIF version prefix 128, and a checksum.
+The result contains the key as payload, the WIF version prefix 128 (0x80
+in hex), and a checksum.
 
 Notice that the "payload" of the compressed key is appended with the
 suffix +01+, signaling that the derived public key is to be compressed:
@@ -840,6 +841,7 @@ key can produce a public key expressed in two different formats
 addresses. However, the private key is identical for both Bitcoin
 addresses.
 
+//FIXME:misaligned text, see Murch CH04 feedback
 [[pubkey_compression]]
 [role="smallerseventy"]
 .Public key compression
@@ -864,7 +866,7 @@ compressed public keys.
 [[addresses_for_p2sh]]
 === Legacy Pay-to-Script-Hash (P2SH)
 
-As we've seen in preceding sections, someone receiving Bitcoins (like
+As we've seen in preceding sections, someone receiving bitcoins (like
 Bob) can require payments to him contain certain constraints in their
 output script.  Bob will need to fulfill those constraints using an
 input script when he spends those bitcoins.  In <<p2pk>>, the constraint
@@ -883,7 +885,7 @@ for which she needs to pay transaction fees every time she wants to spend
 money to Bob.  However, the solution of using hash functions to create
 small commitments to large amounts of data also applies here.
 
-The BIP16 upgrade to the Bitcoin protocol in 2013 allows an
+The BIP16 upgrade to the Bitcoin protocol in 2012 allows an
 output script to commit to a _redemption script_ (_redeem script_).  When
 Bob spends his bitcoins, his input script need to provide a redeem script
 that matches the commitment and also any data necessary to satisfy the
@@ -959,22 +961,28 @@ transactions.
 ====
 
 P2PKH and P2SH are the only two script templates used with base58check
-encoding.  They are now known as legacy addresses and, as of early 2023,
-are only used in
-https://transactionfee.info/charts/payments-spending-segwit/[about 10% of transactions].
+encoding.  They are now known as legacy addresses and have become less
+common over time.
 Legacy addresses were supplanted by the bech32 family of addresses.
 
 [[p2sh_collision_attacks]]
 .P2SH collision attacks
 ****
 All addresses based on hash functions are theoretically vulnerable to an
-attacker finding two different inputs (e.g. redeem scripts) that produce
-the same hash function output (commitment).  For addresses created
+attacker independently finding the same input that produced the hash
+function output (commitment).  In the case of Bitcoin, if they find the
+input the same way the original user did, they'll know the user's private
+key and be able to spend that user's bitcoin.  The chance of an attacker
+independently generating the input for an existing commitment is
+proportional to the strength of the hash algorithm.  For a secure
+160-bit algorithm like HASH160, the probability is 1-in-2^160^.  This is
+a _pre-image attack_.
+
+An attacker can also try to generate two different inputs (e.g. redeem
+scripts) that produce the same commitment.  For addresses created
 entirely by a single party, the chance of an attacker generating a
-different input for an existing commitment is proportional to the
-strength of the hash algorithm.  For a secure 160-bit algorithm like
-HASH160, the probability is 1-in-2^160^.  This is a _second pre-image
-attack_.
+different input for an existing commitment is also about 1-in-2^160^ for
+the HASH160 algoritm.  This is a _second pre-image attack_.
 
 However, this changes when an attacker is able to influence the original input
 value. For example, an attacker participates in the creation of a
@@ -1007,7 +1015,7 @@ special knowledge on the part of wallet developers is to simply use
 a stronger hash function.  Later upgrades to Bitcoin made that possible
 and newer Bitcoin addresses provide at least 128 bits of collision
 resistance.  To perform 2^128^ hash operations would require all current
-Bitcoin miners about 50 billion years to perform.
+Bitcoin miners about 32 billion years to perform.
 
 Although we do not believe there is any immediate threat to anyone
 creating new P2SH addresses, we recommend all new wallets use newer
@@ -1016,19 +1024,19 @@ types of addresses to eliminate address collision attacks as a concern.
 
 === Bech32 addresses
 
-In 2017, the Bitcoin protocol was upgraded to prevent transaction
+In 2017, the Bitcoin protocol was upgraded.  When the upgrade is used,
+it prevents transaction
 identifiers (txids) from being changed without the consent of a spending
 user (or a quorum of signers when multiple signatures are required).
 The upgrade, called _segregated witness_ (or _segwit_ for short),  also
 provided additional capacity for transaction data in blocks and several
 other benefits.  However, users wanting direct access to segwit's
-benefits had to accept payments to variations on the legacy P2PKH and
-P2SH scripts.
+benefits had to accept payments to new output scripts.
 
 As mentioned in <<p2sh>>, one of the advantages of the P2SH output type
 was that a spender (such as Alice) didn't need to know the details of
 the script the receiver (such as Bob) used.  The segwit upgrade was
-designed to be compatible with this mechanism, allowing users to
+designed to use this mechanism, allowing users to
 immediately begin accessing many of the new benefits by using a P2SH
 address.  But for Bob to gain access to all of the benefits, he would
 need Alice's wallet to pay him using a different type of script.  That
@@ -1057,8 +1065,8 @@ identified several problems with base58check:
   located.  It might take you several frustrating minutes to eventually
   discover the mistake.
 
-- A mixed case alphabet also requires extra space to encode in QR code
-  images, which are commonly used to share addresses and invoices
+- A mixed case alphabet also requires extra space to encode in QR codes,
+  which are commonly used to share addresses and invoices
   between wallets.  That extra space means QR codes need to be larger at
   the same resolution or they become harder to scan quickly.
 
@@ -1078,8 +1086,9 @@ The "32" stands for the number of characters in the bech32 alphabet
 
 - Bech32 uses only numbers and a single case of letters (preferably
   rendered in lowercase).  Despite its alphabet being almost half the
-  size of the base58check alphabet, bech32 addresses are only slightly
-  longer than the longest equivalent P2PKH legacy addresses.
+  size of the base58check alphabet, a bech32 address for a P2WPKH script
+  is only slightly longer than a legacy address for an equivalent P2PKH
+  script.
 
 - Bech32 can both detect and help correct errors.  In an address of an
   expected length, it is mathematically guaranteed to detect any error
@@ -1109,8 +1118,8 @@ https://bitcoin.sipa.be/bech32/demo/demo.html[bech32 address decoder demo].
   <<bech32_qrcode_uc_lc>>.
 
 [[bech32_qrcode_uc_lc]]
-.The same bech32 address QR encoded in uppercase and lowercase
-image::images/bech32-qrcode-uc-lc.png["The same bech32 address QR encoded in uppercase and lowercase"]
+.The same bech32 address QR encoded in lowercase and uppercase
+image::images/bech32-qrcode-uc-lc.png["The same bech32 address QR encoded in lowercase and uppercase"]
 
 - Bech32 takes advantage of an upgrade mechanism designed as part of
   segwit to make it possible for spender wallets to be able to pay
@@ -1547,16 +1556,6 @@ key. The resulting base58check-encoded private key is called a
 starting with "5" as is the case with WIF-encoded (uncompressed) keys
 from older wallets.
 
-[TIP]
-====
-"Compressed private keys" is a misnomer! They are not compressed;
-rather, WIF-compressed signifies that the keys should only be used to
-derive compressed public keys and their corresponding Bitcoin addresses.
-Ironically, a "WIF-compressed" encoded private key is one byte longer
-because it has the added +01+ suffix to distinguish it from an
-"uncompressed" one.((("", startref="KAaddress04")))
-====
-
 === Advanced Keys and Addresses
 
 ((("keys and addresses", "advanced forms", id="KAadvanced04")))In the
@@ -1587,7 +1586,7 @@ Elliptic Curve Cryptography (ECC) and SHA as any other address. You can
 no more easily find the private key of an address starting with a vanity
 pattern than you can any other address.
 
-In <<ch01_intro_what_is_bitcoin>>, we introduced Eugenia, a children's
+Eugenia is a children's
 charity director operating in the Philippines. Let's say that Eugenia is
 organizing a bitcoin fundraising drive and wants to use a vanity Bitcoin
 address to publicize the fundraising. Eugenia will create a vanity
@@ -1650,8 +1649,8 @@ Vanity searches on GPU systems are many orders of magnitude
 faster than on a general-purpose CPU.
 
 Another way to find a vanity address is to outsource the work to a pool
-of vanity miners. A pool is a service that
-allows those with GPU hardware to earn bitcoin searching for vanity
+of vanity miners. A https://bitcointalk.org/index.php?topic=84569.0[vanity pool] is a service that
+allows those with fast hardware to earn bitcoin searching for vanity
 addresses for others. For a fee, Eugenia can outsource the search for a
 seven-character pattern vanity address and get results in a few hours
 instead of having to run a CPU search for months.
@@ -1687,8 +1686,8 @@ gives discount pricing to Eugenia.
 
 // https://github.com/MakisChristou/vanitybech
 
-Given those problems, we don't expect to see many vanity addresses in
-the future, although there will probably always be some.
+We don't expect to see many vanity addresses in
+the future unless the above problems are solved.
 
 [[paper_wallets]]
 ==== Paper Wallets

@@ -3,9 +3,9 @@ from bitcoin.rpc import RawProxy
 p = RawProxy()
 
 # The block height where Alice's transaction was recorded
-blockheight = 277316
+blockheight = 775072
 
-# Get the block hash of block with height 277316
+# Get the block hash of the block at the given height
 blockhash = p.getblockhash(blockheight)
 
 # Retrieve the block by its hash

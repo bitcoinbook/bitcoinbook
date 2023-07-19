@@ -47,7 +47,7 @@ differentiate it from other implementations. Bitcoin Core is
 the _reference implementation_ of the Bitcoin system, meaning that it
 provides a reference for how each part of the technology should be
 implemented. Bitcoin Core implements all aspects of Bitcoin, including
-wallets, a transaction and block validation engine, and all modern parts
+wallets, a transaction and block validation engine, tools for block construction, and all modern parts
 of Bitcoin peer-to-peer communication.
 
 <<bitcoin_core_architecture>> shows the architecture of Bitcoin
@@ -494,12 +494,15 @@ inside the configuration file it refers to.
 
 datadir:: Select the directory and filesystem in which to put all the
 blockchain data. By default this is the _.bitcoin_ subdirectory of your
-home directory. Make sure this filesystem has several gigabytes of free
-space.
+home directory. Depending on your configuration, this can use from about 10
+gigabytes to almost 1 terabyte as of this writing, with the maximum size
+expected to increase by several hundred gigabytes per year.
 
-prune:: Reduce the disk space requirements to this many megabytes, by
+prune:: Reduce the blockchain disk space requirements to this many megabytes, by
 deleting old blocks. Use this on a resource-constrained node that can't
-fit the full blockchain.
+fit the full blockchain.  Other parts of the system will use other disk
+space that can't currently be pruned, so you will still need at least
+the minimum amount of space mentioned in the +datadir+ option.
 
 txindex:: Maintain an index of all transactions. This allows you to
 programmatically retrieve any transaction by its ID provided that the
@@ -714,7 +717,7 @@ and their expected output.
 ==== Getting Information on Bitcoin Core's Status
 
 ((("Bitcoin Core", "Bitcoin Core API", "status information")))Bitcoin
-Core provides status reports on diffent modules through the JSON-RPC
+Core provides status reports on different modules through the JSON-RPC
 interface. The most important commands include +getblockchaininfo+,
 +getmempoolinfo+, +getnetworkinfo+ and +getwalletinfo+.
 
@@ -744,9 +747,7 @@ $ bitcoin-cli getnetworkinfo
   "connections_in": 0,
   "connections_out": 10,
   "networks": [
-    ...
-    detailed information about all networks (ipv4, ipv6, onion, i2p, and cjdns)
-    ...
+    "...detailed information about all networks (ipv4, ipv6, onion, i2p, and cjdns)..."
   ],
   "relayfee": 0.00001000,
   "incrementalfee": 0.00001000,
@@ -766,9 +767,15 @@ Bitcoin network and the settings related to this node.
 [TIP]
 ====
 It will take some time, perhaps more than a day, for +bitcoind+
-to catch up to the current blockchain height as it downloads
-blocks from other Bitcoin nodes. You can check its progress using
-+getblockchaininfo+ to see the number of known blocks.
+to catch up to the current blockchain height as it downloads blocks from
+other Bitcoin nodes and validates every transaction in those
+blocks--almost a billion transactions as of this writng. You can check
+its progress using
++getblockchaininfo+ to see the number of known blocks.  The examples in
+the rest of this chapter assume you're at least at block 775,072.
+Because the security of Bitcoin transactions depends on blocks, some of
+the information in the following examples will change slightly depending
+on how many blocks your node has.
 ====
 
 [[exploring_and_decoding_transactions]]
@@ -1002,9 +1009,22 @@ with the request. Bitcoin Core will create a random password on each
 start and place it in the data directory under the name +.cookie+. The
 +bitcoin-cli+ helper can read this password file given the data
 directory. Similarly, you can copy the password and pass it to curl (or
-any higher level Bitcoin Core RPC wrappers). Alternatively, you can
+any higher level Bitcoin Core RPC wrappers), as seen in <<cookie_auth>>.
+
+[[cookie_auth]]
+====
+----
+$ cat .bitcoin/.cookie
+__cookie__:17c9b71cef21b893e1a019f4bc071950c7942f49796ed061b274031b17b19cd0
+
+$ curl --user __cookie__:17c9b71cef21b893e1a019f4bc071950c7942f49796ed061b274031b17b19cd0  --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockchaininfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+{"result":{"chain":"main","blocks":799278,"headers":799278,"bestblockhash":"000000000000000000018387c50988ec705a95d6f765b206b6629971e6978879","difficulty":53911173001054.59,"time":1689703111,"mediantime":1689701260,"verificationprogress":0.9999979206082515,"initialblockdownload":false,"chainwork":"00000000000000000000000000000000000000004f3e111bf32bcb47f9dfad5b","size_on_disk":563894577967,"pruned":false,"warnings":""},"error":null,"id":"curltest"}
+----
+====
+
+Alternatively, you can
 create a static password with the helper script provided in
-_./share/rpcuser/rpcuser.py_ in Bitcoin Core's source directory.
+_./share/rpcauth/rpcauth.py_ in Bitcoin Core's source directory.
 
 If you're implementing a JSON-RPC call in your own program, you can use
 a generic HTTP library to construct the call, similar to what is shown
@@ -1013,6 +1033,8 @@ in the preceding +curl+ example.
 However, there are libraries in most popular programming languages that
 "wrap" the Bitcoin Core API in a way that makes this a lot simpler. We
 will use the +python-bitcoinlib+ library to simplify API access.
+This library is not part of the Bitcoin Core project and needs to be
+installed the usual way you install Python libraries.
 Remember, this requires you to have a running Bitcoin Core instance,
 which will be used to make JSON-RPC calls.
 
@@ -1069,8 +1091,8 @@ a program to run them; you could just as easily use the +bitcoin-cli+
 helper. The next example, however, requires several hundred RPC calls
 and more clearly demonstrates the use of a programmatic interface.
 
-In <<rpc_block>>, we first retrieve block 277316, then retrieve each of
-the 419 transactions within by reference to each transaction ID. Next,
+In <<rpc_block>>, we first retrieve a block, then retrieve each of
+the transactions within it by reference to each transaction ID. Next,
 we iterate through each of the transaction's outputs and add up the
 value.((("", startref="alicethree")))
 
@@ -1136,6 +1158,9 @@ https://github.com/btcsuite/btcd[btcd]:: A Go language full-node Bitcoin client
 
 ==== Rust
 https://github.com/rust-bitcoin/rust-bitcoin[rust-bitcoin]:: Rust bitcoin library for serialization, parsing, and API calls
+
+==== Scala
+https://bitcoin-s.org/[bitcoin-s]:: A Bitcoin implementation in Scala
 
 ==== C#
 https://github.com/MetacoSA/NBitcoin[NBitcoin]:: Comprehensive bitcoin library for the .NET framework
