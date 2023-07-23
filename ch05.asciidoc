@@ -155,7 +155,7 @@ sequence of public child keys from a single public parent key. The
 person who controls the private parent key can then use the same key
 tweaks to create all the corresponding private child keys.
 
-This technique is commonly used is to separate wallet application
+This technique is commonly used to separate wallet application
 frontends (which don't require private keys) from signing operations
 (which do require private keys).  For example, Alice's frontend
 distributes her public keys to people wanting to pay her.  Later, when
@@ -384,7 +384,7 @@ positive or a negative, depending on your perspective:
 Unlike the other schemes, the Aezeed seed encryption scheme
 authenticates its optional passphrase and will return an error if you
 provide an incorrect value.  This eliminates plausible deniability, adds
-error detection, and makes it possible to prove that passphrase has been
+error detection, and makes it possible to prove that the passphrase has been
 revealed.
 
 Many users and developers disagree on which approach is better, with
@@ -405,7 +405,7 @@ just keys.  They also also store user-provided information about every
 transaction they sent or received.
 
 For example, when Bob creates a new address as part of sending an
-invoice to Alice, he adds a _label_ in to the address he generates
+invoice to Alice, he adds a _label_ to the address he generates
 so that he can distinguish her payment
 from other payments he receives.  When Alice pays Bob's address, she
 labels the transaction as paying Bob for the same reason.  Some wallets
@@ -418,11 +418,11 @@ an example, see <<alice_tx_labels>>.
 
 [[alice_tx_labels]]
 .Alice's transaction history with each transaction labeled
-[cols="1,1,1"]
+[cols="1,1,>1"]
 |===
 | Date | Label | BTC
-| 2023-01-01 | Bought bitcoins from Joe | +0.0010
-| 2023-01-02 | Paid Joe for podcast | -0.0075
+| 2023-01-01 | Bought bitcoins from Joe | +0.00100
+| 2023-01-02 | Paid Bob for podcast | −0.00075
 |===
 
 However, because address and transaction labels are stored only in each
@@ -560,7 +560,8 @@ reduce their privacy and so does require some protection.
 
 Almost all wallet applications which use explicit paths as of this
 writing use the _output script descriptors_ standard (called
-_descriptors_ for short) as specified in BIPs 380-386.  Descriptors
+_descriptors_ for short) as specified in BIPs 380, 381, 382, 383, 384,
+385, 386, and 389.  Descriptors
 describe a script and the keys (or key paths) to be used with it.
 A few example descriptors are shown in <<sample_descriptors>>.
 
@@ -753,8 +754,7 @@ pass:[<a data-type="xref" href="#bip39_128_w_pass"
 data-xrefstyle="select: labelnumber">#bip39_128_w_pass</a>], and
 pass:[<a data-type="xref" href="#bip39_256_no_pass"
 data-xrefstyle="select: labelnumber">#bip39_256_no_pass</a>] show
-some examples of recovery codes and the seeds they produce (without any
-passphrase).
+some examples of recovery codes and the seeds they produce.
 
 [[bip39_128_no_pass]]
 .128-bit entropy BIP39 recovery code, no passphrase, resulting seed
@@ -1180,11 +1180,18 @@ the orders paying the same address, it became difficult to correctly
 match orders and transactions, especially when multiple orders for the
 same amount came in close together.
 
+The only metadata that is chosen by the receiver of a typical Bitcoin
+transaction are the amount and payment address.  There's no subject
+or message field that can be used to hold a unique identifier invoice number.
+
 Gabriel's HD wallet offers a much better solution through the ability to
 derive public child keys without knowing the private keys. Gabriel can
 load an extended public key (xpub) on his website, which can be used to
-derive a unique address for every customer order, immediately improving
-privacy. Gabriel can spend the
+derive a unique address for every customer order.  The unique address
+immediately improves privacy and also gives each order a unique
+identifier that can be used for tracking which invoices have been paid.
+
+Using the HD wallet allows Gabriel to spend the
 funds from his personal wallet application, but the xpub loaded on the website can only
 generate addresses and receive funds. This feature of HD wallets is a
 great security feature. Gabriel's website does not contain any private
@@ -1192,7 +1199,7 @@ keys and therefore does not need high levels of security.
 
 To export the xpub from his Trezor hardware signing device, Gabriel uses
 the web-based Trezor wallet application. The Trezor device must be plugged in
-for the public keys to be exported. Note that hardware signing devices will
+for the public keys to be exported. Note that most hardware signing devices will
 never export private keys--those always remain on the device.
 <<export_xpub>> shows the web interface Gabriel uses to export the xpub.
 
@@ -1293,7 +1300,7 @@ child of key m/x, which is the x-th child of m.
 |HD path | Key described
 | m/0 | The first (0) child private key from the master private key (m)
 | m/0/0 | The first grandchild private key from the first child (m/0)
-| m/0'/0 | The first normal grandchild from the first _hardened_ child (m/0')
+| m/0'/0 | The first normal grandchild private key from the first _hardened_ child (m/0')
 | m/1/0 | The first grandchild private key from the second child (m/1)
 | M/23/17/0/0 | The first great-great-grandchild public key from the first great-grandchild from the 18th grandchild from the 24th child
 |=======

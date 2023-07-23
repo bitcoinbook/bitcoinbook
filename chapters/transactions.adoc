@@ -19,7 +19,9 @@ Bitcoin full node which says that Alice controls some number of
 bitcoins. Alice pays Bob by convincing full nodes to update their
 database to say that some of Alice's bitcoins are now controlled by Bob.
 The data that Alice uses to convince full nodes to update their
-databases is called a _transaction_.
+databases is called a _transaction_.  This is done without directly
+using either Alice's or Bob's identities, as well see in
+<<c_authorization_authentication>>.
 
 In this chapter we'll deconstruct a Bitcoin transaction and examine each
 of its parts to see how they facilitate the transfer of value in a way
@@ -50,8 +52,9 @@ e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
 ====
 
 
-There's nothing special about Bitcoin Core's serialization format.
-Programs can use a different format as long as they transmit all of the
+Bitcoin Core's serialization format is special because it's the format
+used to make commitments to transaction, but otherwise programs can use
+a different format as long as they transmit all of the
 same data.  However, Bitcoin Core's format is reasonably compact for the
 data it transmits and simple to parse, so many other Bitcoin programs
 use this format.
@@ -63,14 +66,13 @@ we're aware is the Partially Signed Bitcoin Transaction (PSBT) format
 documented in BIPs 174 and 370 (with extensions documented in other
 BIPs).  PSBT allows an untrusted program to produce a transaction
 template which can be verified and updated by trusted programs (such as
-hardware signing devices) that posses the necessary private keys or
+hardware signing devices) that possesses the necessary private keys or
 other sensitive data to fill in the template.  To accomplish this, PSBT
 allows storing a significant amount of metadata about a transaction,
 making it much less compact than the standard serialization format.
 This book does not go into detail about PSBT, but we strongly recommend
-it to developers of wallets that plan to support hardware signing
-devices or multiple-signer security.
-
+it to developers of wallets that plan to support signing
+with multiple keys.
 ====
 
 The transaction displayed in hexadecimal in <<alice_tx_serialized_reprint>> is
@@ -155,7 +157,7 @@ If the transaction includes a witness structure (which we'll describe in
 non-zero.  In the current P2P protocol, the flag should always be one
 (0x01); alternative flags are reserved for later protocol upgrades.
 
-If the transaction doesn't need a witness, the marker and flag must not
+If the transaction doesn't need a witness stack, the marker and flag must not
 be present.  This is compatible with the original version of Bitcoin's
 transaction serialization format, now called _legacy serialization_.
 For details, see <<legacy_serialization>>.
@@ -232,7 +234,7 @@ Each input in a transaction must contain three fields:
 - A _sequence_
 
 We'll look at each of those fields in the following sections.  Some
-inputs also include a witness, but this is serialized at the end of a
+inputs also include a witness stack, but this is serialized at the end of a
 transaction and so we'll examine it later.
 
 [[outpoints]]
@@ -256,11 +258,11 @@ identify which particular output from that transaction to use, called
 its _output index_.  Output indices are four-byte unsigned
 integers indexed from zero.
 
-When a full node encounters an outpoint, it uses that information to
-try to find the referenced output.  Full nodes only look at earlier
+When a full node encounters an outpoint, it uses that information to try
+to find the referenced output.  Full nodes are only required to look at earlier
 transactions in the blockchain.  For example, Alice's transaction is
-included in block 774,958.  A full node verifying her transaction will
-only look for the previous output referenced by her outpoint in that
+included in block 774,958.  A full node verifying her transaction
+only looks for the previous output referenced by her outpoint in that
 block and previous blocks, not any later blocks.  Within block 774,958,
 they will only look at transactions placed in the block prior to Alice's
 transaction, as determined by the order of leaves in the block's merkle
@@ -269,7 +271,7 @@ tree (see <<merkle_trees>>).
 Upon finding the previous output, the full node obtains several critical
 pieces of information from it:
 
-- The value of bitcoins assigned to that previous output.  All of those
+- The amount of bitcoins assigned to that previous output.  All of those
   bitcoins will be transferred in this transaction.  In the example
   transaction, the value of the previous output was 100,000 satoshis.
 
@@ -397,7 +399,7 @@ output:
 - The first version of the transaction, with nSequenece 0 (0x00000000)
   pays Alice and Bob back the money they initially deposited.  This is
   called a _refund transaction_.  Neither of them broadcasts the refund
-  the transaction at this time.  They only need it if there's a problem.
+  transaction at this time.  They only need it if there's a problem.
 
 - Alice wins the first round of the card game, so the second version of
   the transaction, with sequence 1, increases the amount of money paid
@@ -510,13 +512,13 @@ interpreted as having a relative timelock. Such a transaction may only
 be included in the blockchain once the previous output (referenced by the
 outpoint) has aged by the relative timelock amount. For example, a
 transaction with one input with a relative timelock of 30 blocks can
-only be confirmed after least 30 blocks have elapsed from the time the
-previous output was confirmed in a block on the current blockchain.
+only be confirmed in a block with at least 29 blocks between it and the
+block containing the output being spent on the same blockchain.
 Since sequence is a per-input field, a transaction may contain any
 number of timelocked inputs, all of which must have sufficiently aged
-for the transaction to be valid. A transaction can include both
-timelocked inputs (sequence < 2^31^) and inputs without a relative
-timelock (sequence >= 2^31^).
+for the transaction to be valid. A disable flag allows a transaction to
+include both inputs with a relative timelock (sequence < 2^31^) and
+inputs without a relative timelock (sequence >= 2^31^).
 
 The sequence value is specified in either blocks or seconds.
 A type-flag
@@ -534,7 +536,7 @@ evaluated, the sequence value is usually "masked" with a 16-bit mask
 (e.g., +sequence+ & 0x0000FFFF).  The multiple of 512 seconds is
 roughly equal to the average amount of time between blocks, so the
 maximum relative timelock in both blocks and seconds from 16 bits
-(2^16^) is about one year.
+(2^16^) is a bit more than one year.
 
 <<bip_68_def_of_nseq>> shows the binary layout of the sequence value,
 as defined by BIP68.
@@ -647,7 +649,7 @@ never be spent.  That means full nodes don't need to keep track of them,
 a feature Bitcoin Core takes advantage of to allow users to store small
 amounts of arbitrary data in the blockchain without increasing the size
 of its UTXO database.  Since the outputs are unspendable, they aren't
-uneconomical--any satoshis assigned to them becomes
+uneconomical--any satoshis assigned to them become
 permanently unspendable--so allowing the amount to be zero ensures
 satoshis aren't being destroyed.
 
@@ -689,8 +691,8 @@ transaction outputs_.  This was originally implemented after the
 discovery of several early bugs in Bitcoin related to the Script
 language and is retained in modern Bitcoin Core to support
 anyone-can-spend upgrades and to encourage the best practice of placing
-script conditions in P2SH redeemScripts, segwit v1 witness scripts, and
-segwit v2 (taproot) tapscripts.
+script conditions in P2SH redeemScripts, segwit v0 witness scripts, and
+segwit v1 (taproot) leaf scripts.
 
 We'll look at each of the current standard transaction templates and
 learn how to parse scripts in <<c_authorization_authentication>>.
@@ -733,7 +735,7 @@ identifier.  That public identifier is called a _public key_ and a
 solution to the equation is called a _signature_.
 
 The following script contains a public key and an opcode which requires
-a corresponding signature commit to the data in spending transaction.  Like
+a corresponding signature commit to the data in the spending transaction.  Like
 the number _2_ in our simple example, the signature is our witness.
 
 ----
@@ -772,7 +774,7 @@ transactions out of order.
 
 A problem with this construction in the legacy transaction format is
 that every field, including the input script field which contains
-signatures, is used to build a transaction's identifier (txid).  The
+signatures, is used to derive a transaction's identifier (txid).  The
 txid for Tx~0~ is part of the input's outpoint in Tx~1~.  That means
 there's no way for Alice and Bob to construct Tx~1~ until both
 signatures for Tx~0~ are known--but if they know the signatures for
@@ -900,7 +902,8 @@ the data in a transaction from its witness for the purpose of generating
 a txid is called _segregated witness_ (segwit).
 
 The obvious method for implementing segwit requires a
-backwards-incompatible change to Bitcoin's consensus rules, also called
+change to Bitcoin's consensus rules that would not be compatible with
+older full nodes, also called
 a _hard fork_.  Hard forks come with a lot of challenges, as we'll
 discuss further in <<hard_forks>>.
 
@@ -919,9 +922,9 @@ The soft fork segwit approach is based on anyone-can-spend
 output scripts.  A script which starts with any of the numbers 0 to 16
 and followed by 2 to 40 bytes of data is defined as a segwit
 output script template.  The number indicates its version (e.g. 0 is
-segwit version 0, or _segwit v0_).  The data is called a _native witness
+segwit version 0, or _segwit v0_).  The data is called a _witness
 program_.  It's also possible to wrap the segwit template in a P2SH
-commitment, called a _P2SH witness program_, but we won't deal with that
+commitment, but we won't deal with that
 here.
 
 From the perspective of old nodes, these output script templates can be
@@ -984,14 +987,14 @@ size.
 Legacy inputs don't contain any witness items so their witness stack
 consists entirely of a count of zero (0x00).
 
-Alice's transaction contains one input and one stack item.
+Alice's transaction contains one input and one witness item.
 
 [[lock_time]]
 === Lock Time
 
 The final field in a serialized transaction is its lock time.  This
 field was part of Bitcoin's original serialization format but it was
-only initially enforced by Bitcoin's policy for choosing which
+initially only enforced by Bitcoin's policy for choosing which
 transactions to mine.  Bitcoin's earliest known soft fork added a rule
 that, starting at block height 31,000, forbid the inclusion of a
 transaction in a block unless it satisfies one of the following rules:
@@ -1039,7 +1042,7 @@ Some of the special rules for coinbase transactions include:
   of zeroes) and a maximal output index (0xffffffff).  This prevents the
   coinbase transaction from referencing a previous transaction output,
   which would (at the very least) be confusing given that the coinbase
-  transaction spends fees and subsidy.
+  transaction pays out fees and subsidy.
 
 - The field which would contain a input script in a normal transaction is
   called a _coinbase_.  It's this field that gives the coinbase
@@ -1057,7 +1060,7 @@ Some of the special rules for coinbase transactions include:
   (approximately every four years).  Subsidy values are rounded down to the
   nearest satoshi.
 
-- Since the 2017 soft fork documented in BIP141, any block that contains
+- Since the 2017 segwit soft fork documented in BIP141, any block that contains
   a transaction spending a segwit output must contain an output to the
   coinbase transaction that commits to all of the transactions in the
   block (including their witnesses).  We'll explore this commitment in
@@ -1068,9 +1071,7 @@ a normal transaction.  However, a transaction spending one of those
 outputs cannot be included in any block until after the coinbase
 transaction has received 100 confirmations.  This is called the
 _maturity rule_ and coinbase transaction outputs which don't yet have
-100 confirmations are called _immature_.  The maturity rule requires 100
-blocks to be built on top of a miner's block before that miner is able
-to spend their block reward.
+100 confirmations are called _immature_.
 
 //TODO:stretch goal to describe the reason for the maturity rule and,
 //by extension the reason for no expiring timelocks
@@ -1102,7 +1103,7 @@ weight.  An additional field, the transaction count, uses either 4 or
 12 weight.  All of the remaining weight may be used for transaction
 data.
 
-To calculate the weight of a particular field in transaction, the size
+To calculate the weight of a particular field in a transaction, the size
 of that serialized field in bytes is multiplied by a factor.  To
 calculate the weight of a transaction, sum together the weights of all
 of its fields.  The factors for each of the fields in a transaction are
@@ -1160,7 +1161,7 @@ The serialization format described in this chapter is used for the
 majority of new Bitcoin transactions as of the writing of this book, but
 an older serialization format is still used for many transactions.  That
 older format, called _legacy serialization_, must be used on the Bitcoin
-P2P network for any transaction with an empty witness (which is only
+P2P network for any transaction with an empty witness structure (which is only
 valid if the transaction doesn't spend any witness programs).
 
 Legacy serialization does not include the marker, flag, and witness structure
