@@ -15,40 +15,22 @@ Any time one of those is executed, a signature must be
 provided.
 
 ((("digital signatures", "purposes of")))A digital signature serves
-three purposes in Bitcoin (see the following sidebar). First, the
+three purposes in Bitcoin. First, the
 signature proves that the controller of a private key, who is by
 implication the owner of the funds, has _authorized_ the spending of
 those funds. Secondly, the proof of authorization is _undeniable_
-(nonrepudiation). Thirdly, the signature proves that specific parts of
-the transaction have not and _cannot be modified_ by
-anyone besides the signer.
-
-Note that each transaction input is signed independently. This is
-critical, as neither the signatures nor the inputs have to belong to or
-be applied by the same "owners." In fact, a specific transaction scheme
-called "CoinJoin" uses this fact to create multi-party transactions for
-privacy.
+(nonrepudiation). Thirdly, that the authorized transaction cannot be
+changed by unauthenticated third parties--that its _integrity_ is
+intact.
 
 [NOTE]
 ====
 Each transaction input and any signatures it may contain is _completely_
 independent of any other input or signature. Multiple parties can
 collaborate to construct transactions and sign only one input each.
+Several protocols uses this fact to create multi-party transactions for
+privacy.
 ====
-
-[[digital_signature_definition]]
-.Wikipedia's Definition of a "Digital Signature"
-****
-((("digital signatures", "defined")))A digital signature is a
-mathematical scheme for demonstrating the authenticity of a digital
-message or documents. A valid digital signature gives a recipient reason
-to believe that the message was created by a known sender
-(authentication), that the sender cannot deny having sent the message
-(nonrepudiation), and that the message was not altered in transit
-(integrity).
-
-_Source: https://en.wikipedia.org/wiki/Digital_signature_
-****
 
 In this chapter we look at how digital signatures work and how they can
 present proof of control of a private key without revealing that private
@@ -56,18 +38,19 @@ key.
 
 === How Digital Signatures Work
 
-((("digital signatures", "how they work")))A digital signature is a
-_mathematical scheme_ that consists of two parts. The first part is an
-algorithm for creating a signature, using a private key (the signing
-key), from a message (the transaction). The second part is an algorithm
+((("digital signatures", "how they work")))A digital signature
+consists of two parts. The first part is an algorithm for creating a
+signature for a message (the transaction) using a private key (the
+signing key). The second part is an algorithm
 that allows anyone to verify the signature, given also the message and a
 public key.
 
 ==== Creating a digital signature
 
-In Bitcoin's implementation of digital signature algorithms, the "message" being
+In Bitcoin's use of digital signature algorithms, the "message" being
 signed is the transaction, or more accurately a hash of a specific
-subset of the data in the transaction (see <<sighash_types>>). The
+subset of the data in the transaction, called the _commitment hash_ (see
+<<sighash_types>>). The
 signing key is the user's private key. The result is the signature:
 
 latexmath:[\(Sig = F_{sig}(F_{hash}(m), x)\)]
@@ -75,7 +58,7 @@ latexmath:[\(Sig = F_{sig}(F_{hash}(m), x)\)]
 where:
 
 * _x_ is the signing private key
-* _m_ is the message to sign (such as parts of a transaction)
+* _m_ is the message to sign, the commitment hash (such as parts of a transaction)
 * _F_~_hash_~ is the hashing function
 * _F_~_sig_~ is the signing algorithm
 * _Sig_ is the resulting signature
@@ -96,27 +79,27 @@ simpler serialization format is used.
 
 ==== Verifying the Signature
 
-((("digital signatures", "verifying")))To verify the signature, one must
-have the signature, the serialized transaction, some data about the
-output being spent, and the public key that corresponds to the private key used to create the
-signature. Essentially, verification of a signature means "Only the
-controller of the private key that generated this public key could have
-produced this signature on this transaction."
+((("digital signatures", "verifying"))) The signature verification
+algorithm takes the message (a hash of parts of the transaction and
+related data), the signer's public key and the signature, and returns
+TRUE if the signature is valid for this message and public key.
 
-The signature verification algorithm takes the message (a hash of
-parts of the transaction and related data), the signer's public key and the signature,
-and returns TRUE if the signature is valid for
-this message and public key.
+To verify the signature, one must have the signature, the serialized
+transaction, some data about the output being spent, and the public key
+that corresponds to the private key used to create the signature.
+Essentially, verification of a signature means "Only the controller of
+the private key that generated this public key could have produced this
+signature on this transaction."
 
 [[sighash_types]]
 ==== Signature Hash Types (SIGHASH)
 
 ((("digital signatures", "signature hash
-types")))((("commitment")))Digital signatures are applied to messages,
+types")))((("commitment")))Digital signatures apply to messages,
 which in the case of Bitcoin, are the transactions themselves. The
-signature implies a _commitment_ by the signer to specific transaction
+signature prove a _commitment_ by the signer to specific transaction
 data. In the simplest form, the signature applies to almost the entire
-transaction, thereby committing all the inputs, outputs, and other
+transaction, thereby committing to all the inputs, outputs, and other
 transaction fields. However, a signature can commit to only a subset of
 the data in a transaction, which is useful for a number of scenarios as
 we will see in this section.
@@ -133,7 +116,7 @@ transaction.
 
 Remember, each input may contain one or more signatures. As
 a result, an input may have signatures
-with different +SIGHASH+ flags that commit different parts of the
+with different +SIGHASH+ flags that commit to different parts of the
 transaction. Note also that Bitcoin transactions
 may contain inputs from different "owners," who may sign only one input
 in a partially constructed transaction, collaborating with
@@ -179,8 +162,8 @@ either omitted or truncated (set to zero length and emptied). The resulting tran
 serialized. The +SIGHASH+ flag is included in the serialized
 transaction data and the result is hashed. The hash digest itself is the "message"
 that is signed. Depending on which +SIGHASH+ flag is used, different
-parts of the transaction are included. The resulting hash depends on
-different subsets of the data in the transaction. By including the
+parts of the transaction are included.
+By including the
 +SIGHASH+ flag itself, the signature commits the
 +SIGHASH+ type as well, so it can't be changed (e.g., by a miner).
 
@@ -217,10 +200,10 @@ someone who lends them funds), allowing them to collect the donations
 even if they haven't reached the specified value.
 
 +NONE+ :: This construction can be used to create a "bearer check" or
-"blank check" of a specific amount. It commits to the input, but allows
-the output script to be changed. Anyone can write their own
-Bitcoin address into the output script. However, the output value
-itself cannot be changed.  By itself, this allows any miner to change
+"blank check" of a specific amount. It commits to all inputs, but allows
+the outputs to be changed. Anyone can write their own
+Bitcoin address into the output script.
+By itself, this allows any miner to change
 the output destination and claim the funds for themselves, but if other
 required signatures in the transaction use +SIGHASH_ALL+ or another type
 that commits to the output, it allows those spenders to change the
@@ -248,7 +231,7 @@ destination.
 
 A signature using +SIGHASH_ANYPREVOUTANYSCRIPT+ would not
 commit to the outpoint, the amount, the witness program, or the
-tapleaf_hash used, allowing it to spend any previous output
+specific leaf in the taproot merkle tree (script tree), allowing it to spend any previous output
 which the signature could satisfy.  For example, if Alice received two
 outputs for different amounts and different witness programs (e.g. one
 requiring a single signature and another requiring her signature plus some
@@ -394,7 +377,7 @@ Of course, this is an oversimplified example.  When working with simple
 integers, we can divide products by the generator +G+ to get the
 underlying scalar, which isn't secure.  This is why a critical property
 of the Elliptic Curve Cryptography (ECC) used in Bitcoin is that
-multiplication is easy but division is impractical.  Also, with numbers
+multiplication is easy but division by a point on the curve is impractical.  Also, with numbers
 this small, finding underlying values (or valid substitutes) through
 brute force is easy; the numbers used in Bitcoin are much larger.
 ****
@@ -405,9 +388,9 @@ identity protocol that make it secure:
 - The nonce (+k+).  In step 1, Alice chooses a number that Bob doesn't
   know and can't guess and gives him the scaled form of that number,
   +kG+.  At that point, Bob also already has her public key (+xG+),
-  which is the scaled form of +x+.  That means when Bob is working on
+  which is the scaled form of +x+, her private key.  That means when Bob is working on
   the final equation (+sG = kG + exG+), there are two independent
-  variables that Bob doesn't know (+xG+ and +kG+).  It's possible to use
+  variables that Bob doesn't know (+x+ and +k+).  It's possible to use
   simple algebra to solve an equation with one unknown variable but not
   two independent unknown variables, so the presence of Alice's nonce
   prevents Bob from being able to derive her private key.  It's critical
@@ -417,7 +400,7 @@ identity protocol that make it secure:
   <<nonce_warning>> for more details.
 
 - The challenge scalar (+e+).  Bob waits to receive Alice's public nonce
-  and then proceeds in step 2 to giver her a number (the challenge
+  and then proceeds in step 2 to give her a number (the challenge
   scalar) that Alice didn't previously know and couldn't have guessed.
   It's critical that Bob only give her the challenge scalar after she
   commits to her public nonce.  Consider what could happen if someone
@@ -478,11 +461,11 @@ explicitly, the verification equation becomes +sG == kG + hash(kG) * xG+.
 We need one other thing to finish converting the interactive schnorr
 identity protocol into a digital signature protocol useful for
 Bitcoin.  We don't just want Alice to prove that she knows her private
-key; we also want to give her the to ability to commit to a message.  Specifically,
+key; we also want to give her the ability to commit to a message.  Specifically,
 we want her to commit to the data related to the Bitcoin transaction she
 wants to send.  With the Fiat-Shamir transform in place, we already
 have a commitment, so we can simply have it additionally commit to the
-message.  Instead of +hash(kG)+, we now also commit to to the message
+message.  Instead of +hash(kG)+, we now also commit to the message
 +m+ using +hash(kG || m)+, where +||+ stands for concatenation.
 
 We've now defined a version of the schnorr signature protocol, but
@@ -522,7 +505,7 @@ she's ready to spend, she begins generating her signature:
    are her signature.  She gives this signature to everyone who wants to
    verify that signature; she also needs to ensure everyone receives her
    message +m+.  In Bitcoin, this is done by including her signature in
-   the witness of her spending transaction and then relaying that
+   the witness structure of her spending transaction and then relaying that
    transaction to full nodes.
 
 4. The verifiers (e.g. full nodes) use +s+ to derive +sG+ and then
@@ -620,7 +603,7 @@ the private key for +z+, i.e. Bob's private key.  Now Bob can create a
 valid signature without any assistance from Alice.  This is called a
 _key cancellation attack_.
 
-There are various ways to solve to the key cancellation attack.  The
+There are various ways to solve the key cancellation attack.  The
 simplest scheme would be to require each participant commit to their
 part of the public key before sharing anything about that key with all
 of the other participants.  For example, Alice and Bob each individually
@@ -716,7 +699,7 @@ number of shares.  For example, Alice can choose a threshold (_k_) of
 +2+ if she wants any two of Bob, Carol, and Dan to be able to
 reconstruct her secret.  The best known secure secret sharing algorithm
 is _Shamir's Secret Sharing Scheme_, commonly abbreviated SSSS and named
-after its discoverer, one of the same discovers of the Fiat-Shamir
+after its discoverer, one of the same discoverers of the Fiat-Shamir
 transform we saw in <<schnorr_signatures>>.
 
 In some cryptographic protocols, such as the scriptless threshold signature
@@ -764,7 +747,7 @@ multisignature produced by a process that involved Carol and one that
 didn't.  Even if Alice, Bob, or Carol claim that they didn't sign,
 there's no guaranteed way for them to prove that they didn't
 help produce the signature.  If it's important to know which members of
-the group signed, you will need to use scripted threshold signatures.
+the group signed, you will need to use a script.
 
 2. Manipulation attacks: imagine that Bob tells Alice that Carol is
 unavailable, so they work together to reconstruct Carol's partial
@@ -795,7 +778,7 @@ using the schnorr signature scheme developed an alternative construction
 called the _Digital Signature Algorithm_ (DSA), with a version adapted
 to Elliptic Curves called ECDSA.
 
-The ECDSA scheme and standardized parameters for curves it could be used
+The ECDSA scheme and standardized parameters for suggested curves it could be used
 with were widely implemented in cryptographic libraries by the time
 development on Bitcoin began in 2007.  This was almost certainly the
 reason why ECDSA was the only digital signature protocol that Bitcoin
@@ -837,15 +820,8 @@ values are _R_ and _S_.
 
 ((("public and private keys", "key pairs", "ephemeral")))The signature
 algorithm first generates a private nonce (_k_) and derives from it a public
-nonce (_K_). These are used in the calculation of the _R_ and
-_S_ values, after a transformation involving the signing private key and
-the transaction hash.
-
-From _k_, we generate the corresponding
-public nonce _K_ (calculated as _K = k*G_, in the same way
-bitcoin public keys are derived; see <<public_key_derivation>>). The _R_ value of the
-digital signature is then the x coordinate of the ephemeral public key
-_K_.
+nonce (_K_).  The _R_ value of the digital signature is then the x
+coordinate of the ephemeral public key _K_.
 
 From there, the algorithm calculates the _S_ value of the signature,
 such that:
@@ -861,11 +837,11 @@ where:
 * _p_ is the prime order of the elliptic curve
 
 Verification is the inverse of the signature generation function, using
-the _R_, _S_ values and the public key to calculate a value _P_, which
+the _R_, _S_ values and the public key to calculate a value _K_, which
 is a point on the elliptic curve (the public nonce used in
 signature creation):
 
-_P_ = __S__^-1^ * __Hash__(__m__) * _G_ + __S__^-1^ * _R_ * _X_
+_K_ = __S__^-1^ * __Hash__(__m__) * _G_ + __S__^-1^ * _R_ * _X_
 
 where:
 
@@ -874,7 +850,7 @@ where:
 - _m_ is the message (the transaction data that was signed)
 - _G_ is the elliptic curve generator point
 
-If the x coordinate of the calculated point _P_ is equal to _R_, then
+If the x coordinate of the calculated point _K_ is equal to _R_, then
 the verifier can conclude that the signature is valid.
 
 Note that in verifying the signature, the private key is neither known
@@ -884,8 +860,7 @@ nor revealed.
 ====
 ECDSA is necessarily a fairly complicated piece of math; a full
 explanation is beyond the scope of this book. A number of great guides
-online take you through it step by step: search for "ECDSA explained" or
-try this one: http://bit.ly/2r0HhGB[].
+online take you through it step by step: search for "ECDSA explained".
 ====
 
 [[serialization_of_signatures_der]]
@@ -921,10 +896,11 @@ is part of the DER encoding scheme.
 === The Importance of Randomness in Signatures
 
 ((("digital signatures", "randomness in")))As we saw in <<schnorr_signatures>> and <<ecdsa_signatures>>,
-the signature generation algorithm uses a random key _k_, as the basis
+the signature generation algorithm uses a random number _k_, as the basis
 for a private/public nonce pair. The value of _k_ is not
-important, _as long as it is random_. If the same value _k_ is used to
-produce two signatures on different messages (transactions), then the
+important, _as long as it is random_. If signatures from the same
+private key use the private nonce _k_ with different messages
+(transactions), then the
 signing _private key_ can be calculated by anyone. Reuse of the same
 value for _k_ in a signature algorithm leads to exposure of the private
 key!
@@ -981,11 +957,11 @@ the data indicating the signer's commitment to those values. For
 example, in a simple +SIGHASH_ALL+ type signature, the commitment hash
 includes all inputs and outputs.
 
-Unfortunately, the way the commitment hash was calculated introduced the
-possibility that a node verifying the signature can be forced to perform
+Unfortunately, the way the legacy commitment hashes were calculated introduced the
+possibility that a node verifying a signature can be forced to perform
 a significant number of hash computations. Specifically, the hash
-operations increase in O(n^2^) with respect to the number of signature
-operations in the transaction. An attacker could therefore create a
+operations increase roughly quadratically with respect to the number of
+inputs in the transaction. An attacker could therefore create a
 transaction with a very large number of signature operations, causing
 the entire Bitcoin network to have to perform hundreds or thousands of
 hash operations to verify the transaction.
