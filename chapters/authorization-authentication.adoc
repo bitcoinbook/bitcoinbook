@@ -12,7 +12,7 @@ containing it to be valid.
 
 The original description of Bitcoin used a public key for authorization.
 Alice paid Bob by putting his public key in the output of a transaction.
-Authentication came from Bob in the form a signature that committed to a
+Authentication came from Bob in the form of a signature that committed to a
 spending transaction, such as from Bob to Carol.
 
 The actual version of Bitcoin that was originally released provided a
@@ -84,7 +84,7 @@ or state saved after execution of the script. All the
 information needed to execute a script is contained within the script
 and the transaction executing the script.  A
 script will predictably execute the same way on any system. If your
-system verifies a script, you can be sure that every other system in the
+system verified a script, you can be sure that every other system in the
 Bitcoin network will also verify the script, meaning that a valid
 transaction is valid for everyone and everyone knows this. This
 predictability of outcomes is an essential benefit of the Bitcoin
@@ -132,6 +132,7 @@ payment to a public key hash), showing the combined script resulting
 from the concatenation of the scripts prior to
 validation.
 
+//FIXME: revise to use "output script" and "input script" from chap 6
 [[input_and_output_scripts_legacy]]
 .Combining input and output scripts to evaluate a transaction script
 image::../images/mbc2_0603.png["input_and_output_scripts"]
@@ -223,8 +224,8 @@ opcode). See
 image::../images/mbc2_0604.png["TxScriptSimpleMathExample"]
 
 [role="pagebreak-before"]
-The following is a slightly more complex script, which calculates ++2 +
-7 -- 3 + 1++. Notice that when the script contains several operators in
+The following is a slightly more complex script, which calculates
+++2 + 7 -- 3 + 1++. Notice that when the script contains several operators in
 a row, the stack allows the results of one operator to be acted upon by
 the next operator:
 
@@ -263,8 +264,8 @@ failed to satisfy the spending conditions placed on the output.
 ==== Pay-to-Public-Key-Hash (P2PKH)
 
 ((("Pay-to-Public-Key-Hash (P2PKH)")))
-A Pay-to-Public-Key-Hash or "P2PKH" script uses a output script that
-contains a hash which commits to a public key.  P2PKH is best known as a
+A Pay-to-Public-Key-Hash or "P2PKH" script uses an output script that
+contains a hash which commits to a public key.  P2PKH is best known as
 the basis for a legacy Bitcoin address. A P2PKH output can be spent by
 presenting a public key which matches the hash commitment and a digital
 signature created by the corresponding private key (see
@@ -338,15 +339,18 @@ to tell "M" and "N" apart when they're spoken, so we use the alternative
 K-of-N.  Both phrases refer to the same type of signature scheme.
 ====
 
-At this time, _standard_ multisignature output scripts are limited to at most 3
+At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to at most 3
 listed public keys, meaning you can do anything from a 1-of-1 to a
 3-of-3 multisignature or any combination within that range.
 You may want to check the +IsStandard()+ function to see what is currently
 accepted by the network. Note that the limit of 3 keys applies only to
 standard (also known as "bare") multisignature scripts, not to
 multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script.
-P2SH multisignature scripts are limited to 15 keys, allowing for up to
-15-of-15 multisignature. We will learn about P2SH in <<p2sh>>.
+P2SH multisignature scripts are limited by both policy and consensus to
+15 keys, allowing for up to 15-of-15 multisignature. We will learn about
+P2SH in <<p2sh>>.   All other scripts are consensus limited to 20 keys
+per +OP_CHECKMULTSIG+ or +OP_CHECKMULTISIGVERIFY+ opcode, although one
+script may include multiple of those opcodes.
 
 The general form of a output script setting an K-of-N multisignature
 condition is:
@@ -422,7 +426,7 @@ it became the custom early on to use +OP_0+, which later became a
 relay policy rule and eventually a consensus rule (with the enforcement of BIP147).
 
 Because popping the dummy element is part of the consensus rules, it must now be
-replicated forever. Therefore the correct script validation would look
+replicated forever. Therefore a script should look
 like this:
 
 ----
@@ -486,8 +490,8 @@ for P2SH, let's look at a practical example.
 
 ((("use cases", "import/export", id="mohamseven")))((("scripting",
 "Pay-to-Script-Hash", "import/export example")))((("Pay-to-Script-Hash
-(P2SH)", "import/export example")))In <<ch01_intro_what_is_bitcoin>> we
-introduced Mohammed, an electronics importer based in Dubai. Mohammed's
+(P2SH)", "import/export example")))
+Mohammed is an electronics importer based in Dubai. Mohammed's
 company uses bitcoin's multisignature feature extensively for its
 corporate accounts. Multisignature scripts are one of the most common
 uses of bitcoin's advanced scripting capabilities and are a very
@@ -502,6 +506,7 @@ controls and protects against theft, embezzlement, or loss.
 
 The resulting script is quite long and looks like this:
 
+//FIXME:script match text with nesting
 ----
 2 <Mohammed's Public Key> <Partner1 Public Key> <Partner2 Public Key> <Partner3 Public Key> <Attorney Public Key> 5 OP_CHECKMULTISIG
 ----
@@ -665,7 +670,7 @@ echo \
 ----
 
 Now, Mohammed can give this "address" to his customers and they can use
-almost any bitcoin wallet to make a simple payment, as if it were a
+almost any Bitcoin wallet to make a simple payment, like any other
 Bitcoin address. The 3 prefix gives them a hint that this is a special
 type of address, one corresponding to a script instead of a public key,
 but otherwise it works in exactly the same way as a payment to any other Bitcoin
@@ -684,7 +689,7 @@ scripts in outputs:
 - Complex scripts are replaced by shorter commitments in the
   transaction output, making the transaction smaller.
 
-- Scripts can be coded as an address, so the sender and the sender's
+- The similarity to original legacy addresses means the sender and the sender's
   wallet don't need complex engineering to implement P2SH.
 
 - P2SH shifts the burden of constructing the script to the recipient,
@@ -754,7 +759,7 @@ technology and want to encourage such experimentation. Those who object
 to the inclusion of nonpayment data argue that it causes "blockchain
 bloat," burdening those running full Bitcoin nodes with carrying the
 cost of disk storage for data that the blockchain was not intended to
-carry. Moreover, such transactions create UTXO that cannot be spent,
+carry. Moreover, such transactions create UTXOs that cannot be spent,
 using the destination legacy Bitcoin address as a freeform 20-byte field.
 Because the address is used for data, it doesn't correspond to a private
 key and the resulting UTXO can _never_ be spent; it's a fake payment.
@@ -770,7 +775,7 @@ _provably unspendable_ output, which does not need to be stored in the
 UTXO set. +OP_RETURN+ outputs are recorded on the blockchain, so they
 consume disk space and contribute to the increase in the blockchain's
 size, but they are not stored in the UTXO set and therefore do not bloat
-the UTXO memory pool and burden full nodes with the cost of more
+full nodes with the cost of more
 expensive database operations.
 
 +OP_RETURN+ scripts look like this:
@@ -791,9 +796,9 @@ Keep in mind that there is no input script that corresponds to
 +OP_RETURN+ that could possibly be used to "spend" an +OP_RETURN+ output. The
 whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
 output, and therefore it does not need to be held in the UTXO set as
-potentially spendable: +OP_RETURN+ is _provably unspendable_. +OP_RETURN+ is
-usually an output with a zero amount, because any bitcoins
-assigned to such an output is effectively lost forever. If an +OP_RETURN+ is
+potentially spendable: +OP_RETURN+ outputs are _provably unspendable_. +OP_RETURN+ outputs
+usually have a zero amount, because any bitcoins
+assigned to such an output is effectively lost forever. If an +OP_RETURN+ output is
 referenced as an input in a transaction, the script validation engine
 will halt the execution of the validation script and mark the
 transaction as invalid. The execution of +OP_RETURN+ essentially causes the
@@ -804,7 +809,10 @@ transaction is invalid.
 [[lock_time_limitations]]
 ==== Transaction lock time limitations
 
-Lock time has the limitation that while it makes it possible to spend some outputs in the future, it does not make it impossible to spend them until that time. Let's explain that with the following example.
+Use of the lock time allows a spender to restrict a transaction from
+being included in a block until a specific block height, but it does not
+prevent spending the funds in another transaction earlier than that.
+Let's explain that with the following example.
 
 ((("use cases", "buying coffee", id="alicesseven")))Alice signs a transaction spending one of her outputs to Bob's address, and sets the transaction lock time to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
 
@@ -816,7 +824,7 @@ However:
 * Alice can create another transaction, double-spending the same inputs without a lock time. Thus, Alice can spend the same UTXO before the 3 months have elapsed.
 * Bob has no guarantee that Alice won't do that.
 
-It is important to understand the limitations of transaction lock time. The only guarantee is that Bob will not be able to redeem it before 3 months have elapsed. There is no guarantee that Bob will get the funds. To achieve such a guarantee, the timelock restriction must be placed on the UTXO itself and be part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
+It is important to understand the limitations of transaction lock time. The only guarantee is that Bob will not be able to redeem the presigned transaction before 3 months have elapsed. There is no guarantee that Bob will get the funds. To guarantee that Bob will receive the funds but cannot spend them until 3 months have elapsed, the timelock restriction must be placed on the UTXO itself and be part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
 
 ==== Check Lock Time Verify (OP_CLTV)
 
@@ -835,13 +843,7 @@ In simple terms, by committing to the +OP_CLTV+ opcode in an
 output, that output is restricted so that it can only be spent after the
 specified time has elapsed.
 
-[TIP]
-====
-While lock time is a transaction-level timelock, +OP_CLTV+ is an
-output-based timelock.
-====
-
-+OP_CLTV+ doesn't replace lock time, but rather restricts specific UTXO
++OP_CLTV+ doesn't replace lock time, but rather restricts specific UTXOs
 such that they can only be spent in a future transaction with
 lock time set to a greater or equal value.
 
@@ -913,19 +915,25 @@ use a tool designed to prevent this issue, like a Miniscript compiler.
 An additional implication is that only one variety of +OP_CLTV+ can be
 used in any of the scripts of a transaction.  If the script for one
 input uses the height variety and a different script for a different
-input uses the time variety, there is no way to construct a valid transaction.
+input uses the time variety, there is no way to construct a valid transaction
+that spends both inputs.
 ====
 
 After execution, if +OP_CLTV+ is satisfied, the parameter that
 preceded it remains as the top item on the stack and may need to be
 dropped, with +OP_DROP+, for correct execution of subsequent script
 opcodes. You will often see +OP_CHECKLOCKTIMEVERIFY+ followed by +OP_DROP+ in
-scripts for this reason.
+scripts for this reason.  +OP_CLTV+, like +OP_CSV+ (see <<op_csv>>)
+are unlike other +CHECKVERIFY+ opcodes in leaving items on the stack
+because the soft forks that added them redefined existing opcodes that
+did not drop stack items, and the behavior of those previous
+no-operation (NOP) opcodes must be preserved.
 
 By using lock time in conjunction with +OP_CLTV+, the scenario described in
-<<lock_time_limitations>> changes. Alice can no longer spend the money
-(because it's locked with Bob's key) and Bob cannot spend it before the
-3-month lock time has expired.((("", startref="alicesseven")))
+<<lock_time_limitations>> changes.  Alice sends her transaction
+immediately, assigning the funds to Bob’s key. Alice can no longer spend
+the money, but Bob cannot spend it before the 3-month lock time has
+expired.
 
 By introducing timelock functionality directly into the scripting
 language, +OP_CLTV+ allows us to develop some very interesting complex
@@ -1240,7 +1248,8 @@ must agree. However, in the case of a problem with their keys, they want
 their lawyer to be able to recover the funds with one of the three
 partner signatures. Finally, if all partners are unavailable or
 incapacitated for a while, they want the lawyer to be able to manage the
-account directly.
+account directly after he gains access to the capital account's
+transaction records.
 
 Here's the redeem script that Mohammed designs to achieve this (line
 number prefixed as XX):
@@ -1254,7 +1263,7 @@ number prefixed as XX):
 03      2
 04    OP_ELSE
 05      <30 days> OP_CHECKSEQUENCEVERIFY OP_DROP
-06      <Abdul the Lawyer's Pubkey> OP_CHECKSIGVERIFY
+06      <Abdul the Lawyer's Pubkey> OP_CHECKSIG
 07      1
 08    OP_ENDIF
 09    <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 OP_CHECKMULTISIG
@@ -1298,7 +1307,7 @@ This is achieved by line 7, which sets the quorum for the multisig to
 
 .Spending data for the second execution path (Lawyer + 1-of-3)
 ----
-0 <Saeed's Sig> <Abdul's Sig> OP_FALSE OP_TRUE
+OP_0 <Saeed's Sig> <Abdul's Sig> OP_FALSE OP_TRUE
 ----
 
 [TIP]
@@ -1323,7 +1332,7 @@ Try running the script on paper to see how it behaves on the stack.
 
 Let’s look at some of our example transactions and see how they would
 change with Segregated Witness. We’ll first look at how a
-Pay-to-Public-Key-Hash (P2PKH) payment is transformed with the
+Pay-to-Public-Key-Hash (P2PKH) payment can be accomplished as the
 Segregated Witness program. Then, we’ll look at the Segregated Witness
 equivalent for Pay-to-Script-Hash (P2SH) scripts. Finally, we’ll look at
 how both of the preceding Segregated Witness programs can be embedded
@@ -1374,7 +1383,7 @@ would have to include a signature within the transaction input:
 [...]
 ----
 
-However, to spend the P2PKH output, the transaction has no
+However, to spend the P2WPKH output, the transaction has no
 signature on that input. Instead, Bob’s transaction has an empty
 input script and includes a witness structure:
 
@@ -1387,7 +1396,7 @@ input script and includes a witness structure:
      	 "scriptSig": “”,
 ]
 [...]
-“witness”: “<Bob’s witness data>”
+“witness”: “<Bob’s witness structure>”
 [...]
 ----
 
@@ -1409,10 +1418,11 @@ private key.
 
 [WARNING]
 ====
-P2WPKH should be constructed by the payee (recipient) by converting a
-compressed public key to a P2WPKH hash. You should never transform a
-P2PKH script, Bitcoin address, or uncompressed public key to a P2WPKH
-witness script.
+P2WPKH should be constructed by the recipient by converting a compressed
+public key to a P2WPKH hash. Neither the spender nor anyone else should
+ever transform a P2PKH script, Bitcoin address, or uncompressed public
+key to a P2WPKH witness script.  In general, a spender should only send
+to the receiver in the manner that the receiver indicated.
 ====
 
 [[p2wsh]]
@@ -1459,7 +1469,8 @@ Again, as with the example of P2WPKH, you can see that the Segregated
 Witness equivalent script is a lot simpler and reduces the template
 overhead that you see in P2SH scripts. Instead, the Segregated Witness
 output script consists of two values pushed to the stack: a witness version
-(0) and the 32-byte SHA256 hash of the witness script.
+(0) and the 32-byte SHA256 hash of the witness script (the witness
+program).
 
 [TIP]
 ====
@@ -1472,13 +1483,13 @@ of security in P2SH).  For details, see <<p2sh_collision_attacks>>.
 ====
 
 Mohammed's company can spend the P2WSH output by presenting the
-correct witness script and sufficient signatures to satisfy it. Both the
+correct witness script and sufficient signatures to satisfy it. The
 witness script and the signatures would be
-included as part of the witness data. No data would be placed in the
+included as part of the witness structure. No data would be placed in the
 input script because this is a native witness program, which does not use
 the legacy input script field.
 
-.Decoded transaction showing a P2WSH output being spent with witness data
+.Decoded transaction showing a P2WSH output being spent with witness structure
 ----
 [...]
 "vin" : [
@@ -1540,7 +1551,7 @@ Let's assume, for example, that Alice's wallet is not upgraded to
 segwit, but Bob's wallet is upgraded and can handle segwit transactions.
 Alice and Bob can use legacy non-segwit outputs. But Bob would
 likely want to use segwit to reduce transaction fees, taking advantage
-of the reduced cost of witness data.
+of the reduced cost of witness structure.
 
 In this case Bob's wallet can construct a P2SH address that contains a
 segwit script inside it. Alice's wallet sees this as a "normal" P2SH
@@ -1554,27 +1565,27 @@ as nested P2WSH.
 
 ===== Nested Pay-to-Witness-Public-Key-Hash
 
-The first form of witness script we will examine is nested P2WPKH. This
+The first form of output script we will examine is nested P2WPKH. This
 is a Pay-to-Witness-Public-Key-Hash witness program, embedded inside a
-Pay-to-Script-Hash script, so that it can be used by a wallet that is
-not aware of segwit.
+Pay-to-Script-Hash script, so that a wallet that is
+not aware of segwit can pay the output script.
 
 Bob's wallet constructs a P2WPKH witness program with Bob's public key.
 This witness program is then hashed and the resulting hash is encoded as
 a P2SH script. The P2SH script is converted to a Bitcoin address, one
 that starts with a "3," as we saw in the <<p2sh>> section.
 
-Bob's wallet starts with the P2WPKH witness program we saw earlier:
+Bob's wallet starts with the P2WPKH witness version and witness program we saw earlier:
 
-.Bob's P2WPKH witness program
+.Bob's P2WPKH witness version and witness program
 ----
 0 ab68025513c3dbd2f7b92a94e0581f5d50f654e7
 ----
 
-The P2WPKH witness program consists of the witness version and Bob's
+The data consists of the witness version and Bob's
 20-byte public key hash.
 
-Bob's wallet then hashes the preceding witness program, first with
+Bob's wallet then hashes the data, first with
 SHA256, then with RIPEMD160, producing another 20-byte hash.
 
 Let's use +bx+ on the command-line to replicate that:
@@ -1625,7 +1636,7 @@ company, regardless of whether their wallets are upgraded for segwit,
 Mohammed's wallet can embed the P2WSH witness program inside a P2SH
 script.
 
-First, Mohammed's wallet hashes the redeem script with SHA256 (just
+First, Mohammed's wallet hashes the witness script with SHA256 (just
 once). Let's use +bx+ to do that on the command-line:
 
 .Mohammed's wallet creates a P2WSH witness program
@@ -1641,7 +1652,7 @@ echo \
 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
-Next, the hashed redeem script is turned into a P2WSH witness program:
+Next, the hashed witness script is turned into a version-prefixed P2WSH witness program:
 
 ----
 0 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
@@ -1755,7 +1766,7 @@ commitments (one of them being the merkle root, which will need to be
 included in the authorization data); we could also have four
 commitments for the same cost.  An extra commitment would give us up to
 eight conditions.  With just 16 commitments--512 bytes of commitments--we could have
-over 32,000 authorization conditions, far more that could be effectively
+over 32,000 authorization conditions, far more than could be effectively
 used in an entire block of +OP_IF+ statements.  With 128 commitments
 (4,096 bytes), the number of conditions we could create in theory far
 exceeds the number of conditions that all the computers in the world
@@ -1767,6 +1778,7 @@ his partners to spend their money frequently; the time delayed
 conditions only exist in case something goes wrong.  We can re-structure
 our tree with this knowledge in <<diagram_mast3>>.
 
+//FIXME: keep leaves in the same order, see Murch feedback chapter 7
 [[diagram_mast3]]
 .A MAST with the most-expected script in the best position
 image::../images/mast3.dot.png["A MAST with the most-expected script in the best position"]
@@ -1877,7 +1889,7 @@ because each new key or signature adds data to a transaction, scripted
 multisignatures disclose data about how many keys and signatures are
 being used--which may make it easy to figure out which transactions were
 created by which group of participants.  But, because every scriptless
-multisignatures looks identical to every other scriptless
+multisignatures looks like every other scriptless
 multisignature and every single-signature, no privacy-reducing data is
 leaked.
 
@@ -1903,7 +1915,7 @@ that, even if Carol claims she didn't sign, she can't
 prove that she didn't, which may be bad for accountability and
 auditability.
 
-For many users and use cases, the always reduced sized and increased
+For many users and use cases, the always reduced size and increased
 privacy of multisignatures outweighs its occasional challenges for
 creating and auditing signatures.
 
@@ -1976,11 +1988,11 @@ When spending is possible using just the key, such for a single signature
 or scriptless multisignature, that is called _keypath spending_.  When
 the tree of scripts is used, that is called _scriptpath spending_.
 For keypath spending, the data that gets put onchain is the public key
-(in a witness program) and the signature (in the witness data).
+(in a witness program) and the signature (on the witness stack).
 
 For scriptpath spending, the onchain data also includes the public key,
 which is placed in a witness program and called the _taproot output key_
-in this context.  The witness data includes the following information:
+in this context.  The witness structure includes the following information:
 
 1. A version number
 
@@ -1988,9 +2000,9 @@ in this context.  The witness data includes the following information:
    merkle root to produce the taproot output key.  This underlying key
    is called the _taproot internal key_
 
-3. The script to execute
+3. The leaf script to execute
 
-4. One 32-byte hash for each merkle branch connecting the script to the merkle root
+4. One 32-byte hash for each junction in merkle tree along the path that connects the leaf to the merkle root
 
 5. Any data necessary to satisfy the script (such as signatures or hash preimages)
 
