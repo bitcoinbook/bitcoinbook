@@ -5,7 +5,7 @@ for f in $( git ls-files | grep -v "$0" ) ; do
   # 1. Find discouraged words
   # 2. Ignore things that look like json or code (Bitcoin Core RPCs use many discouraged words)
   egrep -if <( sed "1,/[S]TART DISCOURAGED WORDS/d" "$0" ) "$f" \
-    | grep -v "[\"'][a-zA-Z]\+[\"']" \
+    | grep -v "[\"'][a-zA-Z-]\+[\"']" \
     | if grep . ; then
       echo "DISCOURAGED WORDS FOUND IN $f"
     fi
@@ -37,3 +37,7 @@ BIP [0-9]
 witness field
 witness element
 feerate
+m-of-m
+m-of-n
+n-of-n
+k-of-n
