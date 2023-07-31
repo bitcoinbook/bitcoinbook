@@ -54,92 +54,6 @@ In this chapter, we'll explore various aspects of those
 bids--transaction fees--and how they influence the creation and
 management of Bitcoin transactions.
 
-=== Bids on space and time
-
-There's a chart taught in most economics courses that shows simplified
-supply and demand curves, shown in <<img_supply_demand>>.  In these
-simple scenarios, increasing aggregate demand or decreasing aggregate
-supply results in higher prices; alternatively, decreasing demand or
-increasing supply results in lower prices.
-
-[[img_supply_demand]]
-.Traditional supply and demand curves
-image::../images/supply-demand.png[Traditional supply and demand curves]
-
-It's possible for the supply of block space in Bitcoin to significantly
-change, but normally it's very consistent when averaged over the course
-of several hours or longer.  That means, for the purposes of considering
-transaction fees, price is almost entirely a function of aggregate demand,
-as shown in <<img_block_supply_demand>>.
-
-[[img_block_supply_demand]]
-.Bitcoin block space supply and demand
-image::../images/supply-demand-constant.png[Bitcoin block space supply and demand]
-
-When demand is less than supply, the transaction fees should be nearly
-zero.  Most full nodes which help relay transactions from users to
-miners require that every transaction they relay pay a minimum
-transaction fee.  This prevents their relay bandwidth being wasted.
-That minimum fee is the effective floor on transaction fees.  Note, the
-minimum transaction relay fee must be a fairly small amount or it would
-create an incentive for users to begin sending transactions to miners
-directly, which would be bad for mining decentralization.
-
-When demand exceeds supply, the only thing that prevents fee costs
-from rising to infinity is that higher prices curtail demand.  Each time
-the price increases, the number of people who want to pay that price to
-include a transaction in a block decreases.  Conversely, when prices
-decrease, the the number of people willing to pay that price to confirm
-a transaction increases.  Engineers call this a _negative feedback
-loop_, as shown in <<img_negative_feedback>>.
-
-[[img_negative_feedback]]
-.Negative feedback loop
-image::../images/fee-negative-feedback.png[Negative feedback loop]
-
-In particular, people who want to send a transaction during a period of
-high fees will try to find an alternative.  There are many alternatives
-for most reasons why people need to send a transaction, such as moving to an
-offchain payment system like Lightning Network, using an alternative
-payment network, or taking care to construct the smallest transaction
-possible.  But it's also possible to take advantage of the negative
-feedback loop to pay less fees.  All you need to do is create a
-transaction which pays a fee that's equal to or higher than what
-miners will accept in the future--even if that price is below what they
-accept now.  As the market of other people adapts to the higher price by
-lowering demand, and as miners confirm all transactions paying a higher
-price, the price will drop until miners are willing to accept the
-lower fee you offered earlier.
-
-We can imagine four separate transactions that are equivalent except
-that each pays a different fee.  The transaction paying the highest fee
-gets confirmed first.  As the high prices result in lower demand, which
-subsequently leads to lower prices, the second highest fee transaction
-gets confirmed, as does the third.  Eventually the lowest fee
-transaction gets confirmed.  However, the lower the price becomes, the
-more demand there is to confirm transactions at that price, so a
-transaction paying too low of a fee might never be confirmed.  We can
-see this scenario illustrated in <<img_wait_times>>.
-
-[[img_wait_times]]
-.Wait times for different fee rates
-image::../images/fee-patience.png[Wait times for different fee rates]
-
-In other words, you don't need to pay peak prices, or switch to another
-payment method, if you're willing to wait longer for your transaction to
-confirm.
-
-Miners keep a pool of transactions that they will attempt to mine,
-either presently or in the near future.  Full nodes which relay
-unconfirmed transactions will also keep their own pool.  In some
-Bitcoin implementations these pools are kept in memory and are called
-memory pools or _mempools_.  The mempools across most nodes tend to be
-very similar, so it's common to talk about _the mempool_ as if it was a
-single pool synchronized across multiple peers.  Although that's
-convenient most of the time, anyone evaluating potential problems with
-transaction relay (both accidental problems and deliberate attacks)
-needs to remember that every relay node keeps its own mempool.
-
 === Who pays the transaction fee?
 
 Most payment systems involve some sort of fee for transacting, but
@@ -266,8 +180,8 @@ current list, see https://www.lopp.net/bitcoin-information/fee-estimates.html
 As mentioned, fee rate estimation can never be perfect.  One common
 problem is that the fundamental demand might change, adjusting the
 equilibrium and either increasing prices (fees) to new heights or
-decreasing them towards the minimum, as shown in
-<<img_equilibrium_change>>.  If fee rates go down, then a transaction
+decreasing them towards the minimum.
+If fee rates go down, then a transaction
 that previously paid a normal fee rate might now be paying a high fee
 rate and it will be confirmed earlier than expected.  There's no way to
 lower the fee rate on a transaction you've already sent, so you're stuck
@@ -276,10 +190,6 @@ methods to be able to increase the fee rates on those transactions,
 which is called _fee bumping_.  There are two commonly used types of fee
 bumping in Bitcoin, Replace-By-Fee (RBF) and Child Pays For Parent
 (CPFP).
-
-[[img_equilibrium_change]]
-.Equilibrium change
-image::../images/equilibrium-change.png[Equilibrium change]
 
 [[rbf]]
 === Replace-By-Fee (RBF) Fee Bumping
@@ -497,8 +407,9 @@ which is addressed by package relay.
 
 ==== Package Relay
 
-Early versions of Bitcoin Core didn't place any limits on the size of
-each node's mempool.  Of course, computers have physical limits, whether
+Early versions of Bitcoin Core didn't place any limits on the number of
+unconfirmed transactions they stored for later relay and mining in their
+mempools (see <<mempool>>).  Of course, computers have physical limits, whether
 it's the memory (RAM) or disk space--it's not possible for a full node
 to store an unlimited number of unconfirmed transactions.  Later
 versions of Bitcoin Core limited the size of the mempool to hold about
