@@ -135,8 +135,7 @@ some of those transactions are confirmed in a new block, the node
 doesn't need to receive a second copy of those transactions.
 
 Instead of receiving redundant unconfirmed transactions, compact blocks
-allows a peer that believes your node already has a transaction in that
-block to instead send a short 6-byte identifier for that transaction.
+allows a peer to instead send a short 6-byte identifier for each transaction.
 When your node receives a compact block with one or more identifiers, it
 checks its mempool for those transactions and uses them if they are
 found.  For any transaction that isn't found in your local node's
@@ -144,7 +143,8 @@ mempool, your node can send a request to the peer for a copy.
 
 Conversely, if the remote peer believes your node's mempool doesn't have
 some of the transactions that appear in the block, it can include a copy of
-those transactions in the compact block.
+those transactions in the compact block.  For example, Bitcoin Core
+always sends a block's coinbase transaction.
 
 If the remote peer guesses correctly about what transactions your node
 has in its mempool, and which it does not, it will send a block nearly
@@ -191,7 +191,7 @@ quickly announcing blocks).
 
 // released into the public domain by Nicolas Dorier
 [[bip152_illustration]]
-.BIP152 modes compared (from BIP152)
+.BIP152 modes compared (from BIP152).  They grey bar indicates the time it takes the node to validate the block
 image::images/bip152.png["BIP152"]
 
 The names of the two methods (which are taken from BIP152) can be a bit
@@ -262,7 +262,7 @@ miners and mining pools.
 optimization")))The original Bitcoin Relay Network was replaced in 2016
 with the introduction of the _Fast Internet Bitcoin Relay Engine_ or
 http://bitcoinfibre.org[_FIBRE_], also created by developer Matt
-Corallo. FIBRE is a UDP-based relay network that relays blocks within a
+Corallo. FIBRE is software that allows operating a UDP-based relay network that relays blocks within a
 network of nodes. FIBRE implements FEC and the _compact block_ optimization to
 further reduce the amount of data transmitted and the network latency.
 
@@ -285,12 +285,13 @@ transmitting a  +version+ message, which contains basic identifying
 information, including:
 
 +Version+:: The Bitcoin P2P protocol version the client "speaks" (e.g., 70002)
-+nLocalServices+:: A list of local services supported by the node, currently just +NODE_NETWORK+
++nLocalServices+:: A list of local services supported by the node
 +nTime+:: The current time
 +addrYou+:: The IP address of the remote node as seen from this node
 +addrMe+:: The IP address of the local node, as discovered by the local node
 +subver+:: A sub-version showing the type of software running on this node (e.g., pass:[<span class="keep-together"><code>/Satoshi:0.9.2.1/</code></span>])
 +BestHeight+:: The block height of this node's blockchain
++fRelay+:: A field added by BIP37 for requesting not to receive unconfirmed transactions
 
 (See http://bit.ly/1qlsC7w[GitHub] for an example of the +version+ network message.)
 
@@ -438,11 +439,11 @@ valid blockchain with the most proof of work.
 
 ((("blocks", "genesis block")))((("genesis block")))((("blockchain
 (the)", "genesis block")))Full nodes
-independently process every block, starting with the very first
+independently process every block, starting after the very first
 block (genesis block) and building up to the latest known block in the
 network. A full node can independently and authoritatively
-verify any transaction without recourse or reliance on any other node or
-source of information. The full node relies on the network to
+verify any transaction.
+The full node relies on the network to
 receive updates about new blocks of transactions, which it then verifies
 and incorporates into its local view of which scripts control which
 bitcoins, called the set of _unspent transaction outputs_ (UTXOs).
@@ -467,7 +468,7 @@ command +getpeerinfo+ as we saw earlier; for example, +/Satoshi:24.0.1/+.
 node will do once it connects to peers is try to construct a complete
 chain of block headers. If it is a brand-new node and has no blockchain at all, it
 only knows one block, the genesis block, which is statically embedded in
-the client software. Starting with block #0 (the genesis block), the new
+the client software. Starting after block #0 (the genesis block), the new
 node will have to download hundreds of thousands of blocks to
 synchronize with the network and reestablish the full blockchain.
 
@@ -492,7 +493,7 @@ have.
 
 In parallel, the node will begin requesting the blocks for each header
 it previously received using a +getdata+ message.  The node will request
-different blocks from each of its peers, which allows it to drop
+different blocks from each of its selected peers, which allows it to drop
 connections to peers that are significantly slower than the average in
 order to find newer (and possibly faster) peers.
 
@@ -513,7 +514,7 @@ gradually built up, more blocks are requested and received, and the
 process continues until the node catches up to the rest of the network.
 
 This process of comparing the local blockchain with the peers and
-retrieving any missing blocks happens any time a node goes offline for
+retrieving any missing blocks happens any time a node has been offline for
 an extended period of time.
 
 [[spv_nodes]]
@@ -529,7 +530,7 @@ blockchain. These types of clients are called SPV clients or lightweight
 clients.
 
 SPV clients download only the block headers and do not download the
-transactions included in each block. The resulting chain of blocks,
+transactions included in each block. The resulting chain of headers,
 without transactions, is about 10,000 times smaller than the full blockchain.
 SPV clients cannot construct a full picture of all the UTXOs that are
 available for spending because they do not know about all the
@@ -549,7 +550,7 @@ a dozen other "23 Church Street" addresses in the city and whether this
 is the right one. The mapless tourist's best chance is to ask enough
 people and hope some of them are not trying to mug him.
 
-SPV verifies transactions by reference to their _depth_ in the blockchain instead of their _height_. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
+SPV verifies transactions by reference to their _depth_ in the blockchain. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
 
 For example, when examining a transaction in block 800,000, a full node
 verifies all 800,000 blocks down to the genesis block and builds a full
@@ -591,7 +592,7 @@ node.
 A full node verifies a transaction by checking the entire chain of
 thousands of blocks below it in order to guarantee that the UTXO exists
 and is not spent, whereas an SPV client only proves that a transaction
-exists and checks how deep the block containing that transaction is
+exists and checks that the block containing that transaction is
 buried by a handful of blocks above it.
 ====
 
@@ -614,7 +615,7 @@ node, so developers have looked for other ways to solve the problem.
 
 Shortly after the introduction of SPV/lightweight clients, Bitcoin
 developers added a feature called _bloom filters_ in an attempt to
-reduce the bandwdith that SPV clients needed to use to learn about their
+reduce the bandwidth that SPV clients needed to use to learn about their
 incoming and outgoing transactions.
 Bloom filters allow SPV clients to receive a subset of
 the transactions without directly revealing precisely which addresses they are
@@ -856,10 +857,12 @@ weren't created by the client.  They can even download each matching
 block from a different peer, making it harder for full nodes to connect
 transactions belonging to a single client across multiple blocks.
 
-This idea for server-generated filters doesn't offer perfect privacy and
+This idea for server-generated filters doesn't offer perfect privacy,
 it still places some costs on full nodes (and it does require SPV
-clients use more bandwidth for the block download), but it is much more
-private and reliable than BIP37 client-requested bloom filters.
+clients use more bandwidth for the block download), and the filters can
+only be used for confirmed transactions (not unconfirmed transactions),
+but it is much more private and reliable than BIP37 client-requested
+bloom filters.
 
 After the description of the original idea based on bloom filters,
 developers realized there was a better data structure for
@@ -1080,7 +1083,7 @@ the SipHash function we'll use for compact block filters.
 
 The details of the algorithm used are described in BIP158, but the gist
 is that each output script is reduced to a 64 bit commitment using
-SipHash and some arthritic operations.  You can think of this as
+SipHash and some arithmetic operations.  You can think of this as
 taking a set of large numbers and truncating them to shorter numbers, a
 process that loses data (so it's called _lossy encoding_).  By losing
 some information, we don't need to store as much information later,
@@ -1216,12 +1219,6 @@ of a parent transaction triggers a cascade reconstruction of an entire
 chain of interdependent transactions by re-uniting the orphans with
 their parents all the way down the chain.
 
-Both the mempool and orphan pool (where implemented) are stored
-in local memory and are not saved on persistent storage; rather, they
-are dynamically populated from incoming network messages. When a node
-starts, both pools are empty and are gradually populated with new
-transactions received on the network.
-
 Some implementations of the Bitcoin also maintain an UTXO
 database, which is the set of all unspent outputs on the
 blockchain. This represents a different set of data from the mempool. Unlike the
@@ -1234,8 +1231,8 @@ table on persistent storage.
 Whereas the mempool and orphan pools represent a single node's local
 perspective and might vary significantly from node to node depending
 upon when the node was started or restarted, the UTXO database represents
-the emergent consensus of the network and therefore will vary little
-between nodes. Furthermore, the mempool and orphan pools only
+the emergent consensus of the network and therefore will not usually
+vary between nodes. Furthermore, the mempool and orphan pools only
 contain unconfirmed transactions, while the UTXO database only contains
 confirmed outputs.
 
