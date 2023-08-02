@@ -41,3 +41,5 @@ m-of-m
 m-of-n
 n-of-n
 k-of-n
+blockchain.info
+blockchain.com
