@@ -37,6 +37,21 @@ new owners of bitcoin to know that irrevocable effort was expended
 securing the bitcoin they received in those
 transactions.
 
+Additionally, transactions in the blockchain have a _topological order_
+defined by their position in the block chain.  One transaction is
+earlier than another if it appears in an earlier block or if it appears
+earlier in the same block.  In the Bitcoin protocol, a transaction is
+only valid if it spends the outputs of transactions that appeared
+earlier in the blockchain (whether they are earlier in the same block or
+in an earlier block), and only if no previous transaction spent any of
+those same outputs.  Within a single chain of blocks, the enforcement of
+topological ordering ensure no two valid transactions can spend the same
+output, eliminating the problem of _double spending_.
+
+In some protocols built on top of Bitcoin, the topological order of
+Bitcoin transactions is also used to establish a sequence of events;
+we'll discuss that idea further in <<single_use_seals>>.
+
 ((("fees", "mining rewards")))((("mining and consensus", "mining rewards
 and fees")))((("Proof-of-Work algorithm")))((("mining and consensus",
 "Proof-of-Work algorithm")))Miners receive two types of rewards in
@@ -54,8 +69,8 @@ Bitcoin's money supply is created in a process that's similar to how
 a central bank issues new money by printing bank notes. The maximum
 amount of newly created bitcoin a miner can add to a block decreases
 approximately every four years (or precisely every 210,000 blocks). It
-started at 50 bitcoin per block in January of 2009 and halved to 25
-bitcoin per block in November of 2012. It halved again to 12.5 bitcoin
+started at 50 bitcoins per block in January of 2009 and halved to 25
+bitcoins per block in November of 2012. It halved again to 12.5 bitcoins
 in July 2016, and again to 6.25 in May 2020. Based on this formula, bitcoin mining rewards decrease
 exponentially until approximately the year 2140, when all bitcoin
 will have been issued. After 2140, no new bitcoin
@@ -169,7 +184,7 @@ deflationary spiral.
 
 Bitcoin experts argue that deflation is not bad per se. Rather,
 deflation is associated with a collapse in demand because that is the
-only example of deflation we have to study. In a fiat currency with the
+most obvious example of deflation we have to study. In a fiat currency with the
 possibility of unlimited printing, it is very difficult to enter a
 deflationary spiral unless there is a complete collapse in demand and an
 unwillingness to print money. Deflation in bitcoin is not caused by a
@@ -185,7 +200,7 @@ at the expense of savers.
 
 It remains to be seen whether the deflationary aspect of the currency is
 a problem when it is not driven by rapid economic retraction, or an
-advantage because the protection from inflation and debasement far
+advantage because the protection from inflation and debasement
 outweighs the risks of deflation.
 ****
 
@@ -193,9 +208,9 @@ outweighs the risks of deflation.
 
 ((("mining and consensus", "decentralized consensus")))((("decentralized
 systems", "consensus in")))In the previous chapter we looked at the
-blockchain, the global public ledger (list) of all transactions, which
+blockchain, the global list of all transactions, which
 everyone in the Bitcoin network accepts as the authoritative record of
-ownership.
+ownership transfers.
 
 But how can everyone in the network agree on a single universal "truth"
 about who owns what, without having to trust anyone? All traditional
@@ -249,7 +264,7 @@ trusted, public, global ledger.
 ((("mining and consensus", "independent transaction
 verification")))((("transactions", "independent verification of")))In
 <<c_transactions>>, we saw how wallet software creates transactions by
-collecting UTXO, providing the appropriate authentication data, and then
+collecting UTXOs, providing the appropriate authentication data, and then
 constructing new outputs assigned to a new owner. The resulting
 transaction is then sent to the neighboring nodes in the Bitcoin network
 so that it can be propagated across the entire Bitcoin network.
@@ -267,8 +282,7 @@ criteria:
 
 - Neither lists of inputs or outputs are empty.
 
-- The transaction weight is less than the maximum block weight
-  limit.
+- The transaction weight is low enough to allow it to fit in a block.
 
 - Each output value, as well as the total, must be within the allowed
   range of values (zero or more, but less than 21m coins).
@@ -284,6 +298,9 @@ criteria:
 
 - For each input, if the referenced output transaction is a coinbase
   output, it must have at least +COINBASE_MATURITY+ (100) confirmations.
+  Any absolute or relative locktime must also be satisified.  Nodes may
+  relay transactions a block before they mature since they will be
+  mature if included in the next block.
 
 - Reject if the sum of input values is less than sum of output values.
 
@@ -302,12 +319,11 @@ _mempool_.
 
 ((("mining and consensus", "mining nodes")))((("Bitcoin nodes", "mining
 nodes")))Some of the nodes on the Bitcoin network are specialized nodes
-called _miners_. In <<ch01_intro_what_is_bitcoin>> we introduced ((("use
-cases", "mining for bitcoin", id="jingten")))Jing, a computer
+called _miners_. Jing is a computer
 engineering student in Shanghai, China, who is a Bitcoin miner. Jing
 earns bitcoin by running a "mining rig," which is a specialized
 computer-hardware system designed to mine bitcoin. Jing's specialized
-mining hardware is connected to a server running a full Bitcoin node.
+mining hardware is connected to a server running a full node.
 Unlike Jing, some miners mine without a full node, as we will see in
 <<mining_pools>>. Like every other full node, Jing's node receives and
 propagates unconfirmed transactions on the Bitcoin network. Jing's node,
@@ -315,15 +331,15 @@ however, also aggregates these transactions into new blocks.
 
 Jing's node is listening for new blocks, propagated on the Bitcoin
 network, as do all nodes. However, the arrival of a new block has
-special significance for a mining node. Each round of competition among miners
+special significance for a mining node. Each round of mining
 effectively ends with the propagation of a new block that acts as an
 announcement of a winner. To miners, receiving a valid new block means
-someone else won the competition and they lost. However, the end of one
-round of a competition is also the beginning of the next round. The new
+someone else won. However, the end of one
+round is also the beginning of the next round. The new
 block is
-also the start of the competition for the next block.
+also the start of the search for the next block.
 
-=== Aggregating Transactions into Blocks
+=== Aggregating Unconfirmed Transactions into Blocks
 
 ((("mining and consensus", "aggregating transactions into blocks",
 id="MACaggreg10")))((("transactions", "aggregating into blocks",
@@ -334,24 +350,25 @@ validating transactions, a Bitcoin node will add them to the mempool
 where transactions wait until they can be
 included (mined) into a block. Jing's node collects, validates, and
 relays new transactions just like any other node. Unlike other nodes,
-however, Jing's node will then aggregate these transactions into a
+however, Jing's node will then aggregate these unconfirmed transactions into a
 _candidate block_.
 
 Let's follow the blocks that were created during the time Alice made a
 purchase from Bob (see <<spending_bitcoin>>). Alice's
 transaction was included in a block. For the purpose of
 demonstrating the concepts in this chapter, let's assume that block was
-mined by Jing's mining system and follows Alice's transaction as it
+mined by Jing's mining system and follow Alice's transaction as it
 becomes part of this new block.
 
 Jing's mining node maintains a local copy of the blockchain. By the time
-((("use cases", "buying coffee")))Alice buys the cup of coffee, Jing's
-node has assembled the chain of blocks with the most proof-of-work. Jing's node is listening
+((("use cases", "buying coffee")))Alice buys something, Jing's
+node is caught up with the chain of blocks with the most proof-of-work.
+Jing's node is listening
 for transactions, trying to mine a new block and also listening for
 blocks discovered by other nodes. As Jing's node is mining, it receives
 a new block through the Bitcoin network. The arrival of this block
-signifies the end of the competition for that block and the beginning
-of the competition to create the next block.
+signifies the end of the search for that block and the beginning
+of the search to create the next block.
 
 During the previous several minutes, while Jing's node was searching for a
 solution to the previous block, it was also collecting transactions in
@@ -370,16 +387,15 @@ proof-of-work. The block becomes valid only if the miner succeeds in
 finding a solution according to the proof-of-work algorithm.
 
 When Jing's node aggregates all the transactions from the memory pool,
-the new candidate block has several thousand transactions that pays him
-their total transaction fees.
-
+the new candidate block has several thousand transactions that each pay
+transaction fees he'll attempt to claim.
 
 ==== The Coinbase Transaction
 
 ((("coinbase transactions", id="coinbtrans10")))((("transactions",
 "coinbase transactions", id="Tcoinb10")))The first transaction in any
 block is a special transaction, called a _coinbase transaction_. This
-transaction is constructed by Jing's node and contains his _reward_ for
+transaction is constructed by Jing's node and pays out his _reward_ for
 the mining effort.
 
 Jing's node creates the coinbase transaction as a payment to his own
@@ -389,8 +405,8 @@ reward (6.25 new bitcoin in 2023) and the transaction fees from all
 the transactions included in the block.
 
 Unlike regular transactions, the coinbase transaction does not consume
-(spend) UTXO as inputs. Instead, it has only one input, called the
-_coinbase_, which creates bitcoin from nothing. The coinbase transaction
+(spend) UTXOs as inputs. Instead, it has only one input, called the
+_coinbase input_, which creates bitcoin from nothing. The coinbase transaction
 must have at least one output and may have as many outputs as will fit
 in the block.  It's common for coinbase transactions in 2023 to have two
 outputs: one of these is a zero-value output that uses +OP_RETURN+ to
@@ -403,8 +419,7 @@ reward.
 ((("coinbase transactions", "rewards and fees")))((("fees", "transaction
 fees")))((("mining and consensus", "rewards and fees")))To construct the
 coinbase transaction, Jing's node first calculates the total amount of
-transaction fees by adding all the inputs and outputs of the
-transactions that were added to the block. The fees are calculated as:
+transaction fees:
 
 ----
 Total Fees = Sum(Inputs) - Sum(Outputs)
@@ -446,14 +461,12 @@ The initial subsidy is calculated in satoshis by multiplying 50 with the
 that have occurred by dividing the current block height by the halving
 interval (+SubsidyHalvingInterval+).
 
-The maximum number of halvings allowed is 64, so the code imposes a zero
-reward (returns only the fees) if the 64 halvings is exceeded.
-
 Next, the function uses the binary-right-shift operator to divide the
 reward (+nSubsidy+) by two for each round of halving. In the case of
 block 277,316, this would binary-right-shift the reward of 5 billion
 satoshis once (one halving) and result in 2.5 billion satoshis, or 25
-bitcoins. The binary-right-shift operator is used because it is more
+bitcoins. After the 33rd halving, the subsidy will be rounded down to
+zero.  The binary-right-shift operator is used because it is more
 efficient than multiple repeated divisions. To avoid a potential bug,
 the shift operation is skipped after 63 halvings, and the subsidy is set
 to 0.
@@ -465,7 +478,7 @@ fees (+nFees+), and the sum is returned.
 ====
 If Jing's mining node writes the coinbase transaction, what stops Jing
 from "rewarding" himself 100 or 1000 bitcoin? The answer is that an
-incorrect reward would result in the block being deemed invalid by
+inflated reward would result in the block being deemed invalid by
 everyone else, wasting Jing's electricity used for Proof-of-Work. Jing
 only gets to spend the reward if the block is accepted by everyone.
 ====
@@ -491,8 +504,8 @@ structure of the coinbase transaction's input.
 |Size| Field | Description
 | 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
-| 1&#x2013;9 bytes (VarInt) | Script Size | Script length in bytes, to follow
-| Variable | Input script | A script that fulfills the conditions of the UTXO output script
+| 1&#x2013;9 bytes (compactSize) | Script Size | Script length in bytes, to follow
+| Variable | Input Script | A script that fulfills the conditions of the UTXO output script
 | 4 bytes | Sequence Number | Multipurpose field used for BIP68 time locks and transaction replacement signaling
 |=======
 
@@ -528,13 +541,14 @@ be used by miners in any way they want; it is arbitrary data.
 (the)", "genesis block")))((("genesis block")))In the genesis block, for
 example, Satoshi Nakamoto added the text "The Times 03/Jan/2009
 Chancellor on brink of second bailout for banks" in the coinbase data,
-using it as a proof of the date and to convey a message. Currently,
+using it as a proof of the earliest date this block chould have been
+created and to convey a message. Currently,
 miners often use the coinbase data to include extra nonce values and strings
 identifying the mining pool.
 
 The first few bytes of the coinbase used to be arbitrary, but that is no
 longer the case. As per BIP34, version-2 blocks (blocks with the
-version field set to 2 or higher) must contain the block height index as a script
+version field set to 2 or higher) must contain the block height as a script
 "push" operation in the beginning of the coinbase field.
 
 <<satoshi_words>> uses the libbitcoin library introduced in
@@ -585,7 +599,7 @@ as listed in <<block_header_structure_ch10>>.
 |Size| Field | Description
 | 4 bytes | Version | A multipurpose bitfield
 | 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
-| 32 bytes | Merkle Root | A hash of the root of the merkle tree of this block's transactions
+| 32 bytes | Merkle Root | A hash that is the root of the merkle tree of this block's transactions
 | 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
 | 4 bytes | Target | The Proof-of-Work algorithm target for this block
 | 4 bytes | Nonce | A counter used for the Proof-of-Work algorithm
@@ -621,30 +635,35 @@ selected as the _parent_ of his candidate block.
 ====
 By selecting the specific _parent_ block, indicated by the Previous
 Block Hash field in the candidate block header, Jing is committing his
-mining power to extending the chain that ends in that specific block. In
-essence, this is how Jing "votes" with his mining power for the
-longest-difficulty valid chain.
+mining power to extending the chain that ends in that specific block.
 ====
 
 ((("merkle trees")))((("blockchain (the)", "merkle trees")))The next
-step is to summarize all the transactions with a merkle tree, in order
-to add the merkle root to the block header. The coinbase transaction is
-listed as the first transaction in the block. Then, the user-generated
-transactions are added after it.
-As we saw in the <<merkle_trees>>, there must be an even number
-of "leaf" nodes in the tree, so the last transaction is duplicated if
-necessary, creating nodes that each containing the hash of one transaction. The
+step is to commit to all the transactions using merkle trees.  Each
+transaction is listed using its witness transaction identifier (_wtxid_)
+in topographical order, with 32 0x00 bytes standing in for the wtxid of
+the first transaction (the coinbase).  As we saw in the <<merkle_trees>>
+the last wtxid is duplicated if there are an odd number of wtxids,
+creating nodes that each containing the hash of one transaction. The
 transaction hashes are then combined, in pairs, creating each level of
 the tree, until all the transactions are summarized into one node at the
 "root" of the tree. The root of the merkle tree summarizes all the
-transactions into a single 32-byte value, which is the
-"merkle root".
+transactions into a single 32-byte value, which is the _witness root
+hash_.
+
+The witness root hash is added to an output of the coinbase transaction.
+This step may be skipped in none of the transactions in the blook are
+required to contain a witness structure.  Each transaction (including
+the coinbase transaction) is then listed using its transaction
+identifier (_txid_) and used to build a second merkle tree, the root of
+which becomes the merkle root to which the block header commits.
 
 Jing's mining node will then add a 4-byte timestamp, encoded as a Unix
 "epoch" timestamp, which is based on the number of seconds elapsed from
 January 1, 1970, midnight UTC/GMT.
 
-Jing's node then fills in the target, which defines the required
+Jing's node then fills in the nBits target, which must be set to a
+compact representation of the required
 Proof-of-Work to make this a valid block. The target is stored in the
 block as a "target bits" metric, which is a mantissa-exponent encoding
 of the target. The encoding has a 1-byte exponent, followed by a 3-byte
@@ -656,11 +675,11 @@ is explained in <<target_bits>>.
 
 The final field is the nonce, which is initialized to zero.
 
-With all the other fields filled, the block header is now complete and
-the process of mining can begin. The goal is now to find a value for the
-nonce that results in a block header hash that is less than the target.
-The mining node will need to test billions or trillions of nonce values
-before a nonce is found that satisfies the requirement.
+With all the other fields filled, the header of the candidate block is now complete and
+the process of mining can begin. The goal is now to find a header
+that results in its hash that is less than the target.
+The mining node will need to test billions or trillions of variations of
+the header before a version is found that satisfies the requirement.
 
 === Mining the Block
 
@@ -673,7 +692,7 @@ various aspects of the Bitcoin system. The hash function SHA256 is the
 function used in Bitcoin's mining process.((("", startref="jingten")))
 
 ((("mining and consensus", "defined")))In the simplest terms, mining is
-the process of hashing the block header repeatedly, changing one
+the process of hashing the candidate block header repeatedly, changing one
 parameter, until the resulting hash matches a specific target. The hash
 function's result cannot be determined in advance, nor can a pattern be
 created that will produce a specific hash value. This feature of hash
@@ -750,7 +769,7 @@ again an easy task. Let's say a few rounds later the target is down to
 5. Now, more than half the dice throws will exceed the target and
 therefore be invalid. It takes exponentially more dice throws to win,
 the lower the target gets. Eventually, when the target is 2 (the minimum
-possible), only one throw out of every 36, or 2% of them, will produce a
+possible), only one throw out of every 36, or about 3% of them, will produce a
 winning result.
 
 From the perspective of an observer who knows that the target of the
@@ -892,6 +911,8 @@ second, it still requires 10 minutes on a laptop to find this solution.
 [[target_bits]]
 ==== Target Representation
 
+//TODO:use visual representation like I did on bitcoin.org
+
 ((("mining and consensus", "mining the block", "target
 representation")))((("targets", id="targets10")))
 Block headers contain the target in a notation called "target
@@ -970,10 +991,8 @@ current mining power will result in a 10-minute block interval.
 How, then, is such an adjustment made in a completely decentralized
 network? Retargeting occurs automatically and on every node
 independently. Every 2,016 blocks, all nodes retarget the Proof-of-Work.
-The equation for retargeting measures the time it took to find the last
-2,016 blocks and compares that to the expected time of 20,160 minutes
-(2,016 blocks times the desired 10-minute block interval). The ratio
-between the actual timespan and desired timespan is calculated and a
+The ratio between the actual timespan and desired timespan of ten
+minutes per block is calculated and a
 proportionate adjustment (up or down) is made to the target. In simple
 terms: If the network is finding blocks faster than every 10 minutes,
 the difficulty increases (target decreases). If block discovery is
@@ -982,8 +1001,16 @@ slower than expected, the difficulty decreases (target increases).
 The equation can be summarized as:
 
 ----
-New Target = Old Target * (Actual Time of Last 2016 Blocks / 20160 minutes)
+New Target = Old Target * (20,160 minutes / Actual Time of Last 2015 Blocks)
 ----
+
+[NOTE]
+====
+While the target calibration happens every 2,016 blocks, because of an
+off-by-one error in the original Bitcoin software it is based on the
+total time of the previous 2,015 blocks (not 2,016 as it should be),
+resulting in a retargeting bias toward higher difficulty by 0.05%.
+====
 
 <<retarget_code>> shows the code used in the Bitcoin Core client.
 
@@ -1016,14 +1043,6 @@ New Target = Old Target * (Actual Time of Last 2016 Blocks / 20160 minutes)
 ----
 ====
 
-[NOTE]
-====
-While the target calibration happens every 2,016 blocks, because of an
-off-by-one error in the original Bitcoin Core client it is based on the
-total time of the previous 2,015 blocks (not 2,016 as it should be),
-resulting in a retargeting bias toward higher difficulty by 0.05%.
-====
-
 The parameters +Interval+ (2,016 blocks) and +TargetTimespan+ (two weeks
 as 1,209,600 seconds) are defined in _chainparams.cpp_.
 
@@ -1050,7 +1069,7 @@ therefore electricity expended to secure bitcoin is also entirely
 independent of the number of transactions. Bitcoin can scale up
 and remain secure without any increase in hashing
 power from today's level. The increase in hashing power represents
-market forces as new miners enter the market to compete for the reward.
+market forces as new miners enter the market.
 As long as enough hashing power is under the control of miners acting
 honestly in pursuit of the reward, it is enough to prevent "takeover"
 attacks and, therefore, it is enough to secure bitcoin.
@@ -1126,11 +1145,12 @@ completion")))((("use cases", "mining for bitcoin", id="jingtentwo")))As
 we saw earlier, Jing's node has constructed a candidate block and
 prepared it for mining. Jing has several hardware mining rigs with
 application-specific integrated circuits, where hundreds of thousands of
-integrated circuits run the SHA256 algorithm in parallel at incredible
+integrated circuits run Bitcoin's double SHA256 algorithm in parallel at incredible
 speeds. Many of these specialized machines are connected to his mining
 node over USB or a local area network. Next, the mining node running on
 Jing's desktop transmits the block header to his mining hardware, which
-starts testing trillions of nonces per second. Because the nonce is only
+starts testing trillions of variations of the header per second. Because
+the nonce is only
 32 bits, after exhausting all the nonce possibilities (about 4 billion),
 the mining hardware changes the block header (adjusting the coinbase
 extra nonce space, versionbits, or timestamp) and resets the nonce counter, testing
@@ -1139,8 +1159,6 @@ new combinations.
 Almost 11 minutes after starting to mine a particular block, one of the
 hardware mining machines finds a solution and sends it back to the
 mining node.
-When inserted into the block header, the nonce produces a block hash
-which is less than the target.
 
 Immediately, Jing's mining node transmits the block to all its peers.
 They receive, validate, and then propagate the new block. As the block
@@ -1150,11 +1168,11 @@ nodes receive and validate the block, they abandon their efforts to find
 a block at the same height and immediately start computing the next
 block in the chain, using Jing's block as the "parent." By building on
 top of Jing's newly discovered block, the other miners are essentially
-"voting" with their mining power and endorsing Jing's block and the
+using their mining power to endorse Jing's block and the
 chain it extends.
 
 In the next section, we'll look at the process each node uses to
-validate a block and select the longest chain, creating the consensus
+validate a block and select the most-work chain, creating the consensus
 that forms the decentralized blockchain.((("",
 startref="MACmining10")))((("", startref="jingtentwo")))
 
@@ -1165,12 +1183,12 @@ block validation")))((("validation")))The third step in Bitcoin's
 consensus mechanism is independent validation of each new block by every
 node on the network. As the newly solved block moves across the network,
 each node performs a series of tests to validate it.
-The independent validation also ensures that miners who act
-honestly get their blocks incorporated in the blockchain, thus earning
-the reward. Those miners who act dishonestly have their blocks rejected
-and not only lose the reward, but also waste the effort expended to find
-a Proof-of-Work solution, thus incurring all of the costs of creating a
-block but receiving none of the rewards.
+The independent validation also ensures that only blocks that follow the
+consensus rules are incorporated in the blockchain, thus earning
+their miners the reward. Blocks that violate the rules are rejected
+and not only lose their miners the reward, but also waste the effort expended to find
+a Proof-of-Work solution, thus incurring upon those miners all of the costs of creating a
+block but giving them none of the rewards.
 
 When a node receives a new block, it will validate the block by checking
 it against a long list of criteria that must all be met; otherwise, the
@@ -1182,10 +1200,10 @@ in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
 - The block header hash is less than the target (enforces the
   Proof-of-Work)
 
-- The block timestamp is less than two hours in the future (allowing for
-  time errors)
+- The block timestamp is between the Median Time Past (MTP) and two
+  hours in the future (allowing for time errors)
 
-- The block size is within acceptable limits
+- The block weight is within acceptable limits
 
 - The first transaction (and only the first) is a coinbase transaction
 
@@ -1201,36 +1219,30 @@ instead of the correct reward? Because every node validates blocks
 according to the same rules. An invalid coinbase transaction would make
 the entire block invalid, which would result in the block being rejected
 and, therefore, that transaction would never become part of the ledger.
-The miners have to construct a perfect block, based on the shared rules
+The miners have to construct a block, based on the shared rules
 that all nodes follow, and mine it with a correct solution to the
 Proof-of-Work. To do so, they expend a lot of electricity in mining, and
 if they cheat, all the electricity and effort is wasted. This is why
 independent validation is a key component of decentralized consensus.
 
+//FIXME:normalize terminology between "block-finding race", "mining
+//race", and "forks"
+[[forks]]
 === Assembling and Selecting Chains of Blocks
 
 ((("mining and consensus", "assembling and selecting chains of blocks",
 id="MACassembling10")))((("blocks", "assembling and selecting chains
-of", id="Bassemble10")))The final step in Bitcoin's decentralized
+of", id="Bassemble10")))The final part in Bitcoin's decentralized
 consensus mechanism is the assembly of blocks into chains and the
-selection of the chain with the most Proof-of-Work. Once a node has
-validated a new block, it will then attempt to assemble a chain by
-connecting the block to the existing blockchain.
+selection of the chain with the most Proof-of-Work.
 
-Nodes maintain three sets of blocks: those connected to the best
-blockchain and those that form branches off the best blockchain (stale
-blocks). Invalid blocks are rejected as soon as any one
-of the validation criteria fails and are therefore not included in any
-chain.
-
-The "best blockchain" at any time is whichever _valid_ chain of blocks has
-the most cumulative Proof-of-Work associated with it. Under most
-circumstances this is also the chain with the most blocks in it, unless
-there are two equal-length chains and one has more Proof-of-Work. The
+A _best blockchain_ is whichever valid chain of blocks has
+the most cumulative Proof-of-Work associated with it.
+The
 best chain will also have branches with blocks that are "siblings" to
 the blocks on the best chain. These blocks are valid but not part of the
 best chain. They are kept for future reference, in case one of those
-chains is extended to exceed the best chain in work. In the next section
+chains is extended and becomes the new best chain. In the next section
 (<<forks>>), we will see how secondary chains occur as a result of an
 almost simultaneous mining of blocks at the same height.
 
@@ -1241,47 +1253,18 @@ node will attempt to find that parent in the existing blockchain. Most
 of the time, the parent will be the "tip" of the best chain, meaning
 this new block extends the best chain.
 
-Sometimes, as we will see in <<forks>>, the new block extends a chain
-that is not the best chain. In that case, the node will attach the new
-block to the secondary chain it extends and then compare the work of the
-secondary chain to the best chain. If the secondary chain has more
-cumulative work than the best chain, the node will _reorganize_ its
-chain to use the secondary chain, meaning it will select the secondary chain as its new
-best chain, making the old best chain a secondary chain. If the node is
-a miner, it will now construct a candidate block extending this new, more-Proof of Work,
-chain.
+Sometimes, as we will see in <<forks>>, the new block does not extend
+the best chain.  In that case, the node will attach the new block to a
+secondary chain and then compare the work of the secondary chain to the
+previous best chain. If the secondary chain is now the best chain, the
+node will accordingly _reorganize_ its view of confirmed transactions
+and available UTXOs.  If the node is a miner, it will now construct a
+candidate block extending this new, more-Proof of Work, chain.
 
 By selecting the greatest-cumulative-work valid chain, all nodes
 eventually achieve network-wide consensus. Temporary discrepancies
 between chains are resolved eventually as more work is added, extending
-one of the possible chains. Mining nodes "vote" with their mining power
-by choosing which chain to extend by mining the next block. When they
-mine a new block and extend the chain, the new block itself represents
-their vote.
-
-In the next section we will look at how discrepancies between competing
-chains (forks) are resolved by the independent selection of the
-greatest-cumulative-work chain.
-
-[[forks]]
-==== Blockchain Forks
-
-((("mining and consensus", "assembling and selecting chains of blocks",
-"blockchain forks")))((("blockchain (the)", "blockchain forks",
-id="BCTfork10")))((("forks", "blockchain fork events",
-id="forks10")))Because the blockchain is a decentralized data structure,
-different copies of it are not always consistent. Blocks might arrive at
-different nodes at different times, causing the nodes to have different
-perspectives of the blockchain. To resolve this, each node always
-selects and attempts to extend the valid chain of blocks that contains the
-most Proof-of-Work, also known as the _best blockchain_.
-By summing the work recorded in each block in a
-chain, a node can calculate the total amount of work that has been
-expended to create that chain. As long as all nodes select the
-greatest-cumulative-work chain, the global Bitcoin network eventually
-converges to a consistent state. Forks occur as temporary
-inconsistencies between versions of the blockchain, which are resolved
-by eventual reorganization as more blocks are added to one of the forks.
+one of the possible chains.
 
 [TIP]
 ====
@@ -1297,9 +1280,7 @@ as different shapes (star, triangle, upside-down triangle, rhombus),
 spreading across the network. Each node in the network is represented as
 a circle.
 
-Each node has its own perspective of the global blockchain. As each node
-receives blocks from its neighbors, it updates its own copy of the
-blockchain, selecting the greatest-cumulative-work chain. For
+For
 illustration purposes, each node contains a shape that represents the
 block that it believes is currently the tip of the best chain. So, if
 you see a star shape in the node, that means that the star block is the
@@ -1312,20 +1293,6 @@ of the blockchain, with the star block as the tip of the best chain.
 [role="smallereighty"]
 .Before the fork&#x2014;all nodes have the same perspective
 image::images/mbc2_1002.png["Before the fork - all nodes have the same perspective"]
-
-A "fork" occurs whenever there are two valid blocks competing to
-form the longest blockchain. This occurs under normal conditions
-whenever two miners solve the Proof-of-Work algorithm within a short
-period of time from each other. As both miners discover a solution for
-their respective candidate blocks, they immediately broadcast their own
-"winning" block to their immediate neighbors who begin propagating the
-block across the network. Each node that receives a valid block will
-incorporate it into its blockchain, extending the blockchain by one
-block. If that node later sees another candidate block extending the
-same parent, it connects the second candidate on a secondary chain. As a
-result, some nodes will "see" one candidate block first, while other
-nodes will see the other candidate block and two competing versions of
-the blockchain will emerge.
 
 In <<fork2>>, we see two miners (Node X and Node Y) who mine two
 different blocks almost simultaneously. Both of these blocks are
@@ -1357,6 +1324,8 @@ and some receive block "upside-down triangle" first. As shown in
 blockchain; one side topped with a triangle block, the other with the
 upside-down-triangle block.
 
+//FIXME:node X won't receive upside down triangle because it's not
+//connected to a peer with that block.  Same problem for Node Y
 [[fork3]]
 [role="smallersixty"]
 .Visualization of a blockchain fork event: two blocks propagate, splitting the network
@@ -1386,8 +1355,7 @@ these two competing chains are extended by additional work.
 Mining nodes whose perspective resembles Node X will immediately begin
 mining a candidate block that extends the chain with "triangle" as its
 tip. By linking "triangle" as the parent of their candidate block, they
-are voting with their hashing power. Their vote supports the chain that
-they have elected as the best chain.
+are using their hashing power to build on that chain.
 
 Any mining node whose perspective resembles Node Y will start building a
 candidate node with "upside-down triangle" as its parent, extending the
@@ -1414,7 +1382,7 @@ All nodes that had chosen "triangle" as the winner in the previous round
 will simply extend the chain one more block. The nodes that chose
 "upside-down triangle" as the winner, however, will now see two chains:
 star-triangle-rhombus and star-upside-down-triangle. The chain
-star-triangle-rhombus is now longer (more cumulative work) than the
+star-triangle-rhombus now has more cumulative work than the
 other chain. As a result, those nodes will set the chain
 star-triangle-rhombus as the best chain and change the
 star-upside-down-triangle chain to a secondary chain, as shown in
@@ -1422,7 +1390,7 @@ star-upside-down-triangle chain to a secondary chain, as shown in
 to revise their view of the blockchain to incorporate the new evidence
 of a longer chain. Any miners working on extending the chain
 star-upside-down-triangle will now stop that work because their
-candidate block is "stale," as its parent "upside-down-triangle" is
+block is "stale," as its parent "upside-down-triangle" is
 no longer on the best chain. The transactions within
 "upside-down-triangle" that are not within "triangle" are re-inserted in
 the mempool for inclusion in the next block to become a part of the best
@@ -1468,7 +1436,7 @@ wait for three blocks, over a system with 10-minute blocks.
 startref="Bassemble10")))((("", startref="MACassembling10")))((("",
 startref="forks10")))((("", startref="BCTfork10")))
 
-=== Mining and the Hashing Competition
+=== Mining and the Hash Lottery
 
 ((("mining and consensus", "hashing power race",
 id="MAChash10")))Bitcoin mining is an extremely competitive industry.
@@ -1477,7 +1445,7 @@ existence. Some years the growth has reflected a complete change of
 technology, such as in 2010 and 2011 when many miners switched from
 using CPU mining to GPU mining and field programmable gate array (FPGA)
 mining. In 2013 the introduction of ASIC mining lead to another giant
-leap in mining power, by placing the SHA256 function directly on silicon
+leap in mining power, by placing the double-SHA256 function directly on silicon
 chips specialized for the purpose of mining. The first such chips could
 deliver more mining power in a single box than the entire Bitcoin
 network in 2010.
@@ -1487,9 +1455,7 @@ leaps left in Bitcoin mining equipment,
 because the industry has reached the forefront of Moore's Law, which
 stipulates that computing density will double approximately every 18
 months. Still, the mining power of the network continues to advance at
-a rapid pace as the race for higher density chips is matched with
-a race for locations with lower electrical costs where these chips
-can be deployed.
+a rapid pace.
 
 [[extra_nonce]]
 ==== The Extra Nonce Solution
@@ -1529,7 +1495,8 @@ piece of mining equipment has its own coinbase transaction, this allows
 an individual piece of mining equipment to perform up to 281 TH/s by
 only making changes to the block header.  This keeps mining equipment
 and protocols simpler than incrementing the extranonce in the coinbase
-transaction every 4 billion hashes.
+transaction every 4 billion hashes, which requires recalculating the
+entire left flank of the merkle tree up to the root.
 
 [[mining_pools]]
 ==== Mining Pools
@@ -1598,7 +1565,13 @@ contribute to the pool. By setting a lower difficulty for earning
 shares, the pool measures the amount of work done by each miner. Each
 time a pool miner finds a block header hash that is less than the pool
 target, she proves she has done the hashing work to find that result.
-More importantly, the work to find shares contributes, in a
+That header ultimately commits to the coinbase transaction and so it can
+be used to prove the miner used a coinbase transaction that would have
+paid the block reward to pool.  Each pool miner is given a
+slightly different coinbase transaction template so each of them hashes
+different candidate block headers, preventing duplication of effort.
+
+The work to find shares contributes, in a
 statistically measurable way, to the overall effort to find a hash lower
 than the bitcoin network's target. Thousands of miners trying to find
 low-value hashes will eventually find one low enough to satisfy the
@@ -1691,7 +1664,7 @@ Bitcoin's blockchain consensus mechanism.
 
 P2Pool mining is more complex than pool mining because it requires that
 the pool miners run a dedicated computer with enough disk space, memory,
-and internet bandwidth to support a full Bitcoin node and the P2Pool
+and internet bandwidth to support a Bitcoin full node and the P2Pool
 node software. P2Pool miners connect their mining hardware to their
 local P2Pool node, which simulates the functions of a pool server by
 sending block templates to the mining hardware. On P2Pool, individual
@@ -1726,16 +1699,16 @@ consensus mechanism so as to disrupt the security and availability of
 the Bitcoin network.
 
 It is important to note that consensus attacks have the greatest effect on future
-consensus. Bitcoin's
-ledger becomes more and more immutable as time passes. While in theory,
+consensus. Confirmed transactions ont he best blockchain
+ become more and more immutable as time passes. While in theory,
 a fork can be achieved at any depth, in practice, the computing power
 needed to force a very deep fork is immense, making old blocks
 very hard to change. Consensus attacks also do not affect the security
 of the private keys and signing algorithms.
 
-One attack scenario against the consensus mechanism is called the "51%
-attack." In this scenario a group of miners, controlling a majority
-(51%) of the total network's hashing power, collude to attack bitcoin.
+One attack scenario against the consensus mechanism is called the _majority
+attack_ or _51% attack._ In this scenario a group of miners, controlling a majority
+of the total network's hashing power (such as 51%), collude to attack bitcoin.
 With the ability to mine the majority of the blocks, the attacking
 miners can cause deliberate "forks" in the blockchain and double-spend
 transactions or execute denial-of-service attacks against specific
@@ -1746,8 +1719,8 @@ power, an attacker can invalidate six or more blocks in a row, causing
 transactions that were considered immutable (six confirmations) to be
 invalidated. Note that a double-spend can only be done on the attacker's
 own transactions, for which the attacker can produce a valid signature.
-Double-spending one's own transactions is profitable if by invalidating
-a transaction the attacker can get an irreversible exchange payment or
+Double-spending one's own transactions can be profitable if invalidating
+a transaction allows the attacker can get an irreversible exchange payment or
 product without paying for it.
 
 Let's examine a practical example of a 51% attack. In the first chapter,
@@ -1762,12 +1735,14 @@ because the risk of a credit-card chargeback is low while the cost of
 delaying the transaction to obtain a signature is comparatively larger.
 In contrast, selling a more expensive item for bitcoin runs the risk of
 a double-spend attack, where the buyer broadcasts a competing
-transaction that spends the same inputs (UTXO) and cancels the payment
-to the merchant. A double-spend attack can happen in two ways: either
-before a transaction is confirmed, or if the attacker takes advantage of
-a blockchain fork to undo several blocks. A 51% attack allows attackers
+transaction that spends one of the same inputs (UTXOs) and cancels the payment
+to the merchant. 
+A 51% attack allows attackers
 to double-spend their own transactions in the new chain, thus undoing
 the corresponding transaction in the old chain.
+
+//TODO:distinguish between majority attack and sub-majority "reorg"
+//attack.  Consensus attack
 
 In our example, malicious attacker Mallory goes to ((("use cases",
 "retail sales", id="carolten")))Carol's gallery and purchases a
@@ -1776,7 +1751,7 @@ Carol sells "The Great Fire" paintings for $250,000 in bitcoin to
 Mallory. Instead of waiting for six or more confirmations on the
 transaction, Carol wraps and hands the paintings to Mallory after only
 one confirmation. Mallory works with an accomplice, Paul, who operates a
-large mining pool, and the accomplice launches a 51% attack as soon as
+large mining pool, and the accomplice launches an attack as soon as
 Mallory's transaction is included in a block. Paul directs the mining
 pool to remine the same block height as the block containing Mallory's
 transaction, replacing Mallory's payment to Carol with a transaction
@@ -1797,23 +1772,27 @@ every transaction or block.((("", startref="carolten")))
 ((("confirmations", "of large-value transactions",
 secondary-sortas="large-value transactions")))To protect against this
 kind of attack, a merchant selling large-value items must wait at least
-six confirmations before giving the product to the buyer. Alternatively,
+six confirmations before giving the product to the buyer. Waiting for
+more than six confirmations may sometimes be warranted.  Alternatively,
 the merchant should use an escrow multisignature account, again waiting
 for several confirmations after the escrow account is funded. The more
 confirmations elapse, the harder it becomes to invalidate a transaction
-with a 51% attack. For high-value items, payment by bitcoin will still
+by reorganizing the blockchain. For high-value items, payment by bitcoin will still
 be convenient and efficient even if the buyer has to wait 24 hours for
 delivery, which would correspond to approximately 144 confirmations.
 
 In addition to a double-spend attack, the other scenario for a consensus
 attack is to deny service to specific bitcoin participants (specific
 Bitcoin addresses). An attacker with a majority of the mining power can
-simply ignore specific transactions. If they are included in a block
+censor transactions. If they are included in a block
 mined by another miner, the attacker can deliberately fork and remine
 that block, again excluding the specific transactions. This type of
 attack can result in a sustained denial-of-service against a specific
 address or set of addresses for as long as the attacker controls the
 majority of the mining power.
+
+//TODO: update to not use 51% attack name (see other TODO in this
+//chapter)
 
 Despite its name, the 51% attack scenario doesn't actually require 51%
 of the hashing power. In fact, such an attack can be attempted with a
@@ -1851,7 +1830,7 @@ other pools with denial-of-service. All of these scenarios are
 theoretically possible.
 
 Undoubtedly, a serious consensus attack would erode confidence in
-bitcoin in the short term, possibly causing a significant price decline.
+Bitcoin in the short term, possibly causing a significant price decline.
 However, the Bitcoin network and software are constantly evolving, so
 consensus attacks would be met with immediate countermeasures by the
 Bitcoin community, making Bitcoin more robust.((("",
@@ -1902,7 +1881,7 @@ that do not upgrade to the new consensus rules are unable to participate
 in the consensus mechanism and are forced onto a separate chain at the
 moment of the hard fork. Thus, a change introduced by a hard fork can be
 thought of as not "forward compatible," in that nonupgraded systems can
-no longer process the new consensus rules.
+no longer process blocks because of the new consensus rules.
 
 Let's examine the mechanics of a hard fork with a specific example.
 
@@ -1911,11 +1890,15 @@ height 4, a one-block fork occurs. This is the type of spontaneous fork
 we saw in <<forks>>. With the mining of block 5, the network converges
 on one chain and the fork is resolved.
 
+//FIXME:"The blocks following the new rules should have a unique color. I would have expected the "b-fork" to follow the old rules based on the colors."
+// I was looking here where the other block was created, because I assumed that the enumeration would start with a) and then progress to b).
+//
+// Perhaps call this chain "7F–11F" to indicate the new Foocoin rules?
 [[blockchainwithforks]]
 .A blockchain with forks
 image::images/mbc2_1009.png[A blockchain with forks]
 
-Later, however, at block height 6, a hard fork occurs. Let's assume that
+Later, however, at block height 6,
 a new implementation of the client is released with a change in the
 consensus rules. Starting on block height 7, miners running this new
 implementation will accept a new type of bitcoin, let's call
@@ -2001,8 +1984,7 @@ connected to old nodes and new nodes will only be connected to new
 nodes. A single block based on the new rules will ripple
 through the network and result in the partition into two networks.
 
-Once a miner using the new rules mines a block, the mining power and
-chain will also fork. New miners may mine on top of the new block,
+New miners may mine on top of the new block,
 while old miners will mine a separate chain based on the old rules. The
 partitioned network will make it so that the miners operating on
 separate consensus rules won't likely receive each other's blocks, as
@@ -2166,9 +2148,7 @@ mechanism for "activating" a soft fork is through miners signaling that
 they are ready and willing to enforce the new consensus rules.  If
 all miners enforce the new rules, there's no risk of unmodified
 nodes accepting a block that upgraded nodes would reject.
-This mechanism was introduced with the
-activation of BIP34 in March 2013 and replaced by the activation of
-BIP9 in July 2016.
+This mechanism was introduced by BIP34.
 
 ==== BIP34 Signaling and Activation
 
@@ -2185,7 +2165,7 @@ chose to include. After activation of BIP34, valid blocks had to
 contain a specific block-height at the beginning of the coinbase and be
 identified with a version number greater than or equal to "2."
 
-To signal the change and activation of BIP34, miners set the block
+To signal their readiness to enforce the rules of BIP34, miners set the block
 version to "2," instead of "1." This did not immediately make version
 "1" blocks invalid. Once activated, version "1" blocks would become
 invalid and all version "2" blocks would be required to contain the
@@ -2227,10 +2207,6 @@ mechanism was used twice more to activate soft forks:
 After the activation of BIP65, the signaling and activation mechanism
 of BIP34 was retired and replaced with the BIP9 signaling mechanism
 described next.
-
-The standard is defined in
-https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki[BIP34
-(Block v2, Height in Coinbase)].
 
 [[bip9]]
 ==== BIP9 Signaling and Activation
@@ -2394,7 +2370,7 @@ many protocol developers that BIP9 was itself a failure.  As mentioned,
 the failure of miners to initially signal support for segwit may have
 been largely the result of a one-time conflict of interest that wouldn't
 apply in the future.  To some, it seemed worth trying BIP9 again.
-Others disagree and wanted to use BIP8.
+Others disagreed and wanted to use BIP8.
 
 After months of discussions between those who were the most interested
 in specific activation ideas, a compromise was suggested in order to
@@ -2431,7 +2407,7 @@ majority (51%), they are constrained by the consent of the other
 constituencies. If they act unilaterally, the rest of the participants
 may refuse to accept their blocks, keeping the economic activity on a
 minority chain. Without economic activity (transactions, merchants,
-wallets, exchanges), the miners will be mining a worthless coin with
+wallets, exchanges), the miners will be mining a worthless currency with
 empty blocks. This diffusion of power means that all the participants
 must coordinate, or no changes can be made. Status quo is the stable
 state of this system with only a few changes possible if there is strong
