@@ -50,11 +50,11 @@ functions, such as routing, mining, and wallet services.
 Some nodes, called _archival full nodes_, also maintain a
 complete and up-to-date copy of the blockchain. Full nodes can
 autonomously and authoritatively verify any transaction without external
-reference. ((("simple-payment-verification (SPV)")))  Those nodes can
+reference.  Those nodes can
 serve data to clients that store
-only a subset of the blockchain and verify transactions using a method
+only a subset of the blockchain and partly verify transactions using a method
 called _simplified payment verification_, or SPV. ((("lightweight
-clients")))These clients are known as lightweight clients or SPV clients.
+clients")))These clients are known as lightweight clients.
 
 ((("Bitcoin nodes", "mining nodes")))((("mining and consensus", "mining
 nodes")))((("Proof-of-Work algorithm")))((("mining and consensus",
@@ -518,29 +518,27 @@ retrieving any missing blocks happens any time a node has been offline for
 an extended period of time.
 
 [[spv_nodes]]
-=== Simplified Payment Verification (SPV) Nodes
+=== Lightweight Clients
 
-((("bitcoin network", "SPV clients", id="BNspvnodes08")))((("bitcoin
-nodes", "SPV clients", id="BNospv08")))((("simple-payment-verification
-(SPV)", id="simple08")))Many Bitcoin clients are designed to run on space- and
+Many Bitcoin clients are designed to run on space- and
 power-constrained devices, such as smartphones, tablets, or embedded
 systems. For such devices, a _simplified payment verification_ (SPV)
 method is used to allow them to operate without validating the full
-blockchain. These types of clients are called SPV clients or lightweight
+blockchain. These types of clients are called lightweight
 clients.
 
-SPV clients download only the block headers and do not download the
+Lightweight clients download only the block headers and do not download the
 transactions included in each block. The resulting chain of headers,
 without transactions, is about 10,000 times smaller than the full blockchain.
-SPV clients cannot construct a full picture of all the UTXOs that are
+Lightweight clients cannot construct a full picture of all the UTXOs that are
 available for spending because they do not know about all the
-transactions on the network. SPV clients verify transactions using a
+transactions on the network. Instead, they verify transactions using a
 slightly different method that relies on peers to provide partial views
 of relevant parts of the blockchain on demand.
 
 As an analogy, a full node is like a tourist in a strange city, equipped
-with a detailed map of every street and every address. By comparison, an
-SPV node is like a tourist in a strange city asking random strangers for
+with a detailed map of every street and every address. By comparison, a
+lightweight client is like a tourist in a strange city asking random strangers for
 turn-by-turn directions while knowing only one main avenue. Although
 both tourists can verify the existence of a street by visiting it, the
 tourist without a map doesn't know what lies down any of the side
@@ -550,39 +548,39 @@ a dozen other "23 Church Street" addresses in the city and whether this
 is the right one. The mapless tourist's best chance is to ask enough
 people and hope some of them are not trying to mug him.
 
-SPV verifies transactions by reference to their _depth_ in the blockchain. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, an SPV node will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
+Lightweight clients verify transactions by reference to their _depth_ in the blockchain. Whereas a full node will construct a fully verified chain of thousands of blocks and millions of transactions reaching down the blockchain (back in time) all the way to the genesis block, a lightweight client will verify the proof of work of all blocks (but not whether the blocks and all of their transactions are valid) and link that chain to the transaction of interest.
 
 For example, when examining a transaction in block 800,000, a full node
 verifies all 800,000 blocks down to the genesis block and builds a full
 database of UTXOs, establishing the validity of the transaction by
-confirming that the transaction exists and its output remains unspent. A SPV client can
+confirming that the transaction exists and its output remains unspent. A lightweight client can
 only verify that the transaction exists. The client establishes a link
 between the transaction and the block that contains it, using a _merkle
-path_ (see <<merkle_trees>>). Then, the SPV client waits until it sees the
+path_ (see <<merkle_trees>>). Then, the lightweight client waits until it sees the
 six blocks 800,001 through 800,006 piled on top of the block containing
 the transaction and verifies it by establishing its depth under blocks
 800,006 to 800,001. The fact that other nodes on the network accepted
 block 800,000 and that miners did the necessary work to produce six more blocks
 on top of it is proof, by proxy, that the transaction actually exists.
 
-An SPV client cannot normally be persuaded that a transaction exists in a block
-when the transaction does not in fact exist. The SPV client establishes
+A lightweight client cannot normally be persuaded that a transaction exists in a block
+when the transaction does not in fact exist. The lightweight client establishes
 the existence of a transaction in a block by requesting a merkle path
 proof and by validating the Proof-of-Work in the chain of blocks.
-However, a transaction's existence can be "hidden" from an SPV client. An
-SPV client can definitely prove that a transaction exists but cannot
+However, a transaction's existence can be "hidden" from a lightweight client. A
+lightweight client can definitely prove that a transaction exists but cannot
 verify that a transaction, such as a double-spend of the same UTXO,
 doesn't exist because it doesn't have a record of all transactions. This
 vulnerability can be used in a denial-of-service attack or for a
-double-spending attack against SPV clients. To defend against this, an SPV
+double-spending attack against lightweight clients. To defend against this, a lightweight
 client needs to connect randomly to several clients, to increase the
 probability that it is in contact with at least one honest node. This
-need to randomly connect means that SPV clients also are vulnerable to
+need to randomly connect means that lightweight clients also are vulnerable to
 network partitioning attacks or Sybil attacks, where they are connected
 to fake nodes or fake networks and do not have access to honest nodes or
 the real Bitcoin network.
 
-For many practical purposes, well-connected SPV clients are secure enough,
+For many practical purposes, well-connected lightweight clients are secure enough,
 striking a balance between resource needs, practicality, and security.
 For infallible security, however, nothing beats running a full
 node.
@@ -591,33 +589,33 @@ node.
 ====
 A full node verifies a transaction by checking the entire chain of
 thousands of blocks below it in order to guarantee that the UTXO exists
-and is not spent, whereas an SPV client only proves that a transaction
+and is not spent, whereas an lightweight client only proves that a transaction
 exists and checks that the block containing that transaction is
 buried by a handful of blocks above it.
 ====
 
 To get the block headers it needs to verify a transaction is part of the
-chain, SPV clients use a +getheaders+ message.
+chain, lightweight clients use a +getheaders+ message.
 The responding peer will send up to 2,000 block headers
 using a single +headers+ message.  See the illustration in
 <<spv_synchronization>>.
 
 [[spv_synchronization]]
-.SPV client synchronizing the block headers
-image::images/mbc2_0807.png["SPVSynchronization"]
+.Lightweight client synchronizing the block headers
+image::images/mbc2_0807.png["Header synchronization"]
 
-Block headers allow an SPV client to verify that any individual block
+Block headers allow a lightweight client to verify that any individual block
 belongs to the blockchain with the most proof of work, but they don't
 tell the client which blocks contain transactions that are interesting to
 its wallet.  The client could download every block and check, but that
 would use a large fraction of the resources it would take to run a full
 node, so developers have looked for other ways to solve the problem.
 
-Shortly after the introduction of SPV/lightweight clients, Bitcoin
+Shortly after the introduction of lightweight clients, Bitcoin
 developers added a feature called _bloom filters_ in an attempt to
-reduce the bandwidth that SPV clients needed to use to learn about their
+reduce the bandwidth that lightweight clients needed to use to learn about their
 incoming and outgoing transactions.
-Bloom filters allow SPV clients to receive a subset of
+Bloom filters allow lightweight clients to receive a subset of
 the transactions without directly revealing precisely which addresses they are
 interested in, through a filtering mechanism that uses probabilities
 rather than fixed patterns.((("", startref="BNspvnodes08")))((("",
@@ -632,7 +630,7 @@ id="privacy08")))((("security", "maintaining privacy",
 id="Sprivacy08")))A bloom filter is a probabilistic search filter, a way
 to describe a desired pattern without specifying it exactly. Bloom
 filters offer an efficient way to express a search pattern while
-protecting privacy. They are used by SPV clients to ask their peers for
+protecting privacy. They are used by lightweight clients to ask their peers for
 transactions matching a specific pattern, without revealing exactly
 which addresses, keys, or transactions they are searching for.
 
@@ -651,10 +649,10 @@ more possible addresses and better privacy, but many of the results are
 irrelevant. If she asks for a very specific pattern, she gets fewer
 results but loses privacy.
 
-Bloom filters serve this function by allowing an SPV client to specify a
+Bloom filters serve this function by allowing a lightweight client to specify a
 search pattern for transactions that can be tuned toward precision or
 privacy. A more specific bloom filter will produce accurate results, but
-at the expense of revealing what patterns the SPV client is interested in,
+at the expense of revealing what patterns the lightweight client is interested in,
 thus revealing the addresses owned by the user's wallet. A less specific
 bloom filter will produce more data about more transactions, many
 irrelevant to the client, but will allow the client to maintain better
@@ -748,23 +746,23 @@ pattern is definitely not a match.
 .Testing the existence of pattern "Y" in the bloom filter. The result is a definitive negative match, meaning "Definitely Not!"
 image::images/mbc2_0812.png[]
 
-=== How SPV clients Use Bloom Filters
+=== How Lightweight Clients Use Bloom Filters
 
 Bloom filters are used to filter the transactions (and blocks containing
-them) that an SPV client receives from its peers, selecting only
-transactions of interest to the SPV client without revealing exactly which
+them) that a lightweight client receives from its peers, selecting only
+transactions of interest to the lightweight client without revealing exactly which
 addresses or keys it is interested in.
 
-((("transaction IDs (txid)")))An SPV client will initialize a bloom filter
+((("transaction IDs (txid)")))A lightweight client will initialize a bloom filter
 as "empty"; in that state the bloom filter will not match any patterns.
-The SPV client will then make a list of all the addresses, keys, and
+The lightweight client will then make a list of all the addresses, keys, and
 hashes that it is interested in. It will do this by extracting the
 public key hash and script hash and transaction IDs from any UTXO
-controlled by its wallet. The SPV client then adds each of these to the
+controlled by its wallet. The lightweight client then adds each of these to the
 bloom filter, so that the bloom filter will "match" if these patterns
 are present in a transaction, without revealing the patterns themselves.
 
-((("Bitcoin nodes", "full nodes")))The SPV client will then send a
+((("Bitcoin nodes", "full nodes")))The lightweight client will then send a
 +filterload+ message to the peer, containing the bloom filter to use on
 the connection. On the peer, bloom filters are checked against each
 incoming transaction. The full node checks several parts of the
@@ -790,7 +788,7 @@ matching the filter and a merkle path (see <<merkle_trees>>) for each
 matching transaction. The peer will then also send +tx+ messages
 containing the transactions matched by the filter.
 
-As the full node sends transactions to the SPV client, the SPV client
+As the full node sends transactions to the lightweight client, the lightweight client
 discards any false positives and uses the correctly matched transactions
 to update its UTXO set and wallet balance. As it updates its own view of
 the UTXO set, it also modifies the bloom filter to match any future
@@ -804,7 +802,7 @@ client can send a +filterclear+ message. Because it is not possible to
 remove a pattern from a bloom filter, a client has to clear and resend a
 new bloom filter if a pattern is no longer desired.
 
-The network protocol and bloom filter mechanism for SPV clients is defined
+The network protocol and bloom filter mechanism for lightweight clients is defined
 in http://bit.ly/1x6qCiO[BIP37 (Peer Services)].((("",
 startref="BNebloom08")))((("", startref="bloom08")))
 
@@ -827,7 +825,7 @@ which could lead to denial-of-service attacks.
 For both of those reasons, Bitcoin Core eventually limited support for
 bloom filters to only clients on IP addresses that were explicitly
 allowed by the node operator.  This meant that an alternative method for
-helping SPV clients find their transactions was needed.
+helping lightweight clients find their transactions was needed.
 
 === Compact Block Filters
 
@@ -858,7 +856,7 @@ block from a different peer, making it harder for full nodes to connect
 transactions belonging to a single client across multiple blocks.
 
 This idea for server-generated filters doesn't offer perfect privacy,
-it still places some costs on full nodes (and it does require SPV
+it still places some costs on full nodes (and it does require lightweight
 clients use more bandwidth for the block download), and the filters can
 only be used for confirmed transactions (not unconfirmed transactions),
 but it is much more private and reliable than BIP37 client-requested
@@ -1135,19 +1133,19 @@ lightweight client to download an 80-byte block header, a (usually)
 small coinbase transaction, and the filter for that block to receive
 strong evidence that the filter was accurate.
 
-=== SPV Clients and Privacy
+=== Lightweight Clients and Privacy
 
-Clients that implement SPV have weaker privacy than a full node. A full
+Lightweight clients have weaker privacy than a full node. A full
 node downloads all transactions and therefore reveals no information
-about whether it is using some address in its wallet. An SPV client
+about whether it is using some address in its wallet. A lightweight client
 only downloads transactions that are related to its wallet in some way.
 
-Bloom filters and compact block filters are a way to reduce the loss of privacy. Without them, an
-SPV client would have to explicitly list the addresses it was interested
+Bloom filters and compact block filters are a way to reduce the loss of privacy. Without them, a
+lightweight client would have to explicitly list the addresses it was interested
 in, creating a serious breach of privacy. However, even with
-filters, an adversary monitoring the traffic of an SPV client or
+filters, an adversary monitoring the traffic of a lightweight client or
 connected to it directly as a node in the P2P network may be able to collect enough
-information over time to learn the addresses in the wallet of the SPV
+information over time to learn the addresses in the wallet of the lightweight
 client.
 
 === Encrypted and Authenticated Connections
