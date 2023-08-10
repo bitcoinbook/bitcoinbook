@@ -683,27 +683,16 @@ way as to produce a desired digest, other than trying random
 inputs.
 
 With SHA256, the output is always 256 bits long, regardless of the size
-of the input. In <<sha256_example1>>, we will use the Python interpreter
-to calculate the SHA256 hash of the phrase, "I am Satoshi Nakamoto."
+of the input. For example, we will to calculate the SHA256 hash of the
+phrase, "Hello, World!"
 
-[[sha256_example1]]
-.SHA256 example
-====
-[source,bash]
 ----
-$ python
+$ echo "Hello, world!" | sha256sum
+d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5  -
 ----
-[source,pycon]
-----
-Python 2.7.1
->>> import hashlib
->>> print hashlib.sha256("I am Satoshi Nakamoto").hexdigest()
-5d7c7ba21cbbcd75d14800b100252d5b428e5b1213d27c385bc141ca6b47989e
-----
-====
 
 This
-256-bit number is the _hash_ or _digest_ of the phrase and depends on
+256-bit number (represented in hex) is the _hash_ or _digest_ of the phrase and depends on
 every part of the phrase. Adding a single letter, punctuation mark, or
 any other character will produce a different hash.
 
@@ -713,10 +702,21 @@ this case to vary the SHA256 fingerprint of the phrase.
 
 To make a challenge out of this algorithm, let's set a target: find a
 phrase that produces a hexadecimal hash that starts with a zero.
-Fortunately, this isn't difficult! <<sha256_example_generator_output>>
-shows that the phrase "I am Satoshi Nakamoto13" produces the hash
-+0ebc56d59a34f5082aaef3d66b37a661696c2b618e62432727216ba9531041a5+,
-which fits our criteria. It took 13 attempts to find it. In terms of
+Fortunately, this isn't difficult:
+
+[[sha256_example_generator_output]]
+----
+$ for nonce in $( seq 100 ) ; do echo "Hello, world! $nonce" | sha256sum ; done
+3194835d60e85bf7f728f3e3f4e4e1f5c752398cbcc5c45e048e4dbcae6be782  -
+bfa474bbe2d9626f578d7d8c3acc1b604ec4a7052b188453565a3c77df41b79e  -
+[...]
+f75a100821c34c84395403afd1a8135f685ca69ccf4168e61a90e50f47552f61  -
+09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314  -
+----
+
+The phrase "Hello, World! 32" produces the hash
++09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314+,
+which fits our criteria. It took 32 attempts to find it. In terms of
 probabilities, if the output of the hash function is evenly distributed
 we would expect to find a result with a 0 as the hexadecimal prefix once
 every 16 hashes (one out of 16 hexadecimal digits 0 through F). In
@@ -754,13 +754,18 @@ any possible outcome can be calculated in advance. Therefore, an outcome
 of specified difficulty constitutes proof of a specific amount of work.
 ====
 
-In <<sha256_example_generator_output>>, the winning "nonce" is 13 and
+In <<sha256_example_generator_output>>, the winning "nonce" is 32 and
 this result can be confirmed by anyone independently. Anyone can add the
-number 13 as a suffix to the phrase "I am Satoshi Nakamoto" and compute
-the hash, verifying that it is less than the target. The successful
-result is also Proof-of-Work, because it proves we did the work to find
-that nonce. While it only takes one hash computation to verify, it took
-us 13 hash computations to find a nonce that worked. If we had a lower
+number 32 as a suffix to the phrase "Hello, world!" and compute
+the hash, verifying that it is less than the target.
+
+----
+$ echo "Hello, world! 32" | sha256sum
+09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314  -
+----
+
+Although it only takes one hash computation to verify, it took
+us 32 hash computations to find a nonce that worked. If we had a lower
 target (higher difficulty) it would take many more hash computations to
 find a suitable nonce, but only one hash computation for anyone to
 verify. Furthermore, by knowing the target, anyone can estimate the
@@ -784,95 +789,6 @@ the nonce (usually just incrementing it by one) and try again. At the
 current difficulty in the Bitcoin network, miners have to try
 a huge number of times before finding a nonce that results in a low
 enough block header hash.
-
-A very simplified Proof-of-Work algorithm is implemented in Python in
-<<pow_example1>>.
-
-[[pow_example1]]
-.Simplified Proof-of-Work implementation
-====
-[source, python]
-----
-include::code/proof-of-work-example.py[]
-----
-====
-
-Running this code, you can set the desired difficulty (in bits, how many
-of the leading bits must be zero) and see how long it takes for your
-computer to find a solution. In <<pow_example_outputs>>, you can see how
-it works on an average laptop.
-
-[[pow_example_outputs]]
-.Running the Proof-of-Work example for various difficulties
-====
-[source, bash]
-----
-$ python proof-of-work-example.py*
-----
-
-----
-Difficulty: 1 (0 bits)
-
-[...]
-
-Difficulty: 8 (3 bits)
-Starting search...
-Success with nonce 9
-Hash is 1c1c105e65b47142f028a8f93ddf3dabb9260491bc64474738133ce5256cb3c1
-Elapsed Time: 0.0004 seconds
-Hashing Power: 25065 hashes per second
-Difficulty: 16 (4 bits)
-Starting search...
-Success with nonce 25
-Hash is 0f7becfd3bcd1a82e06663c97176add89e7cae0268de46f94e7e11bc3863e148
-Elapsed Time: 0.0005 seconds
-Hashing Power: 52507 hashes per second
-Difficulty: 32 (5 bits)
-Starting search...
-Success with nonce 36
-Hash is 029ae6e5004302a120630adcbb808452346ab1cf0b94c5189ba8bac1d47e7903
-Elapsed Time: 0.0006 seconds
-Hashing Power: 58164 hashes per second
-
-[...]
-
-Difficulty: 4194304 (22 bits)
-Starting search...
-Success with nonce 1759164
-Hash is 0000008bb8f0e731f0496b8e530da984e85fb3cd2bd81882fe8ba3610b6cefc3
-Elapsed Time: 13.3201 seconds
-Hashing Power: 132068 hashes per second
-Difficulty: 8388608 (23 bits)
-Starting search...
-Success with nonce 14214729
-Hash is 000001408cf12dbd20fcba6372a223e098d58786c6ff93488a9f74f5df4df0a3
-Elapsed Time: 110.1507 seconds
-Hashing Power: 129048 hashes per second
-Difficulty: 16777216 (24 bits)
-Starting search...
-Success with nonce 24586379
-Hash is 0000002c3d6b370fccd699708d1b7cb4a94388595171366b944d68b2acce8b95
-Elapsed Time: 195.2991 seconds
-Hashing Power: 125890 hashes per second
-
-[...]
-
-Difficulty: 67108864 (26 bits)
-Starting search...
-Success with nonce 84561291
-Hash is 0000001f0ea21e676b6dde5ad429b9d131a9f2b000802ab2f169cbca22b1e21a
-Elapsed Time: 665.0949 seconds
-Hashing Power: 127141 hashes per second
-----
-====
-
-As you can see, increasing the difficulty by 1 bit causes a doubling in
-the time it takes to find a solution. If you think of the entire 256-bit
-number space, each time you constrain one more bit to zero, you decrease
-the search space by half. In <<pow_example_outputs>>, it takes 84
-million hash attempts to find a nonce that produces a hash with 26
-leading bits as zero. Even at a speed of more than 120,000 hashes per
-second, it still requires 10 minutes on a laptop to find this solution.
 
 [[target_bits]]
 ==== Target Representation
