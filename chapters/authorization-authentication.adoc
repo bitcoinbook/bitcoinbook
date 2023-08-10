@@ -1732,6 +1732,39 @@ significant downsides of MAST for Bitcoin and there were two solid
 proposals for it, BIP114 and BIP116, before an improved approach was
 discovered, which we'll see in <<taproot>>.
 
+.MAST versus MAST
+****
+The earliest idea for what we now know as _MAST_ in Bitcoin was
+_Merklized Abstract Syntax Trees_.  In an Absract Syntax Tree (AST),
+every condition in a script creates a new branch, as show in <<ast>>.
+
+[[ast]]
+.An Abstract Syntax Tree (AST) for a script
+image::../images/ast.dot.png["An Abstract Syntax Tree (AST) for a script"]
+
+ASTs are widely used by programs that parse and optimize code for other
+programs, such as compilers.  A merklized AST would commit to every part
+of a program and so enable the features described in the section about
+<<mast>>, but it would require revealing at least one 32-byte digest for
+every separate part of the program, which would not be very space
+efficient on the blockchain for most programs.
+
+What most people in most cases call _MAST_ in Bitcoin today is
+_Merklized Alternative Script Trees_, a backronym coined by developer
+Anthony Towns.  An alternative script tree is a a set of scripts, each
+one of them complete by itself, where only one can be selected--making
+them alternatives for each other, as shown in <<alt_script>>.
+
+[[alt_script]]
+.An alternative script tree
+image::../images/alt_script.dot.png["An alternative script tree"]
+
+Alternative script trees only require revealing one 32-byte digest for
+each level of depth between the spender's chosen script and the root of
+the tree.  For most scripts, this is a much more efficient use of space
+in the blockchain.
+****
+
 [[pay_to_contract]]
 === Pay to Contract (P2C)
 
