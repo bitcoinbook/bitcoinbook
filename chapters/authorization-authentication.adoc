@@ -586,30 +586,8 @@ very long:
 
 This entire script can instead be represented by a 20-byte cryptographic
 hash, by first applying the SHA256 hashing algorithm and then applying
-the RIPEMD160 algorithm on the result.
-
-We use +libbitcoin-explorer+ (+bx+) on the command-line to produce the
-script hash, as follows:
-
-----
-echo \
-2 \
-[04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C587] \
-[04A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49] \
-[047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D9977965] \
-[0421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5] \
-[043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800] \
-5 CHECKMULTISIG \
-| bx script-encode | bx sha256 | bx ripemd160
-54c557e07dde5bb6cb791c7a540e0a4796f5e97e
-----
-
-The series of commands above first encodes Mohammed's multisig
-redeem script as a serialized hex-encoded bitcoin Script. The next +bx+ command
-calculates the SHA256 hash of that. The next +bx+ command hashes again
-with RIPEMD160, producing the final script-hash:
-
-The 20-byte hash of Mohammed's redeem script is:
+the RIPEMD160 algorithm on the result.  For example, starting with the
+hash of Mohammed's redeem script:
 
 ----
 54c557e07dde5bb6cb791c7a540e0a4796f5e97e
@@ -660,15 +638,7 @@ addresses use the version prefix "5," which results in
 Base58Check-encoded addresses that start with a "3."
 
 For example, Mohammed's complex script, hashed and Base58Check-encoded
-as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+. We can
-confirm that with the +bx+ command:
-
-----
-echo \
-'54c557e07dde5bb6cb791c7a540e0a4796f5e97e'\
- | bx address-encode -v 5
-39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw
-----
+as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+.
 
 Now, Mohammed can give this "address" to his customers and they can use
 almost any Bitcoin wallet to make a simple payment, like any other
@@ -1588,29 +1558,8 @@ The data consists of the witness version and Bob's
 
 Bob's wallet then hashes the data, first with
 SHA256, then with RIPEMD160, producing another 20-byte hash.
-
-Let's use +bx+ on the command-line to replicate that:
-
-.HASH160 of the P2WPKH witness program
-----
-echo \
-'0 [ab68025513c3dbd2f7b92a94e0581f5d50f654e7]'\
- | bx script-encode | bx sha256 | bx ripemd160
-3e0547268b3b19288b3adef9719ec8659f4b2b0b
-----
-
-Next, the redeem script hash is converted to a Bitcoin address. Let's
-use +bx+ on the command-line again:
-
-.P2SH address
-----
-echo \
-'3e0547268b3b19288b3adef9719ec8659f4b2b0b' \
-| bx address-encode -v 5
-37Lx99uaGn5avKBxiW26HjedQE3LrDCZru
-----
-
-Now, Alice's wallet can make a payment to
+Next, the redeem script hash is converted to a Bitcoin address.
+Finally, Alice's wallet can make a payment to
 +37Lx99uaGn5avKBxiW26HjedQE3LrDCZru+, just as it would to any other
 Bitcoin address.
 
@@ -1638,18 +1587,9 @@ Mohammed's wallet can embed the P2WSH witness program inside a P2SH
 script.
 
 First, Mohammed's wallet hashes the witness script with SHA256 (just
-once). Let's use +bx+ to do that on the command-line:
+once), producing the hash:
 
-.Mohammed's wallet creates a P2WSH witness program
 ----
-echo \
-2 \ [04C16B8698A9ABF84250A7C3EA7EEDEF9897D1C8C6ADF47F06CF73370D74DCCA01CDCA79DCC5C395D7EEC6984D83F1F50C900A24DD47F569FD4193AF5DE762C587] \
-[04A2192968D8655D6A935BEAF2CA23E3FB87A3495E7AF308EDF08DAC3C1FCBFC2C75B4B0F4D0B1B70CD2423657738C0C2B1D5CE65C97D78D0E34224858008E8B49] \
-[047E63248B75DB7379BE9CDA8CE5751D16485F431E46117B9D0C1837C9D5737812F393DA7D4420D7E1A9162F0279CFC10F1E8E8F3020DECDBC3C0DD389D9977965] \
-[0421D65CBD7149B255382ED7F78E946580657EE6FDA162A187543A9D85BAAA93A4AB3A8F044DADA618D087227440645ABE8A35DA8C5B73997AD343BE5C2AFD94A5] \
-[043752580AFA1ECED3C68D446BCAB69AC0BA7DF50D56231BE0AABF1FDEEC78A6A45E394BA29A1EDF518C022DD618DA774D207D137AAB59E0B000EB7ED238F4D800] \
-5 CHECKMULTISIG \
-| bx script-encode | bx sha256
 9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73
 ----
 
@@ -1660,25 +1600,16 @@ Next, the hashed witness script is turned into a version-prefixed P2WSH witness 
 ----
 
 Then, the witness program itself is hashed with SHA256 and RIPEMD160,
-producing a new 20-byte hash, as used in legacy P2SH. Let's use
-+bx+ on the command-line to do that:
+producing a new 20-byte hash:
 
-.The HASH160 of the P2WSH witness program
 ----
- echo \
-'0 [9592d601848d04b172905e0ddb0adde59f1590f1e553ffc81ddc4b0ed927dd73]'\
- | bx script-encode | bx sha256 | bx ripemd160
 86762607e8fe87c0c37740cddee880988b9455b2
 ----
 
 Next, the wallet constructs a P2SH Bitcoin address from this hash.
-Again, we use +bx+ to calculate on the command-line:
 
 .P2SH Bitcoin address
 ----
-echo \
-'86762607e8fe87c0c37740cddee880988b9455b2'\
- | bx address-encode -v 5
 3Dwz1MXhM6EfFoJChHCxh1jWHb8GQqRenG
 ----
 

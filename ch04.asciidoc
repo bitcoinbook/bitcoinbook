@@ -720,41 +720,6 @@ into a Bitcoin address in <<pubkey_to_address>>.
 .Public key to Bitcoin address: conversion of a public key into a Bitcoin address
 image::images/mbc2_0405.png["pubkey_to_address"]
 
-==== Decode from Base58Check
-
-The Bitcoin Explorer commands (see <<appdx_bx>>) make it easy to write
-shell scripts and command-line "pipes" that manipulate bitcoin keys,
-addresses, and transactions. You can use Bitcoin Explorer to decode the
-base58check format on the command line.
-
-We use the +base58check-decode+ command to decode the uncompressed key:
-
-----
-$ bx base58check-decode 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
-wrapper
-{
-    checksum 4286807748
-    payload 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd
-    version 128
-}
-----
-
-The result contains the key as payload, the WIF version prefix 128 (0x80
-in hex), and a checksum.
-
-Notice that the "payload" of the compressed key is appended with the
-suffix +01+, signaling that the derived public key is to be compressed:
-
-----
-$ bx base58check-decode KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
-wrapper
-{
-    checksum 2339607926
-    payload 1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01
-    version 128
-}
-----
-
 [[comp_pub]]
 === Compressed public keys
 
@@ -940,17 +905,7 @@ transaction details are correct, the transaction is valid.
 Addresses for Pay-to-Script-Hash (P2SH) are also created with
 base58check.  The version prefix is set to 5, which results in an
 encoded address starting with a +3+. An example of a P2SH address is
-+3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+, which can be derived using the
-Bitcoin Explorer commands +script-encode+, +sha256+, +ripemd160+, and
-+base58check-encode+ (see <<appdx_bx>>) as follows:
-
-----
-$ echo \
-'DUP HASH160 [89abcdefabbaabbaabbaabbaabbaabbaabbaabba] EQUALVERIFY CHECKSIG' > script
-$ bx script-encode < script | bx sha256 | bx ripemd160 \
-| bx base58check-encode --version 5
-3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM
-----
++3F6i6kwkevjR7AsAd4te2YB2zZyASEm1HM+.
 
 [TIP]
 ====
@@ -1481,17 +1436,6 @@ number, the same private key. They look different, but any one format
 can easily be converted to any other format. Note that the "raw binary"
 is not shown in <<table_4-3>> as any encoding for display here would, by
 definition, not be raw binary data.
-
-We use the +wif-to-ec+ command from Bitcoin Explorer (see <<appdx_bx>>)
-to show that both WIF keys represent the same private key:
-
-----
-$ bx wif-to-ec 5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn
-1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd
-
-$ bx wif-to-ec KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ
-1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd
-----
 
 [[comp_priv]]
 ===== Compressed private keys
