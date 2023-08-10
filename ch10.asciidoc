@@ -1205,11 +1205,11 @@ selection of the chain with the most Proof-of-Work.
 A _best blockchain_ is whichever valid chain of blocks has
 the most cumulative Proof-of-Work associated with it.
 The
-best chain will also have branches with blocks that are "siblings" to
+best chain may also have branches with blocks that are "siblings" to
 the blocks on the best chain. These blocks are valid but not part of the
 best chain. They are kept for future reference, in case one of those
-chains is extended and becomes the new best chain. In the next section
-(<<forks>>), we will see how secondary chains occur as a result of an
+many secondary chains later becomes primary.  When sibling blocks occur,
+they're usually the result of an
 almost simultaneous mining of blocks at the same height.
 
 When a new block is received, a node will try to add it onto the
@@ -1219,7 +1219,7 @@ node will attempt to find that parent in the existing blockchain. Most
 of the time, the parent will be the "tip" of the best chain, meaning
 this new block extends the best chain.
 
-Sometimes, as we will see in <<forks>>, the new block does not extend
+Sometimes the new block does not extend
 the best chain.  In that case, the node will attach the new block to a
 secondary chain and then compare the work of the secondary chain to the
 previous best chain. If the secondary chain is now the best chain, the
@@ -1239,138 +1239,8 @@ result of transmission delays in the global network. We will also look
 at deliberately induced forks later in this chapter.
 ====
 
-In the next few diagrams, we follow the progress of a "fork" event
-across the network. The diagram is a simplified representation of the
-Bitcoin network. For illustration purposes, different blocks are shown
-as different shapes (star, triangle, upside-down triangle, rhombus),
-spreading across the network. Each node in the network is represented as
-a circle.
-
-For
-illustration purposes, each node contains a shape that represents the
-block that it believes is currently the tip of the best chain. So, if
-you see a star shape in the node, that means that the star block is the
-tip of the best chain, as far as that node is concerned.
-
-In the first diagram (<<fork1>>), the network has a unified perspective
-of the blockchain, with the star block as the tip of the best chain.
-
-[[fork1]]
-[role="smallereighty"]
-.Before the fork&#x2014;all nodes have the same perspective
-image::images/mbc2_1002.png["Before the fork - all nodes have the same perspective"]
-
-In <<fork2>>, we see two miners (Node X and Node Y) who mine two
-different blocks almost simultaneously. Both of these blocks are
-children of the star block, and extend the chain by building on top of
-the star block. To help us track it, one is visualized as a triangle
-block originating from Node X, and the other is shown as an upside-down
-triangle block originating from Node Y.
-
-[[fork2]]
-[role="smallersixty"]
-.Visualization of a blockchain fork event: two blocks found simultaneously
-image::images/mbc2_1003.png["Visualization of a blockchain fork event: two blocks found simultaneously"]
-
-Let's assume, for example, that a miner Node X finds a Proof-of-Work
-solution for a block "triangle" that extends the blockchain, building on
-top of the parent block "star." Almost simultaneously, the miner Node Y
-who was also extending the chain from block "star" finds a solution for
-block "upside-down triangle," his candidate block. Now, there are two
-possible blocks; one we call "triangle," originating in Node X; and one
-we call "upside-down triangle," originating in Node Y. Both blocks are
-valid, both blocks contain a valid solution to the Proof-of-Work, and
-both blocks extend the same parent (block "star"). Both blocks likely
-contain most of the same transactions, with only perhaps a few
-differences in the order of transactions.
-
-As the two blocks propagate, some nodes receive block "triangle" first
-and some receive block "upside-down triangle" first. As shown in
-<<fork3>>, the network splits into two different perspectives of the
-blockchain; one side topped with a triangle block, the other with the
-upside-down-triangle block.
-
-//FIXME:node X won't receive upside down triangle because it's not
-//connected to a peer with that block.  Same problem for Node Y
-[[fork3]]
-[role="smallersixty"]
-.Visualization of a blockchain fork event: two blocks propagate, splitting the network
-image::images/mbc2_1004.png["Visualization of a blockchain fork event: two blocks propagate, splitting the network"]
-
-In the diagram, a randomly chosen "Node X" received the triangle block
-first and extended the star chain with it. Node X selected the chain
-with "triangle" block as the best chain. Later, Node X also received the
-"upside-down triangle" block. Since it was received second, it is
-assumed to have "lost" the race. Yet, the "upside-down triangle" block
-is not discarded. It is linked to the "star" block parent and forms a
-secondary chain. While Node X assumes it has correctly selected the
-winning chain, it keeps the "losing" chain so that it has the
-information needed to reorganize if the "losing" chain ends up
-"winning."
-
-On the other side of the network, Node Y constructs a blockchain based
-on its own perspective of the sequence of events. It received
-"upside-down triangle" first and elected that chain as the "winner."
-When it later received "triangle" block, it connected it to the "star"
-block parent as a secondary chain.
-
-Neither side is "correct," or "incorrect." Both are valid perspectives
-of the blockchain. Only in hindsight will one prevail, based on how
-these two competing chains are extended by additional work.
-
-Mining nodes whose perspective resembles Node X will immediately begin
-mining a candidate block that extends the chain with "triangle" as its
-tip. By linking "triangle" as the parent of their candidate block, they
-are using their hashing power to build on that chain.
-
-Any mining node whose perspective resembles Node Y will start building a
-candidate node with "upside-down triangle" as its parent, extending the
-chain that they believe is the best chain. And so, the race begins
-again.
-
-Forks are almost always resolved within one block. While part of the
-network's hashing power is dedicated to building on top of "triangle" as
-the parent, another part of the hashing power is focused on building on
-top of "upside-down triangle." Even if the hashing power is almost
-evenly split, it is likely that one set of miners will find a solution
-and propagate it before the other set of miners have found any
-solutions. Let's say, for example, that the miners building on top of
-"triangle" find a new block "rhombus" that extends the chain (e.g.,
-star-triangle-rhombus). They immediately propagate this new block and
-the entire network sees it as a valid solution as shown in <<fork4>>.
-
-[[fork4]]
-[role="smallereighty"]
-.Visualization of a blockchain fork event: a new block extends one fork, reorganizing the network
-image::images/mbc2_1005.png["Visualization of a blockchain fork event: a new block extends one fork"]
-
-All nodes that had chosen "triangle" as the winner in the previous round
-will simply extend the chain one more block. The nodes that chose
-"upside-down triangle" as the winner, however, will now see two chains:
-star-triangle-rhombus and star-upside-down-triangle. The chain
-star-triangle-rhombus now has more cumulative work than the
-other chain. As a result, those nodes will set the chain
-star-triangle-rhombus as the best chain and change the
-star-upside-down-triangle chain to a secondary chain, as shown in
-<<fork5>>. This is a chain reorganization, because those nodes are forced
-to revise their view of the blockchain to incorporate the new evidence
-of a longer chain. Any miners working on extending the chain
-star-upside-down-triangle will now stop that work because their
-block is "stale," as its parent "upside-down-triangle" is
-no longer on the best chain. The transactions within
-"upside-down-triangle" that are not within "triangle" are re-inserted in
-the mempool for inclusion in the next block to become a part of the best
-chain. The entire network converges on a single blockchain
-star-triangle-rhombus, with "rhombus" as the last block in the chain.
-All miners immediately start working on candidate blocks that reference
-"rhombus" as their parent to extend the star-triangle-rhombus chain.
-
-[[fork5]]
-[role="smallereighty"]
-.Visualization of a blockchain fork event: the network reorganizes on a new longest chain
-image::images/mbc2_1006.png["Visualization of a blockchain fork event: the network reorganizes on a new longest chain"]
-
-It is possible for a fork to extend to two blocks, if two
+Forks are almost always resolved within one block.
+It is possible for an accidental fork to extend to two blocks if both
 blocks are found almost simultaneously by miners on opposite "sides" of
 a previous fork. However, the chance of that happening is low.
 
@@ -1856,13 +1726,9 @@ height 4, a one-block fork occurs. This is the type of spontaneous fork
 we saw in <<forks>>. With the mining of block 5, the network converges
 on one chain and the fork is resolved.
 
-//FIXME:"The blocks following the new rules should have a unique color. I would have expected the "b-fork" to follow the old rules based on the colors."
-// I was looking here where the other block was created, because I assumed that the enumeration would start with a) and then progress to b).
-//
-// Perhaps call this chain "7F–11F" to indicate the new Foocoin rules?
 [[blockchainwithforks]]
 .A blockchain with forks
-image::images/mbc2_1009.png[A blockchain with forks]
+image::images/fork.dot.png[A blockchain with forks]
 
 Later, however, at block height 6,
 a new implementation of the client is released with a change in the

@@ -366,7 +366,6 @@ header and summarizes all the data in all four transactions.
 <<simple_merkle>> shows how the root is calculated by pair-wise hashes
 of the nodes.
 
-//FIXME: s/+/||/
 [[simple_merkle]]
 .Calculating the nodes in a merkle tree
 image::images/mbc2_0902.png["merkle_tree"]
@@ -379,7 +378,6 @@ shown in <<merkle_tree_odd>>, where transaction C is duplicated.
 Similarly, if there are an odd number of hashes to process at any level,
 the last hash is duplicated.
 
-//FIXME: s/+/||/
 [[merkle_tree_odd]]
 .Duplicating one data element achieves an even number of data elements
 image::images/mbc2_0903.png["merkle_tree_odd"]
@@ -403,18 +401,11 @@ is unusual in Merkle trees). This results in certain sequences of
 transactions leading to the same merkle root. For example, these two
 trees:
 
-//FIXME:replace with image to fix italics in code text
-----
-            A               A
-          /  \            /   \
-        B     C         B       C
-       / \    |        / \     / \
-      D   E   F       D   E   F   F
-     / \ / \ / \     / \ / \ / \ / \
-     1 2 3 4 5 6     1 2 3 4 5 6 5 6
-----
+[[cve_tree]]
+.Two Bitcoin-style merkle tree with the same root but a different number of leaves
+image::images/cve-2012-2459.dot.png["Two Bitcoin-style merkle tree with the same root but a different number of leaves"]
 
-for transaction lists [1,2,3,4,5,6] and [1,2,3,4,5,6,5,6] (where 5 and
+For transaction lists [1,2,3,4,5,6] and [1,2,3,4,5,6,5,6] (where 5 and
 6 are repeated) result in the same root hash A (because the hash of both
 of (F) and (F,F) is C).
 
@@ -475,28 +466,12 @@ diagram).
 image::images/mbc2_0905.png["merkle_tree_path"]
 
 The efficiency of merkle trees becomes obvious as the scale increases.
-<<block_structure2>> shows the amount of data that needs to be exchanged
-as a merkle path to prove that a transaction is part of a block.
-
-//FIXME: replace with a plot of size per txes: plot [0:16000] ceil(log2(x))
-[[block_structure2]]
-.Merkle tree efficiency
-[options="header"]
-|=======
-|Number of transactions| Approx. size of block | Path size (hashes) | Path size (bytes)
-| 16 transactions | 4 kilobytes | 4 hashes | 128 bytes
-| 512 transactions | 128 kilobytes | 9 hashes | 288 bytes
-| 2048 transactions | 512 kilobytes | 11 hashes | 352 bytes
-| 65,535 transactions | 16 megabytes | 16 hashes | 512 bytes
-|=======
-
-With merkle trees, a node can download just the block headers (80
-bytes per block) and still be able to identify a transaction's inclusion
-in a block by retrieving a small merkle path from a full node, without
-storing or transmitting the vast majority of the blockchain.
-Clients that do not fully validate transactions, called lightweight
-clients, use merkle paths to verify transactions without downloading
-full blocks.
+The largest possible block can hold almost 16,000 transactions in 4,000,000
+bytes, but proving any particular one of those sixteen thousand transactions
+is a part of that block only requires a copy of the transaction, a copy
+of the 80-byte block header, and 448 bytes for the merkle proof.  That
+makes the largest possible proof almost 10,000 times smaller than the
+largest possible Bitcoin block.
 
 === Merkle Trees and Lightweight Clients
 
