@@ -42,7 +42,7 @@ key.
 consists of two parts. The first part is an algorithm for creating a
 signature for a message (the transaction) using a private key (the
 signing key). The second part is an algorithm
-that allows anyone to verify the signature, given also the message and a
+that allows anyone to verify the signature, given also the message and the corresponding
 public key.
 
 ==== Creating a digital signature
@@ -351,11 +351,11 @@ process:
   the operation Alice performed: +sG == kG + exG+.  If that is equal,
   then Bob can be sure that Alice knew +x+ when she generated +s+.
 
-.Schnorr identity protocol with integers instead of vectors
+.Schnorr identity protocol with integers instead of points
 ****
 It might be easier to understand the interactive schnorr identity
-protocol if you oversimplify by substituting each of the values above
-(including +G+) with simple integers instead of vectors like EC points.
+protocol if we create an insecure oversimplification by substituting each of the values above
+(including +G+) with simple integers instead of points on a elliptic curve.
 For example, we'll use the prime numbers starting with 3:
 
 Setup: Alice chooses +x=3+ as her private key.  She multiplies it by the
@@ -485,6 +485,11 @@ full commitment +hash(kG || xG || m)+.
 
 Now that we've described each part of the BIP340 schnorr signature
 algorithm and explained what it does for us, we can define the protocol.
+Multiplication of integers are performed _modulus p_, indicating that the
+result of the operation divided by the number _p_ (as defined in the
+secp256k1 standard) and the remainder is used.  The number _p_ is very
+large, but if it was 3 and the result of an operation was 5, the actual
+number we would use is 2 (i.e., 5 divided by 3 is 2).
 
 Setup: Alice chooses a large random number (+x+) as her private key
 (either directly or by using a protocol like BIP32 to deterministically
@@ -816,17 +821,18 @@ Non-linear::
 Looking at the math of ECDSA,
 signatures are created by a mathematical function _F_~_sig_~
 that produces a signature composed of two values.  In ECDSA, those two
-values are _R_ and _S_.
+values are _R_ and _s_.
 
 ((("public and private keys", "key pairs", "ephemeral")))The signature
 algorithm first generates a private nonce (_k_) and derives from it a public
 nonce (_K_).  The _R_ value of the digital signature is then the x
 coordinate of the ephemeral public key _K_.
 
-From there, the algorithm calculates the _S_ value of the signature,
-such that:
+From there, the algorithm calculates the _s_ value of the signature,
+such that.  Like we did with schnorr signatures, operations involving
+integers are modulus p.
 
-_S_ = __k__^-1^ (__Hash__(__m__) + __x__ * __R__) _mod p_
+_s_ = __k__^-1^ (__Hash__(__m__) + __x__ * __R__)
 
 where:
 
@@ -834,18 +840,17 @@ where:
 * _R_ is the x coordinate of the public nonce
 * _x_ is the Alice's private key
 * _m_ is the message (transaction data)
-* _p_ is the prime order of the elliptic curve
 
 Verification is the inverse of the signature generation function, using
-the _R_, _S_ values and the public key to calculate a value _K_, which
+the _R_, _s_ values and the public key to calculate a value _K_, which
 is a point on the elliptic curve (the public nonce used in
 signature creation):
 
-_K_ = __S__^-1^ * __Hash__(__m__) * _G_ + __S__^-1^ * _R_ * _X_
+_K_ = __s__^-1^ * __Hash__(__m__) * _G_ + __s__^-1^ * _R_ * _X_
 
 where:
 
-- _R_ and _S_ are the signature values
+- _R_ and _s_ are the signature values
 - _X_ is Alice's public key
 - _m_ is the message (the transaction data that was signed)
 - _G_ is the elliptic curve generator point
@@ -923,7 +928,8 @@ generator.
 number generation")))((("deterministic initialization")))To avoid this
 vulnerability, the industry best practice is to not generate _k_ with a
 random-number generator seeded only with entropy, but instead to use a
-process seeded in part with the transaction data itself.
+process seeded in part with the transaction data itself plus the
+private key being used to sign.
 This ensures that each transaction produces a different _k_. The
 industry-standard algorithm for deterministic initialization of _k_ for
 ECDSA is defined in https://tools.ietf.org/html/rfc6979[RFC6979], published by
@@ -972,7 +978,7 @@ programs, signature verification occurs using an improved commitment
 hash algorithm as specified in BIP143.
 
 The new algorithm allows the number of
-hash operations increases by a much more gradual O(n) to the number of
+hash operations to increase by a much more gradual O(n) to the number of
 signature operations, reducing the opportunity to create
 denial-of-service attacks with overly complex transactions.
 
