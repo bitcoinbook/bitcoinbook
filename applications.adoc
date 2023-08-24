@@ -1,14 +1,11 @@
 [[ch12]]
-== Blockchain Applications
+== Second-Layer Applications
 
-Let's now build on our understanding of Bitcoin by looking at it as an
-_application platform_. Nowadays, many people use the term "blockchain"
-to refer to any application platform that shares the design principles
-of Bitcoin. The term is often misused and applied to many things that
-fail to deliver the primary features that Bitcoin's blockchain delivers.
-
-In this chapter we will look at the features offered by the Bitcoin
-blockchain as an application platform. We will consider the application
+Let's now build on our understanding of the primary Bitcoin system (the
+_first layer_) by looking at it as an
+platform for other applications, or _second layers_. 
+In this chapter we will look at the features offered by Bitcoin
+as an application platform. We will consider the application
 building _primitives_, which form the building blocks of any blockchain
 application. We will look at several important applications that use
 these primitives, such as client-side validation, payment channels, and
@@ -43,7 +40,7 @@ Secure Timestamping:: The consensus rules reject any block whose
 timestamp is too far in the future and attempt to prevent blocks with
 timestamps too far in the past. This ensures that timestamps
 on blocks can be trusted to a certain degree. The timestamp on a block implies an
-unspent-before guarantee for the inputs of all included transactions.
+unspent-before reference for the inputs of all included transactions.
 
 Authorization:: Digital signatures, validated in a decentralized
 network, offer authorization guarantees. Scripts that contain a
@@ -218,7 +215,7 @@ to reveal the contract used to tweak the keys.  Nothing is publicly
 revealed about the contract--not even that a contract between them
 exists.
 
-A P2C contract can arbitrary long and detailed, the terms can be written
+A P2C contract can be arbitrarily long and detailed, the terms can be written
 in any language, and it can reference anything the participants want
 because the contract is not validated by full nodes and only the public
 key with the commitment is published to the blockchain.
@@ -369,7 +366,7 @@ channels", id="BCApayment12")))((("payment (state) channels",
 "defined")))are a trustless mechanism for exchanging Bitcoin
 transactions between two parties, outside of the Bitcoin blockchain.
 These transactions, which would be valid if settled on the Bitcoin
-blockchain, are held off-chain instead, waiting for
+blockchain, are held offchain instead, waiting for
 eventual batch settlement. Because the transactions are not settled,
 they can be exchanged without the usual settlement latency, allowing
 extremely high transaction throughput, low latency, and
@@ -403,7 +400,7 @@ channels in a routed network, first proposed under the name _Lightning
 Network_.
 
 Payment channels are part of the broader concept of a _state channel_,
-which represents an off-chain alteration of state, secured by eventual
+which represents an offchain alteration of state, secured by eventual
 settlement in a blockchain. A payment channel is a state channel where
 the state being altered is the balance of a virtual currency.
 
@@ -420,7 +417,7 @@ of the channel.
 The two parties then exchange signed transactions, called _commitment
 transactions_, that alter the initial state. These transactions are
 valid transactions in that they _could_ be submitted for settlement by
-either party, but instead are held off-chain by each party pending the
+either party, but instead are held offchain by each party pending the
 channel closure. State updates can be created as fast as each party can
 create, sign, and transmit a transaction to the other party. In practice
 this means that dozens of transactions per second can be exchanged.
@@ -508,7 +505,7 @@ paid to the multisignature 2-of-2 address controlled jointly between
 Emma and Fabian. It may have additional outputs for change back to
 Emma's wallet.
 
-Once the funding transaction is confirmed, Emma can start streaming
+After the funding transaction is confirmed to a sufficent depth, Emma can start streaming
 video. Emma's software creates and signs a commitment transaction that
 changes the channel balance to credit 0.01 millibit to Fabian's address
 and refund 35.99 millibits back to Emma. The transaction signed by Emma
@@ -743,10 +740,10 @@ funding transaction locks the channel state in a 2-of-2 multisig, just
 like in the example of a simple channel.
 
 The funding transaction may have one or more inputs from Hitesh (adding
-up to 5 bitcoin or more), and one or more inputs from Irene (adding up
-to 5 bitcoin or more). The inputs have to slightly exceed the channel
+up to 5 bitcoins or more), and one or more inputs from Irene (adding up
+to 5 bitcoins or more). The inputs have to slightly exceed the channel
 capacity in order to cover the transaction fees. The transaction has one
-output that locks the 10 total bitcoin to a 2-of-2 multisig address
+output that locks the 10 total bitcoins to a 2-of-2 multisig address
 controlled by both Hitesh and Irene. The funding transaction may also
 have one or more outputs returning change to Hitesh and Irene if their
 inputs exceeded their intended channel contribution. This is a single
@@ -759,17 +756,17 @@ parties sign, Hitesh and Irene create two different commitment
 transactions that are _asymmetric_.
 
 Hitesh has a commitment transaction with two outputs. The first output
-pays Irene the 5 bitcoin she is owed _immediately_. The second output
-pays Hitesh the 5 bitcoin he is owed, but only after a timelock of 1000
+pays Irene the 5 bitcoins she is owed _immediately_. The second output
+pays Hitesh the 5 bitcoins he is owed, but only after a timelock of 1000
 blocks. The transaction outputs look like this:
 
 ----
 Input: 2-of-2 funding output, signed by Irene
 
-Output 0 <5 bitcoin>:
+Output 0 <5 bitcoins>:
     <Irene's Public Key> CHECKSIG
 
-Output 1 <5 bitcoin>:
+Output 1 <5 bitcoins>:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
@@ -777,18 +774,18 @@ Output 1 <5 bitcoin>:
 ----
 
 Irene has a different commitment transaction with two outputs. The first
-output pays Hitesh the 5 bitcoin he is owed immediately. The second
-output pays Irene the 5 bitcoin she is owed but only after a timelock of
+output pays Hitesh the 5 bitcoins he is owed immediately. The second
+output pays Irene the 5 bitcoins she is owed but only after a timelock of
 1000 blocks. The commitment transaction Irene holds (signed by Hitesh)
 looks like this:
 
 ----
 Input: 2-of-2 funding output, signed by Hitesh
 
-Output 0 <5 bitcoin>:
+Output 0 <5 bitcoins>:
     <Hitesh's Public Key> CHECKSIG
 
-Output 1 <5 bitcoin>:
+Output 1 <5 bitcoins>:
     <1000 blocks>
     CHECKSEQUENCEVERIFY
     DROP
@@ -843,10 +840,10 @@ state and wants to revoke this commitment.
 The second output's script looks like this:
 
 ----
-Output 0 <5 bitcoin>:
+Output 0 <5 bitcoins>:
     <Irene's Public Key> CHECKSIG
 
-Output 1 <5 bitcoin>:
+Output 1 <5 bitcoins>:
 IF
     # Revocation penalty output
     <Revocation Public Key>
@@ -880,7 +877,7 @@ Irene will be able to redeem the output and punish Hitesh before the
 The revocation protocol is bilateral, meaning that in each round, as the
 channel state is advanced, the two parties exchange new commitments,
 exchange revocation secrets for the previous commitments, and sign each
-other's new commitment transactions. As they accept a new state, they
+other's new commitment transactions. After they accept a new state, they
 make the prior state impossible to use, by giving each other the
 necessary revocation secrets to punish any cheating.
 
@@ -921,7 +918,7 @@ remain open indefinitely and can have billions of intermediate
 commitment transactions. In implementations of Lightning
 Network, the commitment state is identified by a 48-bit index, allowing
 more than 281 trillion (2.8 x 10^14^) state transitions in any single
-channel!((("", startref="PSCaymetric12")))
+channel.
 
 ==== Hash Time Lock Contracts (HTLC)
 
@@ -1147,7 +1144,7 @@ does not know that Bob is actually relaying a payment from Alice. She
 also doesn't know that Diana will be relaying a payment to Eric.
 
 This is a critical feature of the Lightning Network, because it ensures
-privacy of payments and makes it very difficult to apply surveillance,
+privacy of payments and makes it difficult to apply surveillance,
 censorship, or blacklists. But how does Alice establish this payment
 path, without revealing anything to the intermediary nodes?
 
@@ -1212,8 +1209,8 @@ second-layer routing technology. It can be applied to any blockchain
 that supports some basic capabilities, such as multisignature
 transactions, timelocks, and basic smart contracts.
 
-If a Lightning Network is layered on top of the Bitcoin network, the
-Bitcoin network can gain a significant increase in capacity, privacy,
+Lightning Network is layered on top of the Bitcoin network, giving
+Bitcoin a significant increase in capacity, privacy,
 granularity, and speed, without sacrificing the principles of trustless
 operation without intermediaries:
 
@@ -1234,9 +1231,9 @@ Granularity:: A Lightning Network can enable payments at least as small
 as the Bitcoin "dust" limit, perhaps even smaller.
 
 Capacity:: A Lightning Network increases the capacity of the Bitcoin
-system by several orders of magnitude. There is no practical upper bound
+system by several orders of magnitude. The upper bound
 to the number of payments per second that can be routed over a Lightning
-Network, as it depends only on the capacity and speed of each node.
+Network depends only on the capacity and speed of each node.
 
 Trustless Operation:: A Lightning Network uses Bitcoin transactions
 between nodes that operate as peers without trusting each other. Thus, a

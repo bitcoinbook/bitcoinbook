@@ -111,7 +111,7 @@ that is appended to the signature. Every signature has either an
 explicit or implicit +SIGHASH+ flag
 and the flag can be different from input to input. A transaction with
 three signed inputs may have three signatures with different +SIGHASH+
-flags, each signature signing (committing) different parts of the
+flags, each signature signing (committing) to different parts of the
 transaction.
 
 Remember, each input may contain one or more signatures. As
@@ -166,14 +166,6 @@ parts of the transaction are included.
 By including the
 +SIGHASH+ flag itself, the signature commits the
 +SIGHASH+ type as well, so it can't be changed (e.g., by a miner).
-
-[NOTE]
-====
-All +SIGHASH+ types sign the transaction lock time field (see
-<<lock_time>>). In addition, the +SIGHASH+ type
-itself is appended to the transaction before it is signed, so that it
-can't be modified once signed.
-====
 
 In
 <<serialization_of_signatures_der>>, we will see that the last part of the
@@ -282,14 +274,14 @@ Linearity::
   variables and then running a function on that sum will produce the
   same value as running the function on each of the variables
   independently and then summing together the results, e.g.
-  +f(x + y + z) = f(x) + f(y) + f(z)+; this property is called
+  +f(x + y + z) == f(x) + f(y) + f(z)+; this property is called
   _additivity_.  The second property is that multiplying a variable and
   then running a function on that product will produce the same value as
   running the function on the variable and then multiplying it by the
-  same amount, e.g. +f(a * x) = a * f(x)+; this property is called
+  same amount, e.g. +f(a * x) == a * f(x)+; this property is called
   _homogeneity of degree 1_.
 +
-In cryptographic operations, some of the functions may be private (such
+In cryptographic operations, some functions may be private (such
   as functions involving private keys or secret nonces), so being able
   to get the same result whether performing an operation inside or
   outside of a function makes it easy for multiple parties to coordinate
@@ -366,7 +358,7 @@ generator +G=5+ to get her public key +xG=15+.  She gives Bob +15+.
 
 2. Bob chooses +e=11+ and gives it to Alice.
 
-3. Alice generates +s = 40 = 7 + 11*3+.  She gives Bob +40+.
+3. Alice generates +s = 40 = 7 + 11 * 3+.  She gives Bob +40+.
 
 4. Bob derives +sG = 200 = 40 * 5+ and +exG = 165 = 11 * 15+.  He then
   verifies that +200 == 35 + 165+.  Note that this is the same operation
@@ -406,21 +398,21 @@ identity protocol that make it secure:
   commits to her public nonce.  Consider what could happen if someone
   who didn't know +x+ wanted to impersonate Alice, and Bob accidentally
   gave them the challenge scalar +e+ before they told him the public
-  nonce +kG+.  This allows them to change parameters on both sides of
+  nonce +kG+.  This allows the impersonator to change parameters on both sides of
   the equation that Bob will use for verification, +sG == kG + exG+,
   specifically they can change both +sG+ and +kG+.  Think about a
   simplified form of that expression: x = y + a.  If you can change both
-  +x+ and +y+, you can cancel out +a+ using +x = (x - a) + a+.  Any
+  +x+ and +y+, you can cancel out +a+ using +x' = (x - a) + a+.  Any
   value you choose for +x+ will now satisfy the equation.  For the
-  actual equation they simply choose a random number for +s+, generate
-  +sG+, and then use EC subtraction to select a +kG+ that equals +kG =
+  actual equation the impersonator simply chooses a random number for +s+, generates
+  +sG+, and then uses EC subtraction to select a +kG+ that equals +kG =
   sG - exG+.  They give Bob their calculated +kG+ and later their random
   +sG+, and Bob thinks that's valid because +sG == (sG - exG) + exG+.
   This explains why the order of operations in the protocol is
   essential: Bob must only give Alice the challenge scalar after Alice
   has committed to her public nonce.
 
-The interactive identity protocol described matches part of Claus
+The interactive identity protocol described here matches part of Claus
 Schnorr's original description, but it lacks two essential features we
 need for the decentralized Bitcoin network.  The first of these is that
 it relies on Bob waiting for Alice to commit to her public nonce and
@@ -475,8 +467,9 @@ concern.  In BIP32 key derivation, as described in
 takes a public key and adds to it a non-secret value to produce a
 derived public key.  That means it's also possible to add that
 non-secret value to a valid signature for one key to produce a signature
-for a related key that's valid but which wasn't authorized by someone
-possessing the private key.  To protect BIP32 unhardened derivation and
+for a related key.  That related signature is valid but it wasn't
+authorized by the person possessing the private key, which is a major
+security failure.  To protect BIP32 unhardened derivation and
 also support several protocols people wanted to build on top of schnorr
 signatures, Bitcoin's version of schnorr signatures, called _BIP340
 schnorr signatures for secp256k1_, also commits to the public key being
@@ -539,7 +532,7 @@ They're serialized in the order of +kG+ and then +s+, producing exactly
 64 bytes.
 
 The taproot soft fork, also called v1 segwit, introduced schnorr signatures
-to Bitcoin and is the only way they are used as of this writing.  When
+to Bitcoin and is the only way they are used in Bitcoin as of this writing.  When
 used with either taproot keypath or scriptpath spending, a 64-byte
 schnorr signature is considered to use a default signature hash (sighash)
 that is +SIGHASH_ALL+.  If an alternative sighash is used, or if the
@@ -823,10 +816,10 @@ signatures are created by a mathematical function _F_~_sig_~
 that produces a signature composed of two values.  In ECDSA, those two
 values are _R_ and _s_.
 
-((("public and private keys", "key pairs", "ephemeral")))The signature
+The signature
 algorithm first generates a private nonce (_k_) and derives from it a public
 nonce (_K_).  The _R_ value of the digital signature is then the x
-coordinate of the ephemeral public key _K_.
+coordinate of the nonce _K_.
 
 From there, the algorithm calculates the _s_ value of the signature,
 such that.  Like we did with schnorr signatures, operations involving
@@ -857,9 +850,6 @@ where:
 
 If the x coordinate of the calculated point _K_ is equal to _R_, then
 the verifier can conclude that the signature is valid.
-
-Note that in verifying the signature, the private key is neither known
-nor revealed.
 
 [TIP]
 ====
@@ -892,10 +882,6 @@ as follows:
   * +0x20+&#x2014;the length of the integer (32 bytes)
   * +S+&#x2014;++4b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813++
 * A suffix (+0x01+) indicating the type of hash used (+SIGHASH_ALL+)
-
-See if you can decode Alice's serialized (DER-encoded) signature using
-this list. The important numbers are +R+ and +S+; the rest of the data
-is part of the DER encoding scheme.
 
 [[nonce_warning]]
 === The Importance of Randomness in Signatures
@@ -951,11 +937,6 @@ ensure you generate a different _k_ for each transaction.((("",
 startref="Tdigsig06")))
 
 === Segregated Witness's New Signing Algorithm
-
-Segregated Witness modified the semantics of the four signature
-verification functions from legacy Bitcoin Script (+CHECKSIG+, +CHECKSIGVERIFY+, +CHECKMULTISIG+,
-and +CHECKMULTISIGVERIFY+), changing the way a transaction commitment
-hash is calculated.
 
 Signatures in bitcoin transactions are applied on a _commitment hash_,
 which is calculated from the transaction data, locking specific parts of

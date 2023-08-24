@@ -15,6 +15,7 @@ done
 for f in $( git ls-files | grep -v "$0" ) ; do
   {
   echo -n
+  grep "bitcoin's" $f
   } | if grep . ; then echo "DISCOURAGED WORDS FOUND IN $f" ; exit 1 ; fi
 done
 
@@ -34,6 +35,8 @@ BIP [0-9]
 \<redeemScript\>
 \<nAmount\>
 \<nValue\>
+\<off-chain\>
+\<on-chain\>
 witness field
 witness element
 feerate
@@ -44,3 +47,5 @@ k-of-n
 blockchain.info
 blockchain.com
 [a-zA-Z]---[a-zA-Z]
+fingerprint
+block chain

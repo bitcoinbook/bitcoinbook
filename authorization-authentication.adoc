@@ -61,7 +61,7 @@ of conditions to be expressed.
 
 ==== Turing Incompleteness
 
-((("Turing incompleteness")))The bitcoin transaction script language
+((("Turing incompleteness")))The Bitcoin transaction script language
 contains many operators, but is deliberately limited in one important
 way--there are no loops or complex flow control capabilities other than
 conditional flow control. This ensures that the language is not _Turing
@@ -96,25 +96,25 @@ system.
 Bitcoin's legacy transaction validation engine relies on two parts of scripts
 to validate transactions: an output script and an input script.
 
-An output script is a spending condition placed on an output:
-it specifies the conditions that must be met to spend the output in the
+An output script
+specifies the conditions that must be met to spend the output in the
 future, such as who is authorized to spend the output and how they will
 be authenticated.
 
 An input script is a script that satisfies the
-conditions placed on an output by an output script and allows the output
+conditions placed in an output script and allows the output
 to be spent. Input scripts are part of every transaction input. Most
 of the time in legacy transactions they contain a digital signature produced by the user's
 wallet from his or her private key, but not all input scripts
 must contain signatures.
 
-Every bitcoin validating node will validate transactions by executing
+Every Bitcoin validating node will validate transactions by executing
 the output and input scripts.  As we saw in
 <<c_transactions>>, each input contains an outpoint which refers to a
 previous transaction output.  The input also contains an input script.  The
 validation software will copy the input script, retrieve the UTXO
 referenced by the input, and copy the output script from that UTXO. The
-input and output scripts are then executed in sequence. The input is
+input and output scripts are then executed together. The input is
 valid if the input script satisfies the output script's conditions
 (see <<script_exec>>). All the inputs are validated independently, as
 part of the overall validation of the transaction.
@@ -140,11 +140,9 @@ image::images/mbc2_0603.png["input_and_output_scripts"]
 
 Bitcoin's scripting language is called a stack-based language because it
 uses a data structure called a _stack_. A stack is a very simple data
-structure that can be visualized as a stack of cards. A stack allows two
-operations: push and pop. Push adds an item on top of the stack. Pop
-removes the top item from the stack. Operations on a stack can only act
-on the topmost item on the stack. A stack data structure is also called
-a Last-In-First-Out, or "LIFO" queue.
+structure that can be visualized as a stack of cards. A stack has two
+base operations: push and pop. Push adds an item on top of the stack. Pop
+removes the top item from the stack.
 
 The scripting language executes the script by processing each item from
 left to right. Numbers (data constants) are pushed onto the stack.
@@ -294,9 +292,7 @@ script:
 <Sig> <Pubkey> OP_DUP OP_HASH160 <Hash> OP_EQUALVERIFY OP_CHECKSIG
 ----
 
-When executed, this combined script will evaluate to TRUE if, and only
-if, the input script matches the conditions set by the output script.
-In other words, the result will be TRUE if the input script
+The result will be TRUE if the input script
 has a valid signature from Bob's private key that corresponds to
 the public key hash set as an encumbrance.
 
@@ -338,19 +334,6 @@ to tell "m" and "n" apart when they're spoken, so we use the alternative
 t-of-k.  Both phrases refer to the same type of signature scheme.
 ====
 
-At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to at most 3
-listed public keys, meaning you can do anything from a 1-of-1 to a
-3-of-3 multisignature or any combination within that range.
-You may want to check the +IsStandard()+ function to see what is currently
-accepted by the network. Note that the limit of 3 keys applies only to
-standard (also known as "bare") multisignature scripts, not to
-multisignature scripts wrapped in a Pay-to-Script-Hash (P2SH) script.
-P2SH multisignature scripts are limited by both policy and consensus to
-15 keys, allowing for up to 15-of-15 multisignature. We will learn about
-P2SH in <<p2sh>>.   All other scripts are consensus limited to 20 keys
-per +OP_CHECKMULTSIG+ or +OP_CHECKMULTISIGVERIFY+ opcode, although one
-script may include multiple of those opcodes.
-
 The general form of a output script setting a t-of-k multisignature
 condition is:
 
@@ -369,7 +352,7 @@ this:
 ----
 
 The preceding output script can be satisfied with an input script
-containing pairs of signatures and public keys:
+containing signatures:
 
 ----
 <Signature B> <Signature C>
@@ -381,14 +364,26 @@ to the three listed public keys.
 The two scripts together would form the combined validation script:
 
 ----
-<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+<Sig B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
-When executed, this combined script will evaluate to TRUE if, and only
-if, the input script script matches the conditions set by the output script.
-In this case, the condition is whether the input script has
-a valid signature from the two private keys that correspond to two of
+When executed, this combined script will evaluate to TRUE if
+the input script has
+two valid signatures from private keys that correspond to two of
 the three public keys set as an encumbrance.
+
+At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to at most 3
+listed public keys, meaning you can do anything from a 1-of-1 to a
+3-of-3 multisignature or any combination within that range.
+You may want to check the +IsStandard()+ function to see what is currently
+accepted by the network. Note that the limit of 3 keys applies only to
+standard (also known as "bare") multisignature scripts, not to
+scripts wrapped in another structure like P2SH, P2WSH, or P2TR.
+P2SH multisignature scripts are limited by both policy and consensus to
+15 keys, allowing for up to 15-of-15 multisignature. We will learn about
+P2SH in <<p2sh>>.   All other scripts are consensus limited to 20 keys
+per +OP_CHECKMULTSIG+ or +OP_CHECKMULTISIGVERIFY+ opcode, although one
+script may include multiple of those opcodes.
 
 [[multisig_bug]]
 ==== An oddity in CHECKMULTISIG execution
@@ -396,7 +391,7 @@ the three public keys set as an encumbrance.
 ((("scripting", "multisignature scripts", "OP_CHECKMULTISIG
 oddity")))((("OP_CHECKMULTISIG oddity workaround")))There is an oddity in
 ++OP_CHECKMULTISIG++'s execution that requires a slight workaround. When
-+OP_CHECKMULTISIG+ executes, it should consume K+N+2 items on the stack as
++OP_CHECKMULTISIG+ executes, it should consume t+k+2 items on the stack as
 parameters. However, due to the oddity, +OP_CHECKMULTISIG+ will pop an extra
 value or one value more than expected.
 
@@ -404,16 +399,16 @@ Let's look at this in greater detail using the previous validation
 example:
 
 ----
-<Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+<Sig B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
-First, +OP_CHECKMULTISIG+ pops the top item, which is +N+ (in this example
-"3"). Then it pops +N+ items, which are the public keys that can sign.
+First, +OP_CHECKMULTISIG+ pops the top item, which is +k+ (in this example
+"3"). Then it pops +k+ items, which are the public keys that can sign.
 In this example, public keys A, B, and C. Then, it pops one item, which
-is +K+, the quorum (how many signatures are needed). Here M = 2. At this
-point, +OP_CHECKMULTISIG+ should pop the final +K+ items, which are the
+is +t+, the quorum (how many signatures are needed). Here t = 2. At this
+point, +OP_CHECKMULTISIG+ should pop the final +t+ items, which are the
 signatures, and see if they are valid. However, unfortunately, an oddity in
-the implementation causes +OP_CHECKMULTISIG+ to pop one more item (K+1
+the implementation causes +OP_CHECKMULTISIG+ to pop one more item (t+1
 total) than it should. The extra item is called the _dummy stack
 element_ and it is disregarded when checking the
 signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
@@ -429,7 +424,7 @@ replicated forever. Therefore a script should look
 like this:
 
 ----
-OP_0 <Signature B> <Signature C> 2 <Public Key A> <Public Key B> <Public Key C> 3 OP_CHECKMULTISIG
+OP_0 <Sign B> <Sig C> 2 <Pubkey A> <Pubkey B> <Pubkey C> 3 OP_CHECKMULTISIG
 ----
 
 Thus the input script actually used in multisig is not:
@@ -441,13 +436,13 @@ Thus the input script actually used in multisig is not:
 but instead it is:
 
 ----
-OP_0 <Signature B> <Signature C>
+OP_0 <Sig B> <Sig C>
 ----
 
 Some people believe this oddity was a bug in the original code for
 Bitcoin, but a plausible alternative explanation exists.  Verifying
 t-of-k signatures can require many more than t or k signature checking
-operations.  Let's consider a simple example of 1-in-3, with the
+operations.  Let's consider a simple example of 1-in-5, with the
 following combined script:
 
 ----
@@ -460,7 +455,7 @@ the other keys before it is finally compared to its corresponding
 performed even though there's only one signature.  One way to eliminate
 this redundancy would have been to provide OP_CHECKMULTISIG a map
 indicating which provided signature corresponds to which public key,
-allowing the OP_CHECKMULTISIG operation to only perform exactly K
+allowing the OP_CHECKMULTISIG operation to only perform exactly +t+
 signature-checking operations.  It's possible that Bitcoin's original
 developer added the extra element (which we now call the dummy stack
 element) in the original version of Bitcoin so that they could add the
@@ -483,21 +478,20 @@ startref="Smulti07")))
 
 ((("transactions", "advanced", "Pay-to-Script-Hash")))((("scripting",
 "Pay-to-Script-Hash", id="Spay07")))Pay-to-Script-Hash (P2SH) was
-introduced in 2012 as a powerful new type of transaction that greatly
-simplifies the use of complex transaction scripts. To explain the need
+introduced in 2012 as a powerful new type of operation that greatly
+simplifies the use of complex scripts. To explain the need
 for P2SH, let's look at a practical example.
 
 ((("use cases", "import/export", id="mohamseven")))((("scripting",
 "Pay-to-Script-Hash", "import/export example")))((("Pay-to-Script-Hash
 (P2SH)", "import/export example")))
 Mohammed is an electronics importer based in Dubai. Mohammed's
-company uses bitcoin's multisignature feature extensively for its
+company uses Bitcoin's multisignature feature extensively for its
 corporate accounts. Multisignature scripts are one of the most common
-uses of bitcoin's advanced scripting capabilities and are a very
-powerful feature. ((("accounts receivable (AR)")))Mohammed's company
-uses a multisignature script for all customer payments, known in
-accounting terms as "accounts receivable," or AR. With the
-multisignature scheme, any payments made by customers are locked in such
+uses of Bitcoin's advanced scripting capabilities and are a very
+powerful feature. Mohammed's company
+uses a multisignature script for all customer payments.
+Any payments made by customers are locked in such
 a way that they require at least two signatures to release.  Mohammed,
 his three partners, and their attorney can each provide one signature.
 A multisignature scheme like that offers corporate governance
@@ -512,9 +506,8 @@ The resulting script is quite long and looks like this:
 Although multisignature scripts are a powerful feature, they are
 cumbersome to use. Given the preceding script, Mohammed would have to
 communicate this script to every customer prior to payment. Each
-customer would have to use special bitcoin wallet software with the
-ability to create custom transaction scripts, and each customer would
-have to understand how to create a transaction using custom scripts.
+customer would have to use special Bitcoin wallet software with the
+ability to create custom transaction scripts.
 Furthermore, the resulting transaction would be about five times larger
 than a simple payment transaction, because this script contains very
 long public keys. The burden of that extra data would be
@@ -524,7 +517,7 @@ node, until it was spent. All of these issues make using complex output scripts
 difficult in practice.
 
 P2SH was developed to resolve these practical difficulties and to make
-the use of complex scripts as easy as a payment to a Bitcoin address.
+the use of complex scripts as easy as a payment to a single-key Bitcoin address.
 With P2SH payments, the complex script is replaced with a
 commitment, the digest of a cryptographic hash. When a transaction attempting
 to spend the UTXO is presented later, it must contain the script that
@@ -559,7 +552,7 @@ details the conditions for spending the output (redeem script) is not
 presented in the output script. Instead, only a hash of it is in the
 output script and the reedemScript itself is presented later, as part
 of the input script when the output is spent. This shifts the burden
-in fees and complexity from the sender to the recipient (spender) of the
+in fees and complexity from the spender to the receiver of the
 transaction.
 
 Let's look at Mohammed's company, the complex multisignature script, and
@@ -654,14 +647,8 @@ of")))((("Pay-to-Script-Hash (P2SH)", "benefits of")))The P2SH feature
 offers the following benefits compared to the direct use of complex
 scripts in outputs:
 
-- Complex scripts are replaced by shorter commitments in the
-  transaction output, making the transaction smaller.
-
 - The similarity to original legacy addresses means the sender and the sender's
   wallet don't need complex engineering to implement P2SH.
-
-- P2SH shifts the burden of constructing the script to the recipient,
-  not the sender.
 
 - P2SH shifts the burden in data storage for the long script from the
   output (which additionally to being stored on the blockchain is in the
@@ -694,7 +681,7 @@ risk, because you can send bitcoin to a P2SH address that cannot be spent later.
 ====
 ((("warnings and cautions", "accidental bitcoin invalidation")))P2SH output scripts
 contain the hash of a redeem script, which gives no clues as to
-the content of the redeem script. The P2SH transaction will be
+the content of the redeem script. The P2SH output will be
 considered valid and accepted even if the redeem script is invalid. You
 might accidentally receive bitcoin in such a way that it cannot later be
 spent.
@@ -707,28 +694,28 @@ spent.
 "data recording output")))((("OP_RETURN operator")))((("data recording
 (nonpayment data)")))((("nonpayment data")))((("blockchain (the)",
 "nonpayment data recording")))((("digital notary services")))Bitcoin's
-distributed and timestamped ledger, the blockchain, has potential uses
+distributed and timestamped blockchain has potential uses
 beyond payments. Many developers have tried to use the transaction
 scripting language to take advantage of the security and resilience of
-the system for applications such as digital notary services
-and smart contracts. Early attempts to use bitcoin's
+the system for applications such as digital notary services.
+Early attempts to use Bitcoin's
 script language for these purposes involved creating transaction outputs
-that recorded data on the blockchain; for example, to record a digital
-fingerprint of a file in such a way that anyone could establish
+that recorded data on the blockchain; for example, to record a commitment
+to a file in such a way that anyone could establish
 proof-of-existence of that file on a specific date by reference to that
 transaction.
 
 ((("blockchain bloat")))((("bloat")))((("unspent transaction outputs
-(UTXO)")))((("UTXO sets")))The use of bitcoin's blockchain to store data
-unrelated to bitcoin payments is a controversial subject. Many
+(UTXO)")))((("UTXO sets")))The use of Bitcoin's blockchain to store data
+unrelated to Bitcoin payments is a controversial subject. Many
 people consider such use abusive and want to discourage it. Others
 view it as a demonstration of the powerful capabilities of blockchain
 technology and want to encourage such experimentation. Those who object
-to the inclusion of nonpayment data argue that it causes "blockchain
-bloat," burdening those running full Bitcoin nodes with carrying the
+to the inclusion of nonpayment data argue that it
+burdens those running full Bitcoin nodes with carrying the
 cost of disk storage for data that the blockchain was not intended to
-carry. Moreover, such transactions create UTXOs that cannot be spent,
-using the destination legacy Bitcoin address as a freeform 20-byte field.
+carry. Moreover, such transactions may create UTXOs that cannot be spent,
+using legacy Bitcoin address as a freeform 20-byte field.
 Because the address is used for data, it doesn't correspond to a private
 key and the resulting UTXO can _never_ be spent; it's a fake payment.
 These transactions that can never be spent are therefore never removed
@@ -789,10 +776,10 @@ Let's explain that with the following example.
 
 However:
 
-* Alice can create another transaction, double-spending the same inputs without a lock time. Thus, Alice can spend the same UTXO before the 3 months have elapsed.
+* Alice can create a conflicting transaction, spending the same inputs without a lock time. Thus, Alice can spend the same UTXO before the 3 months have elapsed.
 * Bob has no guarantee that Alice won't do that.
 
-It is important to understand the limitations of transaction lock time. The only guarantee is that Bob will not be able to redeem the presigned transaction before 3 months have elapsed. There is no guarantee that Bob will get the funds. To guarantee that Bob will receive the funds but cannot spend them until 3 months have elapsed, the timelock restriction must be placed on the UTXO itself and be part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
+It is important to understand the limitations of transaction lock time. The only guarantee is that Bob will not be able to redeem the presigned transaction before 3 months have elapsed. There is no guarantee that Bob will get the funds. One way to guarantee that Bob will receive the funds but cannot spend them until 3 months have elapsed, the timelock restriction must be placed on the UTXO itself and be part of the script, rather than on the transaction. This is achieved by the next form of timelock, called Check Lock Time Verify.
 
 ==== Check Lock Time Verify (OP_CLTV)
 
@@ -804,7 +791,7 @@ timelock was introduced to Bitcoin as a soft fork upgrade. Based on a
 specification in BIP65, a new script operator called
 _OP_CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
 +OP_CLTV+ is a per-output timelock, rather than a per-transaction timelock
-as is the case with lock time. This allows for much greater
+as is the case with lock time. This allows for additional
 flexibility in the way timelocks are applied.
 
 In simple terms, by committing to the +OP_CLTV+ opcode in an
@@ -823,25 +810,24 @@ results in TRUE, execution continues.
 
 In order to use +OP_CLTV+, you insert it into the redeem script of the
 output in the transaction that creates the output. For
-example, if Alice is paying Bob's address, the output would normally
-contain a P2PKH script like this:
+example, if Alice is paying Bob, he might usually accept payment to 
+the following P2SH script:
 
 ----
-OP_DUP OP_HASH160 <Bob's Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
+<Bob's public key> OP_CHECKSIG
 ----
 
-To lock it to a time, say 3 months from now, the transaction would be a
-P2SH transaction with a redeem script like this:
+To lock it to a time, say 3 months from now, his P2SH script would
+instead be:
 
 ----
-<now + 3 months> OP_CHECKLOCKTIMEVERIFY OP_DROP OP_DUP OP_HASH160 <Bob's Public Key Hash> OP_EQUALVERIFY OP_CHECKSIG
+<Bob's pubkey> OP_CHECKSIGVERIFY <now + 3 months> OP_CHECKLOCKTIMEVERIFYG
 ----
 
 where +<now {plus} 3 months>+ is a block height or time value estimated
 3 months from the time the transaction is mined: current block height
 {plus} 12,960 (blocks) or current Unix epoch time {plus} 7,760,000
-(seconds). For now, don't worry about the +OP_DROP+ opcode that follows
-+OP_CHECKLOCKTIMEVERIFY+; it will be explained shortly.
+(seconds).
 
 When Bob tries to spend this UTXO, he constructs a transaction that
 references the UTXO as an input. He uses his signature and public key in
@@ -855,8 +841,8 @@ lock time, script execution continues (acts as if a _no
 operation_ or OP_NOP opcode was executed). Otherwise, script
 execution halts and the transaction is deemed invalid.
 
-More precisely, +OP_CHECKLOCKTIMEVERIFY+ fails and halts execution, marking
-the transaction invalid if (source: BIP65):
+More precisely, BIP65 explains that +OP_CHECKLOCKTIMEVERIFY+ fails and
+halts execution if:
 
 1. the stack is empty; or
 2. the top item on the stack is less than 0; or
@@ -875,7 +861,7 @@ that of +OP_CLTV+ in the outputs--they must both reference either
 block height or time in seconds.
 
 The above implies that a script can never be valid if it must execute
-two different calls to +OP_CLTV+, one which uses a height and one which
+two different calls to +OP_CLTV+, one that uses a height and one that
 uses a time.  It can be easy to make this mistake when writing advanced
 scripts, so be sure to thoroughly test your scripts on a test network or
 use a tool designed to prevent this issue, like a Miniscript compiler.
@@ -1001,12 +987,12 @@ various programming languages that use the construct +IF...THEN...ELSE+.
 Bitcoin conditional clauses look a bit different, but are essentially
 the same construct.
 
-At a basic level, bitcoin conditional opcodes allow us to construct a
+At a basic level, Bitcoin conditional opcodes allow us to construct a
 script that has two ways of being unlocked, depending on a
 +TRUE+/+FALSE+ outcome of evaluating a logical condition. For example,
 if x is +TRUE+, the executed code path is A and the ELSE code path is B.
 
-Additionally, bitcoin conditional expressions can be "nested"
+Additionally, Bitcoin conditional expressions can be "nested"
 indefinitely, meaning that a conditional clause can contain another
 within it, which contains another, etc. Bitcoin Script flow control can
 be used to construct very complex scripts with hundreds
@@ -1018,7 +1004,7 @@ Bitcoin implements flow control using the +OP_IF+, +OP_ELSE+, +OP_ENDIF+, and
 +OP_NOTIF+ opcodes. Additionally, conditional expressions can contain
 boolean operators such as +OP_BOOLAND+, +OP_BOOLOR+, and +OP_NOT+.
 
-At first glance, you may find the bitcoin's flow control scripts
+At first glance, you may find the Bitcoin's flow control scripts
 confusing. That is because Bitcoin Script is a stack language. The same
 way that +1 {plus} 1+ looks "backward" when expressed as +1 1 OP_ADD+, flow
 control clauses in bitcoin also look "backward."
@@ -1201,17 +1187,12 @@ startref="flow07")))((("", startref="condition07")))
 script example", id="Scomplex07")))In this section we combine many of
 the concepts from this chapter into a single example.
 
-((("use cases", "import/export", id="mohamseventwo")))Our example uses
-the story of Mohammed, the company owner in Dubai who is operating an
-import/export business.
-
-((("transactions", "advanced", "multisignature
-scripts")))((("scripting", "multisignature scripts", "import/export
-example")))((("multisignature scripts")))In this example, Mohammed
+Mohammed is company owner in Dubai who is operating an import/export
+business; he
 wishes to construct a company capital account with flexible rules. The
 scheme he creates requires different levels of authorization depending
 on timelocks. The participants in the multisig scheme are Mohammed, his
-two partners Saeed and Zaira, and their company lawyer Abdul. The three
+two partners Saeed and Zaira, and their company lawyer. The three
 partners make decisions based on a majority rule, so two of the three
 must agree. However, in the case of a problem with their keys, they want
 their lawyer to be able to recover the funds with one of the three
@@ -1232,13 +1213,13 @@ number prefixed as XX):
 03      2
 04    OP_ELSE
 05      <30 days> OP_CHECKSEQUENCEVERIFY OP_DROP
-06      <Abdul the Lawyer's Pubkey> OP_CHECKSIGVERIFY
+06      <Lawyer's Pubkey> OP_CHECKSIGVERIFY
 07      1
 08    OP_ENDIF
 09    <Mohammed's Pubkey> <Saeed's Pubkey> <Zaira's Pubkey> 3 OP_CHECKMULTISIG
 10  OP_ELSE
 11    <90 days> OP_CHECKSEQUENCEVERIFY OP_DROP
-12    <Abdul the Lawyer's Pubkey> OP_CHECKSIG
+12    <Lawyer's Pubkey> OP_CHECKSIG
 13  OP_ENDIF
 ----
 ====
@@ -1269,14 +1250,14 @@ described in <<multisig_bug>>.
 
 The second execution path can only be used after 30 days have elapsed
 from the creation of the UTXO. At that time, it requires the signature
-of Abdul the lawyer and one of the three partners (a 1-of-3 multisig).
+of the lawyer and one of the three partners (a 1-of-3 multisig).
 This is achieved by line 7, which sets the quorum for the multisig to
 +1+. To select this execution path, the input script would end in
 +OP_FALSE OP_TRUE+:
 
 .Spending data for the second execution path (Lawyer + 1-of-3)
 ----
-OP_0 <Saeed's Sig> <Abdul's Sig> OP_FALSE OP_TRUE
+OP_0 <Saeed's Sig> <Lawer's Sig> OP_FALSE OP_TRUE
 ----
 
 [TIP]
@@ -1286,13 +1267,13 @@ stack and +TRUE+ is pushed on top of it.
 +TRUE+ is therefore popped _first_ by the first +OP_IF+ opcode.
 ====
 
-Finally, the third execution path allows Abdul the lawyer to spend the
+Finally, the third execution path allows the lawyer to spend the
 funds alone, but only after 90 days. To select this execution path, the
 input script has to end in +OP_FALSE+:
 
 .Input script for the third execution path (Lawyer only)
 ----
-<Abdul's Sig> OP_FALSE
+<Lawyer's Sig> OP_FALSE
 ----
 
 Try running the script on paper to see how it behaves on the stack.
@@ -1345,9 +1326,9 @@ would have to include a signature within the transaction input:
 ----
 [...]
 "vin" : [
-"txid": "abcdef12345...",
-"vout": 0,
-     	 "scriptSig": “<Bob’s scriptSig>”,
+  "txid": "abcdef12345...",
+  "vout": 0,
+  "scriptSig": “<Bob’s scriptSig>”,
 ]
 [...]
 ----
@@ -1360,9 +1341,9 @@ input script and includes a witness structure:
 ----
 [...]
 "vin" : [
-"txid": "abcdef12345...",
-"vout": 0,
-     	 "scriptSig": “”,
+  "txid": "abcdef12345...",
+  "vout": 0,
+  "scriptSig": “”,
 ]
 [...]
 “witness”: “<Bob’s witness structure>”
@@ -1372,9 +1353,9 @@ input script and includes a witness structure:
 ===== Wallet construction of P2WPKH
 
 It is extremely important to note that P2WPKH witness programs should only be created by
-the payee (recipient) and not converted by the sender from a known
-public key, P2PKH script, or address. The sender has no way of knowing
-if the recipient's wallet has the ability to construct segwit
+the receiver and not converted by the spender from a known
+public key, P2PKH script, or address. The spender has no way of knowing
+if the receiver's wallet has the ability to construct segwit
 transactions and spend P2WPKH outputs.
 
 Additionally, P2WPKH outputs must be constructed from the hash of a
@@ -1387,7 +1368,7 @@ private key.
 
 [WARNING]
 ====
-P2WPKH should be constructed by the recipient by converting a compressed
+P2WPKH should be constructed by the receiver by converting a compressed
 public key to a P2WPKH hash. Neither the spender nor anyone else should
 ever transform a P2PKH script, Bitcoin address, or uncompressed public
 key to a P2WPKH witness script.  In general, a spender should only send
@@ -1418,9 +1399,9 @@ satisfy that redeem script, all inside the transaction input:
 ----
 [...]
 "vin" : [
-"txid": "abcdef12345...",
-"vout": 0,
-     	 "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 OP_CHECKMULTISIG>”,
+  "txid": "abcdef12345...",
+  "vout": 0,
+  "scriptSig": “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 OP_CHECKMULTISIG>”,
 ]
 ----
 
@@ -1462,9 +1443,9 @@ the legacy input script field.
 ----
 [...]
 "vin" : [
-"txid": "abcdef12345...",
-"vout": 0,
-     	 "scriptSig": “”,
+  "txid": "abcdef12345...",
+  "vout": 0,
+  "scriptSig": “”,
 ]
 [...]
 “witness”: “<SigA> <SigB> <2 PubA PubB PubC PubD PubE 5 OP_CHECKMULTISIG>”
@@ -1507,10 +1488,10 @@ Legacy P2PKH and
 P2SH continue to work for nonupgraded wallets. That leaves two
 important scenarios, which are addressed in the next section:
 
-- Ability of a sender's wallet that is not segwit-aware to make a
+- Ability of a spender's wallet that is not segwit-aware to make a
   payment to a recipient's wallet that can process segwit transactions.
 
-- Ability of a sender's wallet that is segwit-aware to recognize and
+- Ability of a spender's wallet that is segwit-aware to recognize and
   distinguish between recipients that are segwit-aware and ones that are
   not, by their _addresses_.
 
@@ -1523,8 +1504,8 @@ likely want to use segwit to reduce transaction fees, taking advantage
 of the reduced cost of witness structure.
 
 In this case Bob's wallet can construct a P2SH address that contains a
-segwit script inside it. Alice's wallet sees this as a "normal" P2SH
-address and can make payments to it without any knowledge of segwit.
+segwit script inside it. Alice's wallet can make payments to it without
+any knowledge of segwit.
 Bob's wallet can then spend this payment with a segwit transaction,
 taking advantage of segwit and reducing transaction fees.
 
@@ -1697,7 +1678,7 @@ included in the authorization data); we could also have four
 commitments for the same cost.  An extra commitment would give us up to
 eight conditions.  With just 16 commitments--512 bytes of commitments--we could have
 over 32,000 authorization conditions, far more than could be effectively
-used in an entire block of +OP_IF+ statements.  With 128 commitments
+used in an entire block of transactions filled with +OP_IF+ statements.  With 128 commitments
 (4,096 bytes), the number of conditions we could create in theory far
 exceeds the number of conditions that all the computers in the world
 could create.
@@ -1857,7 +1838,7 @@ leaked.
 
 There are two downsides of scriptless multisignatures.  The first is
 that all known secure algorithms for creating them for Bitcoin require more
-rounds of interaction or more careful management of state (or both) than
+rounds of interaction or more careful management of state than
 scripted multisignature.  This can be challenging in cases where
 signatures are being generated by nearly stateless hardware signing
 devices and the keys are physically distributed.  For example, if you
@@ -1943,10 +1924,10 @@ may appear because any transaction created by a single user who wants it
 to be satisfied by a single signature (or a multisignature generated by
 multiple different wallets they control) looks identical onchain to a
 mutual-satisfaction spend.  There's no onchain difference in this case
-between a spend by million users involved in an extraordinarily complex
+between a spend by a million users involved in an extraordinarily complex
 contract or a single user just spending their saved bitcoins.
 
-When spending is possible using just the key, such for a single signature
+When spending is possible using just the key, such as for a single signature
 or scriptless multisignature, that is called _keypath spending_.  When
 the tree of scripts is used, that is called _scriptpath spending_.
 For keypath spending, the data that gets put onchain is the public key
@@ -1962,7 +1943,7 @@ in this context.  The witness structure includes the following information:
    merkle root to produce the taproot output key.  This underlying key
    is called the _taproot internal key_
 
-3. The leaf script to execute
+3. The script to execute, called the _leaf script_
 
 4. One 32-byte hash for each junction in merkle tree along the path that connects the leaf to the merkle root
 
@@ -2016,7 +1997,8 @@ Additionally, any signature-checking operation which is not expected
 OP_SUCCESSx opcodes::
   Opcodes in previous versions of script which were unusable are now
   redefined to cause an entire script to succeed if they are used.
-  This allows future soft forks to redefine them as not succeeding, which
+  This allows future soft forks to redefine them as not succeeding under
+  certain circumstances, which
   is a restriction and so is possible to do in a soft fork.  (The
   opposite, to define a not-succeeding operation as a success can only
   be done in a hard fork, which is a much more challenging upgrade

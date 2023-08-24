@@ -13,9 +13,9 @@ use to determine which keys control which bitcoins.
 
 To protect himself against conflicting transactions, it would be wise
 for Bob to wait until the transaction from Alice is included in the
-blockchain before he considers the money he received as his to spend.
-He may want to wait even longer than that, as we discussed in
-<<confirmation_score>>.  For Alice's transaction to be included in the
+blockchain to a sufficient depth before he considers the money he
+received as his to spend (see <<confirmations>>).
+For Alice's transaction to be included in the
 blockchain, it must be included in a _block_ of transactions.  There are
 a limited number of blocks produced in a given amount of time and each
 block only has a limited amount of space.  Only the miner who creates
@@ -92,7 +92,7 @@ Bitcoin for spenders to pay transaction fees.  There are exceptions,
 such as for merchants which accept unconfirmed transactions and in
 protocols that don't immediately broadcast transactions after they are
 signed (preventing the spender from being able to choose an appropriate
-fee for the current market).
+fee for the current market).  We'll explore those exceptions later.
 
 === Fees and fee rates
 
@@ -123,7 +123,7 @@ fee rates.
 
 [WARNING]
 ====
-Be careful accepting input for fee rates.  If a user copy and pastes a
+Be careful accepting input for fee rates.  If a user copies and pastes a
 fee rate printed in one denominator into a field using a different
 enumerator, they could overpay fees by 1,000 times.  If they instead
 switch the enumerator, they could theoretically overpay by 100,000,000
@@ -196,7 +196,7 @@ bumping in Bitcoin, Replace-By-Fee (RBF) and Child Pays For Parent
 To increase the fee of a transaction using RBF fee bumping, you create
 a conflicting version of the transaction which pays a higher fee.  Two
 or more transactions are considered to be _conflicting transactions_ if
-only one of them can be included in a valid block chain, forcing a miner
+only one of them can be included in a valid blockchain, forcing a miner
 to chose only one of them.  Conflicts occur when two or more transactions
 each try to spend one of the same UTXOs, i.e. they each include an input
 that has the same outpoint (reference to the output of a previous
@@ -292,9 +292,16 @@ having "Sending support" on
 https://bitcoinops.org/en/compatibility/#replace-by-fee-rbf
 
 As a developer, if you plan to implement RBF fee bumping, you will first
-need to implement the signaling specified in BIP125, which is a simple
+need to decided whether to perform opt-in RBF or full RBF.  At the time
+of writing, opt-in RBF is the only method that's sure to work.  Even if
+full RBF becomes reliable, there will likely be several years where
+replacements of opt-in transactions get confirmed slightly faster than
+full-RBF replacements.  If you choose opt-in RBF, your wallet will need
+to implement the signaling specified in BIP125, which is a simple
 modification to any one of the sequence fields in a transaction (see
-<<sequence>>).
+<<sequence>>).  If you choose full RBF, you don't need to include any
+signaling in your transactions.  Everything else related to RBF is the
+same for both approaches.
 
 When you need to fee bump a transaction, you will simply create a new
 transaction that spends at least one of the same UTXOs as the original
@@ -361,7 +368,7 @@ transaction is called a _child transaction_.
 
 As we learned in <<outpoints>>, every input in a confirmed transaction
 must reference the unspent output of a transaction which appears earlier
-in the block chain (whether earlier in the same block or in a previous
+in the blockchain (whether earlier in the same block or in a previous
 block).  That means a miner who wants to confirm a child transaction
 must also ensure that its parent transaction is confirmed.  If the
 parent transaction hasn't been confirmed yet but the child transaction
@@ -453,12 +460,12 @@ is that they can sometimes prevent someone from being able to use fee
 bumping.  Making it impossible or difficult to fee bump a transaction is
 called _transaction pinning_.
 
-One of the major denial of service concerns revolve around the effect of
+One of the major denial of service concerns revolve's around the effect of
 transaction relationships.  Whenever the output of a transaction is
 spent, that transaction's identifier (txid) is referenced by the child
 transaction.  However, when a transaction is replaced, the replacement
 has a different txid.  If that replacement transaction gets confirmed,
-none of its descendants can be included in the same block chain.  It's
+none of its descendants can be included in the same blockchain.  It's
 possible to recreate and re-sign the descendant transactions, but that's
 not guaranteed to happen.  This has related but divergent implications
 for RBF and CPFP:
@@ -497,7 +504,7 @@ Additionally, a transaction and all of its descendants is not
   that transaction is mined--none of those transactions can now be
   confirmed unless there's a rare blockchain reorganization.  Bitcoin
   Core will remove from its mempool every transaction that can no longer
-  be confirmed on the current block chain.  At it's worst, that can
+  be confirmed on the current blockchain.  At it's worst, that can
   waste an enormous amount of your node's bandwidth and possibly be used
   to prevent transactions from propagating correctly.
 +

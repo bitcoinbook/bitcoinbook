@@ -46,7 +46,7 @@ following it, it cannot be changed without forcing a recalculation of
 all subsequent blocks. Because such a recalculation would require
 enormous computation (and therefore energy consumption), the existence
 of a long chain of blocks makes the blockchain's deep history impractical to change,
-which is a key feature of bitcoin's security.
+which is a key feature of Bitcoin's security.
 
 One way to think about the blockchain is like layers in a geological
 formation, or glacier core sample. The surface layers might change with
@@ -72,7 +72,7 @@ infinitesimal.
 
 ((("blocks", "structure of")))((("blockchain (the)", "block
 structure")))A block is a container data structure that aggregates
-transactions for inclusion in the public ledger, the blockchain. The
+transactions for inclusion in the blockchain. The
 block is made of a header, containing metadata, followed by a long list
 of transactions that make up the bulk of its size. The block header is
 80 bytes, whereas the total size of all transactions in a block can be
@@ -88,7 +88,7 @@ header. <<block_structure1>> describes how Bitcoin Core stores the structure of 
 |Size| Field | Description
 | 4 bytes | Block Size | The size of the block, in bytes, following this field
 | 80 bytes | Block Header | Several fields form the block header
-| 1-9 bytes (compactSize) | Transaction Counter | How many transactions follow
+| 1-3 bytes (compactSize) | Transaction Counter | How many transactions follow
 | Variable | Transactions | The transactions recorded in this block
 |=======
 
@@ -120,20 +120,19 @@ process and will be discussed in more detail in <<mining>>.
 
 ((("blockchain (the)", "block identifiers")))((("blocks", "block
 height")))((("blocks", "block hash")))The primary identifier of a block
-is its cryptographic hash, a digital fingerprint, made by hashing the
+is its cryptographic hash, a commitment made by hashing the
 block header twice through the SHA256 algorithm. The resulting 32-byte
 hash is called the _block hash_ but is more accurately the _block header
 hash_, pass:[<span role="keep-together">because only the block header is
 used to compute it. For example,</span>]
 +000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f+ is
-the block hash of the first block on Bitcoin's block chain. The block hash
+the block hash of the first block on Bitcoin's blockchain. The block hash
 identifies a block uniquely and unambiguously and can be independently
 derived by any node by simply hashing the block header.
 
 Note that the block hash is not actually included inside the block's
-data structure, neither when the block is transmitted on the network,
-nor when it is stored on a node's persistent storage as part of the
-blockchain. Instead, the block's hash is computed by each node as the
+data structure.
+Instead, the block's hash is computed by each node as the
 block is received from the network. The block hash might be stored in a
 separate database table as part of the block's metadata, to facilitate
 indexing and faster retrieval of blocks from disk.
@@ -202,7 +201,7 @@ The following identifier hash belongs to the genesis block:
 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 ----
 
-You can search for that block hash in any block explorer website, such
+You can search for that block hash in almost any block explorer website, such
 as _blockstream.info_, and you will find a page describing the contents
 of this block, with a URL containing that hash:
 
@@ -327,7 +326,7 @@ transactions and permitting a very efficient process to verify whether a
 transaction is included in a block. A merkle tree is constructed by
 recursively hashing pairs of elements until there is only one hash, called
 the _root_, or _merkle root_. The cryptographic hash algorithm used in
-bitcoin's merkle trees is SHA256 applied twice, also known as
+Bitcoin's merkle trees is SHA256 applied twice, also known as
 double-SHA256.
 
 When N data elements are hashed and summarized in a merkle tree, you can

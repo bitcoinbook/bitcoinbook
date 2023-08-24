@@ -29,7 +29,7 @@ consensus network.
 ((("Bitcoin network", "defined")))The term "Bitcoin network" refers to
 the collection of nodes running the Bitcoin P2P protocol. In addition to
 the Bitcoin P2P protocol, there are other protocols that
-are used for mining and lightweight or mobile wallets. These additional
+are used for mining and lightweight wallets. These additional
 protocols are provided by gateway routing servers that access the
 Bitcoin network using the Bitcoin P2P protocol and then extend that
 network to nodes running other protocols. For example, Stratum servers
@@ -48,9 +48,8 @@ supporting. A Bitcoin full node validates blocks and may contain other
 functions, such as routing, mining, and wallet services.
 
 Some nodes, called _archival full nodes_, also maintain a
-complete and up-to-date copy of the blockchain. Full nodes can
-autonomously and authoritatively verify any transaction without external
-reference.  Those nodes can
+complete and up-to-date copy of the blockchain.
+Those nodes can
 serve data to clients that store
 only a subset of the blockchain and partly verify transactions using a method
 called _simplified payment verification_, or SPV. ((("lightweight
@@ -89,21 +88,13 @@ mining or wallet functions. These nodes act as network edge routers,
 allowing various other services (exchanges, wallets, block explorers,
 merchant payment processing) to be built on top.
 
-The extended Bitcoin network includes the network running the Bitcoin
-P2P protocol, described earlier, as well as nodes running specialized
-protocols. Attached to the main Bitcoin P2P network are a number of pool
-servers and protocol gateways that connect nodes running other
-protocols. These other protocol nodes are mostly pool mining nodes (see
-<<mining>>) and lightweight wallet clients, which do not carry a full
-copy of the blockchain.
-
 === Compact Block Relay
 
 When a miner finds a new block, they announce it to the Bitcoin network
 (which includes other miners).  The miner who found that block can start
 building on top of it immediately; all other miners who haven't learned
 about the block yet will continue building on top of the previous block
-until they do learn about it (and, ideally, they also validate it).
+until they do learn about it.
 
 If, before they learn about the new block, one of those other
 miners creates a block, their block will be in competition with the
@@ -476,7 +467,7 @@ because that contains +BestHeight+, a node's current blockchain height
 (number of blocks). A node will see the +version+ messages from its
 peers, know how many blocks they each have, and be able to compare to
 how many blocks it has in its own blockchain. Peered nodes will exchange
-a +getheaders+ message that contains the hash (fingerprint) of the top
+a +getheaders+ message that contains the hash of the top
 block on their local blockchain. One of the peers will be able to
 identify the received hash as belonging to a block that is not at the
 top, but rather belongs to an older block, thus deducing that its own
@@ -1197,11 +1188,9 @@ pools")))((("memory pools (mempools)")))Almost every node on the Bitcoin
 network maintains a temporary list of unconfirmed transactions called
 the _memory pool_ (_mempool_). Nodes use this pool
 to keep track of transactions that are known to the network but are not
-yet included in the blockchain. For example, a wallet node will use the
-mempool to track incoming payments to the user's wallet that
-have been received on the network but are not yet confirmed.
+yet included in the blockchain, called _unconfirmed transactions_.
 
-As transactions are received and verified, they are added to the
+As unconfirmed transactions are received and verified, they are added to the
 mempool and relayed to the neighboring nodes to propagate on
 the network.
 
@@ -1236,9 +1225,7 @@ Whereas the mempool and orphan pools represent a single node's local
 perspective and might vary significantly from node to node depending
 upon when the node was started or restarted, the UTXO database represents
 the emergent consensus of the network and therefore will not usually
-vary between nodes. Furthermore, the mempool and orphan pools only
-contain unconfirmed transactions, while the UTXO database only contains
-confirmed outputs.
+vary between nodes.
 
 Now that we have a understanding of many of the data types and
 structures used by nodes and clients to send data across the Bitcoin
