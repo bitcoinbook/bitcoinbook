@@ -99,7 +99,7 @@ associated with the corresponding Bitcoin public key. The private key is
 used to create signatures that are used to spend bitcoin by proving
 control of funds used in a transaction. The private key must remain
 secret at all times, because revealing it to third parties is equivalent
-to giving them control over the bitcoin secured by that key. The private
+to giving them control over the bitcoins secured by that key. The private
 key must also be backed up and protected from accidental loss, because
 if it's lost it cannot be recovered and the funds secured by it are
 forever lost, too.
@@ -173,7 +173,7 @@ expressed by addition and multiplication on the points of an elliptic
 curve.
 
 <<ecc-curve>> is an example of an elliptic curve, similar to that used
-by bitcoin.
+by Bitcoin.
 
 [[ecc-curve]]
 [role="smallerthirty"]
@@ -649,7 +649,8 @@ shows the full base58 alphabet.
 ====
 
 To add extra security against typos or transcription errors, base58check
-uses the base58 alphabet to also include a _checksum_. The checksum is an additional four bytes
+includes a _checksum_ encoded in the base58 alphabet. The checksum is an
+additional four bytes
 added to the end of the data that is being encoded. The checksum is
 derived from the hash of the encoded data and can therefore be used to
 detect transcription and typing errors. When presented with
@@ -668,10 +669,11 @@ a legacy P2PKH output script.  A list of common version prefixes is shown
 in <<base58check_versions>>.
 
 Next, we compute the "double-SHA" checksum, meaning we apply the SHA256
-hash-algorithm twice on the previous result (prefix and data):
+hash-algorithm twice on the previous result (the prefix concatenated
+with the data):
 
 ----
-checksum = SHA256(SHA256(prefix+data))
+checksum = SHA256(SHA256(prefix||data))
 ----
 
 From the resulting 32-byte hash (hash-of-a-hash), we take only the first
@@ -687,7 +689,7 @@ encoding process.
 .Base58Check encoding: a base58, versioned, and checksummed format for unambiguously encoding bitcoin data
 image::images/mbc2_0406.png["Base58CheckEncoding"]
 
-In Bitcoin, other data besides public key commitmens are presented to the user in
+In Bitcoin, other data besides public key commitments are presented to the user in
 base58check encoding to make that data compact, easy to read, and easy to detect
 errors. The version prefix in base58check encoding is used to create
 easily distinguishable formats, which when encoded in base58 contain
@@ -843,7 +845,7 @@ in the output script she uses to pay him, Bob needs to communicate those
 constraints to her.  This is similar to the problem of Bob needing to
 communicate his public key to her.  Like that problem, where
 public keys can be fairly large, the constraints Bob uses can also be
-quite large---potentially thousands of bytes.  That's not only thousands
+quite large--potentially thousands of bytes.  That's not only thousands
 of bytes which need to be communicated to Alice, but thousands of bytes
 for which she needs to pay transaction fees every time she wants to spend
 money to Bob.  However, the solution of using hash functions to create
@@ -851,7 +853,7 @@ small commitments to large amounts of data also applies here.
 
 The BIP16 upgrade to the Bitcoin protocol in 2012 allows an
 output script to commit to a _redemption script_ (_redeem script_).  When
-Bob spends his bitcoins, his input script need to provide a redeem script
+Bob spends his bitcoins, his input script needs to provide a redeem script
 that matches the commitment and also any data necessary to satisfy the
 redeem script (such as signatures).  Let's start by imagining Bob wants
 to require two signatures to spend his bitcoins, one signature from his
@@ -969,7 +971,7 @@ special knowledge on the part of wallet developers is to simply use
 a stronger hash function.  Later upgrades to Bitcoin made that possible
 and newer Bitcoin addresses provide at least 128 bits of collision
 resistance.  To perform 2^128^ hash operations would require all current
-Bitcoin miners about 32 billion years to perform.
+Bitcoin miners about 32 billion years.
 
 Although we do not believe there is any immediate threat to anyone
 creating new P2SH addresses, we recommend all new wallets use newer
@@ -1286,7 +1288,7 @@ library for Python to quickly generate those addresses, and then take a
 deeper look at what's happening:
 
 ----
-wget https://raw.githubusercontent.com/sipa/bech32/master/ref/python/segwit_addr.py
+$ wget https://raw.githubusercontent.com/sipa/bech32/master/ref/python/segwit_addr.py
 2023-01-30 11:59:10 (46.3 MB/s) - ‘segwit_addr.py’ saved [5022/5022]
 
 $ python
@@ -1317,7 +1319,7 @@ BECH32_CONSTANT = 1
 BECH32M_CONSTANT = 0x2bc830a3
 ----
 
-Next we notice the code produce the checksum.  In the final step of the
+Next we notice the code that produces the checksum.  In the final step of the
 checksum, the appropriate constant is merged into the value using an xor
 operation.  That single value is the only difference between bech32 and
 bech32m.
@@ -1439,8 +1441,8 @@ definition, not be raw binary data.
 [[comp_priv]]
 ===== Compressed private keys
 
-((("public and private keys", "compressed private keys")))Ironically,
-the term "compressed private key" is a misnomer, because when a private
+((("public and private keys", "compressed private keys")))
+the commonly used term "compressed private key" is a misnomer, because when a private
 key is exported as WIF-compressed it is actually one byte _longer_ than
 an "uncompressed" private key. That is because the private key has an
 added one-byte suffix (shown as 01 in hex in <<table_4-4>>), which

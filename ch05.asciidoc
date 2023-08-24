@@ -39,7 +39,7 @@ hardware signing devices or other wallets in a multi-signature scheme.
 It's possible for a wallet application to independently generate each of
 the wallet keys it later plans to use, as illustrated in
 <<Type0_wallet>>.  All early Bitcoin wallet applications did
-this, but this required users back up the wallet database each time they
+this, but it required users to back up the wallet database each time they
 generated and distributed new keys, which could be as often as each time
 they generated a new address to receive a new payment.  Failure to back
 up the wallet database on time would lead to the user losing access to
@@ -121,14 +121,15 @@ image::images/mbc2_0502.png["Deterministic Wallet"]
 In <<public_key_derivation>>, we learned how to create a public key from a private key
 using Elliptic Curve Cryptography (ECC).  Although operations on an
 elliptic curve are not intuitive, they are analogous to the addition,
-subtraction, and multiplication operations we use in regular
+subtraction, and multiplication operations used in regular
 arithmetic.  In other words, it's possible to add or subtract from a
-public key, or to multiply it.  Consider the equation we used for
+public key, or to multiply it.  Consider the operation we used in
+<<public_key_derivation>> for
 generating a public key (K) from a private key (k) using the generator
-point (G):
+point (G).
 
 ----
-K == k * G
+K = k * G
 ----
 
 It's possible to create a derived keypair, called a child keypair, by
@@ -137,6 +138,15 @@ simply adding the same value to both sides of the equation:
 ----
 K + (123 * G) == (k + 123) * G
 ----
+
+[[TIP]]
+====
+In equations throughout this book, we use a single equal sign for
+operations such as +K = k * G+ where the value of a variable is
+calculated.  We use a double equal sign to show both sides of an
+equation are equivalent, or that an operation should return false (not
+true) if the two sides aren't equivalent.
+====
 
 An interesting consequence of this is that adding `123` to the public
 key can be done using entirely public information.  For example, Alice
@@ -285,7 +295,7 @@ Electrum v2::
 Aezeed::
   Used in the LND wallet, this is another word-based recovery code that
   offers improvements over BIP39.  It includes two version numbers: one
-  is internal to eliminates several issues with upgrading wallet
+  is internal and eliminates several issues with upgrading wallet
   applications (like Electrum v2's version number); the other version
   number is external, which can be incremented to change the underlying
   cryptographic properties of the recovery code.  
@@ -512,7 +522,7 @@ paths_.
 |===
 
 The second solution is to back up the path information with the recovery
-code, making it clear with path is used with which scripts.  We call
+code, making it clear which path is used with which scripts.  We call
 this _explicit paths_.
 
 The advantage of implicit paths is that users don't need to keep a record
@@ -533,7 +543,7 @@ For implicit path recovery codes that don't include a version number,
 such as BIP39 and SLIP39, a new version of a wallet application that drops support
 for an older path can't warn users during the restore process that some
 of their funds may not be found.  The same problem happens in reverse if
-a user enters their recovery code into older software, it won't find
+a user enters their recovery code into older software: it won't find
 newer paths to which the user may have received funds.  Recovery codes
 that include version information, such as Electrum v2 and Aezeed, can
 detect that a user is entering an older or newer recovery code and
@@ -745,7 +755,7 @@ key-stretching adds some security by slowing down how fast an attacker
 can check different recovery code combinations.  BIP39's parameters were
 considered weak by modern standards even when it was first published
 almost a decade ago, although that's likely a consequence of being
-design for compatibility with hardware signing devices with low-powered
+designed for compatibility with hardware signing devices with low-powered
 CPUs.  Some alternatives to BIP39 use stronger key-stretching
 parameters, such as Aezeed's 32,768 rounds of hashing using the more
 complex Scrypt algorithm, although they may not be as convenient to run
@@ -944,7 +954,7 @@ function to derive child keys from parent keys.
 The child key derivation functions are based on a one-way hash function
 that combines:
 
-* A parent private or public key (ECDSA uncompressed key)
+* A parent private or public key (uncompressed key)
 * A seed called a chain code (256 bits)
 * An index number (32 bits)
 
@@ -1032,13 +1042,6 @@ of the branch. The extended private key can create a complete branch,
 whereas the extended public key can _only_ create a branch of public
 keys.
 
-[TIP]
-====
-An extended key consists of a private or public key and chain code. An
-extended key can create children, generating its own branch in the tree
-structure. Sharing an extended key gives access to the entire branch.
-====
-
 Extended keys are encoded using Base58Check, to easily export and import
 between different BIP32-compatible wallets. The Base58Check
 coding for extended keys uses a special version number that results in
@@ -1101,7 +1104,7 @@ However, it would also take a wallet application an unreasonable amount
 of time to generate all four billion keys and scan the blockchain for
 transactions involving those keys.  For that reason, most wallets only
 generate a few keys at a time, scan for payments involving those keys,
-and generate additional keys in the sequence as previous keys are used.
+and generate additional keys in the sequence as the previous keys are used.
 For example, Alice's wallet generates 100 keys.  When it sees a payment
 to the first key, it generates the 101st key.
 
@@ -1195,7 +1198,8 @@ Using the HD wallet allows Gabriel to spend the
 funds from his personal wallet application, but the xpub loaded on the website can only
 generate addresses and receive funds. This feature of HD wallets is a
 great security feature. Gabriel's website does not contain any private
-keys and therefore does not need high levels of security.
+keys and therefore any hack of it can only steal the funds Gabriel would
+have received in the future, not any funds he received in the past.
 
 To export the xpub from his Trezor hardware signing device, Gabriel uses
 the web-based Trezor wallet application. The Trezor device must be plugged in
@@ -1243,7 +1247,7 @@ When the hardened private derivation function is used, the resulting
 child private key and chain code are completely different from what
 would result from the normal derivation function. The resulting "branch"
 of keys can be used to produce extended public keys that are not
-vulnerable, because the chain code they contain cannot be exploited to
+vulnerable because the chain code they contain cannot be exploited to
 reveal any private keys for their siblings or parents. Hardened derivation is therefore used to create
 a "gap" in the tree above the level where extended public keys are used.
 
@@ -1270,7 +1274,7 @@ To make the index number easier to read and display, the index number
 for hardened children is displayed starting from zero, but with a prime
 symbol. The first normal child key is therefore displayed as 0, whereas
 the first hardened child (index 0x80000000) is displayed as 0++&#x27;++.
-In sequence then, the second hardened key would have index 0x80000001
+In a sequence then, the second hardened key would have index 0x80000001
 and would be displayed as 1++&#x27;++, and so on. When you see an HD
 wallet index i++&#x27;++, that means 2^31^+i.  In regular ASCII text, the
 prime symbol is substituted with either a single apostrophe or the
@@ -1341,9 +1345,8 @@ m / purpose' / coin_type' / account' / change / address_index
 The first-level "purpose" is always set to +44'+. The second-level
 "coin_type" specifies the type of cryptocurrency coin, allowing for
 multicurrency HD wallets where each currency has its own subtree under
-the second level. There are three currencies defined for now: Bitcoin is
-m/44'/0', Bitcoin Testnet is m/44++&#x27;++/1++&#x27;++, and Litecoin is
-m/44++&#x27;++/2++&#x27;++.
+the second level.  Bitcoin is
+m/44'/0' and Bitcoin Testnet is m/44++&#x27;++/1++&#x27;++.
 
 The third level of the tree is "account," which allows users to
 subdivide their wallets into separate logical subaccounts, for

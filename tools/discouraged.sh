@@ -1,7 +1,7 @@
 #!/bin/bash -u
 
 ## Main discouraged words
-for f in $( git ls-files | grep -v "$0" ) ; do
+for f in $( git ls-files -i -c -x '*.adoc' -x '*.asciidoc' | grep -v "$0" ) ; do
   # 1. Find discouraged words
   # 2. Ignore things that look like json or code (Bitcoin Core RPCs use many discouraged words)
   egrep -if <( sed "1,/[S]TART DISCOURAGED WORDS/d" "$0" ) "$f" \
@@ -43,3 +43,4 @@ n-of-n
 k-of-n
 blockchain.info
 blockchain.com
+[a-zA-Z]---[a-zA-Z]
