@@ -1,0 +1,22 @@
+#!/bin/bash -eu
+
+BUILDDIR=$( mktemp -d )
+
+# Generate a CSV of all images for sending to O'Reilly
+
+files=$( 
+  grep -A1 IMAGE_REPORT:NEW_CHAPTER book.adoc \
+    | sed '/^--/d; /IMAGE_REPORT/d; s/^include:://; s/\[]$//'
+)
+
+chapter=0
+for file in $files ; do
+  chapter=$(( chapter + 1 ))
+
+  images=$BUILDDIR/$( basename $file )
+  grep ^image:: $file > $images || true
+  for image in $( seq 1 $( cat $images | wc -l ) ) ; do
+    echo -n "${chapter}-${image},"
+    sed -n "${image}{s/^image:://; s/\[.*//; p}" $images
+  done
+done
