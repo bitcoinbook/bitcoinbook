@@ -113,7 +113,62 @@ q = probability the attacker finds the next block
 
 q~z~ = probability the attacker will ever catch up from z blocks behind
 
-image::images/mbc2_abin08.png["eq1"]
+++++
+<div data-type="equation">
+<math display="block" class="tml-display" style="display:block math;">
+  <mstyle mathsize="1.2000em">
+    <msub>
+      <mi>q</mi>
+      <mi>z</mi>
+    </msub>
+    <mo>=</mo>
+    <mrow>
+      <mo fence="true" form="prefix">{</mo>
+      <mtable columnalign="center center">
+        <mtr>
+          <mtd>
+            <mn>1</mn>
+          </mtd>
+          <mtd>
+            <mrow>
+              <mtext>𝑖𝑓</mtext>
+              <mspace width="0.2778em"></mspace>
+              <mi>p</mi>
+              <mo>≤</mo>
+              <mi>q</mi>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mo form="prefix" stretchy="false">(</mo>
+              <mi>q</mi>
+              <mo lspace="0em" rspace="0em">⁄</mo>
+              <mi>p</mi>
+              <msup>
+                <mo form="postfix" stretchy="false">)</mo>
+                <mi>z</mi>
+              </msup>
+            </mrow>
+          </mtd>
+          <mtd>
+            <mrow>
+              <mtext>𝑖𝑓</mtext>
+              <mspace width="0.2778em"></mspace>
+              <mi>p</mi>
+              <mo>&gt;</mo>
+              <mi>q</mi>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
+      <mo fence="true" form="postfix">}</mo>
+    </mrow>
+  </mstyle>
+</math>
+</div>
+++++
 
 Given our assumption that p > q, the probability drops exponentially as the number of blocks the attacker has to catch up with increases. With the odds against him, if he doesn't make a lucky lunge forward early on, his chances become vanishingly small as he falls further behind.
 
@@ -123,15 +178,175 @@ The receiver generates a new key pair and gives the public key to the sender sho
 
 The recipient waits until the transaction has been added to a block and z blocks have been linked after it. He doesn't know the exact amount of progress the attacker has made, but assuming the honest blocks took the average expected time per block, the attacker's potential progress will be a Poisson distribution with expected value:
 
-image::images/mbc2_abin09.png["eq2"]
+++++
+<div data-type="equation">
+<math display="block" class="tml-display" style="display:block math;">
+  <mstyle mathsize="1.2000em">
+    <mi>λ</mi>
+    <mo>=</mo>
+    <mi>z</mi>
+    <mfrac>
+      <mi>q</mi>
+      <mi>p</mi>
+    </mfrac>
+  </mstyle>
+</math>
+</div>
+++++
 
 To get the probability the attacker could still catch up now, we multiply the Poisson density for each amount of progress he could have made by the probability he could catch up from that point:
 
-image::images/mbc2_abin10.png["eq3"]
+++++
+<div data-type="equation">
+<math display="block" class="tml-display" style="display:block math;">
+  <mstyle mathsize="1.2000em">
+    <mrow>
+      <munderover>
+        <mo movablelimits="false">∑</mo>
+        <mrow>
+          <mi>k</mi>
+          <mo>=</mo>
+          <mn>0</mn>
+        </mrow>
+        <mi>∞</mi>
+      </munderover>
+    </mrow>
+    <mfrac>
+      <mrow>
+        <msup>
+          <mi>λ</mi>
+          <mi>k</mi>
+        </msup>
+        <msup>
+          <mi>e</mi>
+          <mrow>
+            <mo>−</mo>
+            <mi>λ</mi>
+          </mrow>
+        </msup>
+      </mrow>
+      <mrow>
+        <mi>k</mi>
+        <mo form="postfix" stretchy="false">!</mo>
+      </mrow>
+    </mfrac>
+    <mo>⋅</mo>
+    <mrow>
+      <mo fence="true" form="prefix">{</mo>
+      <mtable columnalign="center center">
+        <mtr>
+          <mtd>
+            <mrow>
+              <mo form="prefix" stretchy="false">(</mo>
+              <mi>q</mi>
+              <mo lspace="0em" rspace="0em">⁄</mo>
+              <mi>p</mi>
+              <msup>
+                <mo form="postfix" stretchy="false">)</mo>
+                <mrow>
+                  <mo form="prefix" stretchy="false">(</mo>
+                  <mi>z</mi>
+                  <mo>−</mo>
+                  <mi>k</mi>
+                  <mo form="postfix" stretchy="false">)</mo>
+                </mrow>
+              </msup>
+            </mrow>
+          </mtd>
+          <mtd>
+            <mrow>
+              <mtext>𝑖𝑓</mtext>
+              <mspace width="0.2778em"></mspace>
+              <mi>k</mi>
+              <mo>≤</mo>
+              <mi>z</mi>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mn>1</mn>
+          </mtd>
+          <mtd>
+            <mrow>
+              <mtext>𝑖𝑓</mtext>
+              <mspace width="0.2778em"></mspace>
+              <mi>k</mi>
+              <mo>&gt;</mo>
+              <mi>z</mi>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
+      <mo fence="true" form="postfix">}</mo>
+    </mrow>
+  </mstyle>
+</math>
+</div>
+++++
 
 Rearranging to avoid summing the infinite tail of the distribution...
 
-image::images/mbc2_abin11.png["eq4"]
+++++
+<div data-type="equation">
+<math display="block" class="tml-display" style="display:block math;">
+  <mstyle mathsize="1.2000em">
+    <mn>1</mn>
+    <mo>−</mo>
+    <mrow>
+      <munderover>
+        <mo movablelimits="false">∑</mo>
+        <mrow>
+          <mi>k</mi>
+          <mo>=</mo>
+          <mn>0</mn>
+        </mrow>
+        <mi>z</mi>
+      </munderover>
+    </mrow>
+    <mfrac>
+      <mrow>
+        <msup>
+          <mi>λ</mi>
+          <mi>k</mi>
+        </msup>
+        <msup>
+          <mi>e</mi>
+          <mrow>
+            <mo>−</mo>
+            <mi>λ</mi>
+          </mrow>
+        </msup>
+      </mrow>
+      <mrow>
+        <mi>k</mi>
+        <mo form="postfix" stretchy="false">!</mo>
+      </mrow>
+    </mfrac>
+    <mrow>
+      <mo fence="true" form="prefix">(</mo>
+      <mn>1</mn>
+      <mo>−</mo>
+      <mo form="prefix" stretchy="false">(</mo>
+      <mi>q</mi>
+      <mo lspace="0em" rspace="0em">⁄</mo>
+      <mi>p</mi>
+      <msup>
+        <mo form="postfix" stretchy="false">)</mo>
+        <mrow>
+          <mo form="prefix" stretchy="false">(</mo>
+          <mi>z</mi>
+          <mo>−</mo>
+          <mi>k</mi>
+          <mo form="postfix" stretchy="false">)</mo>
+        </mrow>
+      </msup>
+      <mo fence="true" form="postfix">)</mo>
+    </mrow>
+  </mstyle>
+</math>
+</div>
+++++
 
 Converting to C code...
 
