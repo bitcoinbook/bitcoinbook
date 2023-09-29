@@ -11,8 +11,8 @@ that only Bob can further spend the bitcoins he receives.
 
 The original Bitcoin paper describes a very simple scheme for achieving
 those goals, shown in <<pay-to-pure-pubkey>>.  A receiver like Bob
-accepts bitcoins to a public key in a transaction which is signed by the
-spender (like Alice).  The bitcoins which Alice is spending had been
+accepts bitcoins to a public key in a transaction that is signed by the
+spender (like Alice).  The bitcoins that Alice is spending had been
 previously received to one her public keys, and she uses the
 corresponding private key to generate her signature.  Full nodes can
 verify that Alice's signature commits to the output of a hash function
@@ -97,7 +97,7 @@ secret at all times, because revealing it to third parties is equivalent
 to giving them control over the bitcoins secured by that key. The private
 key must also be backed up and protected from accidental loss, because
 if it's lost it cannot be recovered and the funds secured by it are
-forever lost, too.
+forever lost too.
 
 [TIP]
 ====
@@ -114,7 +114,7 @@ The first and most important step in generating keys is to find a secure
 source of randomness (which computer scientists call _entropy_). Creating a Bitcoin key is almost
 the same as "Pick a number between 1 and 2^256^." The exact method you
 use to pick that number does not matter as long as it is not predictable
-or repeatable. Bitcoin software uses cryptographically-secure random
+or repeatable. Bitcoin software uses cryptographically secure random
 number generators to produce 256 bits of entropy.
 
 More precisely, the private key can be any number between +0+ and +n -
@@ -158,7 +158,7 @@ visible universe is estimated to contain 10^80^ atoms.
 [[elliptic_curve]]
 ==== Elliptic Curve Cryptography Explained
 
-Elliptic curve cryptography is a type of asymmetric
+Elliptic curve cryptography (ECC) is a type of asymmetric
 or public key cryptography based on the discrete logarithm problem as
 expressed by addition and multiplication on the points of an elliptic
 curve.
@@ -219,7 +219,7 @@ is a point on the +secp256k1+ curve:
 P = (55066263022277343669578718895168534326250603453777594175500187360389116729240, 32670510020758816978083085130507043184471273380659243275938904335757337482424)
 ----
 
-<<example_4_1>> shows how you can check this yourself using Python:
+<<example_4_1>> shows how you can check this yourself using Python.
 
 [[example_4_1]]
 .Using Python to confirm that this point is on the elliptic curve
@@ -389,18 +389,18 @@ corresponding signatures be placed in the spending input script.
 
 Later, in <<tx_script>>, we'll learn about scripts in detail.  For now,
 all we need to understand is that bitcoins are received to an
-output script which acts like a public key, and bitcoin spending is
-authorized by a input script which acts like a signature.
+output script that acts like a public key, and bitcoin spending is
+authorized by an input script that acts like a signature.
 
 [[p2pk]]
-=== IP Addresses: The Original Address For Bitcoin (P2PK)
+=== IP Addresses: The Original Address for Bitcoin (P2PK)
 
 We've established that Alice can pay Bob by assigning some of her
 bitcoins to one of Bob's public keys.  But how does Alice get one of
 Bob's public keys?  Bob could just give her a copy, but let's look again
 at the public key we worked with in <<public_key_derivation>>.  Notice
 that it's quite long.  Imagine Bob trying to read that to Alice over the
-phone.
+phone:
 
 ----
 x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
@@ -408,7 +408,7 @@ y = 07CF33DA18BD734C600B96A72BBC4749D5141C90EC8AC328AE52DDFE2E505BDB
 ----
 
 Instead of direct public key entry, the earliest version of Bitcoin
-software allowed a spender to enter the receiver's IP address.  This
+software allowed a spender to enter the the receiver's IP address, as shown in <<bitcoin_01_send>>.  This
 feature was later removed--there are many problems
 with using IP addresses--but a quick description of it will help us
 better understand why certain features may have been added to the
@@ -456,20 +456,20 @@ key is placed on top of it.  The +OP_CHECKSIG+ operation consumes two
 elements, starting with the public key and followed by the signature,
 removing them from the stack.  It verifies the signature corresponds to
 the public key and also commits to (signs) the various fields in the
-transaction.  If the signature is correct, OP_CHECKSIG replaces itself
+transaction.  If the signature is correct, +OP_CHECKSIG+ replaces itself
 on the stack with the value 1; if the signature was not correct, it
-replaces itself with a 0.  If there's a non-zero item on top of the stack at the
+replaces itself with a 0.  If there's a nonzero item on top of the stack at the
 end of evaluation, the script passes.  If all scripts in a transaction
 pass, and all of the other details about the transaction are valid, then
 full nodes will consider the transaction to be valid.
 
-In short, the script above uses the same public key and signature
+In short, the preceding script uses the same public key and signature
 described in the original paper but adds in the complexity of two script
 fields and an opcode.  That seems like extra work here, but we'll begin
-to see the benefits when we look at <<addresses_for_p2pkh>>.
+to see the benefits when we look at the following section.
 
-This type of output is known today as _Pay-to-Public-Key_, or _P2PK_ for
-short.  It was never widely used for payments, and no widely-used
+This type of output is known today as _pay to public key_, or _P2PK_ for
+short.  It was never widely used for payments, and no widely used
 program has supported IP address payments for almost a decade.
 
 [[addresses_for_p2pkh]]
@@ -491,7 +491,7 @@ already contains several data structures much larger than 65 bytes
 that need to be securely referenced in other parts of Bitcoin using the
 smallest amount of data that was secure.
 
-Bitcoin accomplishes that with a _hash function_, a function which takes
+Bitcoin accomplishes that with a _hash function_, a function that takes
 a potentially large amount of data, scrambles it (hashes it), and outputs a
 fixed amount of data.  A cryptographic hash function will always produce
 the same output when given the same input, and a secure function will
@@ -538,7 +538,7 @@ public key.
 
 We can look at that algorithmically.
 Starting with the public key _K_, we compute the SHA256 hash and then
-compute the RIPEMD160 hash of the result, producing a 160-bit (20-byte)
+compute the RIPEMD-160 hash of the result, producing a 160-bit (20-byte)
 number:
 
 [latexmath]
@@ -587,7 +587,7 @@ signature and his public key; the +OP_CHECKSIG+ opcode verifies they
 correspond with each other and that the signature commits to the
 transaction.
 
-Although this process of Paying To a Public Key Hash (_P2PKH_) may seem
+Although this process of paying to a public key hash (_P2PKH_) may seem
 convoluted, it allows Alice's payment to
 Bob to contain only a 20 byte commitment to his public key instead of
 the key itself, which would've been 65 bytes in the original version of
@@ -598,7 +598,7 @@ However, we haven't yet discussed how Bob gets those 20 bytes from his
 Bitcoin wallet to Alice's wallet.  There are commonly used encodings for
 byte values, such as hexadecimal, but any mistake made in copying a
 commitment would result in the bitcoins being sent to an unspendable
-output, causing them to be lost forever.  In <<base58>>, we'll
+output, causing them to be lost forever.  In the next section, we'll
 look at compact encoding and reliable checksums.
 
 [[base58]]
@@ -671,7 +671,7 @@ previously. <<base58check_encoding>> illustrates the base58check
 encoding process.
 
 [[base58check_encoding]]
-.Base58Check encoding: a base58, versioned, and checksummed format for unambiguously encoding bitcoin data
+.Base58check encoding: a base58, versioned, and checksummed format for unambiguously encoding bitcoin data
 image::images/mbc3_0406.png["Base58CheckEncoding"]
 
 In Bitcoin, other data besides public key commitments are presented to the user in
@@ -682,17 +682,17 @@ specific characters at the beginning of the base58check-encoded payload.
 These characters make it easy for humans to identify the type of data
 that is encoded and how to use it. This is what differentiates, for
 example, a base58check-encoded Bitcoin address that starts with a 1 from
-a base58check-encoded private key WIF that starts with a 5. Some example
+a base58check-encoded private key wallet import format (WIF) that starts with a 5. Some example
 version prefixes and the resulting base58 characters are shown in
 <<base58check_versions>>.
 
 [[base58check_versions]]
-.Base58Check version prefix and encoded result examples
+.Base58check version prefix and encoded result examples
 [options="header"]
 |=======
 |Type| Version prefix (hex)| Base58 result prefix
-| Address for Pay-to-Public-Key-Hash (P2PKH) | 0x00 | 1
-| Address for Pay-to-Script-Hash (P2SH) | 0x05 | 3
+| Address for pay to public key hash (P2PKH) | 0x00 | 1
+| Address for pay to script hash (P2SH) | 0x05 | 3
 | Testnet Address for P2PKH | 0x6F | m or n
 | Testnet Address for P2SH | 0xC4 | 2
 | Private Key WIF |  0x80 | 5, K, or L
@@ -708,7 +708,7 @@ into a Bitcoin address in <<pubkey_to_address>>.
 image::images/mbc3_0407.png["pubkey_to_address"]
 
 [[comp_pub]]
-=== Compressed public keys
+=== Compressed Public Keys
 
 //https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2011-November/000778.html
 
@@ -716,7 +716,7 @@ image::images/mbc3_0407.png["pubkey_to_address"]
 When Bitcoin was first authored, its developers only knew how to create
 65-byte public keys.  However, a later developer became aware of an
 alternative encoding for public keys that used only 33 bytes and which
-was backwards compatible with all Bitcoin full nodes at the time,
+was backward compatible with all Bitcoin full nodes at the time,
 so there was no need to change the Bitcoin protocol.  Those 33-byte
 public keys are known as _compressed public keys_ and the original 65
 byte keys are known as _uncompressed public keys_.  Using smaller public keys
@@ -734,7 +734,7 @@ store it by 256 bits. An almost 50% reduction in size in every
 transaction adds up to a lot of data saved over time!
 
 Here's the public key generated by the private key we created in
-<<public_key_derivation>>.
+<<public_key_derivation>>:
 
 ----
 x = F028892BAD7ED57D2FB57BF33081D5CFCF6F9ED3D3D7F159C2E2FFF579DC341A
@@ -809,16 +809,16 @@ and inputs, it needs to know whether to scan the 65-byte keys (and
 commitments to those keys) or 33-byte keys (and their commitments).  Failure
 to scan for the correct type can lead to the user not being able to
 spend their full balance.  To resolve this issue, when private keys are
-exported from a wallet, the Wallet Import Format (WIF) that is used to
+exported from a wallet, the WIF that is used to
 represent them is implemented slightly differently in newer Bitcoin
 wallets, to indicate that these private keys have been used to produce
 compressed public keys.
 
 [[addresses_for_p2sh]]
-=== Legacy Pay-to-Script-Hash (P2SH)
+=== Legacy Pay to Script Hash (P2SH)
 
 As we've seen in preceding sections, someone receiving bitcoins (like
-Bob) can require payments to him contain certain constraints in their
+Bob) can require that payments to him contain certain constraints in their
 output script.  Bob will need to fulfill those constraints using an
 input script when he spends those bitcoins.  In <<p2pk>>, the constraint
 was simply that the input script needed to provide an appropriate
@@ -832,8 +832,7 @@ communicate his public key to her.  Like that problem, where
 public keys can be fairly large, the constraints Bob uses can also be
 quite large--potentially thousands of bytes.  That's not only thousands
 of bytes which need to be communicated to Alice, but thousands of bytes
-for which she needs to pay transaction fees every time she wants to spend
-money to Bob.  However, the solution of using hash functions to create
+for which she needs to pay transaction fees every time she wants to spend.  However, the solution of using hash functions to create
 small commitments to large amounts of data also applies here.
 
 The BIP16 upgrade to the Bitcoin protocol in 2012 allows an
@@ -860,7 +859,7 @@ OP_HASH160 <commitment> OP_EQUAL
 
 [WARNING]
 ====
-Payments to Script Hashes (P2SH) must use the specific P2SH template
+When using Spay to script hash (P2SH), you must use the specific P2SH template
 with no extra data or conditions in the output script.  If the
 output script is not exactly +OP_HASH160 <20 bytes> OP_EQUAL+, the
 redeem script will not be used and any bitcoins may either be unspendable
