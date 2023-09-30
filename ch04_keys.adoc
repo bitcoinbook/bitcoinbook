@@ -621,7 +621,7 @@ but omitting some characters that are frequently mistaken for one
 another and can appear identical when displayed in certain fonts.
 Specifically, base58 is base64 without the 0 (number zero), O (capital
 o), l (lower L), I (capital i), and the symbols "+" and
-"/". Or, more simply, it is a set of lowercase and capital letters and
+"/." Or, more simply, it is a set of lowercase and capital letters and
 numbers without the four (0, O, l, I) just mentioned. <<base58alphabet>>
 shows the full base58 alphabet.
 
@@ -1171,21 +1171,21 @@ need to know about the HRPs already chosen, shown in
 | Bitcoin testnet
 |===
 
-The HRP is followed by a separator, the number "1".  Earlier proposals
+The HRP is followed by a separator, the number "1."  Earlier proposals
 for a protocol separator used a colon but some operating systems and
-applications which allow a user to double click on a word to highlight
+applications that allow a user to double-click a word to highlight
 it for copy and pasting won't extend the highlighting to and past a
 colon.  A number ensured double-click highlighting would work with any
 program that supports bech32m strings in general (which include other
 numbers).  The number "1" was chosen because bech32 strings don't
 otherwise use it in order to prevent accidental transliteration between
-the number "1" and the lowercase letter "l".
+the number "1" and the lowercase letter "l."
 
-The other part of a bech32m address is called the "data part".  There
+The other part of a bech32m address is called the "data part."  There
 are three elements to this part:
 
 Witness version::
-  A single byte which encodes as a single character
+  A single byte that encodes as a single character
   in a bech32m Bitcoin address immediately following the separator.
   This letter represents the segwit version.  The letter "q" is the
   encoding of "0" for segwit v0, the initial version of segwit where
@@ -1213,7 +1213,7 @@ bech32 and bech32m addresses.  For all of the following examples, we'll use the
 https://github.com/sipa/bech32/tree/master/ref[bech32m reference code
 for Python].
 
-Let's start by generating four output scripts, one for each of the
+We'll start by generating four output scripts, one for each of the
 different segwit outputs in use at the time of publication, plus one for
 a future segwit version that doesn't yet have a defined meaning.  The
 scripts are listed in <<scripts_for_diff_segwit_outputs>>.
@@ -1233,7 +1233,12 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 [[scripts_for_diff_segwit_outputs]]
 .Scripts for different types of segwit outputs
 [cols="1,1"]
+[options="header"]
 |===
+
+|Output type
+|Example script
+
 | P2WPKH
 | OP_0 2b626ed108ad00a944bb2922a309844611d25468
 
@@ -1249,7 +1254,7 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 
 For the P2WPKH output, the witness program contains a commitment constructed in exactly the same
 way as the commitment for a P2PKH output seen in <<addresses_for_p2pkh>>.  A public key is passed into a SHA256 hash
-function.  The resultant 32 byte digest is then passed into a RIPEMD-160
+function.  The resultant 32-byte digest is then passed into a RIPEMD-160
 hash function.  The digest of that function (the commitment) is placed
 in the witness program.
 
@@ -1261,7 +1266,7 @@ some cases; for details, see <<p2sh_collision_attacks>>.  A result of
 using SHA256 without RIPEMD160 is that P2WSH commitments are 32 bytes
 (256 bits) instead 20 bytes (160 bits).
 
-For the Pay-to-Taproot (P2TR) output, the witness program is a point on
+For the pay-to-taproot (P2TR) output, the witness program is a point on
 the secp256k1 curve.  It may be a simple public key, but in most cases
 it should be a public key that commits to some additional data.  We'll
 learn more about that commitment in <<taproot>>.
@@ -1297,10 +1302,10 @@ encode(hrp, witver, witprog)
 'bc1sqqqqkfw08p'
 ----
 
-If we open the file +segwit_addr.py+ and look at what the code is doing,
+If we open the file __segwit_addr.py__ and look at what the code is doing,
 the first thing we will notice
 is the sole difference between bech32 (used for segwit v0) and bech32m
-(used for later segwit versions) is the constant.
+(used for later segwit versions) is the constant:
 
 ----
 BECH32_CONSTANT = 1
@@ -1357,11 +1362,11 @@ When implementing bech32m encoding or decoding, we very strongly
 recommend that you use the test vectors provided in BIP350.  We also ask
 that you ensure your code passes the test vectors related to paying future segwit
 versions that haven't been defined yet.  This will help make your
-software is usable for many years to come even if you aren't able to add
+software usable for many years to come even if you aren't able to add
 support for new Bitcoin features as soon as they become available.
 
 [[priv_formats]]
-==== Private key formats
+==== Private Key Formats
 
 The private key
 can be represented in a number of different formats, all of which
@@ -1372,7 +1377,7 @@ internally in software and rarely shown to users. The WIF is used for
 import/export of keys between wallets and often used in QR code
 (barcode) representations of private keys.
 
-.Modern relevancy of private key formats
+.Modern Relevancy of Private Key Formats
 ****
 Early Bitcoin wallet software generated one or more independent private
 keys when a new user wallet was initialized.  When the initial set of
@@ -1385,7 +1390,7 @@ Later Bitcoin wallets began using deterministic wallets where all
 private keys are generated from a single seed value.  These wallets only
 ever need to be backed up once for typical onchain use.  However, if a
 user exports a single private key from one of these wallets and an
-attacker acquires that key plus some non-private data about the wallet,
+attacker acquires that key plus some nonprivate data about the wallet,
 they can potentially derive any private key in the wallet--allowing the
 attacker to steal all of the wallet funds.  Additionally, keys cannot be
 imported into deterministic wallets.  This means almost no modern
@@ -1403,7 +1408,7 @@ For more information, see <<hd_wallets>>.
 |=======
 |Type|Prefix|Description
 | Hex | None | 64 hexadecimal digits
-| WIF |  5 | Base58Check encoding: base58 with version prefix of 128 and 32-bit checksum
+| WIF |  5 | Base58check encoding: base58 with version prefix of 128 and 32-bit checksum
 | WIF-compressed | K or L | As above, with added suffix 0x01 before encoding
 |=======
 
@@ -1424,10 +1429,9 @@ number, the same private key. They look different, but any one format
 can easily be converted to any other format.
 
 [[comp_priv]]
-===== Compressed private keys
+==== Compressed Private Keys
 
-
-the commonly used term "compressed private key" is a misnomer, because when a private
+The commonly used term "compressed private key" is a misnomer, because when a private
 key is exported as WIF-compressed it is actually one byte _longer_ than
 an "uncompressed" private key. That is because the private key has an
 added one-byte suffix (shown as 01 in hex in <<table_4-4>>), which
@@ -1510,7 +1514,7 @@ Once a vanity address matching the desired pattern is found, the private
 key from which it was derived can be used by the owner to spend bitcoins
 in exactly the same way as any other address. Vanity addresses are no
 less or more secure than any other address. They depend on the same
-Elliptic Curve Cryptography (ECC) and SHA as any other address. You can
+elliptic curve cryptography (ECC) and SHA as any other address. You can
 no more easily find the private key of an address starting with a vanity
 pattern than you can any other address.
 
@@ -1592,7 +1596,7 @@ Vanity addresses were popular in the
 early years of Bitcoin but have almost entirely disappeared from use as
 of 2023.  There are two likely causes for this trend:
 
-1. Deterministic wallets: as we saw in <<recovery_code_intro>>, it's possible to
+Deterministic wallets:: As we saw in <<recovery_code_intro>>, it's possible to
 back up every key in most modern wallets by simply writing down a few
 words or characters.  This is achieved by deriving every key in the
 wallet from those words or characters using a deterministic algorithm.
@@ -1602,9 +1606,9 @@ create.  More practically, most wallets using deterministic key
 generation simply don't allow importing a private key or key tweak from
 a vanity generator.
 
-2. Avoiding address reuse: using a vanity address to receive multiple
+Avoiding address reuse:: Using a vanity address to receive multiple
 payments to the same address creates a link between all of those
-payments.  This might be acceptable to Eugenia if her non-profit needs
+payments.  This might be acceptable to Eugenia if her nonprofit needs
 to report its income and expenditures to a tax authority anyway.
 However, it also reduces the privacy of people who either pay Eugenia or
 receive payments from her.  For example, Alice may want to donate
@@ -1614,7 +1618,7 @@ gives discount pricing to Eugenia.
 // https://github.com/MakisChristou/vanitybech
 
 We don't expect to see many vanity addresses in
-the future unless the above problems are solved.
+the future unless the preceding problems are solved.
 
 [[paper_wallets]]
 ==== Paper Wallets
@@ -1627,11 +1631,10 @@ from the private key.
 [WARNING]
 ====
 Paper wallets are an OBSOLETE technology and are dangerous for most
-users. There are many subtle pitfalls involved in generating them, not
-least of which the possibility that the generating code is compromised
-with a "back door". Many bitcoins have been stolen this way. Paper
+users. There are many subtle pitfalls involved in generating them, not least of which is the possibility that the generating code is compromised
+with a "back door." Many bitcoins have been stolen this way. Paper
 wallets are shown here for informational purposes only and should not be
-used for storing bitcoin. Use a recovery code to backup your
+used for storing bitcoin. Use a recovery code to back up your
 keys, possibly with a hardware signing device to store keys and sign transactions. DO NOT
 USE PAPER WALLETS.
 ====
@@ -1656,7 +1659,7 @@ features. <<paper_wallet_simple>> shows a sample paper wallet.
 image::images/mbc3_0410.png[]
 
 Some are intended to be given as gifts and have seasonal themes, such as
-Christmas and New Year's themes. Others are designed for storage in a
+Christmas and New Year's. Others are designed for storage in a
 bank vault or safe with the private key hidden in some way, either with
 opaque scratch-off stickers, or folded and sealed with tamper-proof
 adhesive foil.  Other designs feature additional copies of the key and
@@ -1669,9 +1672,9 @@ other natural disasters.
 image::images/mbc3_0411.png[]
 
 From the original public-key focused design of Bitcoin to modern addresses
-and scripts like bech32m and pay-to-taproot--and even addresses for
+and scripts like bech32m and pay to taproot--and even addresses for
 future Bitcoin upgrades--you've learned how the Bitcoin protocol allows
-spenders to identify the wallets which should receive their payments.
+spenders to identify the wallets that should receive their payments.
 But when it's actually your wallet receiving the payments, you're going
 to want the assurance that you'll still have access to that money even
 if something happens to your wallet data.  In the next chapter, we'll
