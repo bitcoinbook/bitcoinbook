@@ -44,7 +44,7 @@ only valid if it spends the outputs of transactions that appeared
 earlier in the blockchain (whether they are earlier in the same block or
 in an earlier block), and only if no previous transaction spent any of
 those same outputs.  Within a single chain of blocks, the enforcement of
-topological ordering ensure no two valid transactions can spend the same
+topological ordering ensures no two valid transactions can spend the same
 output, eliminating the problem of _double spending_.
 
 In some protocols built on top of Bitcoin, the topological order of
@@ -56,7 +56,7 @@ return for the security provided by mining: new bitcoins created with each
 new block (called the _subsidy_), and transaction fees from all the transactions included in
 the block. To earn this reward, miners compete to satisfy a challenge
 based on a cryptographic hash algorithm. The
-solution to the problem, called the Proof-of-Work, is included in the
+solution to the problem, called the proof of work, is included in the
 new block and acts as proof that the miner expended significant
 computing effort. The competition to solve the Proof-of-Work algorithm
 to earn the reward and the right to record transactions on the
@@ -66,8 +66,8 @@ Bitcoin's money supply is created in a process that's similar to how
 a central bank issues new money by printing bank notes. The maximum
 amount of newly created bitcoin a miner can add to a block decreases
 approximately every four years (or precisely every 210,000 blocks). It
-started at 50 bitcoins per block in January of 2009 and halved to 25
-bitcoins per block in November of 2012. It halved again to 12.5 bitcoins
+started at 50 bitcoins per block in January 2009 and halved to 25
+bitcoins per block in November 2012. It halved again to 12.5 bitcoins
 in July 2016, and again to 6.25 in May 2020. Based on this formula, mining rewards decrease
 exponentially until approximately the year 2140, when all bitcoins
 will have been issued. After 2140, no new bitcoin
@@ -125,7 +125,7 @@ image::images/mbc3_1201.png["BitcoinMoneySupply"]
 
 [NOTE]
 ====
-The maximum number of bitcoinss mined is the _upper limit_ of possible
+The maximum number of bitcoins mined is the _upper limit_ of possible
 mining rewards for Bitcoin. In practice, a miner may intentionally mine
 a block taking less than the full reward. Such blocks have already been
 mined and more may be mined in the future, resulting in a lower total
@@ -271,7 +271,7 @@ criteria:
 
 - The transaction's syntax and data structure must be correct.
 
-- Neither lists of inputs or outputs are empty.
+- Neither lists of inputs nor outputs are empty.
 
 - The transaction weight is low enough to allow it to fit in a block.
 
@@ -326,7 +326,7 @@ follow Alice's transaction as it becomes part of this new block.
 
 Jing's mining node maintains a local copy of the blockchain. By the time
 Alice buys something, Jing's
-node is caught up with the chain of blocks with the most proof-of-work.
+node is caught up with the chain of blocks with the most proof of work.
 Jing's node is listening
 for transactions, trying to mine a new block and also listening for
 blocks discovered by other nodes. As Jing's node is mining, it receives
@@ -438,7 +438,7 @@ fees (+nFees+), and the sum is returned.
 [TIP]
 ====
 If Jing's mining node writes the coinbase transaction, what stops Jing
-from "rewarding" himself 100 or 1000 bitcoin? The answer is that an
+from "rewarding" himself 100 or 1,000 bitcoin? The answer is that an
 inflated reward would result in the block being deemed invalid by
 everyone else, wasting Jing's electricity used for Proof-of-Work. Jing
 only gets to spend the reward if the block is accepted by everyone.
@@ -467,7 +467,7 @@ structure of the coinbase transaction's input.
 | 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
 | 1&#x2013;9 bytes (compactSize) | Script Size | Script length in bytes, to follow
 | Variable | Input Script | A script that fulfills the conditions of the UTXO output script
-| 4 bytes | Sequence Number | Multipurpose field used for BIP68 time locks and transaction replacement signaling
+| 4 bytes | Sequence Number | Multipurpose field used for BIP68 timelocks and transaction replacement signaling
 |=======
 
 [[table_8-2]]
@@ -546,12 +546,12 @@ order, with BIP66 (strict DER) occuring before BIP65
 that order rather than sorted numerically.
 ====
 
-Today, VersionBits field has no meaning unless there's an attempt to
+Today, the VersionBits field has no meaning unless there's an attempt to
 upgrade the consensus protocol underway, in which case you will need to
 read its documentation to determine how it is using VersionBits.
 
 Next, the mining
-node needs to add the "Previous Block Hash" (also known as +prevhash+).
+node needs to add the "Previous Block Hash" (also known as [.keep-together]#+prevhash+).#
 That is the hash of the block header of the previous block
 received from the network, which Jing's node has accepted and
 selected as the _parent_ of his candidate block.
@@ -569,7 +569,7 @@ transaction is listed using its witness transaction identifier (_wtxid_)
 in topographical order, with 32 0x00 bytes standing in for the wtxid of
 the first transaction (the coinbase).  As we saw in the <<merkle_trees>>
 the last wtxid is hashed with itself if there are an odd number of wtxids,
-creating nodes that each containing the hash of one transaction. The
+creating nodes that each contain the hash of one transaction. The
 transaction hashes are then combined, in pairs, creating each level of
 the tree, until all the transactions are summarized into one node at the
 "root" of the tree. The root of the merkle tree summarizes all the
@@ -642,7 +642,7 @@ inputs.
 
 With SHA256, the output is always 256 bits long, regardless of the size
 of the input. For example, we will calculate the SHA256 hash of the
-phrase, "Hello, World!"
+phrase, "Hello, World!":
 
 ----
 $ echo "Hello, world!" | sha256sum
@@ -660,9 +660,10 @@ this case to vary the output of the SHA256 commitment to the phrase.
 
 To make a challenge out of this algorithm, let's set a target: find a
 phrase that produces a hexadecimal hash that starts with a zero.
-Fortunately, this isn't difficult:
+Fortunately, this isn't difficult, as shown in <<sha256_example_generator_output>>:
 
 [[sha256_example_generator_output]]
+.Simple proof-of-work implementation
 ----
 $ for nonce in $( seq 100 ) ; do echo "Hello, world! $nonce" | sha256sum ; done
 3194835d60e85bf7f728f3e3f4e4e1f5c752398cbcc5c45e048e4dbcae6be782  -
@@ -715,7 +716,7 @@ of specified difficulty constitutes proof of a specific amount of work.
 In <<sha256_example_generator_output>>, the winning "nonce" is 32 and
 this result can be confirmed by anyone independently. Anyone can add the
 number 32 as a suffix to the phrase "Hello, world!" and compute
-the hash, verifying that it is less than the target.
+the hash, verifying that it is less than the target:
 
 ----
 $ echo "Hello, world! 32" | sha256sum
@@ -829,7 +830,7 @@ current mining power will result in a 10-minute block interval.
 How, then, is such an adjustment made in a completely decentralized
 network? Retargeting occurs automatically and on every node
 independently. Every 2,016 blocks, all nodes retarget the Proof-of-Work.
-The ratio between the actual timespan and desired timespan of ten
+The ratio between the actual time span and desired time span of 10
 minutes per block is calculated and a
 proportionate adjustment (up or down) is made to the target. In simple
 terms: If the network is finding blocks faster than every 10 minutes,
@@ -890,7 +891,7 @@ required target adjustment is greater than a factor of four, it will be
 adjusted by a factor of 4 and not more. Any further adjustment will be
 accomplished in the next retargeting period because the imbalance will
 persist through the next 2,016 blocks. Therefore, large discrepancies
-between hashing power and difficulty might take several 2,016 block
+between hashing power and difficulty might take several 2,016-block
 cycles to balance out.
 
 Note that the target is independent of the number of transactions or the
@@ -917,7 +918,7 @@ market.
 [[mtp]]
 === Median Time Past (MTP)
 
-In bitcoin there is a subtle, but very
+In Bitcoin there is a subtle, but very
 significant, difference between wall time and consensus time. Bitcoin is
 a decentralized network, which means that each participant has his or
 her own perspective of time. Events on the network do not occur
@@ -946,24 +947,24 @@ _median time past_ (MTP).
 As part of the activation of BIP68 relative timelocks,
 there was also a change in the way "time" is calculated for timelocks
 (both absolute and relative) in transactions.   Previously, a miner
-could include any transaction in a block with a time lock equal to or
+could include any transaction in a block with a timelock equal to or
 below the time of the block.  That incentivized miners to use the latest
-possible time they thought was possible (close to two hours in the future)
+time they thought was possible (close to two hours in the future)
 so that more transactions would be eligible for their block.
 
 To remove the incentive to lie and strengthen the security of timelocks,
 BIP113 was proposed and activated at the same time as the BIPs for
 relative timelocks.
-The median time past became the consensus
+The MTP became the consensus
 time used for all timelock calculations. By taking the midpoint
 from approximately two hours in the past, the influence of any one
 block's timestamp is reduced. By incorporating 11 blocks, no single
 miner can influence the timestamps in order to gain fees from
 transactions with a timelock that hasn't yet matured.
 
-Median time past changes the implementation of time calculations for
+MTP changes the implementation of time calculations for
 lock time, +CLTV+, sequence, and +CSV+. The consensus time
-calculated by median time past is usually about one hour behind
+calculated by MTP is usually about one hour behind
 wall clock time. If you create timelock transactions, you should account
 for it when estimating the desired value to encode in lock time,
 sequence, +CLTV+, and +CSV+.
@@ -1027,7 +1028,7 @@ in the functions +CheckBlock+ and +CheckBlockHeader+ and include:
 - The block header hash is less than the target (enforces the
   Proof-of-Work)
 
-- The block timestamp is between the Median Time Past (MTP) and two
+- The block timestamp is between the MTP and two
   hours in the future (allowing for time errors)
 
 - The block weight is within acceptable limits
@@ -1085,7 +1086,7 @@ secondary chain and then compare the work of the secondary chain to the
 previous best chain. If the secondary chain is now the best chain, the
 node will accordingly _reorganize_ its view of confirmed transactions
 and available UTXOs.  If the node is a miner, it will now construct a
-candidate block extending this new, more-Proof of Work, chain.
+candidate block extending this new, more-proof-of-work, chain.
 
 By selecting the greatest-cumulative-work valid chain, all nodes
 eventually achieve network-wide consensus. Temporary discrepancies
@@ -1140,7 +1141,7 @@ The hashing power has increased exponentially every year of Bitcoin's
 existence. Some years the growth has reflected a complete change of
 technology, such as in 2010 and 2011 when many miners switched from
 using CPU mining to GPU mining and field programmable gate array (FPGA)
-mining. In 2013 the introduction of ASIC mining lead to another giant
+mining. In 2013 the introduction of ASIC mining led to another giant
 leap in mining power, by placing the double-SHA256 function directly on silicon
 chips specialized for the purpose of mining. The first such chips could
 deliver more mining power in a single box than the entire Bitcoin
@@ -1190,7 +1191,7 @@ header versionbits field for mining, as described in BIP320.  If each
 piece of mining equipment has its own coinbase transaction, this allows
 an individual piece of mining equipment to perform up to 281 TH/s by
 only making changes to the block header.  This keeps mining equipment
-and protocols simpler than incrementing the extranonce in the coinbase
+and protocols simpler than incrementing the extra nonce in the coinbase
 transaction every 4 billion hashes, which requires recalculating the
 entire left flank of the merkle tree up to the root.
 
@@ -1259,18 +1260,18 @@ pool miners win a share frequently enough to make it worthwhile to
 contribute to the pool. By setting a lower difficulty for earning
 shares, the pool measures the amount of work done by each miner. Each
 time a pool miner finds a block header hash that is less than the pool
-target, she proves she has done the hashing work to find that result.
+target, they prove they have done the hashing work to find that result.
 That header ultimately commits to the coinbase transaction and so it can
 be used to prove the miner used a coinbase transaction that would have
-paid the block reward to pool.  Each pool miner is given a
+paid the block reward to the pool.  Each pool miner is given a
 slightly different coinbase transaction template so each of them hashes
 different candidate block headers, preventing duplication of effort.
 
 The work to find shares contributes, in a
 statistically measurable way, to the overall effort to find a hash lower
-than the bitcoin network's target. Thousands of miners trying to find
+than the Bitcoin network's target. Thousands of miners trying to find
 low-value hashes will eventually find one low enough to satisfy the
-bitcoin network target.
+Bitcoin network target.
 
 Let's return to the analogy of a dice game. If the dice players are
 throwing dice with a goal of throwing less than four (the overall
@@ -1298,7 +1299,7 @@ whole pool wins.
 
 Most mining pools are "managed," meaning that
 there is a company or individual running a pool server. The owner of the
-pool server is called the _pool operator_, and he charges pool miners a
+pool server is called the _pool operator_, and they charge pool miners a
 percentage fee of the earnings.
 
 The pool server runs specialized software and a pool-mining protocol
@@ -1370,7 +1371,7 @@ control to a pool operator like managed pools.
 Even though P2Pool reduces the concentration of power by mining pool
 operators, it is conceivably vulnerable to 51% attacks against the share
 chain itself. A much broader adoption of P2Pool does not solve the 51%
-attack problem for bitcoin itself. Rather, P2Pool makes bitcoin more
+attack problem for Bitcoin itself. Rather, P2Pool makes Bitcoin more
 robust overall, as part of a diversified mining ecosystem.  As of this
 writing, P2Pool has fallen into disuse, but new protocols such as
 Stratum v2 can allow individual miners to choose the transactions they
@@ -1404,13 +1405,13 @@ miners can cause deliberate "forks" in the blockchain and double-spend
 transactions or execute denial-of-service attacks against specific
 transactions or addresses. A fork/double-spend attack is where the
 attacker causes previously confirmed blocks to be invalidated by forking
-below them and re-converging on an alternate chain. With sufficient
+below them and reconverging on an alternate chain. With sufficient
 power, an attacker can invalidate six or more blocks in a row, causing
 transactions that were considered immutable (six confirmations) to be
 invalidated. Note that a double-spend can only be done on the attacker's
 own transactions, for which the attacker can produce a valid signature.
 Double-spending one's own transactions can be profitable if invalidating
-a transaction allows the attacker can get an irreversible exchange payment or
+a transaction allows the attacker to get an irreversible exchange payment or
 product without paying for it.
 
 Let's examine a practical example of a 51% attack. In the first chapter,
@@ -1580,8 +1581,8 @@ image::images/mbc3_1202.png[A blockchain with forks]
 Later, however, at block height 6,
 a new implementation of the client is released with a change in the
 consensus rules. Starting on block height 7, miners running this new
-implementation will accept a new type of bitcoin, let's call
-it a "foocoin". Immediately after, a
+implementation will accept a new type of bitcoin; let's call
+it a "foocoin." Immediately after, a
 node running the new implementation creates a transaction that contains
 a foocoin and a miner with the updated software mines block 7b
 containing this transaction.
@@ -1661,7 +1662,7 @@ nodes that are sending them these invalid transactions and blocks. As a
 result, the network may partition into two: old nodes will only remain
 connected to old nodes and new nodes will only be connected to new
 nodes. A single block based on the new rules will ripple
-through the network and result in the partition into two networks.
+through the network and result in a partition into two networks.
 
 New miners may mine on top of the new block,
 while old miners will mine a separate chain based on the old rules. The
@@ -1687,7 +1688,7 @@ chain, the mining power has suddenly declined by 20% vis-a-vis the
 previous period. Blocks will be found on average every 12.5 minutes,
 representing the 20% decline in mining power available to extend this
 chain. This rate of block issuance will continue (barring any changes in
-hashing power) until 2016 blocks are mined, which will take
+hashing power) until 2,016 blocks are mined, which will take
 approximately 25,200 minutes (at 12.5 minutes per block), or 17.5 days.
 After 17.5 days, a retarget will occur and the difficulty will adjust
 (reduced by 20%) to produce 10-minute blocks again, based on the reduced
@@ -1696,7 +1697,7 @@ amount of hashing power in this chain.
 The minority chain, mining under the old rules with only 20% of the
 hashing power, will face a much more difficult task. On this chain,
 blocks will now be mined every 50 minutes on average. The difficulty
-will not be adjusted for 2016 blocks, which will take 100,800 minutes,
+will not be adjusted for 2,016 blocks, which will take 100,800 minutes,
 or approximately 10 weeks to mine. Assuming a fixed capacity per block,
 this will also result in a reduction of transaction capacity by a factor
 of 5, as there are fewer blocks per hour available to record
@@ -1749,15 +1750,13 @@ not vice versa. The new rules can only limit what is valid; otherwise,
 they will trigger a hard fork when rejected under the old rules.
 
 Soft forks can be implemented in a number of ways&#x2014;the term does
-not specify a particular method, rather a set of methods that all have
+not specify a particular method, but rather a set of methods that all have
 one thing in common: they don't require all nodes to upgrade or force
 nonupgraded nodes out of consensus.
 
-===== Soft forks redefining NOP opcodes
-
 Two soft forks have been
 implemented in Bitcoin, based on the re-interpretation of NOP opcodes.
-Bitcoin Script had ten opcodes reserved for future use, NOP1 through
+Bitcoin Script had 10 opcodes reserved for future use, NOP1 through
 NOP10. Under the consensus rules, the presence of these opcodes in a
 script is interpreted as a null-potent operator, meaning they have no
 effect. Execution continues after the NOP opcode as if it wasn't there.
@@ -1778,13 +1777,13 @@ relatively uncontroversial. The NOP opcodes were placed in Bitcoin
 Script with the explicit goal of allowing non-disruptive upgrades.
 
 However, many developers are concerned that other methods of soft fork
-upgrades make unacceptable tradeoffs. Common criticisms of soft fork
+upgrades make unacceptable trade-offs. Common criticisms of soft fork
 changes include:
 
 Technical debt:: Because soft forks are more technically complex than a
 hard fork upgrade, they introduce _technical debt_, a term that refers
 to increasing the future cost of code maintenance because of design
-tradeoffs made in the past. Code complexity in turn increases the
+trade-offs made in the past. Code complexity in turn increases the
 likelihood of bugs and security vulnerabilities.
 
 Validation relaxation:: Unmodified clients see transactions as valid,
@@ -1835,20 +1834,20 @@ invalid and all version "2" blocks would be required to contain the
 block height in the coinbase to be valid.
 
 BIP34 defined a two-step activation mechanism, based on a rolling
-window of 1000 blocks. A miner would signal his or her individual
+window of 1,000 blocks. A miner would signal their individual
 readiness for BIP34 by constructing blocks with "2" as the version
 number. Strictly speaking, these blocks did not yet have to comply with
 the new consensus rule of including the block-height in the coinbase
 transaction because the consensus rule had not yet been activated. The
 consensus rules activated in two steps:
 
-- If 75% (750 of the most recent 1000 blocks) are marked with version
+- If 75% (750 of the most recent 1,000 blocks) are marked with version
   "2," then version "2" blocks must contain block height in the coinbase
   transaction or they are rejected as invalid. Version "1" blocks are
   still accepted by the network and do not need to contain block-height.
   The old and new consensus rules coexist during this period.
 
-- When 95% (950 of the most recent 1000 blocks) are version "2," version
+- When 95% (950 of the most recent 1,000 blocks) are version "2," version
   "1" blocks are no longer considered valid. Version "2" blocks are
   valid only if they contain the block-height in the coinbase (as per
   the previous threshold). Thereafter, all blocks must comply with the
@@ -1860,11 +1859,11 @@ mechanism was used twice more to activate soft forks:
 
 - https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki[BIP66]
   Strict DER Encoding of Signatures was activated by BIP34 style
-  signaling with a block version "3".
+  signaling with a block version "3."
 
 - https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki[BIP65]
   +CHECKLOCKTIMEVERIFY+ was activated by BIP34 style signaling with a
-  block version "4".
+  block version "4."
 
 After the activation of BIP65, the signaling and activation mechanism
 of BIP34 was retired and replaced with the BIP9 signaling mechanism
@@ -1894,7 +1893,7 @@ BIP9 was proposed to overcome these challenges and improve the rate and
 ease of implementing future changes.
 
 BIP9 interprets the block version as a bit field instead of an integer.
-Because the block version was originally used as an integer, versions 1
+Because the block version was originally used as an integer for versions 1
 through 4, only 29 bits remain available to be used as a bit field. This
 leaves 29 bits that can be used to independently and simultaneously
 signal readiness on 29 different proposals.
@@ -1929,7 +1928,7 @@ number.
 bit:: 0 through 28, the bit in the block version that miners use to
 signal approval for this proposal.
 
-starttime:: The time (based on Median Time Past, or MTP) that signaling
+starttime:: The time (based on median time past, or MTP) that signaling
 starts after which the bit's value is interpreted as signaling readiness
 for the proposal.
 
@@ -1937,16 +1936,16 @@ endtime:: The time (based on MTP) after which the change is considered
 rejected if it has not reached the activation threshold.
 
 Unlike BIP34, BIP9 counts activation signaling in whole intervals
-based on the difficulty retarget period of 2016 blocks. For every
+based on the difficulty retarget period of 2,016 blocks. For every
 retarget period, if the sum of blocks signaling for a proposal exceeds
-95% (1916 of 2016), the proposal will be activated one retarget period
+95% (1,916 of 2,016), the proposal will be activated one retarget period
 later.
 
 BIP9 offers a proposal state diagram to illustrate the various stages
 and transitions for a proposal, as shown in <<bip9states>>.
 
 Proposals start in the +DEFINED+ state, once their parameters are known
-(defined) in the bitcoin software. For blocks with MTP after the start
+(defined) in the Bitcoin software. For blocks with MTP after the start
 time, the proposal state transitions to +STARTED+. If the voting
 threshold is exceeded within a retarget period and the timeout has not
 been exceeded, the proposal state transitions to +LOCKED_IN+. One
@@ -1968,7 +1967,7 @@ The standard is defined in
 https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki[BIP9
 (Version bits with timeout and delay)].
 
-=== BIP8: mandatory lock-in with early activation
+=== BIP8: Mandatory Lock-in with Early Activation
 
 After BIP9 was successfully used for the CSV-related soft fork, the next
 implementation of a soft fork consensus change also attempted to use it
@@ -2021,7 +2020,7 @@ running BIP8.  Unfortunately, there's no way to prove what would have
 happened, and so we can't say for sure how much BIP8 contributed to the
 activation of taproot.
 
-=== Speedy trial: fail fast or succeed eventually
+=== Speedy Trial: Fail Fast or Succeed Eventually
 
 Although BIP9 by itself did not seem to result in the activation of
 segwit despite widespread support for the proposal, it was unclear to
@@ -2042,7 +2041,7 @@ six months later at a specified block height.  This mechanism was named
 _speedy trial_ by one of the people who helped promote it.
 
 Speedy trial activation was tried, miners quickly signaled their
-willingness to enforce the rules of taproot, and taproot was successful
+willingness to enforce the rules of taproot, and taproot was successfully
 activated about six months later.  To proponents of speedy trial, it was
 a clear success.  Others were still disappointed that BIP8 wasn't used.
 
@@ -2073,7 +2072,7 @@ reflective of this reality.
 
 It is important to recognize that there is no perfect
 solution for consensus development. Both hard forks and soft forks
-involve tradeoffs. For some types of changes, soft forks may be a better
+involve trade-offs. For some types of changes, soft forks may be a better
 choice; for others, hard forks may be a better choice. There is no
 perfect choice; both carry risks. The one constant characteristic of
 consensus software development is that change is difficult and consensus
