@@ -38,7 +38,7 @@ transaction pinning, and are largely uninteresting to the following
 discussion about fees--so we're going to ignore them in this chapter.
 ====
 
-The criteria that almost all miners use to select which transactions to
+The criterion that almost all miners use to select which transactions to
 include in their blocks is to maximize their revenue.  Bitcoin was
 specifically designed to accommodate this by providing a mechanism that
 allows a transaction to give money to the miner who includes that
@@ -54,7 +54,7 @@ In this chapter, we'll explore various aspects of those
 bids--transaction fees--and how they influence the creation and
 management of Bitcoin transactions.
 
-=== Who pays the transaction fee?
+=== Who Pays the Transaction Fee?
 
 Most payment systems involve some sort of fee for transacting, but
 often this fee is hidden from typical buyers.  For example, a merchant
@@ -85,16 +85,16 @@ normally allowing only spenders to choose fees can sometimes be a
 problem; we'll look at a solution to that problem in <<cpfp>>.  However,
 in many common payment flows, the parties with the highest desire to see a
 transaction confirm quickly--that is, the parties who'd be the most
-willing to pay higher fees--are the the spenders.
+willing to pay higher fees--are the spenders.
 
 For those reasons, both technical and practical, it is customary in
 Bitcoin for spenders to pay transaction fees.  There are exceptions,
-such as for merchants which accept unconfirmed transactions and in
+such as for merchants that accept unconfirmed transactions and in
 protocols that don't immediately broadcast transactions after they are
 signed (preventing the spender from being able to choose an appropriate
 fee for the current market).  We'll explore those exceptions later.
 
-=== Fees and fee rates
+=== Fees and Fee Rates
 
 Each transaction only pays a single fee--it doesn't matter how large the
 transaction is.  However, the larger transactions become, the fewer of
@@ -140,7 +140,7 @@ by accident.  There are legitimate reasons for users to overpay fees on
 rare occasions.
 ====
 
-=== Estimating appropriate fee rates
+=== Estimating Appropriate Fee Rates
 
 We've established that you can pay a lower fee rate if you're willing to
 wait longer for your transaction to be confirmed, with the exception
@@ -163,7 +163,7 @@ similar number of blocks to confirm.  Bitcoin Core includes a fee rate
 estimator that uses these principles, which can be called using the
 `estimatesmartfee` RPC with a parameter specifying how many blocks
 you're willing to wait before the transaction is highly likely to
-confirm (for example, 144 blocks is about 1 day).
+confirm (for example, 144 blocks is about 1 day):
 
 ----
 $ bitcoin-cli -named estimatesmartfee conf_target=144
@@ -174,12 +174,12 @@ $ bitcoin-cli -named estimatesmartfee conf_target=144
 ----
 
 Many web-based services also provide fee estimation as an API.  For a
-current list, see https://www.lopp.net/bitcoin-information/fee-estimates.html
+current list, see https://www.lopp.net/bitcoin-information/fee-estimates.html.
 
 As mentioned, fee rate estimation can never be perfect.  One common
 problem is that the fundamental demand might change, adjusting the
 equilibrium and either increasing prices (fees) to new heights or
-decreasing them towards the minimum.
+decreasing them toward the minimum.
 If fee rates go down, then a transaction
 that previously paid a normal fee rate might now be paying a high fee
 rate and it will be confirmed earlier than expected.  There's no way to
@@ -187,18 +187,18 @@ lower the fee rate on a transaction you've already sent, so you're stuck
 paying a higher fee rate.  But, when fee rates go up, there's a need for
 methods to be able to increase the fee rates on those transactions,
 which is called _fee bumping_.  There are two commonly used types of fee
-bumping in Bitcoin, Replace-By-Fee (RBF) and Child Pays For Parent
+bumping in Bitcoin, replace by fee (RBF) and child pays for parent
 (CPFP).
 
 [[rbf]]
-=== Replace-By-Fee (RBF) Fee Bumping
+=== Replace By Fee (RBF) Fee Bumping
 
 To increase the fee of a transaction using RBF fee bumping, you create
-a conflicting version of the transaction which pays a higher fee.  Two
+a conflicting version of the transaction that pays a higher fee.  Two
 or more transactions are considered to be _conflicting transactions_ if
 only one of them can be included in a valid blockchain, forcing a miner
-to chose only one of them.  Conflicts occur when two or more transactions
-each try to spend one of the same UTXOs, i.e. they each include an input
+to choose only one of them.  Conflicts occur when two or more transactions
+each try to spend one of the same UTXOs, i.e., they each include an input
 that has the same outpoint (reference to the output of a previous
 transaction).
 
@@ -226,7 +226,7 @@ Full RBF::
   version.  As of this writing, this can be optionally enabled in
   Bitcoin Core (but it is disabled by default).
 
-.Why are there two variants of RBF?
+.Why Are There Two Variants of RBF?
 ****
 The reason for the two different versions of RBF is that full RBF has
 been controversial.  Early versions of Bitcoin allowed transaction
@@ -260,7 +260,7 @@ based on the first version, but the second version gets confirmed, then
 the merchant will not receive payment for its costs.
 
 Some merchants, and people supporting them, requested that transaction
-replacement not be re-enabled in Bitcoin Core.  Other people pointed out
+replacement not be reenabled in Bitcoin Core.  Other people pointed out
 that transaction replacement provides benefits, including the ability to
 fee bump transactions that initially paid too low of a fee rate.
 
@@ -289,7 +289,7 @@ whether or not that has happened yet.
 As a user, if you plan to use RBF fee bumping, you will first need to
 choose a wallet that supports it, such as one of the wallets listed as
 having "Sending support" on
-https://bitcoinops.org/en/compatibility/#replace-by-fee-rbf
+https://bitcoinops.org/en/compatibility/#replace-by-fee-rbf.
 
 As a developer, if you plan to implement RBF fee bumping, you will first
 need to decided whether to perform opt-in RBF or full RBF.  At the time
@@ -306,8 +306,8 @@ same for both approaches.
 When you need to fee bump a transaction, you will simply create a new
 transaction that spends at least one of the same UTXOs as the original
 transaction you want to replace.  You will likely want to keep the
-same outputs in the transaction which pay the receiver (or receivers).
-You may pay the increased fee by reducing the the value of your change
+same outputs in the transaction that pay the receiver (or receivers).
+You may pay the increased fee by reducing the value of your change
 output or by adding additional inputs to the transaction.  Developers
 should provide users with a fee-bumping interface that does all of this
 work for them and simply asks them (or suggests to them) how much the
@@ -324,11 +324,11 @@ overpay the receivers.  For example:
 - Transaction version 0 includes input _A_.
 - Transaction version 1 includes inputs _A_ and _B_ (e.g., you had to add
   input _B_ to pay the extra fees)
-- Transaction version 2 includes inputs B and C (e.g., you had to add input
+- Transaction version 2 includes inputs _B_ and _C_ (e.g., you had to add input
   _C_ to pay the extra fees but _C_ was large enough that you no longer
   need input _A_).
 
-In the above scenario, any miner who saved version 0 of the transaction
+In this scenario, any miner who saved version 0 of the transaction
 will be able to confirm both it and version 2 of the transaction.  If
 both versions pay the same receivers, they'll be paid twice (and the
 miner will receive transaction fees from two separate transactions).
@@ -347,27 +347,26 @@ have created if they had paid the increased fee rate in the first place.
 The fundamental disadvantage of RBF fee bumping is that it can normally
 only be performed by the creator of the transaction--the person or
 people who were required to provide signatures or other authentication
-data for the transaction.  An exception to this is transactions which
+data for the transaction.  An exception to this is transactions that
 were designed to allow additional inputs to be added by using sighash
-flags, see <<sighash_types>>, but that presents its own challenges.  In
+flags (see <<sighash_types>>), but that presents its own challenges.  In
 general, if you're the receiver of an unconfirmed transaction and you
 want to make it confirm faster (or at all), you can't use an RBF fee
 bump; you need some other method.
 
-There are additional problems with RBF that we'll explore in the
-subsequent <<transaction_pinning>> section.
+There are additional problems with RBF that we'll explore in <<transaction_pinning>>.
 
 [[cpfp]]
-=== Child Pays For Parent (CPFP) Fee Bumping
+=== Child Pays for Parent (CPFP) Fee Bumping
 
 Anyone who receives the output of an unconfirmed transaction can
 incentivize miners to confirm that transaction by spending that output.
 The transaction you want to get confirmed is called the _parent
-transaction_.  A transaction which spends an output of the parent
+transaction_.  A transaction that spends an output of the parent
 transaction is called a _child transaction_.
 
 As we learned in <<outpoints>>, every input in a confirmed transaction
-must reference the unspent output of a transaction which appears earlier
+must reference the unspent output of a transaction that appears earlier
 in the blockchain (whether earlier in the same block or in a previous
 block).  That means a miner who wants to confirm a child transaction
 must also ensure that its parent transaction is confirmed.  If the
@@ -384,7 +383,7 @@ about by fee rate and include the highest-revenue ones in the block
 they're attempting to mine, up to the maximum size (weight) allowed to
 be included in a block.  To find even more packages that might be
 profitable to mine, the miner can evaluate packages across multiple
-generations (e.g. an unconfirmed parent transaction being combined with
+generations (e.g., an unconfirmed parent transaction being combined with
 both its child and grandchild).  This is called _ancestor fee rate
 mining_.
 
@@ -404,14 +403,14 @@ The primary disadvantage of CPFP compared to RBF is that CPFP typically
 uses more block space.  In RBF, a fee bump transaction is often the same
 size as the transaction it replaces.  In CPFP, a fee bump adds a whole
 separate transaction.  Using extra block space requires paying extra
-fees beyond the the cost of the fee bump.
+fees beyond the cost of the fee bump.
 
 There are several challenges with CPFP, some of which we'll explore in
-<<transaction_pinning>>.  One other problem which we
+<<transaction_pinning>>.  One other problem that we
 specifically need to mention is the minimum relay fee rate problem,
 which is addressed by package relay.
 
-==== Package Relay
+=== Package Relay
 
 Early versions of Bitcoin Core didn't place any limits on the number of
 unconfirmed transactions they stored for later relay and mining in their
@@ -454,25 +453,25 @@ problem.
 
 Although both RBF and CPFP fee bumping work in the basic cases we
 described, there are rules related to both
-methods that are designed to prevent denial of service attacks on miners
+methods that are designed to prevent denial-of-service attacks on miners
 and relaying full nodes.  An unfortunate side effect of those rules
 is that they can sometimes prevent someone from being able to use fee
 bumping.  Making it impossible or difficult to fee bump a transaction is
 called _transaction pinning_.
 
-One of the major denial of service concerns revolve's around the effect of
+One of the major denial of service concerns revolves around the effect of
 transaction relationships.  Whenever the output of a transaction is
 spent, that transaction's identifier (txid) is referenced by the child
 transaction.  However, when a transaction is replaced, the replacement
 has a different txid.  If that replacement transaction gets confirmed,
 none of its descendants can be included in the same blockchain.  It's
-possible to recreate and re-sign the descendant transactions, but that's
+possible to re-create and re-sign the descendant transactions, but that's
 not guaranteed to happen.  This has related but divergent implications
 for RBF and CPFP:
 
 - In the context of RBF, when Bitcoin Core accepts a replacement
   transaction, it keeps things simple by forgetting about the original
-  transaction and all descendant transactions which depended on that
+  transaction and all descendant transactions that depended on that
   original.  To ensure that it's more profitable for miners to accept
   replacements, Bitcoin Core only accepts a replacement transaction if it
   pays more fees than all the transactions that will be forgotten.
@@ -496,7 +495,7 @@ transaction.
   Similarly, if a transaction with 25 descendants is removed from a
   node's mempool (such as for being included in a block), and each of
   those descendants has 25 other ancestors, another 625 packages need to
-  be updated.  Each time we double our parameter (e.g. from 25 to 50),
+  be updated.  Each time we double our parameter (e.g., from 25 to 50),
   we quadruple the amount of work our node needs to perform.
 +
 Additionally, a transaction and all of its descendants is not
@@ -526,14 +525,13 @@ Protocol developers have been working on mitigating problems with
 transaction pinning for several years.  One partial solution is
 described in <<cpfp_carve_out>>.  Several other solutions have been
 proposed, and at least one solution is being actively developed as of
-this writing (ephemeral anchors, see
-https://bitcoinops.org/en/topics/ephemeral-anchors/).
+this writing—https://bitcoinops.org/en/topics/ephemeral-anchors/[ephemeral anchors].
 
 [[cpfp_carve_out]]
 === CPFP Carve Out and Anchor Outputs
 
 In 2018, developers working on Lightning Network (LN) had a problem.
-Their protocol uses transactions which require signatures from two
+Their protocol uses transactions that require signatures from two
 different parties.  Neither party wants to trust the other, so they sign
 transactions at a point in the protocol when trust isn't needed,
 allowing either of them to broadcast one of those transactions at a
@@ -620,7 +618,7 @@ you intended.
 [[fee_sniping]]
 === Timelock Defense Against Fee Sniping
 
-Fee-sniping is a theoretical
+Fee sniping is a theoretical
 attack scenario, where miners attempting to rewrite past blocks "snipe"
 higher-fee transactions from future blocks to maximize their
 profitability.
@@ -666,4 +664,4 @@ As Bitcoin continues to mature, and as the subsidy continues to decline,
 fees become more and more important to Bitcoin users, both in their
 day-to-day use for getting transactions confirmed quickly and in
 providing an incentive for miners to continue securing Bitcoin
-transactions with new proof-of-work.
+transactions with new proof of work.

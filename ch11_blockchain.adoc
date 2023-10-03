@@ -84,7 +84,7 @@ header. <<block_structure1>> describes how Bitcoin Core stores the structure of 
 |Size| Field | Description
 | 4 bytes | Block Size | The size of the block, in bytes, following this field
 | 80 bytes | Block Header | Several fields form the block header
-| 1-3 bytes (compactSize) | Transaction Counter | How many transactions follow
+| 1–3 bytes (compactSize) | Transaction Counter | How many transactions follow
 | Variable | Transactions | The transactions recorded in this block
 |=======
 
@@ -103,8 +103,8 @@ block metadata as shown in <<block_header_structure_ch09>>.
 | 32 bytes | Previous Block Hash | A hash of the previous (parent) block in the chain
 | 32 bytes | Merkle Root | The root hash of the merkle tree of this block's transactions
 | 4 bytes | Timestamp | The approximate creation time of this block (Unix epoch time)
-| 4 bytes | Target | A compact encoding of the Proof-of-Work target for this block
-| 4 bytes | Nonce | Arbitrary data used for the Proof-of-Work algorithm
+| 4 bytes | Target | A compact encoding of the proof-of-work target for this block
+| 4 bytes | Nonce | Arbitrary data used for the proof-of-work algorithm
 |=======
 
 The nonce, target, and timestamp are used in the mining
@@ -185,7 +185,7 @@ even the single transaction within. Thus, every node has the starting
 point for the blockchain, a secure "root" from which to build a trusted
 blockchain.
 
-See the statically encoded genesis block inside the Bitcoin Core client,
+See the statically encoded genesis block inside the Bitcoin Core client
 in https://github.com/bitcoin/bitcoin/blob/3955c3940eff83518c186facfec6f50545b5aab5/src/chainparams.cpp#L123[_chainparams.cpp_].
 
 The following identifier hash belongs to the genesis block:
@@ -200,7 +200,7 @@ of this block, with a URL containing that hash:
 
 https://blockstream.info/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
 
-Using the Bitcoin Core reference client on the command line:
+Alternatively, you can get the block using Bitcoin Core on the command line:
 
 ----
 $ bitcoin-cli getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
@@ -311,7 +311,7 @@ these trees are usually displayed upside down with the "root" at the top
 and the "leaves" at the bottom of a diagram, as you will see in the
 examples that follow.
 
-Merkle trees are used in bitcoin to summarize all the transactions in a
+Merkle trees are used in Bitcoin to summarize all the transactions in a
 block, producing an overall commitment to the entire set of
 transactions and permitting a very efficient process to verify whether a
 transaction is included in a block. A merkle tree is constructed by
@@ -361,7 +361,7 @@ of the nodes.
 image::images/mbc3_1102.png["merkle_tree"]
 
 Because the merkle tree is a binary tree, it needs
-an even number of leaf nodes. If there is an odd number of transactions
+an even number of leaf nodes. If there are an odd number of transactions
 to summarize, the last transaction hash will be duplicated to create an
 even number of leaf nodes, also known as a _balanced tree_. This is
 shown in <<merkle_tree_odd>>, where transaction C is duplicated.
@@ -372,10 +372,10 @@ the last hash is duplicated.
 .Duplicating one data element achieves an even number of data elements
 image::images/mbc3_1103.png["merkle_tree_odd"]
 
-.A design flaw in Bitcoin's merkle tree
+.A Design Flaw in Bitcoin's Merkle Tree
 ****
-An extended comment in Bitcoin Core's source code describes a
-significant problems in the design of Bitcoin's duplication of odd
+An extended comment in Bitcoin Core's source code, reproduced here with slight revisions, describes a
+significant problem in the design of Bitcoin's duplication of odd
 elements in its merkle tree:
 
 [quote,Bitcoin Core src/consensus/merkle.cpp]
@@ -388,14 +388,14 @@ duplicate txids, resulting in a vulnerability (CVE-2012-2459).
 The reason is that if the number of hashes in the list at a given level
 is odd, the last one is duplicated before computing the next level (which
 is unusual in Merkle trees). This results in certain sequences of
-transactions leading to the same merkle root. For example, these two
-trees:
+transactions leading to the same merkle root. For example, the two
+trees in <<cve_tree>>:
 
 [[cve_tree]]
 .Two Bitcoin-style merkle tree with the same root but a different number of leaves
-image::images/mbc3_1104.png["Two Bitcoin-style merkle tree with the same root but a different number of leaves"]
+image::images/mbc3_1104.png["Two Bitcoin-style merkle trees with the same root but a different number of leaves"]
 
-For transaction lists [1,2,3,4,5,6] and [1,2,3,4,5,6,5,6] (where 5 and
+The transaction lists [1,2,3,4,5,6] and [1,2,3,4,5,6,5,6] (where 5 and
 6 are repeated) result in the same root hash A (because the hash of both
 of (F) and (F,F) is C).
 
@@ -433,7 +433,7 @@ especially important as the number of transactions increases, because
 the base-2 logarithm of the number of transactions increases much more
 slowly. This allows Bitcoin nodes to efficiently produce paths of 10 or
 12 hashes (320–384 bytes), which can provide proof of a single
-transaction out of more than a thousand transactions in a multi-megabyte
+transaction out of more than a thousand transactions in a multimegabyte
 block.
 
 [[merkle_tree_large]]
@@ -457,7 +457,7 @@ image::images/mbc3_1106.png["merkle_tree_path"]
 
 The efficiency of merkle trees becomes obvious as the scale increases.
 The largest possible block can hold almost 16,000 transactions in 4,000,000
-bytes, but proving any particular one of those sixteen thousand transactions
+bytes, but proving any particular one of those 16,000 transactions
 is a part of that block only requires a copy of the transaction, a copy
 of the 80-byte block header, and 448 bytes for the merkle proof.  That
 makes the largest possible proof almost 10,000 times smaller than the
@@ -576,14 +576,14 @@ as +btcd+ (written in Go) and +bcoin+ (written in JavaScript), to
 experiment and learn in other programming languages and frameworks.
 
 Testnet3 supports all the features of mainnet, including
-Segregated Witness v0 and v1 (see <<segwit>> and <<taproot>>). Therefore, testnet3 can also be
-used to test Segregated Witness features.
+segregated witness v0 and v1 (see <<segwit>> and <<taproot>>). Therefore, testnet3 can also be
+used to test segregated witness features.
 
-===== Problems With Testnet
+===== Problems with testnet
 
 Testnet doesn't just use the same data structures as Bitcoin, it also
-uses almost exactly the same Proof-of-Work (PoW) security mechanism as
-Bitcoin.  The notable differences for testnet are that it's minimum
+uses almost exactly the same proof-of-work (PoW) security mechanism as
+Bitcoin.  The notable differences for testnet are that its minimum
 difficulty is half that of Bitcoin and that it's allowed to include a
 block at the minimum difficulty if that block's timestamp is more than
 20 minutes after the previous block.
@@ -630,7 +630,7 @@ BIP325 signets are designed to make it very easy to create your own.  If
 you disagree with how someone else is running their signet, you can
 start your own signet and connect your software to it.
 
-===== The Default Signet and Custom Signets
+===== The default signet and custom signets
 
 Bitcoin Core supports a default signet, which we believe to be the most
 widely used signet at the time of writing.  It is currently operated by
@@ -757,7 +757,7 @@ $ bitcoin-cli -regtest getbalance
 === Using Test Blockchains for Development
 
 Bitcoin's various
-blockchains (+regtest+, +signet+, +testnet3+, +mainnet+) offer a range
+blockchains (regtest, signet, testnet3, mainnet) offer a range
 of testing environments for bitcoin development. Use the test
 blockchains whether you are developing for Bitcoin Core, or another
 full-node consensus client; an application such as a wallet, exchange,
