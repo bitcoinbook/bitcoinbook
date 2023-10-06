@@ -15,26 +15,26 @@ wallets to prevent the loss of data from becoming a loss of money.
 Some solutions have almost no downsides and are universally adopted by
 modern wallets.  We'll simply recommend those solutions as best
 practices.  Other solutions have both advantages and disadvantages,
-leading different wallet authors to make different tradeoffs.
+leading different wallet authors to make different trade-offs.
 In those cases, we'll describe the various options available.
 
 === Independent Key Generation
 
 Wallets for physical cash hold that cash,
 so it's unsurprising that many people mistakenly believe that
-bitcoin wallets contain bitcoins.  In fact, what many people call a
+Bitcoin wallets contain bitcoins.  In fact, what many people call a
 Bitcoin wallet--which we call a _wallet database_ to distinguish it
 from wallet applications--contains only keys.  Those keys are associated
 with bitcoins recorded on the blockchain.  By proving to Bitcoin full nodes that you
 control the keys, you can can spend the associated bitcoins.
 
 Simple wallet databases contain both the public keys to which bitcoins
-are received and the private keys which allow creating the signatures
-necessary to authorize spending those bitcoins.  Other wallet's databases
+are received and the private keys that allow creating the signatures
+necessary to authorize spending those bitcoins.  Other wallets' databases
 may contain only public keys, or only some of the private keys necessary
 to authorize a spending transaction.  Their wallet applications produce
 the necessary signatures by working with external tools, such as
-hardware signing devices or other wallets in a multi-signature scheme.
+hardware signing devices or other wallets in a multisignature scheme.
 
 It's possible for a wallet application to independently generate each of
 the wallet keys it later plans to use, as illustrated in
@@ -43,20 +43,20 @@ this, but it required users to back up the wallet database each time they
 generated and distributed new keys, which could be as often as each time
 they generated a new address to receive a new payment.  Failure to back
 up the wallet database on time would lead to the user losing access to
-any funds received to keys which had not been backed up.
+any funds received to keys that had not been backed up.
 
-For each independently-generated key, the user would need to back up
+For each independently generated key, the user would need to back up
 about 32 bytes, plus overhead.  Some users and wallet applications tried
 to minimize the amount of data that needed to be backed up
 by only using a single key.  Although that can be secure, it severely
 reduces the privacy of that user and all of the people with whom they
 transact.  People who valued their privacy and those of their peers
-created new keypairs for each transaction, producing wallet databases
+created new key pairs for each transaction, producing wallet databases
 that could only reasonably be backed up using digital media.
 
 [[Type0_wallet]]
 [role="smallersixty"]
-.Non-deterministic key generation: a collection of independently generated keys stored in a wallet database
+.Nondeterministic key generation: a collection of independently generated keys stored in a wallet database
 image::images/mbc3_0501.png["Non-Deterministic Wallet"]
 
 Modern wallet applications don't independently generate keys but instead
@@ -71,9 +71,9 @@ different.  If the function is cryptographically secure, nobody should
 be able to predict the new output--not even if they know the new input.
 
 This allows us to take one random value and transform it into a
-practically unlimited number of seemingly-random values.  Even more
+practically unlimited number of seemingly random values.  Even more
 usefully, later using the same hash function with the same input
-(called a _seed_) will produce the same seemingly-random values.
+(called a _seed_) will produce the same seemingly random values:
 
 ----
 # Collect some entropy (randomness)
@@ -119,31 +119,31 @@ image::images/mbc3_0502.png["Deterministic Wallet"]
 ==== Public Child Key Derivation
 
 In <<public_key_derivation>>, we learned how to create a public key from a private key
-using Elliptic Curve Cryptography (ECC).  Although operations on an
+using elliptic curve cryptography (ECC).  Although operations on an
 elliptic curve are not intuitive, they are analogous to the addition,
 subtraction, and multiplication operations used in regular
 arithmetic.  In other words, it's possible to add or subtract from a
 public key, or to multiply it.  Consider the operation we used in
 <<public_key_derivation>> for
 generating a public key (K) from a private key (k) using the generator
-point (G).
+point (G):
 
 ----
 K = k * G
 ----
 
-It's possible to create a derived keypair, called a child keypair, by
+It's possible to create a derived key pair, called a child key pair, by
 simply adding the same value to both sides of the equation:
 
 ----
 K + (123 * G) == (k + 123) * G
 ----
 
-[[TIP]]
+[TIP]
 ====
-In equations throughout this book, we use a single equal sign for
+In equations throughout this book, we use a single equals sign for
 operations such as +K = k * G+ where the value of a variable is
-calculated.  We use a double equal sign to show both sides of an
+calculated.  We use a double equals sign to show both sides of an
 equation are equivalent, or that an operation should return false (not
 true) if the two sides aren't equivalent.
 ====
@@ -172,7 +172,7 @@ frontends (which don't require private keys) from signing operations
 distributes her public keys to people wanting to pay her.  Later, when
 she wants to spend the received money, she can provide the key tweaks
 she used to a _hardware signing device_ (sometimes confusingly called a
-_hardware wallet_) which securely stores her original private key.  The
+_hardware wallet_) that securely stores her original private key.  The
 hardware signer uses the tweaks to derive the necessary child private
 keys and uses them to sign the transactions, returning the signed
 transactions to the less-secure frontend for broadcast to the Bitcoin
@@ -181,13 +181,13 @@ network.
 Public child key derivation can produce a linear sequence of keys
 similar to the previously seen <<Type1_wallet>>, but modern wallets
 applications use one more trick to provide a tree of keys instead a
-single sequence, as described in <<hd_wallets>>.
+single sequence, as described in the following section.
 
 [[hd_wallets]]
 ==== Hierarchical Deterministic (HD) Key Generation (BIP32)
 
-Every modern Bitcoin wallet of which we're aware uses Hierarchical
-Deterministic (HD) key generation by default.  This standard, defined in
+Every modern Bitcoin wallet of which we're aware uses hierarchical
+deterministic (HD) key generation by default.  This standard, defined in
 BIP32, uses deterministic key generation and optional public child key
 derivation with an algorithm that produces a tree of keys.
 In this tree, any key can be the parent of a sequence of child keys, and
@@ -217,8 +217,8 @@ is ever corrupted or lost, you can regenerate all of the private keys
 for your wallet using your original seed.  But, if someone else gets
 your seed, they can also generate all of the private keys, allowing them
 to steal all of the bitcoins from a single-sig wallet and reduce the
-security of bitcoins in multi-signature wallets.  In this section, we'll
-look at several _recovery codes_ which are intended to make backups
+security of bitcoins in multisignature wallets.  In this section, we'll
+look at several _recovery codes_, which are intended to make backups
 easier and safer.
 
 Although seeds are large random numbers, usually 128 to 256 bits, most
@@ -279,7 +279,7 @@ BIP39::
   24 words (which may be localized to a user's native language).  The
   words (plus an optional passphrase) are run through a _key-stretching
   function_ and the output is used as a seed.  BIP39 recovery codes have
-  several shortcomings which later schemes attempt to address.
+  several shortcomings, which later schemes attempt to address.
 
 Electrum v2::
   Used in the Electrum wallet (version 2.0 and above), this word-based
@@ -311,13 +311,13 @@ Aezeed::
 
 Muun::
   Used in the Muun wallet, which defaults to requiring spending
-  transactions be signed by multiple keys, this is a non-word code which
+  transactions be signed by multiple keys, this is a nonword code that
   must be accompanied by additional information (which Muun currently
   provides in a PDF).  This recovery code is unrelated to the seed and
   is instead used to decrypt the private keys contained in the PDF.
   Although this is unwieldy compared to the BIP39, Electrum v2, and
   Aezeed recovery codes, it provides support for new technologies and
-  standards which are becoming more common in new wallets, such as
+  standards that are becoming more common in new wallets, such as
   Lightning Network support, output script descriptors, and miniscript.
 
 SLIP39::
@@ -346,25 +346,25 @@ recovery codes to investigate its https://secretcodex32.com[current
 status].
 ====
 
-.Recovery code passphrases
+.Recovery Code Passphrases
 ****
 The BIP39, Electrum v2, Aezeed, and SLIP39 schemes may all be used with an
 optional passphrase.  If the only place you keep this passphrase is in
 your memory, it has the same advantages and disadvantages as memorizing
-your recovery code.  However, there's a further set of tradeoffs
+your recovery code.  However, there's a further set of trade-offs
 specific to the way the passphrase is used by the recovery code.
 
 Three of the schemes (BIP39, Electrum v2, and SLIP39) do not include the optional passphrase in the
 checksum they use to protect against data entry mistakes.  Every
 passphrase (including not using a passphrase) will result in producing a
-seed for a BIP32 tree of keys, but they'll won't be the same trees.
+seed for a BIP32 tree of keys, but they won't be the same trees.
 Different passphrases will result in different keys.  That can be a
 positive or a negative, depending on your perspective:
 
 - On the positive, if someone obtains your recovery code (but not your
   passphrase), they will see a valid BIP32 tree of keys.
   If you prepared for that contingency and sent some bitcoins to the
-  non-passphrase tree, they will steal that money.  Although having some
+  nonpassphrase tree, they will steal that money.  Although having some
   of your bitcoins stolen is normally a bad thing, it can also provide
   you with a warning that your recovery code has been compromised,
   allowing you to investigate and take corrective measures.
@@ -406,7 +406,7 @@ duress.  We suspect the debate will continue for as long as recovery
 codes continue to be widely used.
 ****
 
-==== Backing Up Non-Key Data
+==== Backing Up Nonkey Data
 
 The most important data in a wallet database is its private keys.  If
 you lose access to the private keys, you lose the ability to spend your
@@ -432,6 +432,7 @@ an example, see <<alice_tx_labels>>.
 [[alice_tx_labels]]
 .Alice's transaction history with each transaction labeled
 [cols="1,1,>1"]
+[options="header"]
 |===
 | Date | Label | BTC
 | 2023-01-01 | Bought bitcoins from Joe | +0.00100
@@ -454,9 +455,9 @@ widely used wallet applications that make it easy to create and use
 recovery codes but which provide no way to back up or restore label
 data.
 
-Additionally, it may be useful for wallets applications to provide a
+Additionally, it may be useful for wallet applications to provide a
 standardized format to export labels so that they can be used in other
-applications, e.g. accounting software.  A standard for that format is
+applications, e.g., accounting software.  A standard for that format is
 proposed in BIP329.
 
 Wallet applications implementing additional protocols beyond basic
@@ -496,9 +497,9 @@ those children each potentially having four billion children of their
 own, and so on.  It's not possible for a wallet application to generate
 even a small fraction of every possible key in a BIP32 tree, which means
 that recovering from data loss requires knowing more than just the
-recovery code, the algorithm for obtaining your seed (e.g. BIP39), and
+recovery code, the algorithm for obtaining your seed (e.g., BIP39), and
 the deterministic key derivation algorithm
-(e.g., BIP32)--it also requires knowing what paths in the tree of keys
+(e.g., BIP32)—it also requires knowing what paths in the tree of keys
 your wallet application used for generating the specific keys it distributed.
 
 Two solutions to this problem have been adopted.  The first is using
@@ -509,15 +510,18 @@ defining what key derivation path to use.  For example, BIP44 defines
 legacy address).  A wallet application implementing this standard uses
 the keys in that path both when it is first started and after a
 restoration from a recovery code.  We call this solution _implicit
-paths_.
+paths_. Several popular implicit paths defined by BIPs are shown in <<bip_implicit_paths>>
 
+[[bip_implicit_paths]]
+.Implicit script paths defined by various BIPs
 [cols="1,1,1"]
+[options="header"]
 |===
-| Standard | Script | BIP32 Path
-| BIP44    | P2PKH  | m/44'/0'/0'
-| BIP49    | Nested P2WPKH  | m/49'/1'/0'
-| BIP84    | P2WPKH | m/84'/0'/0'
-| BIP86    | P2TR Single-key | m/86'/0'/0'
+| Standard | Script | BIP32 path
+| BIP44    | P2PKH  | +m/44'/0'/0'+
+| BIP49    | Nested P2WPKH  | +m/49'/1'/0'+
+| BIP84    | P2WPKH | +m/84'/0'/0'+
+| BIP86    | P2TR Single-key | +m/86'/0'/0'+
 |===
 
 The second solution is to back up the path information with the recovery
@@ -550,28 +554,28 @@ direct them to appropriate resources.
 
 The final consequence of implicit paths is that they can only include
 information that is either universal (such as a standardized path) or
-derived from the seed (such as keys).  Important non-deterministic
+derived from the seed (such as keys).  Important nondeterministic
 information that's specific to a certain user can't be restored using
 a recovery code.  For example, Alice, Bob, and Carol receive funds that
 can only be spent with signatures from two out of three of them.  Although
 Alice only needs either Bob's or Carol's signature to spend, she needs
 both of their public keys in order to find their joint funds on the
 blockchain.  That means each of them must back up the public keys for
-all three of them.  As multi-signature and other advanced scripts become
+all three of them.  As multisignature and other advanced scripts become
 more common on Bitcoin, the inflexibility of implicit paths becomes more
 significant.
 
 The advantage of explicit paths is that they can describe exactly what
 keys should be used with what scripts.  There's no need to support
-outdated scripts, no problems with backwards or forwards compatibility,
+outdated scripts, no problems with backward or forward compatibility,
 and any extra information (like the public keys of other users) can be
-included directly.  Their disadvantage is that they require users back
+included directly.  Their disadvantage is that they require users to back
 up additional information along with their recovery code.  The
 additional information usually can't compromise a user's security, so it
 doesn't require as much protection as the recovery code, although it can
 reduce their privacy and so does require some protection.
 
-Almost all wallet applications which use explicit paths as of this
+Almost all wallet applications that use explicit paths as of this
 writing use the _output script descriptors_ standard (called
 _descriptors_ for short) as specified in BIPs 380, 381, 382, 383, 384,
 385, 386, and 389.  Descriptors
@@ -579,29 +583,29 @@ describe a script and the keys (or key paths) to be used with it.
 A few example descriptors are shown in <<sample_descriptors>>.
 
 [[sample_descriptors]]
-.Sample Descriptors from Bitcoin Core documentation (with elision)
+.Sample descriptors from Bitcoin Core documentation (with elision)
 [cols="1,1"]
 |===
 | Descriptor | Explanation
 
-| pkh(02c6...9ee5)
+| +pkh(02c6...9ee5)+
 | P2PKH script for the provided public key
 
-| sh(multi(2,022f...2a01,03ac...ccbe))
-| P2SH multi-signature requring two signatures corresponding to these two keys
+| +sh(multi(2,022f...2a01,03ac...ccbe))+
+| P2SH multisignature requring two signatures corresponding to these two keys
 
-| pkh([d34db33f/44'/0'/0']xpub6ERA...RcEL/1/*)
-| P2PKH scripts for the BIP32 +d34db33f+ with the extended public key (xpub) at the path M/44'/0'/0', which is xpub6ERA...RcEL, using the keys at M/1/* of that xpub.
+| +pkh([d34db33f/44'/0'/0']xpub6ERA...RcEL/1/*)+
+| P2PKH scripts for the BIP32 +d34db33f+ with the extended public key (xpub) at the path +M/44'/0'/0'+, which is +xpub6ERA...RcEL+, using the keys at +M/1/*+ of that xpub
 |===
 
 It has long been the trend for wallet applications designed only for
 single signature scripts to use implicit paths.  Wallet applications
 designed for multiple signatures or other advanced scripts are
 increasingly adopting support for explicit paths using descriptors.
-Applications which do both will usually conform to the standards for
+Applications that do both will usually conform to the standards for
 implicit paths and also provide descriptors.
 
-=== A Wallet Technology Stack In Detail
+=== A Wallet Technology Stack in Detail
 
 Developers of modern wallets can choose from a variety of different
 technologies to help users create and use backups--and new solutions
@@ -611,7 +615,7 @@ this chapter on the stack of technologies that we think is most widely
 used in wallets as of early 2023:
 
 - BIP39 recovery codes
-- BIP32 Hierarchical Deterministic (HD) key derivation
+- BIP32 hierarchical deterministic (HD) key derivation
 - BIP44-style implicit paths
 
 All of these standards have been around since 2014 or earlier and
@@ -671,7 +675,7 @@ of entropy, adds a checksum, and then maps the entropy to a word list:
 4. Split the result into 11-bit length segments.
 
 5. Map each 11-bit value to a word from the predefined dictionary of
-2048 words.
+2,048 words.
 
 6. The recovery code is the sequence of words.
 
@@ -728,7 +732,7 @@ described previously in <<generating_recovery_words>>:
   "<code>mnemonic</code>" concatenated with an optional user-supplied
   passphrase string.</li>
 
-  <li>PBKDF2 stretches the recovery code and salt parameters using 2048
+  <li>PBKDF2 stretches the recovery code and salt parameters using 2,048
   rounds of hashing with the HMAC-SHA512 algorithm, producing a 512-bit
   value as its final output. That 512-bit value is the seed.</li>
 </ol>
@@ -742,7 +746,7 @@ image::images/mbc3_0505.png["From recovery code to seed"]
 
 [TIP]
 ====
-The key-stretching function, with its 2048 rounds of hashing, makes it
+The key-stretching function, with its 2,048 rounds of hashing, makes it
 slightly harder to brute-force attack the recovery code using software.
 Special-purpose hardware is not significantly affected.  For an attacker
 who needs to guess a user's entire recovery code, the length of the code
@@ -802,7 +806,7 @@ luggage oxygen faint major edit measure invite love trap field dilemma oblige+
 +5f1e0deaa082df8d487381379df848a6ad7e98798404+
 |=======
 
-.How much entropy do you need?
+.How Much Entropy Do You Need?
 ****
 BIP32 allows seeds to be from 128 to 512 bits.  BIP39 accepts from 128
 to 256 bits of entropy; Electrum v2 accepts 132 bits of entropy; Aezeed
@@ -978,8 +982,8 @@ generations.
 Child private keys are indistinguishable from nondeterministic (random)
 keys. Because the derivation function is a one-way function, the child
 key cannot be used to find the parent key. The child key also cannot be
-used to find any siblings. If you have the n~th~ child, you cannot find
-its siblings, such as the n-1 child or the n+1 child, or any
+used to find any siblings. If you have the n^th^ child, you cannot find
+its siblings, such as the n–1 child or the n+1 child, or any
 other children that are part of the sequence. Only the parent key and
 chain code can derive all the children. Without the child chain code,
 the child key cannot be used to derive any grandchildren either. You
@@ -1024,10 +1028,10 @@ of the branch. The extended private key can create a complete branch,
 whereas the extended public key can _only_ create a branch of public
 keys.
 
-Extended keys are encoded using Base58Check, to easily export and import
-between different BIP32-compatible wallets. The Base58Check
+Extended keys are encoded using base58check, to easily export and import
+between different BIP32-compatible wallets. The base58check
 coding for extended keys uses a special version number that results in
-the prefix "xprv" and "xpub" when encoded in Base58 characters to make
+the prefix "xprv" and "xpub" when encoded in base58 characters to make
 them easily recognizable. Because the extended key contains many more
 bytes than regular addresses,
 it is also much longer than other Base58Check-encoded strings we have
@@ -1059,7 +1063,7 @@ An extended public key can be used, therefore, to derive all of the
 _public_ keys (and only the public keys) in that branch of the HD wallet
 structure.
 
-This shortcut can be used to create public key-only
+This shortcut can be used to create public key–only
 deployments where a server or application has a copy of an extended
 public key and no private keys whatsoever. That kind of deployment can
 produce an infinite number of public keys and Bitcoin addresses, but
@@ -1078,12 +1082,12 @@ preload them on the ecommerce server. That approach is cumbersome and
 requires constant maintenance to ensure that the ecommerce server
 doesn't "run out" of keys.
 
-.Mind the gap
+.Mind the Gap
 ****
-An extended public key can generate approximately four billion direct
+An extended public key can generate approximately 4 billion direct
 child keys, far more than any store or application should ever need.
 However, it would also take a wallet application an unreasonable amount
-of time to generate all four billion keys and scan the blockchain for
+of time to generate all 4 billion keys and scan the blockchain for
 transactions involving those keys.  For that reason, most wallets only
 generate a few keys at a time, scan for payments involving those keys,
 and generate additional keys in the sequence as the previous keys are used.
@@ -1121,7 +1125,7 @@ Server, attempt to dodge this problem by using very large gap limits and
 limiting the rate at which they generate invoices.  Other solutions have
 been proposed, such as
 asking the spender's wallet to construct (but not broadcast) a
-transaction paying a possibly-reused address before they receive a fresh
+transaction paying a possibly reused address before they receive a fresh
 address for the actual transaction.  However, these other solutions have
 not been used in production as of this writing.
 ****
@@ -1146,11 +1150,11 @@ Let's see how HD wallets are used by looking at
 Gabriel's web store.
 
 Gabriel first set up his web store as a hobby, based on a simple hosted
-Wordpress page. His store was quite basic with only a few pages and an
-order form with a single bitcoin address.
+WordPress page. His store was quite basic with only a few pages and an
+order form with a single Bitcoin address.
 
 Gabriel used the first Bitcoin address generated by his regular wallet as
-the main bitcoin address for his store.
+the main Bitcoin address for his store.
 Customers would submit an order using the form and send payment to
 Gabriel's published Bitcoin address, triggering an email with the order
 details for Gabriel to process. With just a few orders each week, this
@@ -1351,8 +1355,8 @@ a few more examples.
 [options="header"]
 |=======
 |HD path | Key described
-| M/44++&#x27;++/0++&#x27;++/0++&#x27;++/0/2 | The third receiving public key for the primary bitcoin account
-| M/44++&#x27;++/0++&#x27;++/3++&#x27;++/1/14 | The fifteenth change-address public key for the fourth bitcoin account
+| M/44++&#x27;++/0++&#x27;++/0++&#x27;++/0/2 | The third receiving public key for the primary Bitcoin account
+| M/44++&#x27;++/0++&#x27;++/3++&#x27;++/1/14 | The fifteenth change-address public key for the fourth Bitcoin account
 | m/44++&#x27;++/2++&#x27;++/0++&#x27;++/0/1 | The second private key in the Litecoin main account, for signing transactions
 |=======
 
