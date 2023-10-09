@@ -394,7 +394,7 @@ The calculation can be seen in function +GetBlockSubsidy+ in the Bitcoin
 Core client, as shown in <<getblocksubsidy_source>>.
 
 [[getblocksubsidy_source]]
-.Calculating the block reward&#x2014;Function GetBlockSubsidy, Bitcoin Core Client, main.cpp
+.Calculating the block reward&#x2014;Function +GetBlockSubsidy+, Bitcoin Core Client, main.cpp
 ====
 [role="c_less_space"]
 [source, cpp]
@@ -407,7 +407,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         return 0;
 
     CAmount nSubsidy = 50 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+    // Subsidy is cut in half every 210,000 blocks.
     nSubsidy >>= halvings;
     return nSubsidy;
 }
@@ -461,6 +461,7 @@ structure of the coinbase transaction's input.
 [[table_8-1]]
 .The structure of a "normal" transaction input
 [options="header"]
+[cols="1,1,1"]
 |=======
 |Size| Field | Description
 | 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
@@ -473,6 +474,7 @@ structure of the coinbase transaction's input.
 [[table_8-2]]
 .The structure of a coinbase transaction input
 [options="header"]
+[cols="1,1,1"]
 |=======
 |Size| Field | Description
 | 32 bytes | Transaction Hash | All bits are zero: Not a transaction hash reference
@@ -520,6 +522,7 @@ as listed in <<block_header_structure_ch10>>.
 [[block_header_structure_ch10]]
 .The structure of the block header
 [options="header"]
+[cols="1,1,1"]
 |=======
 |Size| Field | Description
 | 4 bytes | Version | A multipurpose bitfield
@@ -533,7 +536,7 @@ as listed in <<block_header_structure_ch10>>.
 The version field was originally an integer field and was used in three
 upgrades to the Bitcoin network, those defined in BIPs 34, 66, and 65.
 Each time, the version number was incremented.  Later upgrades defined
-the version field as a bitfield, called _VersionBits_, allowing up to 29
+the version field as a bitfield, called _versionbits_, allowing up to 29
 upgrades to be in progress simultaneously; see <<bip9>> for details.
 Even later, miners began using some of the versionbits as an auxiliary
 nonce field.
@@ -546,9 +549,9 @@ order, with BIP66 (strict DER) occuring before BIP65
 that order rather than sorted numerically.
 ====
 
-Today, the VersionBits field has no meaning unless there's an attempt to
+Today, the versionbits field has no meaning unless there's an attempt to
 upgrade the consensus protocol underway, in which case you will need to
-read its documentation to determine how it is using VersionBits.
+read its documentation to determine how it is using versionbits.
 
 Next, the mining
 node needs to add the "Previous Block Hash" (also known as [.keep-together]#+prevhash+).#
@@ -664,6 +667,7 @@ Fortunately, this isn't difficult, as shown in <<sha256_example_generator_output
 
 [[sha256_example_generator_output2]]
 .Simple proof-of-work implementation
+====
 ----
 $ for nonce in $( seq 100 ) ; do echo "Hello, world! $nonce" | sha256sum ; done
 3194835d60e85bf7f728f3e3f4e4e1f5c752398cbcc5c45e048e4dbcae6be782  -
@@ -672,10 +676,10 @@ bfa474bbe2d9626f578d7d8c3acc1b604ec4a7052b188453565a3c77df41b79e  -
 f75a100821c34c84395403afd1a8135f685ca69ccf4168e61a90e50f47552f61  -
 09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314  -
 ----
+====
 
-The phrase "Hello, World! 32" produces the hash
-+09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314+,
-which fits our criteria. It took 32 attempts to find it. In terms of
+The phrase "Hello, World! 32" produces the following hash, which fits our criteria: 
++09cb91f8250df04a3db8bd98f47c7cecb712c99835f4123e8ea51460ccbec314+. It took 32 attempts to find it. In terms of
 probabilities, if the output of the hash function is evenly distributed
 we would expect to find a result with a 0 as the hexadecimal prefix once
 every 16 hashes (one out of 16 hexadecimal digits 0 through F). In
@@ -854,7 +858,7 @@ resulting in a retargeting bias toward higher difficulty by 0.05%.
 <<retarget_code>> shows the code used in the Bitcoin Core client.
 
 [[retarget_code]]
-.Retargeting the Proof-of-Work&#x2014;CalculateNextWorkRequired() in pow.cpp
+.Retargeting the Proof-of-Work&#x2014;[.plain]#++CalculateNextWorkRequired()++# in pow.cpp
 ====
 [source,cpp]
 ----
@@ -1824,7 +1828,7 @@ BIP34 defined a consensus rule change that required the coinbase field
 (input) of the coinbase transaction to contain the block height. Prior
 to BIP34, the coinbase could contain any arbitrary data the miners
 chose to include. After activation of BIP34, valid blocks had to
-contain a specific block-height at the beginning of the coinbase and be
+contain a specific block height at the beginning of the coinbase and be
 identified with a block version number greater than or equal to "2."
 
 To signal their readiness to enforce the rules of BIP34, miners set the block
@@ -1837,21 +1841,21 @@ BIP34 defined a two-step activation mechanism, based on a rolling
 window of 1,000 blocks. A miner would signal their individual
 readiness for BIP34 by constructing blocks with "2" as the version
 number. Strictly speaking, these blocks did not yet have to comply with
-the new consensus rule of including the block-height in the coinbase
+the new consensus rule of including the block height in the coinbase
 transaction because the consensus rule had not yet been activated. The
 consensus rules activated in two steps:
 
 - If 75% (750 of the most recent 1,000 blocks) are marked with version
   "2," then version "2" blocks must contain block height in the coinbase
   transaction or they are rejected as invalid. Version "1" blocks are
-  still accepted by the network and do not need to contain block-height.
+  still accepted by the network and do not need to contain block height.
   The old and new consensus rules coexist during this period.
 
 - When 95% (950 of the most recent 1,000 blocks) are version "2," version
   "1" blocks are no longer considered valid. Version "2" blocks are
-  valid only if they contain the block-height in the coinbase (as per
+  valid only if they contain the block height in the coinbase (as per
   the previous threshold). Thereafter, all blocks must comply with the
-  new consensus rules, and all valid blocks must contain block-height in
+  new consensus rules, and all valid blocks must contain block height in
   the coinbase transaction.
 
 After successful signaling and activation under the BIP34 rules, this
