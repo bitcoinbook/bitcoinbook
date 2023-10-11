@@ -216,16 +216,40 @@ encoding familiar to any programmer.  For other numbers up to
 length—but otherwise the numbers look like regular C-language encoded
 unsigned integers:
 
-[cols="1,1,1"]
-[options="header"]
-|===
-| Value | Bytes used | Format
-| >= +0+ && \<= +252+ (++0xfc++) | +1+ | +uint8_t+
-| >= +253+ && \<= +0xffff+ | 3 | +0xfd+ followed by the number as +uint16_t+
-| >= +0x10000+ && \<= +0xffffffff+ | +5+ | +0xfe+ followed by the number as +uint32_t+
-| >= +0x100000000+ && \<= +0xffffffffffffffff+ | +9+ | +0xff+ followed by the number as +uint64_t+
-|===
-****
+++++
+<table>
+
+<thead>
+<tr>
+<th>Value</th>
+<th>Bytes used</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>&gt;= <code>0</code> &amp;&amp; &lt;= <code>252</code> (<code>0xfc</code>)</p></td>
+<td><p><code>1</code></p></td>
+<td><p><code>uint8_t</code></p></td>
+</tr>
+<tr>
+<td><p>&gt;= <code>253</code> &amp;&amp; &lt;= <code>0xffff</code></p></td>
+<td><p>3</p></td>
+<td><p><code>0xfd</code> followed by the number as <code>uint16_t</code></p></td>
+</tr>
+<tr>
+<td><p>&gt;= <code>0x10000</code> &amp;&amp; &lt;= <code>0xffffffff</code></p></td>
+<td><p><code>5</code></p></td>
+<td><p><code>0xfe</code> followed by the number as <code>uint32_t</code></p></td>
+</tr>
+<tr>
+<td><p>&gt;= <code>0x100000000</code> &amp;&amp; &lt;= <code>0xffffffffffffffff</code></p></td>
+<td><p><code>9</code></p></td>
+<td><p><code>0xff</code> followed by the number as <code>uint64_t</code></p></td>
+</tr>
+</tbody>
+</table>
+++++
 
 Each input in a transaction must contain three fields:
 
@@ -954,15 +978,33 @@ bitcoins to be received to output scripts and spent with input scripts.
 Later experience with contract protocols inspired allowing bitcoins to
 be received to witness programs and spent with the witness structure. The terms and fields used in different versions of Bitcoin are shown in <<terms_used_authorization_authentication>>.
 
-[[terms_used_authorization_authentication]]
-.Terms used for authorization and authentication data in different parts of Bitcoin
-[cols="1,1,1"]
-|===
-| | **Authorization** | **Authentication**
-| **Whitepaper** | Public key | Signature
-| **Original (Legacy)** | Output script | Input script
-| **Segwit** | Witness program | Witness structure
-|===
+++++
+<table id="terms_used_authorization_authentication">
+<caption>Terms used for authorization and authentication data in different parts of Bitcoin</caption>
+<tbody>
+<tr>
+<td/>
+<td><p><strong>Authorization</strong></p></td>
+<td><p><strong>Authentication</strong></p></td>
+</tr>
+<tr>
+<td><p><strong>Whitepaper</strong></p></td>
+<td><p>Public key</p></td>
+<td><p>Signature</p></td>
+</tr>
+<tr>
+<td><p><strong>Original (Legacy)</strong></p></td>
+<td><p>Output script</p></td>
+<td><p>Input script</p></td>
+</tr>
+<tr>
+<td><p><strong>Segwit</strong></p></td>
+<td><p>Witness program</p></td>
+<td><p>Witness structure</p></td>
+</tr>
+</tbody>
+</table>
+++++
 
 ==== Witness Structure Serialization
 
@@ -1118,26 +1160,83 @@ reduce the weight used when spending a UTXO.  This helps discourage the
 creation of uneconomical outputs as described in
 <<uneconomical_outputs>>.
 
-[[weight_factors]]
-.Weight factors for all fields in a Bitcoin transaction
-[cols="1,1,1"]
-[option="header"]
-|===
-| Field | Factor | Weight in Alice's Tx
-| Version       | 4 | 16
-| Marker & Flag | 1 | 2
-| Inputs Count  | 4 | 4
-| Outpoint      | 4 | 144
-| Input script  | 4 | 4
-| Sequence      | 4 | 16
-| Outputs Count | 4 | 4
-| Amount         | 4 | 64 (2 outputs)
-| Output script | 4 | 232 (2 outputs with different scripts)
-| Witness Count | 1 | 1
-| Witness items | 1 | 66
-| Lock time     | 4 | 16
-| **Total**     | _N/A_ | **569**
-|===
+++++
+<table id="weight_factors">
+<caption>Weight factors for all fields in a Bitcoin transaction</caption>
+<tbody>
+<tr>
+<td><p>Field</p></td>
+<td><p>Factor</p></td>
+<td><p>Weight in Alice’s Tx</p></td>
+</tr>
+<tr>
+<td><p>Version</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p>Marker &amp; Flag</p></td>
+<td><p>1</p></td>
+<td><p>2</p></td>
+</tr>
+<tr>
+<td><p>Inputs Count</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Outpoint</p></td>
+<td><p>4</p></td>
+<td><p>144</p></td>
+</tr>
+<tr>
+<td><p>Input script</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Sequence</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p>Outputs Count</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Amount</p></td>
+<td><p>4</p></td>
+<td><p>64 (2 outputs)</p></td>
+</tr>
+<tr>
+<td><p>Output script</p></td>
+<td><p>4</p></td>
+<td><p>232 (2 outputs with different scripts)</p></td>
+</tr>
+<tr>
+<td><p>Witness Count</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+</tr>
+<tr>
+<td><p>Witness items</p></td>
+<td><p>1</p></td>
+<td><p>66</p></td>
+</tr>
+<tr>
+<td><p>Lock time</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p><strong>Total</strong></p></td>
+<td><p><em>N/A</em></p></td>
+<td><p><strong>569</strong></p></td>
+</tr>
+</tbody>
+</table>
+++++
 
 We can verify our weight calculation by getting the total for Alice's
 transaction from Bitcoin Core:

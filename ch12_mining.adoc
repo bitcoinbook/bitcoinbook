@@ -458,31 +458,82 @@ input with a coinbase transaction input. <<table_8-1>> shows the
 structure of a regular transaction, while <<table_8-2>> shows the
 structure of the coinbase transaction's input.
 
-[[table_8-1]]
-.The structure of a "normal" transaction input
-[options="header"]
-[cols="1,1,1"]
-|=======
-|Size| Field | Description
-| 32 bytes | Transaction Hash | Pointer to the transaction containing the UTXO to be spent
-| 4 bytes | Output Index | The index number of the UTXO to be spent, first one is 0
-| 1&#x2013;9 bytes (compactSize) | Script Size | Script length in bytes, to follow
-| Variable | Input Script | A script that fulfills the conditions of the UTXO output script
-| 4 bytes | Sequence Number | Multipurpose field used for BIP68 timelocks and transaction replacement signaling
-|=======
-
-[[table_8-2]]
-.The structure of a coinbase transaction input
-[options="header"]
-[cols="1,1,1"]
-|=======
-|Size| Field | Description
-| 32 bytes | Transaction Hash | All bits are zero: Not a transaction hash reference
-| 4 bytes | Output Index | All bits are ones: 0xFFFFFFFF
-| 1 byte  | Coinbase Data Size | Length of the coinbase data, from 2 to 100 bytes
-| Variable | Coinbase Data | Arbitrary data used for extra nonce and mining tags. In v2 blocks; must begin with block height
-| 4 bytes | Sequence Number | Set to 0xFFFFFFFF
-|=======
+++++
+<table id="table_8-1">
+<caption><span class="label">Table 12-1. </span>The structure of a “normal” transaction input</caption>
+<thead>
+<tr>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>32 bytes</p></td>
+<td><p>Transaction Hash</p></td>
+<td><p>Pointer to the transaction containing the UTXO to be spent</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Output Index</p></td>
+<td><p>The index number of the UTXO to be spent, first one is 0</p></td>
+</tr>
+<tr>
+<td><p>1–9 bytes (compactSize)</p></td>
+<td><p>Script Size</p></td>
+<td><p>Script length in bytes, to follow</p></td>
+</tr>
+<tr>
+<td><p>Variable</p></td>
+<td><p>Input Script</p></td>
+<td><p>A script that fulfills the conditions of the UTXO output script</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Sequence Number</p></td>
+<td><p>Multipurpose field used for BIP68 timelocks and transaction replacement signaling</p></td>
+</tr>
+</tbody>
+</table>
+<table id="table_8-2">
+<caption><span class="label">Table 12-2. </span>The structure of a coinbase transaction input</caption>
+<thead>
+<tr>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>32 bytes</p></td>
+<td><p>Transaction Hash</p></td>
+<td><p>All bits are zero: Not a transaction hash reference</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Output Index</p></td>
+<td><p>All bits are ones: 0xFFFFFFFF</p></td>
+</tr>
+<tr>
+<td><p>1 byte</p></td>
+<td><p>Coinbase Data Size</p></td>
+<td><p>Length of the coinbase data, from 2 to 100 bytes</p></td>
+</tr>
+<tr>
+<td><p>Variable</p></td>
+<td><p>Coinbase Data</p></td>
+<td><p>Arbitrary data used for extra nonce and mining tags. In v2 blocks; must begin with block height</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Sequence Number</p></td>
+<td><p>Set to 0xFFFFFFFF</p></td>
+</tr>
+</tbody>
+</table>
+++++
 
 In a coinbase transaction, the first two fields are set to values that
 do not represent a UTXO reference. Instead of a "transaction hash," the
@@ -519,19 +570,50 @@ To
 construct the block header, the mining node needs to fill in six fields,
 as listed in <<block_header_structure_ch10>>.
 
-[[block_header_structure_ch10]]
-.The structure of the block header
-[options="header"]
-[cols="1,1,1"]
-|=======
-|Size| Field | Description
-| 4 bytes | Version | A multipurpose bitfield
-| 32 bytes | Previous Block Hash | A reference to the hash of the previous (parent) block in the chain
-| 32 bytes | Merkle Root | A hash that is the root of the merkle tree of this block's transactions
-| 4 bytes | Timestamp | The approximate creation time of this block (seconds from Unix Epoch)
-| 4 bytes | Target | The Proof-of-Work algorithm target for this block
-| 4 bytes | Nonce | A counter used for the Proof-of-Work algorithm
-|=======
+++++
+<table id="block_header_structure_ch10">
+<caption>The structure of the block header</caption>
+<thead>
+<tr>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Version</p></td>
+<td><p>A multipurpose bitfield</p></td>
+</tr>
+<tr>
+<td><p>32 bytes</p></td>
+<td><p>Previous Block Hash</p></td>
+<td><p>A reference to the hash of the previous (parent) block in the chain</p></td>
+</tr>
+<tr>
+<td><p>32 bytes</p></td>
+<td><p>Merkle Root</p></td>
+<td><p>A hash that is the root of the merkle tree of this block’s transactions</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Timestamp</p></td>
+<td><p>The approximate creation time of this block (seconds from Unix Epoch)</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Target</p></td>
+<td><p>The Proof-of-Work algorithm target for this block</p></td>
+</tr>
+<tr>
+<td><p>4 bytes</p></td>
+<td><p>Nonce</p></td>
+<td><p>A counter used for the Proof-of-Work algorithm</p></td>
+</tr>
+</tbody>
+</table>
+++++
 
 The version field was originally an integer field and was used in three
 upgrades to the Bitcoin network, those defined in BIPs 34, 66, and 65.
