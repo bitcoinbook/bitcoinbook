@@ -17,7 +17,7 @@ blockchain to a sufficient depth before he considers the money he
 received as his to spend (see <<confirmations>>).
 For Alice's transaction to be included in the
 blockchain, it must be included in a _block_ of transactions.  There are
-a limited number of((("blocks", "transactions in")))((("transactions", "in blocks", secondary-sortas="blocks"))) blocks produced in a given amount of time and each
+a limited number of((("blocks", "transactions in")))((("transactions", "in blocks", secondary-sortas="blocks"))) blocks produced in a given amount of time, and each
 block only has a limited amount of space.  Only the miner who creates
 that block gets to choose which transactions to include.  Miners may
 select transactions by any criteria they want, including refusing to
@@ -84,7 +84,7 @@ a payment typically have an interest in having it confirming quickly, so
 normally allowing only spenders to choose fees can sometimes be a
 problem; we'll look at a solution to that problem in <<cpfp>>.  However,
 in many common payment flows, the parties with the highest desire to see a
-transaction confirm quickly--that is, the parties who'd be the most
+transaction confirm quickly--that is, the parties who would be the most
 willing to pay higher fees--are the spenders.
 
 For those reasons, both technical and practical, it is customary in
@@ -230,11 +230,11 @@ Full RBF::
 ****
 The reason for the two different versions of RBF is that full RBF has
 been controversial.  Early versions of Bitcoin allowed transaction
-replacement but this behavior was disabled for several releases.  During
+replacement, but this behavior was disabled for several releases.  During
 that time, a miner or full node using the software now called Bitcoin
 Core would not replace the first version of an unconfirmed transaction
 they received with any different version.  Some merchants came to expect
-this behavior: they assumed that any valid unconfirmed transaction which
+this behavior: they assumed that any valid unconfirmed transaction that
 paid an appropriate fee rate would eventually become a confirmed
 transaction, so they provided their goods or services shortly after
 receiving such an unconfirmed transaction.
@@ -292,7 +292,7 @@ having "Sending support" on
 https://oreil.ly/IhMzx.
 
 As a developer, if you plan to implement RBF fee bumping, you will first
-need to decided whether to perform opt-in RBF or full RBF.  At the time
+need to decide whether to perform opt-in RBF or full RBF.  At the time
 of writing, opt-in RBF is the only method that's sure to work.  Even if
 full RBF becomes reliable, there will likely be several years where
 replacements of opt-in transactions get confirmed slightly faster than
@@ -432,7 +432,7 @@ The solution to this problem is the ability to relay transactions as a
 package, called _package relay_, allowing the receiving node to evaluate
 the fee rate of the entire package before operating on any individual
 transaction.  As of this writing, developers working on Bitcoin Core
-have made significant progress on implementing package relay and a
+have made significant progress on implementing package relay, and a
 limited early version of it may be available by the time this book is
 published.
 
@@ -594,10 +594,10 @@ Fees = Sum(Inputs) – Sum(Outputs)
 ----
 
 This is a somewhat confusing element of transactions and an important
-point to understand, because if you are constructing your own
-transactions you must ensure you do not inadvertently include a very
+point to understand because if you are constructing your own
+transactions, you must ensure you do not inadvertently include a very
 large fee by underspending the inputs. That means that you must account
-for all inputs, if necessary by creating change, or you will end up
+for all inputs, if necessary, by creating change, or you will end up
 giving the miners a very big tip!
 
 For example, if you spend a 20-bitcoin UTXO to make a 1-bitcoin
@@ -619,7 +619,7 @@ you intended.
 === Timelock Defense Against Fee Sniping
 
 Fee sniping ((("transaction fees", "fee sniping", id="transaction-fee-sniping")))((("fee sniping", id="fee-snipe")))((("timelocks", "fee sniping and", id="timelock-fee-snipe")))((("lock time", "fee sniping and", id="lock-time-fee-snipe")))is a theoretical
-attack scenario, where miners attempting to rewrite past blocks "snipe"
+attack scenario where miners attempting to rewrite past blocks "snipe"
 higher-fee transactions from future blocks to maximize their
 profitability.
 
@@ -635,7 +635,7 @@ They can include any transactions that were in the "old" block
 Essentially they have the option to pull transactions from the "present"
 into the rewritten "past" when they re-create block  #100,000.
 
-Today, this attack is not very lucrative, because the block subsidy is much
+Today, this attack is not very lucrative because the block subsidy is much
 higher than total fees per block. But at some point in the future,
 transaction fees will be the majority of the reward (or even the
 entirety of the reward). At that time, this scenario becomes inevitable.
@@ -649,15 +649,15 @@ no effect&#x2014;the transactions could only be included in block
 #100,001 anyway; it's the next block.
 
 But under a reorganization attack, the miners would not be able to pull
-high-fee transactions from the mempool, because all those transactions
+high-fee transactions from the mempool because all those transactions
 would be timelocked to block #100,001. They can only remine  #100,000
 with whatever transactions were valid at that time, essentially gaining
 no new fees.
 
 This does not entirely prevent fee sniping, but it does make it less
-profitable in some cases and so can help preserve the stability of the
+profitable in some cases and can help preserve the stability of the
 Bitcoin network as the block subsidy declines.  We recommend all wallets
-implement anti fee sniping when it doesn't interfere with the wallet's
+implement anti-fee sniping when it doesn't interfere with the wallet's
 other uses of the lock time field.
 
 As Bitcoin continues to mature, and as the subsidy continues to decline,

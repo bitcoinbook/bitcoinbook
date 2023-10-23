@@ -72,7 +72,7 @@ be able to predict the new output--not even if they know the new input.
 
 This allows us to take one random value and transform it into a
 practically unlimited number of seemingly random values.  Even more
-usefully, later using the same hash function with the same ((("seeds")))input
+useful, later using the same hash function with the same ((("seeds")))input
 (called a _seed_) will produce the same seemingly random values:
 
 ----
@@ -160,7 +160,7 @@ that corresponds to the public child key Bob created.
 In other words, it's possible to create child public keys even if you
 don't know anything about the parent private key.  The value added to a
 public key is ((("key tweaks")))known as a _key tweak._  If a deterministic algorithm is
-used for generating the key tweaks, then it's possible to for someone
+used for generating the key tweaks, then it's possible for someone
 who doesn't know the private key to create an essentially unlimited
 sequence of public child keys from a single public parent key. The
 person who controls the private parent key can then use the same key
@@ -179,7 +179,7 @@ transactions to the less-secure frontend for broadcast to the Bitcoin
 network.
 
 Public child key derivation can produce a linear sequence of keys
-similar to the previously seen <<Type1_wallet>>, but modern wallets
+similar to the previously seen <<Type1_wallet>>, but modern wallet
 applications use one more trick to provide a tree of keys instead a
 single sequence, as described in the((("wallets", "key generation", "public child key derivation", startref="wallet-keygen-public-child")))((("key generation", "public child key derivation", startref="keygen-public-child")))((("public child key derivation", startref="public-child-derive")))((("child key pair derivation", startref="child-key-pair"))) following section.
 
@@ -278,7 +278,7 @@ BIP39::
   adding a checksum to it, and encoding the data into a series of 12 to
   24 words (which may be localized to a user's native language).  The
   words (plus an optional passphrase) are run through a _key-stretching
-  function_ and the output is used as a seed.  BIP39 recovery codes have
+  function_, and the output is used as a seed.  BIP39 recovery codes have
   several shortcomings, which later schemes attempt to address.
 
 Electrum v2::
@@ -299,7 +299,7 @@ Aezeed::
   cryptographic properties of the recovery code.  
   It also includes a _wallet birthday_
   in the recovery code, a reference to the date when the user created
-  the wallet database; this allows a restoration process to find all of
+  the wallet database. This allows a restoration process to find all of
   the funds associated with a wallet without scanning the entire
   blockchain, which is especially useful for privacy-focused lightweight clients.
   It includes support for changing the passphrase or changing other
@@ -318,7 +318,7 @@ Muun::
   Although this is unwieldy compared to the BIP39, Electrum v2, and
   Aezeed recovery codes, it provides support for new technologies and
   standards that are becoming more common in new wallets, such as
-  Lightning Network support, output script descriptors, and miniscript.
+  Lightning Network (LN) support, output script descriptors, and miniscript.
 
 SLIP39::
   A successor ((("SLIP39 recovery codes")))to BIP39 with some of the same authors, SLIP39 allows
@@ -467,12 +467,12 @@ amount of every transaction listed but a blank entry for the
 Wallets should provide their users with a convenient way to back up
 label data.  That seems obvious, but there are a number of
 widely used wallet applications that make it easy to create and use
-recovery codes but which provide no way to back up or restore label
+recovery codes but that provide no way to back up or restore label
 data.
 
 Additionally, it may be useful for wallet applications to provide a
 standardized format to export labels so that they can be used in other
-applications, e.g., accounting software.  A standard for that ((("labels, backing up", startref="label-backup")))format is
+applications (e.g., accounting software).  A standard for that ((("labels, backing up", startref="label-backup")))format is
 proposed in BIP329.
 
 Wallet applications implementing additional protocols beyond basic
@@ -507,7 +507,7 @@ and additional ((("wallets", "nonkey data, backing up", startref="wallet-nonkey-
 ==== Backing Up Key Derivation Paths
 
 In a ((("wallets", "key generation", "backing up derivation paths", id="wallet-keygen-backups")))((("key generation", "backing up derivation paths", id="keygen-backups")))((("backing up", "key derivation paths", id="backup-key-derive")))BIP32 tree of keys, there are approximately four billion first-level
-keys and each of those keys can have its own four billion children, with
+keys; each of those keys can have its own four billion children, with
 those children each potentially having four billion children of their
 own, and so on.  It's not possible for a wallet application to generate
 even a small fraction of every possible key in a BIP32 tree, which means
@@ -611,7 +611,7 @@ included directly.  Their disadvantage is that they require users to back
 up additional information along with their recovery code.  The
 additional information usually can't compromise a user's security, so it
 doesn't require as much protection as the recovery code, although it can
-reduce their privacy and so does require some protection.
+reduce their privacy and does require some protection.
 
 Almost all wallet applications that use explicit paths as of this
 writing use the _output script descriptors_ standard (called
@@ -660,14 +660,14 @@ Developers of modern wallets can choose from a variety of different
 technologies to help users create and use backups--and new solutions
 appear every year.  Instead of going into detail about each of the
 options we described earlier in this chapter, we'll focus the rest of
-this chapter on the stack of technologies that we think is most widely
+this chapter on the stack of technologies we think is most widely
 used in wallets as of early 2023:
 
 - BIP39 recovery codes
-- BIP32 hierarchical deterministic (HD) key derivation
+- BIP32 HD key derivation
 - BIP44-style implicit paths
 
-All of these standards have been around since 2014 or earlier and
+All of these standards have been around since 2014 or earlier, and
 you'll have no problem finding additional resources for using them.
 However, if you're feeling bold, we do encourage you to investigate more
 modern standards that may provide additional features or safety.
@@ -678,7 +678,7 @@ modern standards that may provide additional features or safety.
 BIP39 ((("wallets", "recovery codes", id="wallet-recovery-bip39")))((("recovery codes", id="recovery-code-bip39")))((("BIP39 recovery codes", id="bip39-recovery")))recovery codes are word
 sequences that represent (encode) a random number used as a seed to
 derive a deterministic wallet. The sequence of words is sufficient to
-re-create the seed and from there re-create all the
+re-create the seed and from there, re-create all the
 derived keys. A wallet application that implements deterministic wallets
 with a BIP39 recovery code will show the user a sequence of 12 to 24 words when
 first creating a wallet. That sequence of words is the wallet backup and
@@ -693,7 +693,7 @@ Recovery codes((("brainwallets"))) are often confused with
 "brainwallets." They are not the same. The primary difference is that a
 brainwallet consists of words chosen by the user, whereas recovery codes
 are created randomly by the wallet and presented to the user. This
-important difference makes recovery codes much more secure, because
+important difference makes recovery codes much more secure because
 humans are very poor sources of randomness.
 ====
 
@@ -902,7 +902,7 @@ some examples of recovery codes and the seeds ((("key-stretching functions", sta
 </tbody>
 </table>
 <table id="bip39_256_no_pass">
-<caption><span class="label">Table 5-7. </span>256-bit entropy BIP39 recovery code, no passphrase, resulting seed</caption>
+<caption>256-bit entropy BIP39 recovery code, no passphrase, resulting seed</caption>
 <tbody>
 <tr>
 <td><p><strong>Entropy input (256 bits)</strong></p></td>
@@ -966,7 +966,7 @@ greater the entropy, the harder it will be for them to figure out part
 of the code they didn't see.  For example, if an attacker sees half of a
 128-bit code (64 bits), it's plausible that they'll be able to brute
 force the remaining 64 bits.  If they see half of a 256-bit code (128
-bits), it's not plausible that they can brute force the other half.  We
+bits), it's not plausible they can brute force the other half.  We
 don't recommend relying on this defense--either keep your recovery codes
 very safe or use a method like SLIP39 that lets you distribute your
 recovery code across multiple locations without relying on the safety of
@@ -1026,7 +1026,7 @@ her family to recover the cryptocurrency((("wallets", "recovery codes", startref
 
 HD wallets ((("wallets", "key generation", "HD (hierarchical deterministic)", id="wallet-keygen-hd")))((("key generation", "HD (hierarchical deterministic)", id="keygen-hd")))((("HD (hierarchical deterministic) key generation", id="hd-keygen")))((("BIP32 HD (hierarchical deterministic) key generation", id="bip32")))((("seeds", "HD wallet creation", id="seed-hdwallet")))are created from a ((("root seeds")))single _root seed_, which is a
 128-, 256-, or 512-bit random number. Most commonly, this seed is
-generated by or decrypted from a _recovery code_ as detailed in the previous section.
+generated by or decrypted from a recovery code as detailed in the previous section.
 
 Every key in the HD wallet is deterministically derived from this root
 seed, which makes it possible to re-create the entire HD wallet from
@@ -1068,7 +1068,7 @@ that combines:
 The chain code is used to introduce deterministic random data to the
 process, so that knowing the index and a child key is not sufficient to
 derive other child keys. Knowing a child key does not make it possible
-to find its siblings, unless you also have the chain code. The initial
+to find its siblings unless you also have the chain code. The initial
 chain code seed (at the root of the tree) is made from the seed, while
 subsequent child chain codes are derived from each parent chain code.
 
@@ -1089,7 +1089,7 @@ parent.
 image::images/mbc3_0507.png["ChildPrivateDerivation"]
 
 Changing the index allows us to extend the parent and create the other
-children in the sequence, e.g., Child 0, Child 1, Child 2, etc. Each
+children in the sequence (e.g., Child 0, Child 1, Child 2, etc.). Each
 parent key can have 2,147,483,647 (2^31^) children (2^31^ is half of the
 entire 2^32^ range available because the other half is reserved for a
 special type of derivation we will talk about later in this chapter).
@@ -1177,9 +1177,9 @@ LrtJunSDMstweyLXhRgPxdp14sk9tJPW9
 
 As
 mentioned  previously, ((("key generation", "HD (hierarchical deterministic)", "public child key derivation", id="keygen-hd-public-child")))((("HD (hierarchical deterministic) key generation", "public child key derivation", id="hd-keygen-public-child")))((("public child key derivation", id="public-child")))((("child key pair derivation", "public keys", id="child-key-pair-public")))a very useful characteristic of HD wallets is the
-ability to derive public child keys from public parent keys, _without_
+ability to derive public child keys from public parent keys _without_
 having the private keys. This gives us two ways to derive a child public
-key: either from the child private key, or directly from the parent
+key: either from the child private key or directly from the parent
 public key.
 
 An extended public key can be used, therefore, to derive all of the
@@ -1189,7 +1189,7 @@ structure.
 This shortcut can be used to create public key–only
 deployments where a server or application has a copy of an extended
 public key and no private keys whatsoever. That kind of deployment can
-produce an infinite number of public keys and Bitcoin addresses, but
+produce an infinite number of public keys and Bitcoin addresses but
 cannot spend any of the money sent to those addresses. Meanwhile, on
 another, more secure server, the extended private key can derive all the
 corresponding private keys to sign transactions and spend the money.
@@ -1359,9 +1359,9 @@ a "gap" in the tree above the level where extended public keys are used.
 
 In simple terms, if you want to use the convenience of an xpub to derive
 branches of public keys, without exposing yourself to the risk of a
-leaked chain code, you should derive it from a hardened parent, rather
+leaked chain code, you should derive it from a hardened parent rather
 than a normal parent. As a best practice, the level-1 children of the
-master keys are always derived through the hardened derivation, to
+master keys are always derived through the hardened derivation to
 prevent compromise of the master keys.
 
 ===== Index numbers for normal and hardened derivation
@@ -1445,7 +1445,7 @@ extended key can have 4 billion children: 2 billion normal children and
 billion children, and so on. The tree can be as deep as you want, with
 an infinite number of generations. With all that flexibility, however,
 it becomes quite difficult to navigate this infinite tree. It is
-especially difficult to transfer HD wallets between implementations,
+especially difficult to transfer HD wallets between implementations
 because the possibilities for internal organization into branches and
 subbranches are endless.
 
@@ -1456,7 +1456,7 @@ the "purpose" of the tree structure. Based on BIP43, an HD wallet
 should use only one level-1 branch of the tree, with the index number
 identifying the structure and namespace of the rest of the tree by
 defining its purpose. For example, an HD wallet using only branch
-m/i++&#x27;++/ is intended to signify a specific purpose and that
+m/i++&#x27;++/ is intended to signify a specific purpose, and that
 purpose is identified by index number "i."
 
 Extending that specification, ((("BIP44 HD wallet tree structure", id="bip44")))BIP44 proposes a multiaccount structure
@@ -1474,10 +1474,10 @@ The first-level "purpose" is always set to +44'+. The second-level
 "coin_type" specifies the type of cryptocurrency coin, allowing for
 multicurrency HD wallets where each currency has its own subtree under
 the second level.  Bitcoin is
-m/44'/0' and Bitcoin Testnet is m/44++&#x27;++/1++&#x27;++.
+m/44'/0' and Bitcoin Testnet is m/44++&#x27;++/1++'++.
 
 The third level of the tree is "account," which allows users to
-subdivide their wallets into separate logical subaccounts, for
+subdivide their wallets into separate logical subaccounts for
 accounting or organizational purposes. For example, an HD wallet might
 contain two Bitcoin "accounts": m/44++&#x27;++/0++&#x27;++/0++&#x27;++
 and m/44++&#x27;++/0++&#x27;++/1++&#x27;++. Each account is the root of

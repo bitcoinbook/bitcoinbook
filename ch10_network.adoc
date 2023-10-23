@@ -222,7 +222,7 @@ receive it.  For example:
 A third technique is to assume all nodes receiving the data have
 almost all of the same transactions in their mempool, so they can all
 accept the same compact block.  That not only saves us time computing
-a compact block at each hop, but it means that all each hop can simply
+a compact block at each hop, but it means that each hop can simply
 relay the FEC packets to the next hop even before validating them.
 
 The trade-off for each of the preceding methods is that they work well with
@@ -238,7 +238,7 @@ The original
 https://oreil.ly/30ZKi[Bitcoin Relay Network] was((("Bitcoin Relay Network"))) created by
 developer Matt Corallo in 2015 to enable fast synchronization of
 blocks between miners with very low latency. The network consisted of
-several Virtual Private Servers (VPSes) hosted on
+several virtual private servers (VPSes) hosted on
 infrastructure around the world and served to connect the majority of
 miners and mining pools.
 
@@ -268,7 +268,7 @@ information, including:
 +Version+:: The Bitcoin P2P protocol version the client "speaks" (e.g., 70002)
 +nLocalServices+:: A list of local services supported by the node
 +nTime+:: The current time
-+addrYou+:: The IP address of the remote node as seen from this node
++addrYou+:: The IP address of the remote node, as seen from this node
 +addrMe+:: The IP address of the local node, as discovered by the local node
 +subver+:: A subversion showing the type of software running on this node (e.g., [.keep-together]#+/Satoshi:0.9.2.1/+#)
 +BestHeight+:: The block height of this node's blockchain
@@ -326,12 +326,12 @@ A node must connect to a few different peers in order to establish
 diverse paths into the Bitcoin network. Paths are not reliable—nodes
 come and go—and so the node must continue to discover new nodes as it
 loses old connections as well as assist other nodes when they bootstrap.
-Only one connection is needed to bootstrap, because the first node can
+Only one connection is needed to bootstrap because the first node can
 offer introductions to its peer nodes and those peers can offer further
 introductions. It's also unnecessary and wasteful of network resources
 to connect to more than a handful of nodes. After bootstrapping, a node
-will remember its most recent successful peer connections, so that if it
-is rebooted it can quickly reestablish connections with its former peer
+will remember its most recent successful peer connections so if it
+is rebooted, it can quickly reestablish connections with its former peer
 network. If none of the former peers respond to its connection request,
 the node can use the seed nodes to bootstrap again.
 
@@ -399,14 +399,14 @@ $ bitcoin-cli getpeerinfo
 To override the automatic management of peers and to specify a list of
 IP addresses, users can provide the option +-connect=<IPAddress>+ and
 specify one or more IP addresses. If this option is used, the node will
-only connect to the selected IP addresses, instead of discovering and
+only connect to the selected IP addresses instead of discovering and
 maintaining the peer connections automatically.
 
 If there is no traffic on a connection, nodes will periodically send a
 message to maintain the connection. If a node has not communicated on a
 connection for too long, it is assumed to be disconnected
 and a new peer will be sought. Thus, the network dynamically adjusts to
-transient nodes and network problems, and can organically grow and
+transient nodes and network problems and can organically grow and
 shrink as needed without any ((("Bitcoin network", "nodes", "network discovery", startref="bitcoin-network-node-discovery")))((("nodes", "network discovery", startref="node-discovery")))((("network discovery", startref="network-discovery")))central control.
 
 === Full Nodes
@@ -449,7 +449,7 @@ node will have to download hundreds of thousands of blocks to
 synchronize with the network and reestablish the full blockchain.
 
 The
-process of syncing the blockchain starts with the +version+ message,
+process of syncing the blockchain starts with the +version+ message
 because that contains +BestHeight+, a node's current blockchain height
 (number of blocks). A node will see the +version+ messages from its
 peers, know how many blocks they each have, and be able to compare to
@@ -549,7 +549,7 @@ verify that a transaction, such as a double-spend of the same UTXO,
 doesn't exist because it doesn't have a record of all transactions. This
 vulnerability can be used in a denial-of-service attack or for a
 double-spending attack against lightweight clients. To defend against this, a lightweight
-client needs to connect randomly to several clients, to increase the
+client needs to connect randomly to several clients to increase the
 probability that it is in contact with at least one honest node. This
 need to randomly connect means that lightweight clients also are vulnerable to
 network partitioning attacks or Sybil attacks, where they are connected
@@ -603,7 +603,7 @@ A bloom filter((("Bitcoin network", "bloom filters", "operational overview", id=
 to describe a desired pattern without specifying it exactly. Bloom
 filters offer an efficient way to express a search pattern while
 protecting privacy. They are used by lightweight clients to ask their peers for
-transactions matching a specific pattern, without revealing exactly
+transactions matching a specific pattern without revealing exactly
 which addresses, keys, or transactions they are searching for.
 
 In our previous analogy, a tourist without a map is asking for
@@ -615,7 +615,7 @@ reveals slightly less about the desired destination than asking for "23
 Church St." Using this technique, a tourist could specify the desired
 address in more detail such as "ending in U-R-C-H" or less detail such as
 "ending in H." By varying the precision of the search, the tourist
-reveals more or less information, at the expense of getting more or less
+reveals more or less information at the expense of getting more or less
 specific results. If they ask for a less specific pattern, they get a lot
 more possible addresses and better privacy, but many of the results are
 irrelevant. If they ask for a very specific pattern, they get fewer
@@ -662,7 +662,7 @@ changed from +0+ to +1+.
 <<bloom2>> is an example of adding a pattern "A" to the simple bloom filter shown in <<bloom1>>.
 
 Adding a second pattern is as simple as repeating this process. The
-pattern is hashed by each hash function in turn and the result is
+pattern is hashed by each hash function in turn, and the result is
 recorded by setting the bits to +1+. Note that as a bloom filter is
 filled with more patterns, a hash function result might coincide with a
 bit that is already set to +1+, in which case the bit is not changed. In
@@ -726,16 +726,16 @@ transactions of interest to the lightweight client without revealing exactly whi
 addresses or keys it is interested in.
 
 A lightweight client will initialize a bloom filter
-as "empty"; in that state the bloom filter will not match any patterns.
+as "empty"; in that state, the bloom filter will not match any patterns.
 The lightweight client will then make a list of all the addresses, keys, and
 hashes that it is interested in. It will do this by extracting the
-public key hash and script hash and transaction IDs from any UTXO
+public key hash, script hash, and transaction IDs from any UTXO
 controlled by its wallet. The lightweight client then adds each of these to the
-bloom filter, so that the bloom filter will "match" if these patterns
+bloom filter so that the bloom filter will "match" if these patterns
 are present in a transaction, without revealing the patterns themselves.
 
 The lightweight client will then send a
-+filterload+ message to the peer, containing the bloom filter to use on
++filterload+ message to the peer containing the bloom filter to use on
 the connection. On the peer, bloom filters are checked against each
 incoming transaction. The full node checks several parts of the
 transaction against the bloom filter, looking for a match including:
@@ -826,11 +826,11 @@ weren't created by the client.  They can even download each matching
 block from a different peer, making it harder for full nodes to connect
 transactions belonging to a single client across multiple blocks.
 
-This idea for server-generated filters doesn't offer perfect privacy,
+This idea for server-generated filters doesn't offer perfect privacy;
 it still places some costs on full nodes (and it does require lightweight
-clients use more bandwidth for the block download), and the filters can
-only be used for confirmed transactions (not unconfirmed transactions),
-but it is much more private and reliable than BIP37 client-requested
+clients to use more bandwidth for the block download), and the filters can
+only be used for confirmed transactions (not unconfirmed transactions). However,
+it is much more private and reliable than BIP37 client-requested
 bloom filters.
 
 After the description of the original idea based on bloom filters,
@@ -930,7 +930,7 @@ differences:
 |===
 
 If we know that we might need to store large numbers (because large
-differences can happen, even if they are rare) but we'll most often need
+differences can happen, even if they are rare), but we'll most often need
 to store small numbers, we can encode each number using a system that
 uses less space for small numbers and extra space for large numbers.
 On average, that system will perform better than using the same amount
@@ -968,14 +968,14 @@ accurate filter.
 For both the primary and secondary goals to be met, a filter would need
 to reference two types of information:
 
-* The script for every output in every transaction in a block.
+* The script for every output in every transaction in a block
 
-* The outpoint for every input in every transaction in a block.
+* The outpoint for every input in every transaction in a block
 
 An early design for compact block filters included both of those pieces
-of information, but it was realized that there was a more efficient way
+of information, but it was realized there was a more efficient way
 to accomplish the primary goal if we sacrificed the secondary goal.  In
-the new design, a block filter would still references two types of
+the new design, a block filter would still reference two types of
 information, but they'd be more closely related:
 
 * As before, the script for every output in every transaction in a
@@ -1072,7 +1072,7 @@ finding the differences (deltas) between each entry.  That compact block
 filter is then distributed by peers to their clients (such as wallets).
 
 A client uses the deltas to reconstruct the original commitments.  The
-client such as a wallet also takes all the output scripts it is
+client, such as a wallet, also takes all the output scripts it is
 monitoring for and generates commitments in the same way as BIP158.  It
 checks whether any of its generated commitments match the commitments in
 the filter.
@@ -1085,7 +1085,7 @@ compact block filter contains the number 1234.  When a client sees that
 
 There's a 100% guarantee that an accurate filter containing 1234 will
 allow a client to learn about a block containing 123456, called a _true
-positive_.  However, there's also chance that the block might contain
+positive_.  However, there's also a chance that the block might contain
 123400, 123401, or almost a hundred other entries that are not what the
 client is looking for (in this example), ((("false positives")))called a _false positive_.
 
@@ -1141,7 +1141,7 @@ communications: _Tor transport_.
 Tor, which
 stands for _The Onion Routing network_, is a software project and
 network that offers encryption and encapsulation of data through
-randomized network paths that offer anonymity, untraceability and
+randomized network paths that offer anonymity, untraceability, and
 privacy.
 
 Bitcoin Core ((("Bitcoin Core", "Tor transport")))offers several configuration options that allow you to run
@@ -1192,7 +1192,7 @@ children). Any matching orphans are then validated. If valid, they are
 removed from the orphan pool and added to the mempool,
 completing the chain that started with the parent transaction. In light
 of the newly added transaction, which is no longer an orphan, the
-process is repeated recursively looking for any further descendants,
+process is repeated recursively looking for any further descendants
 until no more descendants are found. Through this process, the arrival
 of a parent transaction triggers a cascade reconstruction of an entire
 chain of interdependent transactions by reuniting the orphans with

@@ -92,7 +92,7 @@ signature on this transaction."
 
 Digital signatures((("digital signatures", "SIGHASH flags", id="digital-signature-sighash")))((("SIGHASH flags", id="sighash"))) apply to messages,
 which in the case of Bitcoin, are the transactions themselves. The
-signature prove a _commitment_ by the signer to specific transaction
+signature proves a _commitment_ by the signer to specific transaction
 data. In the simplest form, the signature applies to almost the entire
 transaction, thereby committing to all the inputs, outputs, and other
 transaction fields. However, a signature can commit to only a subset of
@@ -103,7 +103,7 @@ Bitcoin signatures have a way of indicating which
 part of a transaction's data is included in the hash signed by the
 private key using a +SIGHASH+ flag. The +SIGHASH+ flag is a single byte
 that is appended to the signature. Every signature has either an
-explicit or implicit +SIGHASH+ flag
+explicit or implicit +SIGHASH+ flag,
 and the flag can be different from input to input. A transaction with
 three signed inputs may have three signatures with different +SIGHASH+
 flags, each signature signing (committing) to different parts of the
@@ -217,7 +217,7 @@ in practice:
 funds can construct a transaction with a single output. The single
 output pays the "goal" amount to the fundraiser. Such a transaction is
 obviously not valid, as it has no inputs. However, others can now amend
-it by adding an input of their own, as a donation. They sign their own
+it by adding an input of their own as a donation. They sign their own
 input with +ALL|ANYONECANPAY+. Unless enough inputs are gathered to
 reach the value of the output, the transaction is invalid. Each donation
 is a "pledge," which cannot be collected by the fundraiser until the
@@ -227,7 +227,7 @@ someone who lends them funds), allowing them to collect the donations
 even if they haven't reached the specified value.
 
 +NONE+ :: This construction can be used to create a "bearer check" or
-"blank check" of a specific amount. It commits to all inputs, but allows
+"blank check" of a specific amount. It commits to all inputs but allows
 the outputs to be changed. Anyone can write their own
 Bitcoin address into the output script.
 By itself, this allows any miner to change
@@ -394,7 +394,7 @@ generator +G=5+ to get her public key +xG=15+.  She gives Bob +15+.
 
 4. Bob derives +sG = 200 = 40 * 5+ and +exG = 165 = 11 * 15+.  He then
   verifies that +200 == 35 + 165+.  Note that this is the same operation
-  that Alice performed but all of the values have been scaled up by +5+
+  that Alice performed, but all of the values have been scaled up by +5+
   (the value of +G+).
 
 Of course, this is an oversimplified example.  When working with simple
@@ -549,8 +549,7 @@ she's ready to spend, she begins generating her signature:
 ==== Serialization of Schnorr Signatures
 
 A schnorr signature ((("digital signatures", "schnorr signature algorithm", "serialization")))((("schnorr signature algorithm", "serialization")))((("serialization", "of schnorr signature algorithm", secondary-sortas="schnorr")))consists of two values, +kG+ and +s+.  The value
-+kG+ is a point on Bitcoin's elliptic curve (called secp256k1) and so
-would normally be represented by two 32-byte coordinates, e.g., +(x,y)+.
++kG+ is a point on Bitcoin's elliptic curve (called secp256k1) and would normally be represented by two 32-byte coordinates, e.g., +(x,y)+.
 However, only the _x_ coordinate is needed, so only that value is
 included.  When you see +kG+ in schnorr signatures for Bitcoin, note that it's only that point's _x_
 coordinate.
@@ -560,7 +559,7 @@ Bitcoin's secp256k1 curve, it can never be more than 32 bytes long.
 
 Although both +kG+ and +s+ can sometimes be values that can be
 represented with fewer than 32 bytes, it's improbable that they'd be
-much smaller than 32 bytes, and so they're serialized as two 32-byte
+much smaller than 32 bytes, so they're serialized as two 32-byte
 values (i.e., values smaller than 32 bytes have leading zeros).
 They're serialized in the order of +kG+ and then +s+, producing exactly
 64 bytes.
@@ -621,9 +620,9 @@ simple multisignature protocol:
 
 Alice and Bob have proven that they know the sum of their private keys without
 either one of them revealing their private key to the other or anyone
-else.  The protocol can be extended to any number of participants; e.g.,
+else.  The protocol can be extended to any number of participants (e.g.,
 a million people could prove they knew the sum of their million
-different keys.
+different keys).
 
 The preceding protocol has several security problems.  Most notable is that one
 party might learn the public keys of the other parties before committing
@@ -631,7 +630,7 @@ to their own public key.  For example, Alice generates her public key
 +yG+ honestly and shares it with Bob.  Bob generates his public key
 using +zG - yG+.  When their two keys are combined (+yG + zG - yG+), the
 positive and negative +yG+ terms cancel out so the public key only represents
-the private key for +z+, i.e., Bob's private key.  Now Bob can create a
+the private key for +z+ (i.e., Bob's private key).  Now Bob can create a
 valid signature without any assistance from Alice.  This is ((("key cancellation attacks")))called a
 _key cancellation attack_.
 
@@ -790,9 +789,9 @@ work together to reconstruct Alice's partial private key.  Now Bob has
 his own partial private key plus the keys of Alice and Carol, allowing
 him to spend the funds himself without their involvement.  This attack can
 be addressed if all of the participants agree to only communicate using a
-scheme that allows any one of them to see all of the other's messages;
-e.g., if Bob tells Alice that Carol is unavailable, Carol is able to see
-that message before she begins working with Bob.  Other solutions,
+scheme that allows any one of them to see all of the other's messages
+(e.g., if Bob tells Alice that Carol is unavailable, Carol is able to see
+that message before she begins working with Bob).  Other solutions,
 possibly more robust solutions, to this problem were being researched at
 the time of writing.
 
@@ -841,7 +840,7 @@ Less provable security::
 
 Nonlinear::
   ECDSA signatures cannot be easily combined to create scriptless
-  multisignatures or used in related advanced applications such as
+  multisignatures or used in related advanced applications, such as
   multiparty signature adaptors.  There are workarounds for this
   problem, but they involve additional extra complexity that
   significantly slows down operations and which, in some cases, has
@@ -923,7 +922,7 @@ as follows:
 === The Importance of Randomness in Signatures
 
 As we((("digital signatures", "randomness, importance of", id="digital-signature-random")))((("randomness, importance in digital signatures", id="random-digital-signature"))) saw in <<schnorr_signatures>> and <<ecdsa_signatures>>,
-the signature generation algorithm uses a random number _k_, as the basis
+the signature generation algorithm uses a random number _k_ as the basis
 for a private/public nonce pair. The value of _k_ is not
 important, _as long as it is random_. If signatures from the same
 private key use the private nonce _k_ with different messages

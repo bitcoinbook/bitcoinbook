@@ -54,7 +54,7 @@ e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
 
 Bitcoin Core's serialization format is special because it's the format
 used to make commitments to transactions and to relay them across
-Bitcoin's peer-to-peer (P2P) network, but otherwise programs can use
+Bitcoin's P2P network, but otherwise programs can use
 a different format as long as they transmit all of the
 same data.  However, Bitcoin Core's format is reasonably compact for the
 data it transmits and simple to parse, so many other Bitcoin programs
@@ -62,12 +62,12 @@ use this format.
 
 [TIP]
 ====
-The only ((("partially signed bitcoin transaction (PSBT) format")))((("PSBT (partially signed bitcoin transaction) format")))other widely used transaction serialization format of that
+The only ((("partially signed bitcoin transaction (PSBT) format")))((("PSBT (partially signed bitcoin transaction) format")))other widely used transaction serialization format that
 we're aware of is the partially signed bitcoin transaction (PSBT) format
 documented in BIPs 174 and 370 (with extensions documented in other
 BIPs).  PSBT allows an untrusted program to produce a transaction
 template that can be verified and updated by trusted programs (such as
-hardware signing devices) that possesses the necessary private keys or
+hardware signing devices) that have the necessary private keys or
 other sensitive data to fill in the template.  To accomplish this, PSBT
 allows storing a significant amount of metadata about a transaction,
 making it much less compact than the standard serialization format.
@@ -135,7 +135,7 @@ If you implement a protocol that uses presigned transactions, ensure
 that it doesn't use any features that are reserved for future upgrades.
 Bitcoin Core's default transaction relay policy does not allow the use
 of reserved features.  You can test whether a transaction complies with
-that policy by using the Bitcoin Core RPC +testmempoolaccept+ on ((("transactions", "presigned", startref="transaction-presign")))((("presigned transactions", startref="presign-transaction")))Bitcoin
+that policy by using Bitcoin Core's +testmempoolaccept+ RPC on ((("transactions", "presigned", startref="transaction-presign")))((("presigned transactions", startref="presign-transaction")))Bitcoin
 mainnet.
 ****
 
@@ -143,8 +143,8 @@ As of this writing, a proposal to begin using version 3 transactions is
 being widely considered.  That proposal does not seek to change the
 consensus rules but only the policy that Bitcoin full nodes use to relay
 transactions.  Under the proposal, version 3 transactions would be
-subject to additional constraints in order to prevent certain Denial of
-Service (DoS) attacks that we'll discuss((("transactions", "version of", startref="transactions-version")))((("version (of transactions)", startref="version-transactions"))) further in <<transaction_pinning>>.
+subject to additional constraints in order to prevent certain denial of
+service (DoS) attacks that we'll discuss((("transactions", "version of", startref="transactions-version")))((("version (of transactions)", startref="version-transactions"))) further in <<transaction_pinning>>.
 
 === Extended Marker and Flag
 
@@ -262,7 +262,7 @@ Each input in a transaction must contain three fields:
 
 We'll look at each of those fields in the following sections.  Some
 inputs also include a witness stack, but this is serialized at the end of a
-transaction and so we'll ((("transactions", "inputs", "length of list", startref="transaction-input-length")))((("inputs", "length of list", startref="input-transaction-length")))examine it later.
+transaction so we'll ((("transactions", "inputs", "length of list", startref="transaction-input-length")))((("inputs", "length of list", startref="input-transaction-length")))examine it later.
 
 
 [[outpoints]]
@@ -347,7 +347,7 @@ txid from the outpoint in our example transaction:
 eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
 ----
 
-If we try using that that txid to retrieve that transaction using
+If we try using that txid to retrieve that transaction using
 Bitcoin Core, we get an error and must reverse its byte order:
 
 ----
@@ -371,7 +371,7 @@ This odd behavior is probably an unintentional consequence of a
 https://oreil.ly/01JH2[design
 decision in early Bitcoin software].  As a practical matter, it means
 developers of Bitcoin software need to remember to reverse the order of
-bytes in transaction and block identifiers that they show to users.
+bytes in transaction and block identifiers they show to users.
 
 In this book, we use the term _internal byte order_ for the data that
 appears within transactions and blocks.  We use _display byte order_ for
@@ -486,7 +486,7 @@ isn't a very effective protocol.
 The third problem was that it was possible to replace one version of a
 transaction with a different version an unlimited number of
 times.  Each replacement would consume the bandwidth of all the relaying full nodes
-on the network.  For example, as of this writing there are about 50,000
+on the network.  For example, as of this writing, there are about 50,000
 relaying full nodes; an attacker creating 1,000 replacement transactions
 per minute at 200 bytes each would use about 20 kilobytes of their
 personal bandwidth but about 10 gigabytes of full node network bandwidth
@@ -546,7 +546,7 @@ Since sequence is a per-input field, a transaction may contain any
 number of timelocked inputs, all of which must have sufficiently aged
 for the transaction to be valid. A disable flag allows a transaction to
 include both inputs with a relative timelock (sequence < 2^31^) and
-inputs without a relative timelock (sequence >= 2^31^).
+inputs without a relative timelock (sequence ≥ 2^31^).
 
 The sequence value is specified in either blocks or seconds.
 A type-flag
@@ -573,7 +573,7 @@ as defined by BIP68.
 .BIP68 definition of sequence encoding (Source: BIP68)
 image::images/mbc3_0603.png["BIP68 definition of sequence encoding"]
 
-Note that any transaction which sets a relative timelock using sequence
+Note that any transaction that sets a relative timelock using sequence
 also sends the signal for opt-in replace by fee ((("transactions", "inputs", startref="transaction-input")))((("inputs", startref="input-transaction")))((("transactions", "inputs", "sequence field", startref="transaction-input-sequence")))((("inputs", "sequence field", startref="input-transaction-sequence")))((("sequence field (transaction inputs)", startref="sequence-field")))((("relative timelocks", startref="relative-timelock")))as described in
 <<sequence-bip125>>.
 
@@ -626,7 +626,7 @@ contribute any value to a transaction spending it even if the
 transaction's fee rate was zero.  However, many other outputs with low
 values can be uneconomical as well, even unintentionally.  For example,
 at a typical fee rate on the network today, an output might add more
-value to a transaction than it costs to spend--but, tomorrow, fee rates
+value to a transaction than it costs to spend--but tomorrow, fee rates
 might rise and make the output uneconomical.
 
 The need for full nodes to keep track of all unspent transaction outputs
@@ -685,7 +685,7 @@ satoshis aren't being ((("transactions", "outputs", "amount field", startref="tr
 
 The ((("transactions", "outputs", "output scripts", id="transaction-output-script")))((("outputs", "output scripts", id="output-transaction-script")))((("output scripts", id="output-script2")))output amount is followed by a compactSize integer indicating the
 length of the _output script_, the script that contains the
-conditions which will need to be fulfilled in order to spend the
+conditions that will need to be fulfilled in order to spend the
 bitcoins.  According to Bitcoin's
 consensus rules, the minimum size of an output script is zero.
 
@@ -703,7 +703,7 @@ the block containing it.
 An output script with zero length can be spent by an input script containing
 ++OP_TRUE++.  Anyone can create that input script, which means anyone
 can spend an empty output script.  There are an essentially unlimited
-number of scripts that anyone can spend and they are known to Bitcoin
+number of scripts that anyone can spend, and they are known to Bitcoin
 protocol developers as _anyone can spends_.  Upgrades to Bitcoin's
 script language often take an existing anyone-can-spend script and add
 new constraints to it, making it only spendable under the new
@@ -719,7 +719,7 @@ transaction outputs_.  This was originally implemented after the
 discovery of several early bugs in Bitcoin related to the Script
 language and is retained in modern Bitcoin Core to support
 anyone-can-spend upgrades and to encourage the best practice of placing
-script conditions in P2SH redeem script, segwit v0 witness scripts, and
+script conditions in P2SH redeem scripts, segwit v0 witness scripts, and
 segwit v1 (taproot) leaf scripts.
 
 We'll look at each of the current standard transaction templates and
@@ -736,7 +736,7 @@ accept evidence from those who are reliable.
 Imagine what a witness would look like for a math problem.  For example,
 if the important problem was _x + 2 == 4_ and someone claimed they
 witnessed the solution, what would we ask them?  We'd want a
-mathematical proof that showed a value which could be summed with two to
+mathematical proof that showed a value that could be summed with two to
 equal four.  We could even omit the need for a person and just use the
 proposed value for _x_ as our witness.  If we were told that the witness
 was _two_, then we could fill in the equation, check that it was correct, and
@@ -757,7 +757,7 @@ protected by the following script:
 Obviously, allowing your bitcoins to be spent by anyone who can solve a
 simple equation wouldn't be secure.  As we'll see in <<c_signatures>>, an
 unforgeable digital signature scheme uses an equation that can only be
-solved by someone in possession of certain data that they're able to
+solved by someone in possession of certain data they're able to
 keep secret.  They're able to reference that secret data using a public
 identifier.  That public identifier is ((("public keys")))((("digital signatures")))((("signatures", see="digital signatures")))called a _public key_ and a
 solution to the equation is called a _signature_.
@@ -797,7 +797,7 @@ transactions out of order:
 
 - If Alice and Bob sign Tx~1~ before they sign Tx~0~, then they're both
   guaranteed to be able to get a refund at any time.  The protocol
-  doesn't require either of them trust the other, making ((("trustless protocols")))it a _trustless
+  doesn't require either of them to trust the other, making ((("trustless protocols")))it a _trustless
   protocol_.
 
 A problem with this construction in the legacy transaction format is
@@ -882,7 +882,7 @@ developers worked on proposals to minimize third-party malleability,
 such as BIP62.  However, even if they were able to entirely eliminate
 third-party malleability, users of contract protocols faced another problem:
 if they required a signature from someone else involved in the protocol,
-that person could generate alternative signatures and so change the txid.
+that person could generate alternative signatures and change the txid.
 
 For example, Alice and Bob have deposited their money into a script
 requiring a signature from both of them to spend.  They've also created
@@ -1030,7 +1030,7 @@ items_.  We'll explore them in detail in
 each witness item is prefixed by a compactSize integer indicating its
 size.
 
-Legacy inputs don't contain any witness items so their witness stack
+Legacy inputs don't contain any witness items, so their witness stack
 consists entirely of a count of zero (0x00).
 
 Alice's transaction contains one input and one ((("transactions", "witnesses", startref="transaction-witness")))((("witnesses", startref="witness")))((("transactions", "witnesses", "count", startref="transaction-witness-count")))((("witnesses", "count", startref="witness-count")))witness item.
@@ -1039,7 +1039,7 @@ Alice's transaction contains one input and one ((("transactions", "witnesses", s
 === Lock Time
 
 The ((("transactions", "lock time")))((("lock time")))final field in a serialized transaction is its lock time.  This
-field was part of Bitcoin's original serialization format but it was
+field was part of Bitcoin's original serialization format, but it was
 initially only enforced by Bitcoin's policy for choosing which
 transactions to mine.  Bitcoin's earliest known soft fork added a rule
 that, starting at block height 31,000, forbid the inclusion of a

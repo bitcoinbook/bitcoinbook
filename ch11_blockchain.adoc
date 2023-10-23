@@ -10,7 +10,7 @@ full nodes (and sometimes light clients) to validate.
 
 The blockchain data structure is
 an ordered, back-linked list of blocks of transactions.  The blockchain
-can be stored as a flat file, or in a simple database.
+can be stored as a flat file or in a simple database.
 Blocks are linked "back," each referring to the previous block in the
 chain. The blockchain is often visualized
 as a vertical stack, with blocks layered on top of each other and the
@@ -32,8 +32,8 @@ Although a block has just one parent, it can have ((("child blocks")))multiple
 children. Each of the children commits to the same parent block.
 Multiple children arise during a blockchain "fork," a temporary
 situation that can occur when different blocks are discovered almost
-simultaneously by different miners (see <<forks>>). Eventually, only one
-child block becomes part of the blockchain accepted by all full nodes and the "fork" is resolved.
+simultaneously by different miners (see <<forks>>). Eventually only one
+child block becomes part of the blockchain accepted by all full nodes, and the "fork" is resolved.
 
 The "previous block hash" field is inside the block header and thereby
 affects the _current_ block's hash.
@@ -396,7 +396,7 @@ H<sub>A</sub> = SHA256(SHA256(Transaction A))
 </pre>
 ++++
 
-Consecutive pairs of leaf nodes are then summarized in a parent node, by
+Consecutive pairs of leaf nodes are then summarized in a parent node by
 concatenating the two hashes and hashing them together. For example, to
 construct the parent node H~AB~, the two 32-byte hashes of the children
 are concatenated to create a 64-byte string. That string is then
@@ -445,12 +445,11 @@ duplicate txids, resulting in a vulnerability (CVE-2012-2459).
 
 The reason is that if the number of hashes in the list at a given level
 is odd, the last one is duplicated before computing the next level (which
-is unusual in Merkle trees). This results in certain sequences of
+is unusual in merkle trees). This results in certain sequences of
 transactions leading to the same merkle root. For example, the two
 trees in <<cve_tree>>:
 
 [[cve_tree]]
-[role="figuresmallerninety"]
 .Two Bitcoin-style merkle tree with the same root but a different number of leaves
 image::images/mbc3_1104.png["Two Bitcoin-style merkle trees with the same root but a different number of leaves"]
 
@@ -488,7 +487,7 @@ To prove that a specific transaction is
 included in a block, a node only needs to produce approximately +log~2~(N)+ 32-byte
 hashes, constituting ((("authentication path")))((("merkle path")))an _authentication path_ or _merkle path_
 connecting the specific transaction to the root of the tree. This is
-especially important as the number of transactions increases, because
+especially important as the number of transactions increases because
 the base-2 logarithm of the number of transactions increases much more
 slowly. This allows Bitcoin nodes to efficiently produce paths of 10 or
 12 hashes (320–384 bytes), which can provide proof of a single
@@ -542,7 +541,7 @@ The lightweight client can use this merkle path to connect the transaction to th
 block header and verify that the transaction is included in the block. The lightweight
 client also uses the block header to link the block to the rest of the
 blockchain. The combination of these two links, between the transaction
-and block, and between the block and blockchain, proves that the
+and block and between the block and blockchain, proves that the
 transaction is recorded in the blockchain. All in all, the lightweight client will
 have received less than a kilobyte of data for the block header and
 merkle path, an amount of data that is more than a thousand times less
@@ -643,7 +642,7 @@ used to test segregated witness features.
 Testnet doesn't just use the same data structures as Bitcoin, it also
 uses almost exactly the same proof-of-work (PoW) security mechanism as
 Bitcoin.  The notable differences for testnet are that its minimum
-difficulty is half that of Bitcoin and that it's allowed to include a
+difficulty is half that of Bitcoin and it's allowed to include a
 block at the minimum difficulty if that block's timestamp is more than
 20 minutes after the previous block.
 
@@ -746,10 +745,10 @@ $ bitcoin-cli -signet getblockchaininfo
 Regtest, ((("blockchain", "test blockchains", "regtest", id="blockchain-test-regtest")))((("test blockchains", "regtest", id="test-block-regtest")))((("regtest", id="regtest")))which stands for
 "Regression Testing," is a Bitcoin Core feature that allows you to
 create a local blockchain for testing purposes. Unlike signet and testnet3, which
-are a public and shared test blockchain, the regtest blockchains are
+are public and shared test blockchains, the regtest blockchains are
 intended to be run as closed systems for local testing. You launch a
 regtest blockchain from scratch. You may
-add other nodes to the network, or run it with a single node only to
+add other nodes to the network or run it with a single node only to
 test the Bitcoin Core software.
 
 To start ((("Bitcoin Core", "regtest")))Bitcoin Core in regtest mode, you use the +regtest+ flag:
@@ -807,7 +806,7 @@ $ bitcoin-cli -regtest generatetoaddress 500 \
 
 It will only take a few seconds to mine all these blocks, which
 certainly makes it easy for testing. If you check your wallet balance,
-you will see that you earned reward for the first 400 blocks (coinbase
+you will see that you earned a reward for the first 400 blocks (coinbase
 rewards must be 100 blocks deep before you can ((("blockchain", "test blockchains", "regtest", startref="blockchain-test-regtest")))((("test blockchains", "regtest", startref="test-block-regtest")))((("regtest", startref="regtest")))spend them):
 
 ----
@@ -820,10 +819,10 @@ $ bitcoin-cli -regtest getbalance
 Bitcoin's ((("blockchain", "test blockchains", "development usage")))((("test blockchains", "development usage")))various
 blockchains (regtest, signet, testnet3, mainnet) offer a range
 of testing environments for bitcoin development. Use the test
-blockchains whether you are developing for Bitcoin Core, or another
-full-node consensus client; an application such as a wallet, exchange,
+blockchains whether you are developing for Bitcoin Core or another
+full-node consensus client (an application such as a wallet, exchange,
 ecommerce site; or even developing novel smart contracts and complex
-scripts.
+scripts).
 
 You can use the test blockchains to establish a development pipeline.
 Test your code locally on a regtest as you develop it. Once you are
@@ -837,6 +836,6 @@ into production.
 
 Now that we know what data the blockchain contains and how cryptographic
 commitments securely tie the various parts together, we will look at the
-special commitment that both provides computational security and
-ensures no block can be changed without invalidating all other blocks
+special commitment that both provide computational security and
+ensure no block can be changed without invalidating all other blocks
 built on top of it: Bitcoin's mining function.

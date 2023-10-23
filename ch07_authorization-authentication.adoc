@@ -7,7 +7,7 @@ nodes will distinguish the authorized spenders from everyone else,
 called _authentication_.  Your authorization instructions and the
 spender proof of authentication will be checked by thousands of
 independent full nodes, which all need to come to the same conclusion
-that a spend was authorized and authentic in order for the transaction
+that a spend was authorized and authenticated in order for the transaction
 containing it to be valid.
 
 The original description of Bitcoin used a public key for authorization.
@@ -51,7 +51,7 @@ conditions for spending and how those conditions can be satisfied.
 [TIP]
 ====
 Bitcoin transaction validation((("transactions", "validating")))((("validating", "transactions"))) is not based on
-a static pattern, but instead is achieved through the execution of a
+a static pattern but instead is achieved through the execution of a
 scripting language. This language allows for a nearly infinite variety
 of conditions to be expressed.
 ====
@@ -75,7 +75,7 @@ validation mechanism from being used as a vulnerability.
 ==== Stateless Verification
 
 The ((("scripts", "stateless verification")))((("stateless script verification")))((("verifying", "scripts")))Bitcoin transaction script language is
-stateless, in that there is no state prior to execution of the script,
+stateless, in that there is no state prior to execution of the script
 or state saved after execution of the script. All the
 information needed to execute a script is contained within the script
 and the transaction executing the script.  A
@@ -112,7 +112,7 @@ validation software will copy the input script, retrieve the UTXO
 referenced by the input, and copy the output script from that UTXO. The
 input and output scripts are then executed together. The input is
 valid if the input script satisfies the output script's conditions
-(see <<script_exec>>). All the inputs are validated independently, as
+(see <<script_exec>>). All the inputs are validated independently as
 part of the overall validation of the transaction.
 
 Note that the preceding steps involve making copies of all data.  The
@@ -150,8 +150,8 @@ the stack.
 Conditional operators evaluate a condition, producing a boolean result
 of +TRUE+ or +FALSE+. For example, +OP_EQUAL+ pops two items from the stack
 and pushes +TRUE+ (+TRUE+ is represented by the number 1) if they are equal
-or +FALSE+ (represented by zero) if they are not equal. Bitcoin
-transaction scripts usually contain a conditional operator, so that they
+or +FALSE+ (represented by 0) if they are not equal. Bitcoin
+transaction scripts usually contain a conditional operator so that they
 can produce the +TRUE+ result that signifies a valid ((("scripts", "stack", startref="script-stack")))((("stack", startref="stack")))transaction.
 
 ===== A simple script
@@ -363,7 +363,7 @@ the input script has
 two valid signatures from private keys that correspond to two of
 the three public keys set as an encumbrance.
 
-At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to at most three
+At this time, Bitcoin Core's transaction relay policy limits multisignature output scripts to, at most, three
 listed public keys, meaning you can do anything from a 1-of-1 to a
 3-of-3 multisignature or any combination within that range.
 You may want to check the +IsStandard()+ function to see what is currently
@@ -400,13 +400,12 @@ point, +OP_CHECKMULTISIG+ should pop the final +t+ items, which are the
 signatures, and see if they are valid. However, unfortunately, an oddity in
 the implementation causes +OP_CHECKMULTISIG+ to pop one more item (t+1
 total) than it should. The extra item is called((("dummy stack element"))) the _dummy stack
-element_ and it is disregarded when checking the
+element_, and it is disregarded when checking the
 signatures so it has no direct effect on +OP_CHECKMULTISIG+ itself.
-However, the dummy element must be present because, if it isn't present,
+However, the dummy element must be present because, if it isn't present
 when +OP_CHECKMULTISIG+ attempts to pop on an empty stack, it will cause a
 stack error and script failure (marking the transaction as invalid).
-Because the dummy element is disregarded it can be anything, but
-it became the custom early on to use +OP_0+, which later became a
+Because the dummy element is disregarded, it can be anything. It became the custom early on to use +OP_0+, which later became a
 relay policy rule and eventually a consensus rule (with the enforcement of BIP147).
 
 Because popping the dummy element is part of the consensus rules, it must now be
@@ -448,9 +447,9 @@ indicating which provided signature corresponds to which public key,
 allowing the +OP_CHECKMULTISIG+ operation to only perform exactly +t+
 signature-checking operations.  It's possible that Bitcoin's original
 developer added the extra element (which we now call the dummy stack
-element) in the original version of Bitcoin so that they could add the
+element) in the original version of Bitcoin so they could add the
 feature for allowing a map to be passed in a later soft fork.  However,
-that feature was never implemented and the BIP147 update to the
+that feature was never implemented, and the BIP147 update to the
 consensus rules in 2017 makes it impossible to add that feature in the
 future.
 
@@ -552,10 +551,10 @@ with P2SH.
 </table>
 ++++
 
-As you can see from the tables, with P2SH the complex script that
+As you can see from the tables, with P2SH, the complex script that
 details the conditions for spending the output (redeem script) is not
 presented in the output script. Instead, only a hash of it is in the
-output script and the redeem script itself is presented later, as part
+output script, and the redeem script itself is presented later as part
 of the input script when the output is spent. This shifts the burden
 in fees and complexity from the spender to the receiver of the
 transaction.
@@ -572,7 +571,7 @@ incoming payments from customers:
 ----
 
 This entire script can instead be represented by a 20-byte cryptographic
-hash, by first applying the SHA256 hashing algorithm and then applying
+hash by first applying the SHA256 hashing algorithm and then applying
 the RIPEMD-160 algorithm on the result.  For example, starting with the
 hash of Mohammed's redeem script:
 
@@ -625,14 +624,14 @@ base58check-encoded addresses that start with a "3."
 For example, Mohammed's complex script, hashed and base58check-encoded
 as a P2SH address, becomes +39RF6JqABiHdYHkfChV6USGMe6Nsr66Gzw+.
 
-Now, Mohammed can give this "address" to his customers and they can use
-almost any Bitcoin wallet to make a simple payment, like any other
+Now, Mohammed can give this "address" to his customers, and they can use
+almost any Bitcoin wallet to make a simple payment like any other
 Bitcoin address. The 3 prefix gives them a hint that this is a special
 type of address, one corresponding to a script instead of a public key,
 but otherwise it works in exactly the same way as a payment to any other Bitcoin
 address.
 
-P2SH addresses hide all of the complexity so that the person making a
+P2SH addresses hide all of the complexity so the person making a
 payment does not see the script.
 
 ==== Benefits of P2SH
@@ -657,7 +656,7 @@ scripts in outputs:
 
 ==== Redeem Script and Validation
 
-You are((("redeem scripts", "validating")))((("validating", "redeem scripts"))) not able to put a P2SH inside a P2SH redeem script, because the
+You are((("redeem scripts", "validating")))((("validating", "redeem scripts"))) not able to put a P2SH inside a P2SH redeem script because the
 P2SH specification is not recursive. Also, while it is technically
 possible to include +OP_RETURN+ (see <<op_return>>) in a redeem script, as
 nothing in the rules prevents you from doing so, it is of no practical
@@ -669,7 +668,7 @@ until you attempt to spend a P2SH output, if you create an output with the
 hash of an invalid redeem script, you will not be able to spend
 it.  The spending transaction, which includes the redeem script,
 will not be accepted because it is an invalid script. This creates a
-risk, because you can send bitcoin to a P2SH address that cannot be spent later.
+risk because you can send bitcoin to a P2SH address that cannot be spent later.
 
 [WARNING]
 ====
@@ -742,7 +741,7 @@ Keep in mind that there is no input script that corresponds to
 whole point of an +OP_RETURN+ output is that you can't spend the money locked in that
 output, and therefore it does not need to be held in the UTXO set as
 potentially spendable: +OP_RETURN+ outputs are _provably unspendable_. +OP_RETURN+ outputs
-usually have a zero amount, because any bitcoins
+usually have a zero amount because any bitcoins
 assigned to such an output are effectively lost forever. If an +OP_RETURN+ output is
 referenced as an input in a transaction, the script validation engine
 will halt the execution of the validation script and mark the
@@ -759,7 +758,7 @@ being included in a block until a specific block height, but it does not
 prevent spending the funds in another transaction earlier than that.
 Let's explain that with the following example.
 
-Alice signs a transaction spending one of her outputs to Bob's address, and sets the transaction lock time to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
+Alice signs a transaction spending one of her outputs to Bob's address and sets the transaction lock time to 3 months in the future. Alice sends that transaction to Bob to hold. With this transaction Alice and Bob know that:
 
 * Bob cannot transmit the transaction to redeem the funds until 3 months have elapsed.
 * Bob may transmit the transaction after 3 months.
@@ -777,7 +776,7 @@ In ((("transactions", "timelocks", "verifying", id="transaction-timelock-op-cltv
 timelock was introduced to Bitcoin as a soft fork upgrade. Based on a
 specification in BIP65, a new script operator called
 _OP_CHECKLOCKTIMEVERIFY_ (_CLTV_) was added to the scripting language.
-+OP_CLTV+ is a per-output timelock, rather than a per-transaction timelock
++OP_CLTV+ is a per-output timelock rather than a per-transaction timelock,
 as is the case with lock time. This allows for additional
 flexibility in the way timelocks are applied.
 
@@ -808,7 +807,7 @@ To lock it to a time, say 3 months from now, his P2SH script would
 instead be:
 
 ----
-<Bob's pubkey> OP_CHECKSIGVERIFY <now + 3 months> OP_CHECKLOCKTIMEVERIFYG
+<Bob's pubkey> OP_CHECKSIGVERIFY <now + 3 months> OP_CHECKLOCKTIMEVERIFY
 ----
 
 where +<now {plus} 3 months>+ is a block height or time value estimated
@@ -823,7 +822,7 @@ to be equal or greater to the timelock in the +OP_CHECKLOCKTIMEVERIFY+
 Alice set. Bob then broadcasts the transaction on the Bitcoin network.
 
 Bob's transaction is evaluated as follows. If the +OP_CHECKLOCKTIMEVERIFY+
-parameter Alice set is less than or equal the spending transaction's
+parameter Alice set is less than or equal to the spending transaction's
 lock time, script execution continues (acts as if a _no
 operation_ or +OP_NOP+ opcode was executed). Otherwise, script
 execution halts and the transaction is deemed invalid.
@@ -911,7 +910,7 @@ the +OP_CHECKSEQUENCEVERIFY+ (+OP_CSV+) opcode.
 Relative timelocks are
 implemented according to the specifications in
 https://oreil.ly/ZuANb[BIP68,
-Relative lock-time using consensus-enforced sequence numbers] and
+relative lock-time using consensus-enforced sequence numbers] and
 https://oreil.ly/dLA2r[BIP112,
 +OP_CHECKSEQUENCEVERIFY+].
 
@@ -947,7 +946,7 @@ of interaction across inputs that occurs with +OP_CLTV+ doesn't affect +OP_CSV+.
 ====
 
 Relative timelocks with +OP_CSV+ are especially useful when several
-(chained) transactions are created and signed, but not propagated--that
+(chained) transactions are created and signed but not propagated--that
 is, they're kept off the blockchain (_offchain_). A child transaction cannot be used until the
 parent transaction has been propagated, mined, and aged by the time
 specified in the relative timelock. One application of this use case is shown in <<state_channels>> and <<lightning_network>>.
@@ -962,7 +961,7 @@ One of((("scripts", "flow control", id="script-flow")))((("flow control in scrip
 powerful features of Bitcoin Script is flow control, also known as
 conditional clauses. You are probably familiar with flow control in
 various programming languages that use the construct +IF...THEN...ELSE+.
-Bitcoin conditional clauses look a bit different, but are essentially
+Bitcoin conditional clauses look a bit different but are essentially
 the same construct.
 
 At a basic level, Bitcoin conditional opcodes allow us to construct a
@@ -1082,7 +1081,7 @@ A very common use for flow control in Bitcoin Script is to construct a
 script that offers multiple execution paths, each a different way
 of redeeming the UTXO.
 
-Let's look at a simple example, where
+Let's look at a simple example where
 we have two signers, Alice and Bob, and either one is able to redeem.
 With multisig, this would be expressed as a 1-of-2 multisig script. For
 the sake of demonstration, we will do the same thing with an +OP_IF+
@@ -1146,7 +1145,7 @@ In this scenario, there are three execution paths (+subscript A+, +subscript
 B+, and +subscript C+). The input script provides a path in the form of
 a sequence of +TRUE+ or +FALSE+ values. To select path +subscript B+, for
 example, the input script must end in +OP_1 OP_0+ (+TRUE+, +FALSE+). These
-values will be pushed onto the stack, so that the second value (+FALSE+)
+values will be pushed onto the stack so that the second value (+FALSE+)
 ends up at the top of the stack. The outer +OP_IF+ clause pops the +FALSE+
 value and executes the first +OP_ELSE+ clause. Then the +TRUE+ value moves
 to the top of the stack and is evaluated by the inner (nested) +OP_IF+,
@@ -1163,7 +1162,7 @@ at each flow control((("scripts", "flow control", startref="script-flow")))((("f
 In this((("scripts", "examples of", id="script-example-complex"))) section we combine many of
 the concepts from this chapter into a single example.
 
-Mohammed is company owner in Dubai who is operating an import/export
+Mohammed, a company owner in Dubai, operates an import/export
 business; he
 wishes to construct a company capital account with flexible rules. The
 scheme he creates requires different levels of authorization depending
@@ -1239,7 +1238,7 @@ OP_0 <Saeed's Sig> <Lawer's Sig> OP_FALSE OP_TRUE
 [TIP]
 ====
 Why +OP_FALSE OP_TRUE+? Isn't that backward? +FALSE+ is pushed onto the
-stack and +TRUE+ is pushed on top of it.
+stack, and +TRUE+ is pushed on top of it.
 +TRUE+ is therefore popped _first_ by the first +OP_IF+ opcode.
 ====
 
@@ -1480,14 +1479,14 @@ Alice and Bob can use legacy non-segwit outputs. But Bob would
 likely want to use segwit to reduce transaction fees, taking advantage
 of the reduced cost of witness structure.
 
-In this case Bob's wallet can construct a P2SH address that contains a
+In this case, Bob's wallet can construct a P2SH address that contains a
 segwit script inside it. Alice's wallet can make payments to it without
 any knowledge of segwit.
 Bob's wallet can then spend this payment with a segwit transaction,
 taking advantage of segwit and reducing transaction fees.
 
 Both forms of witness scripts, P2WPKH and P2WSH, can be embedded in a
-P2SH address. The first is noted as nested P2WPKH and the second is noted
+P2SH address. The first is noted as nested P2WPKH, and the second is noted
 as nested P2WSH.
 
 ===== Nested pay to witness public key hash
@@ -1632,7 +1631,7 @@ image::images/mbc3_0705.png["A MAST with three sub-scripts"]
 We can now create a compact membership proof that proves a particular
 authorization condition is a member of the merkle tree without
 disclosing any details about the other members of the merkle tree.  See
-<<diagram_mast2>>, and note that the nodes with diagonal corners can be
+<<diagram_mast2>>, and note that the shaded nodes can be
 computed from other data provided by the user, so they don't need to be
 specified at spend time.
 
@@ -1641,7 +1640,7 @@ specified at spend time.
 image::images/mbc3_0706.png["A MAST membership proof for one of the sub-scripts"]
 
 The hash digests used to create the commitments are each 32 bytes, so
-proving a spend of <<diagram_mast2>> is authorized (using a merkle tree and the
+proving that a spend of <<diagram_mast2>> is authorized (using a merkle tree and the
 particular conditions) and authenticated (using signatures) uses 383
 bytes.  By comparison, the same spend without a merkle tree (i.e., providing all possible authorization conditions) uses 412 bytes.
 
@@ -1692,7 +1691,7 @@ discovered, which we'll see in <<taproot>>.
 .MAST Versus MAST
 ****
 The earliest((("abstract syntax trees (AST)")))((("AST (abstract syntax trees)"))) idea for what we now know as _MAST_ in Bitcoin was
-_merklized abstract syntax trees_.  In an absract syntax tree (AST),
+_merklized abstract syntax trees_.  In an abstract syntax tree (AST),
 every condition in a script creates a new branch, as show in <<ast>>.
 
 [[ast]]
@@ -1701,12 +1700,12 @@ image::images/mbc3_0708.png["An Abstract Syntax Tree (AST) for a script"]
 
 ASTs are widely used by programs that parse and optimize code for other
 programs, such as compilers.  A merklized AST would commit to every part
-of a program and so enable the features described in 
+of a program and enable the features described in 
 <<mast>>, but it would require revealing at least one 32-byte digest for
 every separate part of the program, which would not be very space
 efficient on the blockchain for most programs.
 
-What most people in most cases call _MAST_ in Bitcoin today is
+What people in most cases call _MAST_ in Bitcoin today is
 _merklized alternative script trees_, a backronym coined by developer
 Anthony Towns.  An alternative script tree is a set of scripts, each
 one of them complete by itself, where only one can be selected--making
@@ -1737,22 +1736,22 @@ also serve another use.
 
 Let's imagine Bob wants to buy something from Alice but he also wants to
 be able prove later what he paid for in case there's any dispute.  Alice
-and Bob agree on the name of the item or service being sold, e.g.,
-"Alice's podcast episode #123," and transform that description into a
+and Bob agree on the name of the item or service being sold (e.g.,
+"Alice's podcast episode #123"), and transform that description into a
 number by hashing it and interpreting the hash digest as a number.  Bob
 adds that number to Alice's public key and pays it.  The process is
-called _key tweaking_ and the number is known as a _tweak_.
+called _key tweaking_, and the number is known as a _tweak_.
 
 Alice can spend the funds by tweaking her private key using the same
 number (tweak).
 
 Later, Bob can prove to anyone what he paid Alice by revealing her
 underlying key and the description they used.  Anyone can verify that
-the public key which was paid equals the underlying key plus the
+the public key, which was paid, equals the underlying key plus the
 hash commitment to the description.  If Alice admits that key is hers,
 then she received the payment.  If Alice spent the funds, this further
 proves she knew the description at the time she signed the spending
-transaction, since she could only create a valid signature for the
+transaction since she could only create a valid signature for the
 tweaked public key if she knew the tweak (the description).
 
 If neither Alice nor Bob decided to publicly reveal the description they
@@ -1808,7 +1807,7 @@ using a single key and signature.  The story is the same for privacy:
 because each new key or signature adds data to a transaction, scripted
 multisignatures disclose data about how many keys and signatures are
 being used--which may make it easy to figure out which transactions were
-created by which group of participants.  But, because every scriptless
+created by which group of participants.  However, because every scriptless
 multisignatures looks like every other scriptless
 multisignature and every single-signature, no privacy-reducing data is
 leaked.

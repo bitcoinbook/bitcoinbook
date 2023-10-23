@@ -13,7 +13,7 @@ The original Bitcoin paper describes a very simple scheme for achieving
 those goals, shown in <<pay-to-pure-pubkey>>.  A receiver like Bob
 accepts bitcoins to a public key in a transaction that is signed by the
 spender (like Alice).  The bitcoins that Alice is spending had been
-previously received to one her public keys, and she uses the
+previously received to one of her public keys, and she uses the
 corresponding private key to generate her signature.  Full nodes can
 verify that Alice's signature commits to the output of a hash function
 that itself commits to Bob's public key and other transaction details.
@@ -93,10 +93,10 @@ over the private key is the root of user control over all funds
 associated with the corresponding Bitcoin public key. The private key is
 used to create signatures that are used to spend bitcoins by proving
 control of funds used in a transaction. The private key must remain
-secret at all times, because revealing it to third parties is equivalent
+secret at all times because revealing it to third parties is equivalent
 to giving them control over the bitcoins secured by that key. The private
-key must also be backed up and protected from accidental loss, because
-if it's lost it cannot be recovered and the funds secured by it are
+key must also be backed up and protected from accidental loss because
+if it's lost, it cannot be recovered and the funds secured by it are
 forever lost too.
 
 [TIP]
@@ -119,7 +119,7 @@ number generators to produce 256 bits of entropy.
 
 More precisely, the private key can be any number between +0+ and +n -
 1+ inclusive, where n is a constant (n = 1.1578 * 10^77^, slightly less
-than 2^256^) defined as the order of the elliptic curve used in bitcoin
+than 2^256^) defined as the order of the elliptic curve used in Bitcoin
 (see <<elliptic_curve>>). To create such a key, we randomly pick a
 256-bit number and check that it is less than +n+. In programming terms,
 this is usually achieved by feeding a larger string of random bits,
@@ -150,7 +150,7 @@ bits):
 
 [TIP]
 ====
-The size of Bitcoin's private key space, (2^256^) is an unfathomably
+The size of Bitcoin's private key space (2^256^) is an unfathomably
 large number. It is approximately 10^77^ in decimal. For comparison, the
 visible universe is estimated to((("private keys", "generating", startref="private-key-generate"))) contain 10^80^ atoms.
 ====
@@ -268,7 +268,7 @@ interest to points on the curve with two integer coordinates!
 
 In some cases (i.e., if P~1~ and P~2~ have the same x values but
 different y values), the tangent line will be exactly vertical, in which
-case P3 = "point at infinity."
+case P~3~ = "point at infinity."
 
 If P~1~ is the "point at infinity," then P~1~ + P~2~ = P~2~. Similarly,
 if P~2~ is the point at infinity, then P~1~ + P~2~ = P~1~. This shows
@@ -292,7 +292,7 @@ irreversible: _K_ = _k_ * _G_, where _k_ is the private key, _G_ is a
 constant point called the _generator point_, and _K_ is the resulting
 public key. The reverse operation, known as "finding the discrete
 logarithm"—calculating _k_ if you know __K__—is as difficult as trying
-all possible values of _k_, i.e., a brute-force search. Before we
+all possible values of _k_ (i.e., a brute-force search). Before we
 demonstrate how to generate a public key from a private key, let's look
 at elliptic curve cryptography in a bit more detail.
 
@@ -325,9 +325,9 @@ bitcoin:
 
 where _k_ is the private key, _G_ is the generator point, and _K_ is the
 resulting public key, a point on the curve. Because the generator point
-is always the same for all bitcoin users, a private key _k_ multiplied
+is always the same for all Bitcoin users, a private key _k_ multiplied
 with _G_ will always result in the same public key _K_. The relationship
-between _k_ and _K_ is fixed, but can only be calculated in one
+between _k_ and _K_ is fixed but can only be calculated in one
 direction, from _k_ to _K_. That's why a Bitcoin public key can be
 shared with anyone and does not reveal the user's private key (_k_).
 
@@ -339,7 +339,7 @@ one way.
 ====
 
 Implementing the elliptic curve multiplication, we take the private key
-_k_ generated previously and multiply it with the generator point G to
+_k_ generated previously and multiply it with the generator point _G_ to
 find the public key _K_:
 
 [source, python]
@@ -533,11 +533,11 @@ was the exact same key that was used to create that earlier commitment.
 The SHA256 hash function is considered to be very secure and produces
 256 bits (32 bytes) of output, less than half the size of original
 Bitcoin public keys.  However, there are other slightly less secure hash
-functions that produce smaller output, such as the ((("RIPEMD160 hash function")))RIPEMD160 hash
+functions that produce smaller output, such as the ((("RIPEMD-160 hash function")))RIPEMD-160 hash
 function whose output is 160 bits (20 bytes).  For reasons Satoshi
 Nakamoto never stated, the original version of Bitcoin made commitments
 to public keys by first hashing the key with SHA256 and then hashing
-that output with RIPEMD160; this produced a 20-byte commitment to the
+that output with RIPEMD-160; this produced a 20-byte commitment to the
 public key.
 
 We can look at that algorithmically.
@@ -754,15 +754,14 @@ When ((("public key cryptography", "compressed public keys", id="pub-key-compres
 alternative encoding for public keys that used only 33 bytes and which
 was backward compatible with all Bitcoin full nodes at the time,
 so there was no need to change the Bitcoin protocol.  Those 33-byte
-public keys are known as _compressed public keys_ and the original 65
-byte keys are known as _uncompressed public keys_.  Using smaller public keys
+public keys are known as _compressed public keys_, and the original 65-byte keys are known as _uncompressed public keys_.  Using smaller public keys
 results in smaller transactions, allowing more payments to be made in the same
 block.
 
 As we saw in the section <<public_key_derivation>>, a public key is a point (x,y) on an
 elliptic curve. Because the curve expresses a mathematical function, a
 point on the curve represents a solution to the equation and, therefore,
-if we know the _x_ coordinate we can calculate the _y_ coordinate by
+if we know the _x_ coordinate, we can calculate the _y_ coordinate by
 solving the equation y^2^ mod p = (x^3^ + 7) mod p. That allows us to
 store only the _x_ coordinate of the public key point, omitting the _y_
 coordinate and reducing the size of the key and the space required to
@@ -796,8 +795,8 @@ positive or negative value. Visually, this means that the resulting _y_
 coordinate can be above or below the x-axis. As you can see from the
 graph of the elliptic curve in <<ecc-curve>>, the curve is symmetric,
 meaning it is reflected like a mirror by the x-axis. So, while we can
-omit the _y_ coordinate we have to store the _sign_ of _y_ (positive or
-negative); or in other words, we have to remember if it was above or
+omit the _y_ coordinate, we have to store the _sign_ of _y_ (positive or
+negative); in other words, we have to remember if it was above or
 below the x-axis because each of those options represents a different
 point and a different public key. When calculating the elliptic curve in
 binary arithmetic on the finite field of prime order p, the _y_
@@ -821,9 +820,9 @@ This compressed public key corresponds to the same private key, meaning
 it is generated from the same private key. However, it looks different
 from the uncompressed public key. More importantly, if we convert this
 compressed public key to a commitment using the HASH160
-function (+RIPEMD160(SHA256(K))+) it will produce a _different_
+function (+RIPEMD160(SHA256(K))+), it will produce a _different_
 commitment than the uncompressed public key, leading to a different
-address. This can be confusing, because it means that a single private
+address. This can be confusing because it means that a single private
 key can produce a public key expressed in two different formats
 (compressed and uncompressed) that produce two different Bitcoin
 addresses. However, the private key is identical for both Bitcoin
@@ -835,7 +834,7 @@ addresses.
 image::images/mbc3_0408.png["pubkey_compression"]
 
 Compressed public keys are now the default in almost all Bitcoin
-software, and were made required when using certain new features added
+software and were required when using certain new features added
 in later protocol upgrades.
 
 However, some software still needs to support uncompressed public keys,
@@ -847,7 +846,7 @@ to scan for the correct type can lead to the user not being able to
 spend their full balance.  To resolve this issue, when private keys are
 exported from a wallet, the WIF that is used to
 represent them is implemented slightly differently in newer Bitcoin
-wallets, to indicate that these private keys have been used to produce((("public key cryptography", "compressed public keys", startref="pub-key-compress")))((("compressed public keys", startref="compress-pub-key")))((("uncompressed public keys", startref="uncompress-pub-key")))
+wallets to indicate that these private keys have been used to produce((("public key cryptography", "compressed public keys", startref="pub-key-compress")))((("compressed public keys", startref="compress-pub-key")))((("uncompressed public keys", startref="uncompress-pub-key")))
 compressed public keys.
 
 [[addresses_for_p2sh]]
@@ -962,7 +961,7 @@ the HASH160 algorithm.  This is((("second preimage attacks"))) a _second preimag
 
 However, this changes when an attacker is able to influence the original input
 value. For example, an attacker participates in the creation of a
-multisignature script where tthey don't need to submit their public key until after they learn all of the other partys' public keys.
+multisignature script where they don't need to submit their public key until after they learn all of the other partys' public keys.
 In that case, the strength of hash algorithm is reduced to its square
 root.  For HASH160, the probability becomes 1-in-2^80^.  This is a
 _collision attack_.
@@ -985,9 +984,9 @@ processes involving multiple parties, which could make the attack
 profitable.
 
 There are well-established cryptographic protocols for preventing
-collision attacks but a simple solution that doesn't require any
+collision attacks, but a simple solution that doesn't require any
 special knowledge on the part of wallet developers is to simply use
-a stronger hash function.  Later upgrades to Bitcoin made that possible
+a stronger hash function.  Later upgrades to Bitcoin made that possible,
 and newer Bitcoin addresses provide at least 128 bits of collision
 resistance.  To perform 2^128^ hash operations would take all current
 Bitcoin miners about 32 billion years.
@@ -1028,7 +1027,7 @@ identified several problems((("public key cryptography", "base58check encoding")
 - Its mixed-case presentation made it inconvenient to read aloud or
   transcribe.  Try reading one of the legacy addresses in this chapter
   to a friend who you have transcribe it.  Notice how you have to prefix
-  every letter with the words "uppercase" and "lowercase."  Also note
+  every letter with the words "uppercase" and "lowercase."  Also, note
   when you review their writing that the uppercase and lowercase
   versions of some letters can look similar in many people's
   handwriting.
@@ -1173,20 +1172,20 @@ time in a billion.
 //https://gist.github.com/sipa/a9845b37c1b298a7301c33a04090b2eb
 
 The version of bech32 with a single different constant is known as
-Bech32 Modified (bech32m).  All of the characters in bech32 and bech32m
+bech32 modified (bech32m).  All of the characters in bech32 and bech32m
 addresses for the same underlying data will be identical except for the
 last six (the checksum).  That means a wallet will need to know which
 version is in use in order to validate the checksum, but both address
 types contain an internal version byte that makes determining that easy.
 
-===== Encoding and Decoding bech32m addresses
 
-In this((("encoding", "bech32m addresses", id="encode-bech32m")))((("decoding", "bech32m addresses", id="decode-bech32m"))) section, we'll look at the encoding and parsing rules for
+
+To work with both bech32 and((("encoding", "bech32m addresses", id="encode-bech32m")))((("decoding", "bech32m addresses", id="decode-bech32m"))) bech32m, we'll look at the encoding and parsing rules for
 bech32m Bitcoin addresses since they encompass the ability to parse
 bech32 addresses and are the current recommended address format for
 Bitcoin wallets.
 
-Bech32m addresses start with a Human Readable Part (HRP).  There are
+Bech32m addresses start with a human readable part (HRP).  There are
 rules in BIP173 for creating your own HRPs, but for Bitcoin you only
 need to know about the HRPs already chosen, shown in
 <<bech32_hrps_for_bitcoin>>.
@@ -1284,19 +1283,19 @@ scripts are listed in <<scripts_for_diff_segwit_outputs>>.
 <tbody>
 <tr>
 <td><p>P2WPKH</p></td>
-<td><p>OP_0 2b626ed108ad00a944bb2922a309844611d25468</p></td>
+<td><p><code>OP_0 2b626ed108ad00a944bb2922a309844611d25468</code></p></td>
 </tr>
 <tr>
 <td><p>P2WSH</p></td>
-<td><p>OP_0 648a32e50b6fb7c5233b228f60a6a2ca4158400268844c4bc295ed5e8c3d626f</p></td>
+<td><p><code>OP_0 648a32e50b6fb7c5233b228f60a6a2ca4158400268844c4bc295ed5e8c3d626f</code></p></td>
 </tr>
 <tr>
 <td><p>P2TR</p></td>
-<td><p>OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311</p></td>
+<td><p><code>OP_1 2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311</code></p></td>
 </tr>
 <tr>
 <td><p>Future Example</p></td>
-<td><p>OP_16 0000</p></td>
+<td><p><code>OP_16 0000</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -1314,7 +1313,7 @@ the script, pass it into a SHA256 hash function, and use the 32-byte
 digest of that function in the witness program.  For P2SH, the SHA256
 digest was hashed again with RIPEMD-160, but that may not be secure in
 some cases; for details, see <<p2sh_collision_attacks>>.  A result of
-using SHA256 without RIPEMD160 is that P2WSH commitments are 32 bytes
+using SHA256 without RIPEMD-160 is that P2WSH commitments are 32 bytes
 (256 bits) instead 20 bytes (160 bits).
 
 For the pay-to-taproot (P2TR) output, the witness program is a point on
@@ -1328,12 +1327,12 @@ program (2 bytes) with a null value.
 
 Now that we know the version number and the witness program, we can
 convert each of them into a bech32 address.  Let's use the bech32m reference
-library for Python to quickly generate those addresses, and then take a
+library for Python to quickly generate those addresses and then take a
 deeper look at what's happening:
 
 ----
 $ github="https://raw.githubusercontent.com"
-$ wget $github//sipa/bech32/master/ref/python/segwit_addr.py
+$ wget $github/sipa/bech32/master/ref/python/segwit_addr.py
 
 $ python
 >>> from segwit_addr import *
@@ -1385,7 +1384,8 @@ decode(hrp, addr)
 >>> _ = decode("bc", "bc1q9d3xa5gg45q2j39m9y32xzvygcgay4rgc6aaee")
 >>>  _[0], bytes(_[1]).hex()
 (0, '2b626ed108ad00a944bb2922a309844611d25468')
->>> _ = decode("bc", "bc1p9nh05ha8wrljf7ru236awm4t2x0d5ctkkywmu9sclnm4t0av2vgs4k3au7")
+>>> _ = decode("bc",
+        "bc1p9nh05ha8wrljf7ru236awm4t2x0d5ctkkywmu9sclnm4t0av2vgs4k3au7")
 >>> _[0], bytes(_[1]).hex()
 (1, '2ceefa5fa770ff24f87c5475d76eab519eda6176b11dbe1618fcf755bfac5311')
 ----
@@ -1523,7 +1523,7 @@ can easily be converted to any other((("private keys", "formats", startref="priv
 ==== Compressed Private Keys
 
 The commonly((("private keys", "compressed", id="private-key-compress")))((("compressed private keys", id="compress-private-key"))) used term "compressed private key" is a misnomer, because when a private
-key is exported as WIF-compressed it is actually one byte _longer_ than
+key is exported as WIF-compressed, it is actually one byte _longer_ than
 an "uncompressed" private key. That is because the private key has an
 added one-byte suffix (shown as 01 in hex in <<table_4-4>>), which
 signifies that the private key is from a newer wallet and should only be
@@ -1596,8 +1596,8 @@ addresses and those will be used in transactions. When exporting private
 keys from a new wallet that implements compressed public keys, the WIF
 is modified, with the addition of a one-byte suffix +01+ to the private
 key. The resulting base58check-encoded private key is called a
-"compressed WIF" and starts with the letter _K_ or _L_, instead of
-starting with "5" as is the case with WIF-encoded (uncompressed) keys
+"compressed WIF" and starts with the letter _K_ or _L_ instead of
+starting with "5," as is the case with WIF-encoded (uncompressed) keys
 from((("private keys", "compressed", startref="private-key-compress")))((("compressed private keys", startref="compress-private-key"))) older wallets.
 
 === Advanced Keys and Addresses
@@ -1613,7 +1613,7 @@ addresses that contain human-readable messages. For example,
 +1LoveBPzzD72PUXLzCkYAtGFYmK5vYNR33+ is a valid address that contains
 the letters forming the word "Love" as the first four base58 letters.
 Vanity addresses require generating and testing billions of candidate
-private keys, until a Bitcoin address with the desired pattern is found.
+private keys until a Bitcoin address with the desired pattern is found.
 Although there are some optimizations in the vanity generation
 algorithm, the process essentially involves picking a private key at
 random, deriving the public key, deriving the Bitcoin address, and
@@ -1767,7 +1767,7 @@ As you can see, Eugenia won't be creating the vanity address
 computers. Each additional character increases the difficulty by a
 factor of 58. Patterns with more than seven characters are usually found
 by specialized hardware, such as custom-built desktops with multiple
-GPUs.
+graphics processing units (GPUs).
 Vanity searches on GPU systems are many orders of magnitude
 faster than on a general-purpose CPU.
 
@@ -1842,7 +1842,7 @@ image::images/mbc3_0410.png[]
 Some are intended to be given as gifts and have seasonal themes, such as
 Christmas and New Year's. Others are designed for storage in a
 bank vault or safe with the private key hidden in some way, either with
-opaque scratch-off stickers, or folded and sealed with tamper-proof
+opaque scratch-off stickers or folded and sealed with tamper-proof
 adhesive foil.  Other designs feature additional copies of the key and
 address, in the form of detachable stubs similar to ticket stubs,
 allowing you to store multiple copies to protect against fire, flood, or
