@@ -436,12 +436,12 @@ Bob waits to receive Alice's public nonce
   the equation that Bob will use for verification, _sG_ == _kG_ + _exG_;
   specifically, they can change both _sG_ and _kG_.  Think about a
   simplified form of that expression: _x_ = _y_ + _a_.  If you can change both
-  _x_ and _y_, you can cancel out _a_ using _x_++'++ = (_x_ - _a_) + _a_.  Any
+  _x_ and _y_, you can cancel out _a_ using _x_++'++ = (_x_ – _a_) + _a_.  Any
   value you choose for _x_ will now satisfy the equation.  For the
   actual equation the impersonator simply chooses a random number for _s_, generates
   _sG_, and then uses EC subtraction to select a _kG_ that equals _kG_ =
-  _sG_ - _exG_.  They give Bob their calculated _kG_ and later their random
-  _sG_, and Bob thinks that's valid because _sG_ == (_sG_ - _exG_) + _exG_.
+  _sG_ – _exG_.  They give Bob their calculated _kG_ and later their random
+  _sG_, and Bob thinks that's valid because _sG_ == (_sG_ – _exG_) + _exG_.
   This explains why the order of operations in the protocol is
   essential: Bob must only give Alice the challenge scalar after Alice
   has committed to her public nonce.
@@ -482,7 +482,7 @@ and hashes it herself.  We no longer need interaction from Bob.  She can
 simply publish her public nonce _kG_ and the scalar _s_, and each of the
 thousands of full nodes (past and future) can hash _kG_ to produce _e_,
 use that to produce _exG_, and then verify _sG_ == _kG_ + _exG_.  Written
-explicitly, the verification equation becomes _sG_ == _kG_ + hash(_kG_) × _xG_.
+explicitly, the verification equation becomes _sG_ == _kG_ + _hash_(_kG_) × _xG_.
 
 We need one other thing to finish converting the interactive schnorr
 identity protocol into a digital signature protocol useful for
@@ -491,8 +491,8 @@ key; we also want to give her the ability to commit to a message.  Specifically,
 we want her to commit to the data related to the Bitcoin transaction she
 wants to send.  With the Fiat-Shamir transform in place, we already
 have a commitment, so we can simply have it additionally commit to the
-message.  Instead of hash(_kG_), we now also commit to the message
-_m_ using hash(_kG_ || _m_), where || stands for concatenation.
+message.  Instead of _hash_(_kG_), we now also commit to the message
+_m_ using _hash_(_kG_ || _m_), where || stands for concatenation.
 
 We've now defined a version of the schnorr signature protocol, but
 there's one more thing we need to do to address a Bitcoin-specific
@@ -508,7 +508,7 @@ also support several protocols people wanted to build on top of schnorr
 signatures, Bitcoin's version of schnorr signatures, called _BIP340
 schnorr signatures for secp256k1_, also commits to the public key being
 used in addition to the public nonce and the message.  That makes the
-full commitment hash(_kG_ || _xG_ || _m_).
+full commitment _hash_(_kG_ || _xG_ || _m_).
 
 Now that we've described each part of the BIP340 schnorr signature
 algorithm and explained what it does for us, we can define the protocol.
@@ -531,7 +531,7 @@ she's ready to spend, she begins generating her signature:
    nonce _kG_.
 
 2. She chooses her message _m_ (e.g., transaction data) and generates the
-   challenge scalar _e_ = hash(_kG_ || _xG_ || _m_).
+   challenge scalar _e_ = _hash_(_kG_ || _xG_ || _m_).
 
 3. She produces the scalar _s_ = _k_ + _ex_.  The two values _kG_ and _s_
    are her signature.  She gives this signature to everyone who wants to
@@ -541,7 +541,7 @@ she's ready to spend, she begins generating her signature:
    transaction to full nodes.
 
 4. The verifiers (e.g., full nodes) use _s_ to derive _sG_ and then
-   verify that _sG_ == _kG_ + hash(_kG_ || _xG_ || _m_) × _xG_.  If the equation is
+   verify that _sG_ == _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_.  If the equation is
    valid, Alice proved that she knows her private key _x_ (without
    revealing it) and committed to the message _m_ (containing the
    transaction data).
@@ -609,14 +609,14 @@ simple multisignature protocol:
    public nonce _kG_ = _aG_ + _bG_.
 
 2. They agree on the message to sign, _m_ (e.g., a transaction), and
-   each generates a copy of the challenge scalar: _e_ = hash(_kG_ || _xG_ || _m_).
+   each generates a copy of the challenge scalar: _e_ = _hash_(_kG_ || _xG_ || _m_).
 
 3. Alice produces the scalar _q_ = _a_ + _ey_.  Bob produces the scalar
    _r_ = _b_ + _ez_.  They add the scalars together to produce
    _s_ = _q_ + _r_.  Their signature is the two values _kG_ and _s_.
 
 4. The verifiers check their public key and signature using the normal
-   equation: _sG_ == _kG_ + hash(_kG_ || _xG_ || _m_) × _xG_.
+   equation: _sG_ == _kG_ + _hash_(_kG_ || _xG_ || _m_) × _xG_.
 
 Alice and Bob have proven that they know the sum of their private keys without
 either one of them revealing their private key to the other or anyone
@@ -628,7 +628,7 @@ The preceding protocol has several security problems.  Most notable is that one
 party might learn the public keys of the other parties before committing
 to their own public key.  For example, Alice generates her public key
 _yG_ honestly and shares it with Bob.  Bob generates his public key
-using _zG_ - _yG_.  When their two keys are combined (_yG_ + _zG_ - _yG_), the
+using _zG_ – _yG_.  When their two keys are combined (_yG_ + _zG_ – _yG_), the
 positive and negative _yG_ terms cancel out so the public key only represents
 the private key for _z_ (i.e., Bob's private key).  Now Bob can create a
 valid signature without any assistance from Alice.  This is ((("key cancellation attacks")))called a
