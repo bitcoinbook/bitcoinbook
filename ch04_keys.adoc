@@ -63,10 +63,10 @@ from the private key, so storing only the private key is also possible.
 
 A Bitcoin wallet contains a collection of key
 pairs, each consisting of a private key and a public key. The private
-key (k) is a number, usually derived from a number picked at random.
+key (_k_) is a number, usually derived from a number picked at random.
 From the private key, we
 use elliptic curve multiplication, a one-way cryptographic function, to
-generate a public((("public key cryptography", startref="pub-key")))((("key pairs", startref="key-pair"))) key (K).
+generate a public((("public key cryptography", startref="pub-key")))((("key pairs", startref="key-pair"))) key (_K_).
 
 .Why Use Asymmetric Cryptography (Public/Private Keys)?
 ****
@@ -118,15 +118,15 @@ or repeatable. Bitcoin software uses cryptographically secure random
 number generators to produce 256 bits of entropy.
 
 More precisely, the private key can be any number between 0 and n -
-1 inclusive, where n is a constant (n = 1.1578 × 10^77^, slightly less
+1 inclusive, where _n_ is a constant (_n_ = 1.1578 × 10^77^, slightly less
 than 2^256^) defined as the order of the elliptic curve used in Bitcoin
 (see <<elliptic_curve>>). To create such a key, we randomly pick a
-256-bit number and check that it is less than +n+. In programming terms,
+256-bit number and check that it is less than _n_. In programming terms,
 this is usually achieved by feeding a larger string of random bits,
 collected from a cryptographically secure source of randomness, into the
 SHA256 hash algorithm, which will conveniently produce a 256-bit value
 that can be interpreted as a number.
-If the result is less than +n+, we have a suitable private key.
+If the result is less than _n_, we have a suitable private key.
 Otherwise, we simply try again with another random number.
 
 [WARNING]
@@ -140,7 +140,7 @@ choose to make sure it is cryptographically secure. Correct
 implementation of the CSPRNG is critical to the security of the keys.
 ====
 
-The following is a randomly generated private key (k) shown in
+The following is a randomly generated private key (_k_) shown in
 hexadecimal format (256 bits shown as 64 hexadecimal digits, each 4
 bits):
 
@@ -167,7 +167,7 @@ curve.
 by Bitcoin.
 
 [[ecc-curve]]
-[role="width-80"]
+[role="width-50"]
 .An elliptic curve
 image::images/mbc3_0402.png["ecc-curve"]
 
@@ -341,12 +341,10 @@ Implementing the elliptic curve multiplication, we take the private key
 _k_ generated previously and multiply it with the generator point _G_ to
 find the public key _K_:
 
-[latexmath]
-++++
-\begin{equation}
-{K = 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD \times G}
-\end{equation}
-++++
+[source, python]
+----
+K = 1E99423A4ED27608A15A2616A2B0E9E52CED330AC530EDCC32C8FFC6A526AEDD * G
+----
 
 Public key _K_ is defined as a point K = (x, y):
 
@@ -1087,7 +1085,7 @@ The "32" stands for the number of characters in the bech32 alphabet
 .Bech32 typo detection
 ====
 Address:
-  bc1p9nh05ha8wrljf7ru236aw**n**4t2x0d5ctkkywm**v**9sclnm4t0av2vgs4k3au7
+  bc1p9nh05ha8wrljf7ru236awpass:[<u>n</u>]4t2x0d5ctkkywm**v**9sclnm4t0av2vgs4k3au7
 
 Detected errors shown in bold.  Generated using the
 https://oreil.ly/paWIx[bech32 address decoder demo].
@@ -1633,7 +1631,7 @@ Once a vanity address matching the desired pattern is found, the private
 key from which it was derived can be used by the owner to spend bitcoins
 in exactly the same way as any other address. Vanity addresses are no
 less or more secure than any other address. They depend on the same
-elliptic curve cryptography (ECC) and SHA as any other address. You can
+elliptic curve cryptography (ECC) and secure hash algorithm (SHA) as any other address. You can
 no more easily find the private key of an address starting with a vanity
 pattern than you can any other address.
 

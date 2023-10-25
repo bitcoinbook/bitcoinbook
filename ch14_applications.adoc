@@ -339,9 +339,8 @@ Translated forwarding::
   support forwarding bitcoin payments.
 
 Native forwarding is conceptually simpler but essentially requires a
-separate Lightning Network for every asset.  Translated forwarding
-allows building on the economies of scale of the Bitcoin Lightning
-Network, but it may be vulnerable to a problem called((("free American call option"))) the _free American
+separate LN for every asset.  Translated forwarding
+allows building on the economies of scale of the Bitcoin LN, but it may be vulnerable to a problem called((("free American call option"))) the _free American
 call option_, where a receiver may selectively accept or reject certain
 payments depending on recent changes to the exchange rate in order to
 siphon money from the hop next to them.  Although there's no known
@@ -712,8 +711,7 @@ Even though a transaction cannot be canceled, it can be constructed in
 such a way as to make it undesirable to use. The way we do that is by
 giving each party a _revocation key_ that can be used to punish the
 other party if they try to cheat. This mechanism for revoking prior
-commitment transactions was first proposed as part of the Lightning
-Network.
+commitment transactions was first proposed as part of the LN.
 
 To explain revocation keys, we will construct a more complex payment
 channel between two exchanges run by Hitesh and Irene. Hitesh and Irene
@@ -909,8 +907,7 @@ Asymmetric revocable commitments with relative time locks (+CSV+) are a
 much better way to implement payment channels and a very significant
 innovation in this technology.  With this construct, the channel can
 remain open indefinitely and can have billions of intermediate
-commitment transactions. In implementations of Lightning
-Network, the commitment state is identified by a 48-bit index, allowing
+commitment transactions. In implementations of LN, the commitment state is identified by a 48-bit index, allowing
 more than 281 trillion (2.8 × 10^14^) state transitions in ((("payment channels", "asymmetric revocable commitments", startref="payment-channel-revoke")))((("asymmetric revocable commitments", startref="asymmetric-revoke-commit")))((("commitment transactions", "asymmetric revocable commitments", startref="commit-revoke")))((("revocable commitments", startref="revoke-commit")))any single
 channel.
 
@@ -996,12 +993,11 @@ to Carol, Carol to Diana, and Diana to Eric. For simplicity let's assume
 each channel is funded with 2 bitcoins by each participant, for a total
 capacity of 4 bitcoins in each channel.
 
-<<lightning_network_fig>> shows five participants in a Lightning
-Network, connected by bidirectional payment channels that can be linked
+<<lightning_network_fig>> shows five participants in an LN, connected by bidirectional payment channels that can be linked
 to make a payment from Alice to Eric (see <<lightning_network>>).
 
 [[lightning_network_fig]]
-.A series of bidirectional payment channels linked to form a Lightning Network that can route a payment from Alice to Eric
+.A series of bidirectional payment channels linked to form an LN that can route a payment from Alice to Eric
 image::images/mbc3_1406.png["A series of bi-directional payment channels linked to form a Lightning Network"]
 
 Alice wants to pay Eric 1 bitcoin. However, Alice is not connected to
@@ -1015,10 +1011,10 @@ payment from Alice to Eric, through a series of HTLC commitments on the
 payment channels connecting the participants.
 
 [[ln_payment_process]]
-.Step-by-step payment routing through a Lightning Network
+.Step-by-step payment routing through an LN
 image::images/mbc3_1407.png["Step-by-step payment routing through a Lightning Network"]
 
-Alice is running a Lightning Network (LN) node that is keeping track of
+Alice is running an LN node that is keeping track of
 her payment channel to Bob and has the ability to discover routes
 between payment channels. Alice's LN node also has the ability to
 connect over the internet to Eric's LN node. Eric's LN node creates a
@@ -1114,7 +1110,7 @@ with sufficient capacity. Nodes advertise routing information, including
 what channels they have open, how much capacity each channel has, and
 what fees they charge to route payments. The routing information can be
 shared in a variety of ways, and different pathfinding protocols have
-emerged as Lightning Network technology has advanced.
+emerged as LN technology has advanced.
 Current implementations of
 route discovery use a P2P model where nodes propagate channel
 announcements to their peers in a "flooding" model, similar to how
@@ -1132,15 +1128,15 @@ Carol's perspective, this looks like a payment from Bob to Diana. Carol
 does not know that Bob is actually relaying a payment from Alice. She
 also doesn't know that Diana will be relaying a payment to Eric.
 
-This is a critical feature of the Lightning Network because it ensures
+This is a critical feature of the LN because it ensures
 privacy of payments and makes it difficult to apply surveillance,
 censorship, or blacklists. But how does Alice establish this payment
 path without revealing anything to the intermediary nodes?
 
-The Lightning Network implements an onion-routed protocol based on a
+The LN implements an onion-routed protocol based on a
 scheme called https://oreil.ly/fuCiK[Sphinx]. This routing protocol
 ensures that a payment sender can construct and communicate a path
-through the Lightning Network such that:
+through the LN such that:
 
 - Intermediate nodes can verify and decrypt their portion of route
   information and find the next hop.
@@ -1192,40 +1188,39 @@ hops to go.
 
 ==== Lightning Network Benefits
 
-A((("payment channels", "Lightning Network", "benefits of", id="payment-channel-ln-benefits")))((("Lightning Network", "benefits of", id="lightning-benefits"))) Lightning Network is a
+An((("payment channels", "Lightning Network", "benefits of", id="payment-channel-ln-benefits")))((("Lightning Network", "benefits of", id="lightning-benefits"))) LN is a
 second-layer routing technology. It can be applied to any blockchain
 that supports some basic capabilities, such as multisignature
 transactions, timelocks, and basic smart contracts.
 
-Lightning Network is layered on top of the Bitcoin network, giving
+LN is layered on top of the Bitcoin network, giving
 Bitcoin a significant increase in capacity, privacy,
 granularity, and speed, without sacrificing the principles of trustless
 operation without intermediaries:
 
-Privacy:: Lightning Network payments are much more private than payments
+Privacy:: LN payments are much more private than payments
 on the Bitcoin blockchain, as they are not public. While participants in
 a route can see payments propagated across their channels, they do not
 know the sender or recipient.
 
-Fungibility:: A Lightning Network makes it much more difficult to apply
+Fungibility:: An LN makes it much more difficult to apply
 surveillance and blacklists on Bitcoin, increasing the fungibility of
 the currency.
 
-Speed:: Bitcoin transactions using Lightning Network are settled in
+Speed:: Bitcoin transactions using LN are settled in
 milliseconds, rather than minutes or hours, as HTLCs are cleared without
 committing transactions to a block.
 
-Granularity:: A Lightning Network can enable payments at least as small
+Granularity:: An LN can enable payments at least as small
 as the Bitcoin "dust" limit, perhaps even smaller.
 
-Capacity:: A Lightning Network increases the capacity of the Bitcoin
+Capacity:: An LN increases the capacity of the Bitcoin
 system by several orders of magnitude. The upper bound
 to the number of payments per second that can be routed over a Lightning
 Network depends only on the capacity and speed of each node.
 
-Trustless Operation:: A Lightning Network uses Bitcoin transactions
-between nodes that operate as peers without trusting each other. Thus, a
-Lightning Network preserves the principles of the Bitcoin system, while
+Trustless Operation:: An LN uses Bitcoin transactions
+between nodes that operate as peers without trusting each other. Thus, an LN preserves the principles of the Bitcoin system, while
 expanding its operating parameters ((("Bitcoin", "as application platform", "routed payment channels (Lightning Network)", secondary-sortas="application platform", startref="bitcoin-app-platform-ln")))((("application platform, Bitcoin as", "routed payment channels (Lightning Network)", startref="app-platform-ln")))((("payment channels", "Lightning Network", startref="payment-channel-ln")))((("Lightning Network", startref="lightning")))((("payment channels", "Lightning Network", "benefits of", startref="payment-channel-ln-benefits")))((("Lightning Network", "benefits of", startref="lightning-benefits")))significantly.
 
 We have examined just a few of the emerging applications that can be
