@@ -13,4 +13,8 @@
   <!-- Drop @width attributes from images if present -->
   <xsl:template match="h:img/@width"/>
 
+ <!-- Drop @alt attribute content from images if present -->
+  <xsl:template match="h:img/@alt">
+    <xsl:attribute name="alt"/>
+  </xsl:template>
 </xsl:stylesheet>
