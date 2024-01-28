@@ -3,17 +3,8 @@
 This book is developed collaboratively and openly, here on GitHub. We accept comments, contributions and corrections from all.
 
 ## Current Project STATUS
-**CONTENT FREEZE - THIRD EDITION IN PRODUCTION**
 
-## Contributing with a Pull Request
-
-Before contributing with a Pull Request, please read the current **PROJECT STATUS**.
-
-If the current **PROJECT STATUS** is **CONTENT FREEZE**, please keep these points in mind;
-
-* Please submit only PRs for errors that a non-domain-expert copy editor might miss. Do not submit PRs for typos, grammar and syntax, as those are part of the copy editors job.
-* Please don't merge code. Any changes will have to be applied manually (by the Author) after copy edit and before final proof, if the copy editor doesn't catch the same errors.
-
+**THIRD EDITION PUBLISHED**
 
 
 ## License and attribution
@@ -30,13 +21,18 @@ Added by: @aantonop
 ////
 ```
 
+
+## Contributing with a Pull Request
+
+Please submit only PRs for errors that a non-domain-expert copy editor might miss. Do not submit PRs for typos, grammar and syntax, as those are part of the copy editors job. 
+
 The best way to contribute to this book is by making a pull request:
 
 1. Login with your GitHub account or create one now
 2. [Fork](https://github.com/bitcoinbook/bitcoinbook#fork-destination-box) the `bitcoinbook` repository. Work on your fork.
 3. Create a new branch on which to make your change, e.g. `git checkout -b my_code_contribution`, or make the change on the `develop` branch.
-4. Please do one pull request PER asciidoc file, to avoid large merges. Edit the asciidoc file where you want to make a change or create a new asciidoc file in the `contrib` directory if you're not sure where your contribution might fit.
-5. Edit `github_contrib.asciidoc` and add your own name to the list of contributors under the Acknowledgment section. Use your name, or a GitHub username, or a pseudonym.
+4. Please do one pull request *per asciidoc file*, to avoid large merges. Edit the asciidoc file where you want to make a change.
+5. If you want attribution for your contribution, edit the file `meta/github_contrib.adoc` and add your own name to the list of contributors under the Acknowledgment section. Use your name, or a GitHub username, or a pseudonym. You are responsible for creating an attribution.
 6. Commit your change. Include a commit message describing the correction.
 7. Submit a pull request against the bitcoinbook repository.
 
