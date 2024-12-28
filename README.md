@@ -12,7 +12,7 @@ This repository contains the complete text of three editions of the book Masteri
 
 To read this book *for free*, see [BOOK.md](https://github.com/bitcoinbook/bitcoinbook/blob/develop/BOOK.md). Click on each of the chapters to read in your browser. 
 
-_Please note that some of the links in each chapter do not work when reading the book on Github. This is because those links are intended for the print and ebook editions of the book and only work when all the chapters are rendered together. Unfortunatelly, Github does not have the ability to render the complete book at once._
+_Please note that some of the links in each chapter do not work when reading the book on Github. This is because those links are intended for the print and ebook editions of the book and only work when all the chapters are rendered together. Unfortunately, Github does not have the ability to render the complete book at once._
 
 <!-- /* This section no longer applies -harding */
 ## Where is the PDF?
@@ -50,7 +50,7 @@ The tags, [second_edition_print_1](https://github.com/bitcoinbook/bitcoinbook/re
 
 <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="https://purl.org/dc/terms/" href="https://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">Mastering Bitcoin - Second Edition</span> by <a xmlns:cc="https://creativecommons.org/ns#" href="https://aantonop.com/books" property="cc:attributionName" rel="cc:attributionURL">aantonop Books LLC</a> is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
-Mastering Bitcoin (Open Second Edition), based on the Seond Edition, is also available in English and Spanish at https://aantonop.com. Mastering Bitcoin 2nd Edition is also published in German, Polish, Japanese, Korean, Chinese and other languages by publishers in the respective countries.
+Mastering Bitcoin (Open Second Edition), based on the Second Edition, is also available in English and Spanish at https://aantonop.com. Mastering Bitcoin 2nd Edition is also published in German, Polish, Japanese, Korean, Chinese and other languages by publishers in the respective countries.
 
 # Issues, Errors, Comments, Contributions
 
