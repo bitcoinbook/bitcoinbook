@@ -12,7 +12,7 @@ This repository contains the complete text of three editions of the book Masteri
 
 To read this book *for free*, see [BOOK.md](https://github.com/bitcoinbook/bitcoinbook/blob/develop/BOOK.md). Click on each of the chapters to read in your browser. 
 
-_Please note that some of the links in each chapter do not work when reading the book on Github. This is because those links are intended for the print and ebook editions of the book and only work when all the chapters are rendered together. Unfortunatelly, Github does not have the ability to render the complete book at once._
+_Please note that some of the links in each chapter do not work when reading the book on Github. This is because those links are intended for the print and ebook editions of the book and only work when all the chapters are rendered together. Unfortunately, Github does not have the ability to render the complete book at once._
 
 <!-- /* This section no longer applies -harding */
 ## Where is the PDF?
