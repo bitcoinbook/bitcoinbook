@@ -24,7 +24,7 @@ Added by: @aantonop
 
 ## Contributing with a Pull Request
 
-Please submit only PRs for errors that a non-domain-expert copy editor might miss. Do not submit PRs for typos, grammar and syntax, as those are part of the copy editors job. 
+Please submit only PRs for errors that a non-domain-expert copy editor might miss. Do not submit PRs for typos, grammar and syntax, as those are part of the copy editor's job. 
 
 The best way to contribute to this book is by making a pull request:
 
@@ -32,7 +32,7 @@ The best way to contribute to this book is by making a pull request:
 2. [Fork](https://github.com/bitcoinbook/bitcoinbook#fork-destination-box) the `bitcoinbook` repository. Work on your fork.
 3. Create a new branch on which to make your change, e.g. `git checkout -b my_code_contribution`, or make the change on the `develop` branch.
 4. Please do one pull request *per asciidoc file*, to avoid large merges. Edit the asciidoc file where you want to make a change.
-5. If you want attribution for your contribution, edit the file `meta/github_contrib.adoc` and add your own name to the list of contributors under the Acknowledgment section. Use your name, or a GitHub username, or a pseudonym. You are responsible for creating an attribution.
+5. If you want attribution for your contribution, edit the file `meta/github_contrib.adoc` and add your own name to the list of contributors under the Acknowledgement section. Use your name, or a GitHub username, or a pseudonym. You are responsible for creating an attribution.
 6. Commit your change. Include a commit message describing the correction.
 7. Submit a pull request against the bitcoinbook repository.
 
