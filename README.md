@@ -60,4 +60,4 @@ If you know how to make a pull request to contribute a fix, please write the cor
 
 # Translations
 
-If you are interested in translating this book, please join our team of volunteers at: https://www.transifex.com/bitcoinbook/mastering-bitcoin/
+If you are interested in translating this book, please join our team of volunteers at: https://explore.transifex.com/aantonop/mastering-bitcoin/
