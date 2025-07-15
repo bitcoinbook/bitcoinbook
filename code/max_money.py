@@ -10,7 +10,7 @@ def max_money():
     total = 0
     while current_reward > 0:
         total += reward_interval * current_reward
-        current_reward /= 2
+        current_reward = current_reward // 2
     return total
 
 
