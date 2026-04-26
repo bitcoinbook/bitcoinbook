@@ -1,0 +1,1140 @@
+[[c_transactions]]
+== Miamala (Transactions)
+
+Njia tunayotumia kwa kawaida kuhamisha fedha taslimu za kifizikia inafanana kidogo sana na njia tunayohamisha bitcoin. Fedha taslimu za kifizikia ni ishara inayoshikiliwa (bearer token). Alice anamlipa Bob kwa kumpa idadi fulani ya ishara hizo, kama vile noti za dola. Kwa kulinganisha, bitcoin hazipo kifizikia wala kama data ya kidijitali—Alice hawezi kumpa Bob baadhi ya bitcoin au kumtumia kwa barua pepe.
+
+Badala yake, fikiria jinsi Alice anavyoweza kuhamisha umiliki wa kipande cha ardhi kwa Bob. Hawezi kuinua ardhi kifizikia na kumpa Bob. Badala yake, kuna aina fulani ya rekodi (kawaida inadumishwa na serikali ya mtaa) inayoelezea ardhi ambayo Alice anamiliki. Alice anahamisha ardhi hiyo kwa Bob kwa kuishawishi serikali kusasisha rekodi ili kusema kwamba Bob sasa anamiliki ardhi hiyo.
+
+Bitcoin inafanya kazi kwa njia sawa. Kuna kanzidata (database) kwenye kila nodi kamili (full node) ya Bitcoin inayosema kwamba Alice anadhibiti idadi fulani ya bitcoin. Alice anamlipa Bob kwa kushawishi nodi kamili kusasisha kanzidata zao kusema kwamba baadhi ya bitcoin za Alice sasa zinadhibitiwa na Bob. Data ambayo Alice anatumia kushawishi nodi kamili kusasisha kanzidata zao inaitwa _muamala_ (transaction). Hili linafanywa bila kutumia vitambulisho vya Alice au Bob moja kwa moja, kama tutakavyoona katika <<c_authorization_authentication>>.
+
+Katika sura hii, tutachambua muamala wa Bitcoin na kuchunguza kila sehemu yake ili kuona jinsi zinavyowezesha uhamishaji wa thamani kwa njia inayoonyesha mengi na inayoaminika sana.
+
+[[tx_structure]]
+=== Muamala wa Bitcoin Uliopangwa (A Serialized Bitcoin Transaction)
+
+Katika <<exploring_and_decoding_transactions>>, sisi ((("miamala", "iliyopangwa", id="transaction-serialize")))((("miamala iliyopangwa (serialized transactions)", id="serial-transactions")))((("Bitcoin Core", "miamala iliyopangwa", id="bitcoin-core-serial-transaction")))tulitumia Bitcoin Core na chaguo la txindex likiwa limewezeshwa kupata nakala ya malipo ya Alice kwa Bob. Hebu tupate tena muamala wenye malipo hayo, kama unavyoonyeshwa katika <<alice_tx_serialized_reprint>>.
+
+[[alice_tx_serialized_reprint]]
+.Muamala wa Alice uliopangwa
+====
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177
+
+01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da13569
+8679268041c54a0100000000ffffffff02204e0000000000002251203b41daba
+4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068f8240100
+000000001600147752c165ea7be772b2c0acb7f4d6047ae6f4768e0141cf5efe
+2d8ef13ed0af21d4f4cb82422d6252d70324f6f4576b727b7d918e521c00b51b
+e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
+0000
+----
+====
+
+
+Mpangilio (serialization format) wa Bitcoin Core ni maalum kwa sababu ni mpangilio unaotumiwa kufanya ahadi (commitments) kwenye miamala na kuisambaza kwenye mtandao wa P2P wa Bitcoin, lakini vinginevyo programu zinaweza kutumia mpangilio tofauti mradi tu zinasambaza data ile ile yote. Hata hivyo, mpangilio wa Bitcoin Core una ufupi wa kuridhisha kwa data inayoisambaza na ni rahisi kuichanganua (parse), hivyo programu nyingine nyingi za Bitcoin zinatumia mpangilio huu.
+
+[KIDOKEZO]
+====
+Mpangilio mwingine pekee((("mpangilio wa muamala wa bitcoin uliosainiwa kwa kiasi (PSBT)")))((("PSBT (mpangilio wa muamala wa bitcoin uliosainiwa kwa kiasi)"))) wa kupanga miamala unaotumiwa sana ambao tunaufahamu ni mpangilio wa muamala wa bitcoin uliosainiwa kwa kiasi (partially signed bitcoin transaction - PSBT) ulioandikwa katika BIPs 174 na 370 (na viendelezi vilivyoandikwa katika BIPs nyingine). PSBT inaruhusu programu isiyoaminika kuzalisha kiolezo (template) cha muamala ambacho kinaweza kuthibitishwa na kusasishwa na programu zinazoaminika (kama vile vifaa vya kusaini vya kifizikia) ambazo zina funguo za siri zinazohitajika au data nyingine nyeti ili kujaza kiolezo hicho. Ili kufanikisha hili, PSBT inaruhusu kuhifadhi kiasi kikubwa metadata kuhusu muamala, na kuifanya isiwe fupi kama mpangilio wa kawaida. Kitabu hiki hakiingii kwa undani kuhusu PSBT, lakini tunakipendekeza sana kwa watengenezaji wa mikoba wanaopanga kusaidia usaini wenye funguo nyingi.
+====
+
+Muamala ulioonyeshwa katika hexadecimal katika <<alice_tx_serialized_reprint>> umetolewa nakala kama ramani ya bytes (byte map) katika <<alice_tx_byte_map>>. Kumbuka kwamba inachukua herufi 64 za hexadecimal kuonyesha bytes 32. Ramani hii inaonyesha nyanja za ngazi ya juu pekee (top-level fields). Tutachunguza kila moja wapo kwa mpangilio zinavyoonekana katika muamala na kuelezea nyanja zozote za ziada ambazo nazo((("miamala", "iliyopangwa", startref="transaction-serialize")))((("miamala iliyopangwa (serialized transactions)", startref="serial-transactions")))((("Bitcoin Core", "miamala iliyopangwa", startref="bitcoin-core-serial-transaction"))) zinazo.
+
+[[alice_tx_byte_map]]
+.Ramani ya bytes ya muamala wa Alice.
+image::images/mbc3_0601.png["Ramani ya bytes ya muamala wa Alice"]
+
+[[version]]
+=== Toleo (Version)
+
+Bytes ((("miamala", "toleo la", id="transactions-version")))((("toleo (la miamala)", id="version-transactions")))nne za kwanza za muamala wa Bitcoin uliopangwa (serialized) ni
+toleo lake. Toleo asili la miamala ya Bitcoin lilikuwa toleo la 1
+(0x01000000). Miamala yote katika Bitcoin lazima ifuate
+sheria za miamala ya toleo la 1, huku nyingi za sheria hizo zikielezwa
+katika kitabu hiki chote.
+
+Miamala ya toleo la 2 la Bitcoin ilianzishwa katika mabadiliko ya soft fork ya BIP68 kwenye sheria za makubaliano za Bitcoin. BIP68 inaweka vikwazo vya ziada kwenye uwanja wa mfuatano (sequence field), lakini vikwazo hivyo vinatumika tu kwenye miamala yenye toleo la 2 au la juu zaidi. Miamala ya toleo la 1 haiathiriwi. BIP112, ambayo ilikuwa sehemu ya soft fork ile ile kama BIP68, iliboresha opcode (++OP_CHECKSEQUENCEVERIFY++), ambayo sasa itashindwa ikiwa itatathminiwa kama sehemu ya muamala wenye toleo chini ya 2. Zaidi ya mabadiliko hayo mawili, miamala ya toleo la 2 inafanana kabisa na miamala ya toleo la 1.
+
+[role="less_space pagebreak-before"]
+.Kulinda Miamala Iliyosainiwa Kabla (Protecting Presigned Transactions)
+****
+Hatua ya mwisho ((("miamala", "iliyosainiwa kabla", id="transaction-presign")))((("miamala iliyosainiwa kabla (presigned transactions)", id="presign-transaction")))kabla ya kutangaza muamala kwenye mtandao ili ujumuishwe kwenye blockchain ni kuusaini. Hata hivyo, inawezekana kusaini muamala bila kuutangaza mara moja. Unaweza kuhifadhi muamala huo uliosainiwa kabla kwa miezi au miaka ukiwa na imani kwamba unaweza kuongezwa kwenye blockchain baadaye utakapo utangaza. Katika kipindi hicho, unaweza hata kupoteza ufikiaji wa funguo ya siri (au funguo) inayohitajika kusaini muamala mbadala wa kutumia fedha hizo. Hili si la kufikirika: itifaki kadhaa zilizojengwa juu ya Bitcoin, ikiwa ni pamoja na Lightning Network, zinategemea miamala [.keep-together]#iliyosainiwa kabla.#
+
+Hili linaleta changamoto kwa watengenezaji wa itifaki wanaposaidia watumiaji katika kuboresha itifaki ya makubaliano ya Bitcoin. Kuongeza vikwazo vipya—kama vile BIP68 ilivyofanya kwenye uwanja wa mfuatano—kunaweza kubatilisha baadhi ya miamala iliyosainiwa kabla. Ikiwa hakuna njia ya kuunda saini mpya kwa ajili ya muamala sawa, basi fedha zinazotumika katika muamala uliosainiwa kabla zinapotea moja kwa moja.
+
+Tatizo hili linatatuliwa kwa kuhifadhi (reserving) baadhi ya vipengele vya miamala kwa ajili ya maboresho, kama vile namba za toleo. Yeyote anayeunda miamala iliyosainiwa kabla kabla ya BIP68 alipaswa kuwa anatumia miamala ya toleo la 1, hivyo kutumia tu vikwazo vya ziada vya BIP68 kwenye mfuatano kwa miamala ya v2 au la juu zaidi hakupaswi kubatilisha miamala yoyote [.keep-together]#iliyosainiwa kabla.#
+
+Ikiwa unatekeleza itifaki inayotumia miamala iliyosainiwa kabla, hakikisha kwamba haitumii vipengele vyovyote ambavyo vimehifadhiwa kwa ajili ya maboresho ya baadaye. Sera chaguomsingi ya usambazaji (relay policy) ya miamala ya Bitcoin Core hairuhusu matumizi ya vipengele vilivyohifadhiwa. Unaweza kujaribu ikiwa muamala unakubaliana na sera hiyo kwa kutumia RPC ya +testmempoolaccept+ ya Bitcoin Core kwenye Bitcoin mainnet.
+****
+
+Kufikia wakati wa uandishi huu, pendekezo la kuanza kutumia miamala ya toleo la 3 linazingatiwa kwa upana. Pendekezo hilo halilengi kubadilisha sheria za makubaliano (consensus rules) bali ni kubadilisha sera ambayo nodi kamili za Bitcoin zinatumia kusambaza miamala. Chini ya pendekezo hili, miamala ya toleo la 3 itakuwa chini ya vikwazo vya ziada ili kuzuia mashambulizi fulani ya kunyima huduma (denial of service - DoS) ambayo tutayajadili((("miamala", "toleo la", startref="transactions-version")))((("toleo (la miamala)", startref="version-transactions"))) zaidi katika <<transaction_pinning>>.
+
+=== Alama na Bendera Zilizopanuliwa (Extended Marker and Flag)
+
+Nyanja mbili zinazofuata((("miamala", "mpangilio uliopanuliwa")))((("mpangilio uliopanuliwa (extended serialization format)")))((("BIP144 mpangilio uliopanuliwa"))) za muamala uliopangwa wa mfano ziliongezwa kama
+sehemu ya mabadiliko ya soft fork ya shahidi aliyetengwa (segregated witness - segwit) kwenye sheria za makubaliano za Bitcoin. Sheria zilibadilishwa kulingana na BIPs 141 na 143,
+lakini _mpangilio uliopanuliwa_ (extended serialization format) umeelezwa katika BIP144.
+
+[role="less_space pagebreak-before"]
+Ikiwa muamala unajumuisha muundo wa shahidi (witness structure - ambao tutauelezea katika
+<<witness_structure>>), alama (marker) lazima iwe sifuri (0x00) na bendera (flag) lazima iwe
+isiyo sifuri (nonzero). Katika itifaki ya sasa ya P2P, bendera inapaswa kuwa moja daima
+(0x01); bendera mbadala zimehifadhiwa kwa ajili ya maboresho ya baadaye ya itifaki.
+
+Ikiwa muamala hauhitaji fungu la mashahidi (witness stack), alama na bendera hazipaswi
+kuwepo. Hii inaendana na toleo asili la
+mpangilio wa muamala wa Bitcoin, ambao sasa unaitwa _mpangilio wa urithi_ (legacy serialization).
+Kwa maelezo zaidi, tazama <<legacy_serialization>>.
+
+Katika ((("miamala", "mpangilio wa urithi")))((("mpangilio wa urithi (legacy serialization)")))mpangilio wa urithi, byte ya alama ingetafsiriwa kama
+idadi ya ingizo (sifuri). Muamala hauwezi kuwa na ingizo sifuri, hivyo
+alama inaashiria kwa programu za kisasa kwamba mpangilio uliopanuliwa
+unatumika. Uwanja wa bendera unatoa ishara sawa na pia
+unarahisisha mchakato wa kusasisha mpangilio katika
+siku zijazo.
+
+[[inputs]]
+=== Ingizo (Inputs)
+
+Uwanja ((("miamala", "ingizo", id="transaction-input")))((("ingizo (inputs)", id="input-transaction"))) wa ingizo una nyanja nyingine kadhaa, hivyo hebu tuanze kwa kuonyesha ramani ya bytes hizo katika <<alice_tx_input_map>>.
+
+[[alice_tx_input_map]]
+.Ramani ya bytes katika uwanja wa ingizo wa muamala wa Alice.
+image::images/mbc3_0602.png["ramani ya bytes katika uwanja wa ingizo wa muamala wa Alice"]
+
+==== Urefu wa Orodha ya Ingizo la Muamala (Length of Transaction Input List)
+
+Orodha ((("miamala", "ingizo", "urefu wa orodha", id="transaction-input-length")))((("ingizo", "urefu wa orodha", id="input-transaction-length"))) ya ingizo la muamala inaanza na namba nzima (integer) inayoashiria idadi ya ingizo katika muamala. Thamani ya chini kabisa ni moja. Hakuna thamani ya juu kabisa iliyo wazi, lakini vikwazo kwenye ukubwa wa juu wa muamala kwa kweli vinawekea ukomo miamala kuwa na ingizo elfu chache tu. Namba hiyo imesimbwa kama namba nzima isiyo na hasi ya compactSize (compactSize unsigned integer).
+
+[role="less_space pagebreak-before"]
+.Namba Nzima Zisizo na Hasi za CompactSize (CompactSize Unsigned Integers)
+****
+Namba nzima zisizo na hasi((("namba nzima zisizo na hasi za compactSize", id="compactsize")))((("namba nzima zisizo na hasi", id="unsigned"))) katika Bitcoin ambazo mara nyingi zina thamani ya chini, lakini ambazo wakati mwingine zinaweza kuwa na thamani kubwa, kawaida husimbwa kwa kutumia aina ya data ya compactSize. CompactSize ni toleo la namba nzima yenye urefu unaobadilika (variable-length integer), hivyo wakati mwingine inaitwa var_int au varint (tazama, kwa mfano, nyaraka za BIPs 37 na 144).
+
+[ONYO]
+====
+Aina kadhaa za namba nzima zenye urefu unaobadilika zinatumika
+katika programu tofauti, ikiwa ni pamoja na programu tofauti za Bitcoin. Kwa mfano, Bitcoin Core inakupanga (serializes) kanzidata yake ya UTXO kwa kutumia aina ya data inayoiita +VarInts+, ambayo ni tofauti na compactSize. Zaidi ya hayo,
+uwanja wa nBits katika kichwa cha kizuizi cha Bitcoin umesimbwa kwa kutumia aina ya data
+ya kipekee inayojulikana kama +Compact+, ambayo haihusiani na compactSize. Tunapozungumzia
+namba nzima zenye urefu unaobadilika zinazotumiwa katika mpangilio wa muamala wa Bitcoin
+na sehemu nyingine za itifaki ya P2P ya Bitcoin, tutatumia kila wakati jina kamili compactSize.
+====
+
+Kwa namba kutoka 0 hadi 252, namba nzima zisizo na hasi za compactSize zinafanana kabisa na aina ya data ya lugha ya C ya +uint8_t+, ambayo pengine ndiyo usimbaji asili unaofahamika kwa mtengenezaji programu yeyote. Kwa namba nyingine hadi
+0xffffffffffffffff, byte inaongezwa mwanzoni mwa namba ili kuonyesha
+urefu wake—lakini vinginevyo namba zinaonekana kama namba nzima zisizo na hasi zilizosimbwa kwa lugha ya kawaida ya C:
+
+++++
+<table>
+<thead>
+<tr>
+<th>Thamani</th>
+<th>Bytes zinazotumika</th>
+<th>Mpangilio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>≥ <code>0</code> &amp;&amp; ≤ <code>252</code> (<code>0xfc</code>)</p></td>
+<td><p><code>1</code></p></td>
+<td><p><code>uint8_t</code></p></td>
+</tr>
+<tr>
+<td><p>≥ <code>253</code> &amp;&amp; ≤ <code>0xffff</code></p></td>
+<td><p>3</p></td>
+<td><p><code>0xfd</code> ikifuatiwa na namba kama <code>uint16_t</code></p></td>
+</tr>
+<tr>
+<td><p>≥ <code>0x10000</code> &amp;&amp; ≤ <code>0xffffffff</code></p></td>
+<td><p><code>5</code></p></td>
+<td><p><code>0xfe</code> ikifuatiwa na namba kama <code>uint32_t</code></p></td>
+</tr>
+<tr>
+<td><p>≥ <code>0x100000000</code> &amp;&amp; ≤ <code>0xffffffffffffffff</code></p></td>
+<td><p><code>9</code></p></td>
+<td><p><code>0xff</code> ikifuatiwa na namba kama <code>uint64_t</code></p></td>
+</tr>
+</tbody>
+</table>
+++++
+****
+
+Kila ingizo katika muamala lazima liwe na nyanja tatu: uwanja wa _outpoint_, uwanja wa _hati ya ingizo_ (input script) uliotanguliwa na urefu, na _mfuatano_ (sequence).
+
+Tutaangalia kila moja ya nyanja hizo katika sehemu zinazofuata. Baadhi ya ingizo pia hujumuisha fungu la mashahidi (witness stack), lakini hili linapangwa mwishoni mwa muamala hivyo ((("miamala", "ingizo", "urefu wa orodha", startref="transaction-input-length")))((("ingizo", "urefu wa orodha", startref="input-transaction-length")))tutalichunguza baadaye.
+
+
+[[outpoints]]
+==== Uelekezi Nje (Outpoint)
+
+Muamala ((("miamala", "ingizo", "uwanja wa outpoint", id="transaction-input-outpoint")))((("ingizo", "uwanja wa outpoint", id="input-transaction-outpoint")))((("uwanja wa outpoint (ingizo la muamala)", id="outpoint")))wa Bitcoin ni ombi kwa nodi kamili kusasisha
+kanzidata yao ya taarifa za umiliki wa sarafu (coin ownership). Ili Alice ahamishe udhibiti
+wa baadhi ya bitcoin zake kwa Bob, kwanza anahitaji kuambia nodi kamili jinsi
+ya kupata uhamishaji uliopita ambapo alipokea bitcoin hizo. Kwa kuwa
+udhibiti juu ya bitcoin unakabidhiwa katika toleo la muamala (transaction outputs), Alice _anaelekeza_ (points) kwenye _toleo_ lililopita kwa kutumia uwanja wa _outpoint_. Kila ingizo lazima
+liwe na outpoint moja.
+
+Outpoint ina txid ya bytes 32 kwa ajili ya muamala ambapo Alice alipokea bitcoin anazotaka kutumia sasa.
+Txid hii iko katika mpangilio wa ndani wa bytes (internal byte order) wa Bitcoin kwa ajili ya hashi; tazama
+<<internal_and_display_order>>.
+
+Kwa sababu miamala inaweza kuwa na matoleo (outputs) mengi, Alice anahitaji pia
+kutambua ni toleo gani haswa kutoka kwenye muamala huo ambalo anatumia, ((("fahirisi za toleo (output indexes)")))linaloitwa
+_fahirisi ya toleo_ lake (output index). Fahirisi za toleo ni namba nzima zisizo na hasi za bytes 4
+zinazoanzia sifuri.
+
+Wakati nodi kamili inakumbana na outpoint, inatumia taarifa hiyo kujaribu kupata toleo lililopita linalorejelewa. Nodi kamili zinatakiwa tu kuangalia miamala ya nyuma kwenye blockchain. Kwa mfano, muamala wa Alice
+umejumuishwa katika kizuizi namba 774,958. Nodi kamili inayothibitisha muamala wake
+inaangalia tu toleo lililopita linalorejelewa na outpoint yake katika kizuizi hicho
+na vizuizi vilivyotangulia, na sio vizuizi vyovyote vya baadaye. Ndani ya kizuizi 774,958, wataangalia tu miamala iliyowekwa kwenye kizuizi kabla ya muamala wa Alice, kama inavyoamuliwa na mpangilio wa majani (leaves) katika mti wa merkle wa kizuizi hicho (tazama <<merkle_trees>>).
+
+Baada ya kupata toleo lililopita, nodi kamili inapata taarifa kadhaa muhimu
+kutoka kwake:
+
+- Kiasi cha bitcoin zilizokabidhiwa kwenye toleo hilo lililopita. Bitcoin hizo
+  zote zitahamishwa katika muamala huu. Katika muamala wa mfano, thamani ya toleo lililopita ilikuwa satoshi 100,000.
+
+- Masharti ya uidhinishaji kwa toleo hilo lililopita. Haya ndiyo
+  masharti ambayo lazima yatimizwe ili kutumia bitcoin
+  zilizokabidhiwa kwenye toleo hilo lililopita.
+
+- Kwa miamala iliyothibitishwa, urefu (height) wa kizuizi kilichoithibitisha
+  na wakati wa kati uliopita (median time past - MTP) kwa kizuizi hicho. Hii inahitajika kwa ajili ya relative timelocks (zilizoelezwa katika <<relative_timelocks>>) na matoleo
+  ya miamala ya coinbase (yaliyoelezwa katika <<coinbase_transactions>>).
+
+- Uthibitisho kwamba toleo lililopita lipo katika blockchain (au kama muamala
+  unaofahamika ambao haujathibitishwa) na kwamba hakuna muamala mwingine umeutumia.
+  Moja ya sheria za makubaliano za Bitcoin inazuia toleo lolote kutumika
+  zaidi ya mara moja ndani ya blockchain halali. Hii ndiyo sheria((("matumizi mara mbili (double spending)")))((("miamala inayokinzana (conflicting transactions)"))) inayopinga
+  _matumizi mara mbili_ (double spending): Alice hawezi kutumia toleo lile lile lililopita kumlipa
+  Bob na Carol katika miamala tofauti. Miamala miwili ambayo kila mmoja anajaribu kutumia toleo
+  lile lile lililopita inaitwa _miamala inayokinzana_ (conflicting transactions) kwa sababu moja pekee kati yao ndiyo inaweza kujumuishwa kwenye blockchain halali.
+
+Njia tofauti za kufuatilia matoleo yaliyopita zimejaribiwa na
+utekelezaji mbalimbali wa nodi kamili kwa nyakati tofauti. Bitcoin Core kwa sasa
+inatumia suluhisho ambalo linaaminika kuwa bora zaidi katika kuhifadhi
+taarifa zote zinazohitajika huku ikipunguza nafasi ya diski inavyowezekana: inaweka
+kanzidata inayohifadhi kila UTXO na
+metadata muhimu kuihusu (kama urefu wa kizuizi kilichothibitisha). Kila
+wakati kizuizi kipya cha miamala kinapowasili, matoleo yote inayotumia
+yanaondolewa kwenye kanzidata ya UTXO na matoleo yote inayounda
+yanaongezwa kwenye((("miamala", "ingizo", "uwanja wa outpoint", startref="transaction-input-outpoint")))((("ingizo", "uwanja wa outpoint", startref="input-transaction-outpoint")))((("uwanja wa outpoint (ingizo la muamala)", startref="outpoint"))) kanzidata.
+
+[[internal_and_display_order]]
+.Mpangilio wa Bytes wa Ndani na wa Kuonyeshwa (Internal and Display Byte Orders)
+****
+Bitcoin inatumia ((("kazi za hashi", "muhtasari (digests)")))((("muhtasari (digests)")))((("mpangilio wa byte wa ndani (internal byte order)")))((("mpangilio wa byte wa kuonyesha (display byte order)")))matokeo ya kazi za hashi, inayoitwa _muhtasari_ (digests), katika njia mbalimbali. Muhtasari hutoa vitambulisho vya kipekee kwa vizuizi na miamala; hutumiwa katika ahadi kwa anwani, vizuizi, miamala, saini, na zaidi; na muhtasari unarudiwa (iterated) katika kazi ya uthibitisho-wa-kazi (proof-of-work) ya Bitcoin. Katika baadhi ya matukio, muhtasari wa hashi huonyeshwa kwa watumiaji katika mpangilio mmoja wa byte lakini unatumika ndani (internally) katika mpangilio tofauti wa byte, jambo linaloleta mkanganyiko. Kwa mfano, fikiria txid ya toleo lililopita kutoka kwenye outpoint katika muamala wetu wa mfano:
+
+----
+eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
+----
+
+Ikiwa tutajaribu kutumia txid hiyo kupata muamala huo kwa kutumia
+Bitcoin Core, tutapata kosa na lazima tugeuze mpangilio wake wa byte:
+
+----
+$ bitcoin-cli getrawtransaction \
+  eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a
+error code: -5
+error message:
+No such mempool or blockchain transaction. 
+Use gettransaction for wallet transactions.
+
+$ echo eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da135698679268041c54a \
+  | fold -w2 | tac | tr -d "\n"
+4ac541802679866935a19d4f40728bb89204d0cac90d85f3a51a19278fe33aeb
+
+$ bitcoin-cli getrawtransaction \
+  4ac541802679866935a19d4f40728bb89204d0cac90d85f3a51a19278fe33aeb
+02000000000101c25ae90c9f3d40cc1fc509ecfd54b06e35450702...
+----
+
+Tabia hii isiyo ya kawaida labda ni matokeo yasiyokusudiwa ya
+https://oreil.ly/01JH2[uamuzi wa muundo
+katika programu za awali za Bitcoin]. Kimsingi, inamaanisha kwamba watengenezaji wa programu za Bitcoin wanahitaji kukumbuka kugeuza mpangilio wa bytes katika vitambulisho vya muamala na kizuizi wanavyoonyesha kwa watumiaji.
+
+Katika kitabu hiki, tunatumia neno _mpangilio wa byte wa ndani_ (internal byte order) kwa data
+inayoonekana ndani ya miamala na vizuizi. Tunatumia _mpangilio wa byte wa kuonyesha_ (display byte order) kwa umbo linaloonyeshwa kwa watumiaji. Seti nyingine ya maneno ya kawaida ni _mpangilio wa byte wa little-endian_ kwa toleo la ndani na _mpangilio wa byte wa big-endian_
+kwa toleo la kuonyesha.
+****
+
+==== Hati ya Ingizo (Input Script)
+
+Uwanja wa ((("miamala", "ingizo", "hati ya ingizo")))((("ingizo", "hati ya ingizo")))((("hati za ingizo (input scripts)")))hati ya ingizo (input script) ni mabaki ya mpangilio wa muamala wa urithi (legacy transaction format). Ingizo la muamala wetu wa mfano linatumia toleo la native segwit ambalo halihitaji
+data yoyote katika hati ya ingizo, hivyo kiambishi awali cha urefu (length prefix) kwa ajili ya
+hati ya ingizo kimewekwa sifuri (0x00).
+
+Kwa mfano wa hati ya ingizo iliyotanguliwa na urefu inayotumia toleo
+la urithi, tunatumia moja kutoka kwa muamala wowote ule katika kizuizi cha hivi karibuni
+zaidi wakati wa uandishi huu:
+
+----
+6b483045022100a6cc4e8cd0847951a71fad3bc9b14f24d44ba59d19094e0a8c
+fa2580bb664b020220366060ea8203d766722ed0a02d1599b99d3c95b97dab8e
+41d3e4d3fe33a5706201210369e03e2c91f0badec46c9c903d9e9edae67c167b
+9ef9b550356ee791c9a40896
+----
+
+Kiambishi awali cha urefu ni namba nzima isiyo na hasi ya compactSize (compactSize unsigned integer) inayoashiria
+urefu wa uwanja uliopangwa wa hati ya ingizo. Katika kesi hii, ni byte
+moja (0x6b) inayoashiria hati ya ingizo ina bytes 107. Tutajadili jinsi ya
+kuchanganua na kutumia hati (scripts) kwa undani katika <<c_authorization_authentication>>.
+
+[[sequence]]
+==== Mfuatano (Sequence)
+
+Bytes ((("miamala", "ingizo", "uwanja wa mfuatano", id="transaction-input-sequence")))((("ingizo", "uwanja wa mfuatano", id="input-transaction-sequence")))((("uwanja wa mfuatano (ingizo la muamala)", id="sequence-field")))nne za mwisho za ingizo ni namba yake ya _mfuatano_ (sequence). Matumizi na maana ya uwanja huu yamebadilika kadiri muda ulivyopita.
+
+[[original_tx_replacement]]
+===== Ubadilishaji wa muamala asili unaotegemea mfuatano (Original sequence-based transaction replacement)
+
+Uwanja wa ((("ubadilishaji wa muamala unaotegemea mfuatano", id="sequence-replace")))mfuatano ulikusudiwa awali kuruhusu uundaji wa
+matoleo mengi ya muamala ule ule, huku matoleo ya baadaye yakibadilisha (replacing)
+matoleo ya awali kama watahiniwa wa kuthibitishwa. Namba ya mfuatano ilifuatilia toleo la muamala.
+
+Kwa mfano, fikiria Alice na Bob wanataka kucheza kamari ya mchezo wa kadi. Wanaanza
+kwa kila mmoja kusaini muamala unaoweka baadhi ya fedha katika
+toleo lenye hati inayohitaji saini kutoka kwao wote wawili ili ((("hati za saini nyingi (multisignature scripts)")))((("miamala ya kuanzisha (setup transactions)")))kutumika,
+hati ya _saini nyingi_ (_multisig_ kwa kifupi). Hii inaitwa
+_muamala wa kuanzisha_ (setup transaction). Kisha wanaunda muamala unaotumia
+toleo hilo:
+
+- Toleo la kwanza la muamala, likiwa na nSequence 0 (0x00000000), linawalipa Alice na Bob kurudisha fedha walizoweka awali. Hii
+  inaitwa _muamala wa kurejesha fedha_ (refund transaction). Hakuna hata mmoja wao anayetangaza muamala
+  wa kurejesha fedha wakati huu. Wanauhitaji tu ikiwa kuna tatizo.
+
+- Alice anashinda raundi ya kwanza ya mchezo wa kadi, hivyo toleo la pili
+  la muamala, lenye mfuatano 1, linaongeza kiasi cha fedha kinacholipwa
+  kwa Alice na kupunguza fungu la Bob. Wote wawili wanasaini muamala uliosasishwa.
+  Tena, hawahitaji kutangaza toleo hili la muamala isipokuwa kuwe na tatizo.
+
+- Bob anashinda raundi ya pili, hivyo mfuatano unaongezwa hadi 2,
+  fungu la Alice linapunguzwa, na fungu la Bob linaongezwa. Wanasaini tena lakini
+  hawatangazi.
+
+- Baada ya raundi nyingine nyingi ambapo mfuatano unaongezwa, fedha
+  kugawanywa upya, na muamala unaotokana kusainiwa lakini kutotangazwa,
+  wanaamua kukamilisha muamala. Wakiunda
+  muamala wenye salio la mwisho la fedha, wanaweka mfuatano (sequence) kuwa thamani
+  yake ya juu kabisa (0xffffffff), wakikamilisha muamala. Wanatangaza toleo hili la muamala, linasambazwa kwenye mtandao, na
+  hatimaye kuthibitishwa na wachimbaji (miners).
+
+Tunaweza kuona sheria za kubadilisha (replacement rules) za mfuatano zikifanya kazi tukifikiria matukio mbadala:
+
+- Fikiria kwamba Alice anatangaza muamala wa mwisho, wenye mfuatano wa
+  0xffffffff, na kisha Bob anatangaza mojawapo ya miamala ya awali ambapo
+  salio lake lilikuwa kubwa zaidi. Kwa sababu toleo la Bob la
+  muamala lina namba ya mfuatano ya chini zaidi, nodi kamili zinazotumia
+  msimbo asili (original code) wa Bitcoin hazitausambaza kwa wachimbaji, na wachimbaji
+  ambao pia walitumia msimbo asili hawatauchimba.
+
+- Katika tukio lingine, fikiria kwamba Bob anatangaza toleo la awali la
+  muamala sekunde chache kabla ya Alice kutangaza toleo la mwisho.
+  Nodi zitasambaza toleo la Bob na wachimbaji watajaribu kuli
+  chimba, lakini toleo la Alice lenye namba yake ya juu zaidi ya mfuatano litakapofika,
+  nodi zitausambaza pia na wachimbaji wanaotumia msimbo asili wa
+  Bitcoin watajaribu kuli chimba badala ya toleo la Bob. Isipokuwa kama Bob alibahatika
+  na kizuizi kiligunduliwa kabla ya toleo la Alice kufika, ni toleo la Alice la muamala ambalo
+  litathibitishwa.
+
+Aina hii ya itifaki ndiyo tunayo ((("njia za malipo (payment channels)")))iita sasa _njia ya malipo_ (payment channel).
+Muundaji wa Bitcoin, katika barua pepe anayosemekana kuiandika yeye, aliita((("miamala ya masafa ya juu (high-frequency transactions)"))) hii
+_miamala ya masafa ya juu_ (high-frequency transactions) na alielezea vipengele kadhaa
+vilivyoongezwa kwenye itifaki ili kuiwezesha. Tutajifunza kuhusu
+vipengele hivyo vingine baadaye na pia kugundua jinsi matoleo ya kisasa
+ya njia za malipo yanavyozidi kutumika katika Bitcoin leo.
+
+Kulikuwa na matatizo machache na njia za malipo zilizotegemea mfuatano pekee.
+Tatizo la kwanza lilikuwa kwamba sheria za kubadilisha muamala wa mfuatano wa chini na muamala wa mfuatano wa juu zilikuwa tu sera ya programu (software policy).
+Hapakuwa na motisha ya moja kwa moja kwa wachimbaji kupendelea toleo moja
+la muamala kuliko jingine lolote. Tatizo la pili lilikuwa kwamba mtu wa kwanza kutuma muamala wake
+angeweza kubahatika na kuthibitishwa hata kama haukuwa muamala wa mfuatano wa juu zaidi. Itifaki ya usalama ambayo inashindwa asilimia chache ya wakati
+kwa sababu ya bahati mbaya si itifaki yenye ufanisi sana.
+
+Tatizo la tatu lilikuwa kwamba iliwezekana kubadilisha toleo moja la
+muamala na toleo tofauti kwa idadi isiyo na kikomo ya
+mara. Kila ubadilishaji ungetumia kipimo data (bandwidth) cha nodi zote kamili za kusambaza
+kwenye mtandao. Kwa mfano, kufikia wakati wa uandishi huu, kuna takriban
+nodi kamili 50,000 zinazosambaza; mshambuliaji anayeunda miamala mbadala 1,000 kwa dakika yenye ukubwa wa bytes 200 kila mmoja angetumia takriban KB 20 za kipimo data
+chao binafsi lakini takriban GB 10 za kipimo data cha mtandao wa nodi kamili kila dakika.
+Isipokuwa kwa gharama ya kipimo data chao cha KB 20/dakika na
+ada ya hapa na pale wakati muamala unapothibitishwa, mshambuliaji
+asingehitaji kulipa gharama zozote kwa mzigo mkubwa aliouweka kwa waendeshaji wa nodi kamili.
+
+Ili kuondoa hatari ya shambulio hili, aina asili ya
+ubadilishaji wa muamala unaotegemea mfuatano (sequence-based transaction replacement) ililemazwa katika toleo
+la awali la programu ya Bitcoin. Kwa miaka kadhaa, nodi kamili za Bitcoin hazikuruhusu muamala ambao haujathibitishwa ulio na ingizo fulani (kama inavyoonyeshwa na outpoint yake) kubadilishwa na muamala tofauti ulio na ingizo hilo hilo. Hata hivyo, hali hiyo haiku ((("ubadilishaji wa muamala unaotegemea mfuatano", startref="sequence-replace")))dumu milele.
+
+[[sequence-bip125]]
+===== Kuashiria ubadilishaji wa muamala wa hiari (Opt-in transaction replacement signaling)
+
+Baada ya((("ubadilishaji wa muamala wa hiari (opt-in transaction replacement)")))((("badilisha kwa ada (replace by fee - RBF)")))((("ada za muamala", "ubadilishaji wa muamala wa hiari"))) ubadilishaji asili wa muamala unaotegemea mfuatano kulemazwa (disabled)
+kwa sababu ya uwezekano wa matumizi mabaya, suluhisho lilipendekezwa: kutengeneza (programming) programu ya
+Bitcoin Core na programu nyingine za nodi kamili zinazosambaza kuruhusu muamala ambao
+unatoa kiwango cha juu zaidi cha ada ya muamala kuchukua nafasi ya muamala
+unaokinzana unaotoa kiwango cha chini cha ada. Hili linaitwa _badilisha kwa ada_ (replace by fee),
+au _RBF_ kwa kifupi. Baadhi ya watumiaji na biashara walipinga kuongeza msaada wa kubadilisha miamala tena katika Bitcoin Core,
+hivyo maelewano yalifikiwa ambayo yalirudi kutumia uwanja wa mfuatano
+kusaidia ubadilishaji (replacement).
+
+Kama ilivyoandikwa katika BIP125, muamala ambao haujathibitishwa ulio na ingizo lolote ambalo lina
+mfuatano uliowekwa kwa thamani chini ya 0xfffffffe (yaani, angalau 2 chini ya
+thamani ya juu kabisa) unaashiria mtandao kwamba msaini wake anataka uweze
+kubadilishwa na muamala unaokinzana unaolipa kiwango cha juu cha ada.
+Bitcoin Core iliruhusu miamala hiyo ambayo haijathibitishwa kubadilishwa na
+iliendelea kutoruhusu miamala mingine kubadilishwa. Hili
+liliruhusu watumiaji na biashara zilizopinga ubadilishaji (replacement) kupuuza tu
+miamala ambayo haijathibitishwa iliyo na ishara ya BIP125 hadi itakapothibitishwa.
+
+Kuna mengi zaidi kuhusu sera za kisasa za kubadilisha miamala kuliko viwango vya ada
+na ishara za mfuatano, ambayo tutaona katika <<rbf>>.
+
+[[relative_timelocks]]
+===== Mfuatano kama kufuli la muda linalotegemea makubaliano (Sequence as a consensus-enforced relative timelock)
+
+Katika <<version>>, tulijifunza ((("kufuli za muda asilia (relative timelocks)", id="relative-timelock")))kwamba soft fork ya BIP68 iliongeza
+kikwazo kipya kwa miamala yenye namba za toleo 2 au zaidi. Kikwazo hicho kinatumika
+kwa uwanja wa mfuatano.
+
+Ingizo la miamala lenye thamani za mfuatano chini ya 2^31^ zinafasiriwa
+kama zenye kufuli la muda la aina ya _relative_ (relative timelock). Muamala kama huo unaweza tu
+kujumuishwa kwenye blockchain mara tu toleo lililopita (linalorejelewa na
+outpoint) linapofikia umri wa kiasi cha kufuli hilo la muda. Kwa mfano, muamala
+wenye ingizo moja lenye kufuli la muda la kizuizi 30 unaweza tu
+kuthibitishwa katika kizuizi chenye angalau vizuizi 29 kati yake na
+kizuizi kilicho na toleo linalotumika kwenye blockchain hiyo hiyo.
+Kwa kuwa mfuatano ni uwanja wa kila ingizo, muamala unaweza kuwa na idadi
+yoyote ya ingizo zenye kufuli la muda, ambazo zote lazima ziwe zimefikia umri wa kutosha (sufficiently aged) ili muamala uwe halali. Bendera ya kulemaza (disable flag) inaruhusu muamala
+kujumuisha ingizo zenye kufuli la muda (mfuatano < 2^31^) pamoja na
+ingizo zisizo na kufuli la muda (mfuatano >= 2^31^).
+
+Thamani ya mfuatano inabainishwa kwa vizuizi (blocks) au sekunde.
+Bendera ya aina (type-flag)
+inatumika kutofautisha kati ya thamani zinazohesabu vizuizi na thamani
+zinazohesabu muda kwa sekunde. Bendera ya aina imewekwa kwenye bit ya 23 ya
+chini kabisa (least-significant bit) (yaani, thamani 1<<22). Ikiwa bendera ya aina imewekwa, basi
+thamani ya mfuatano inafasiriwa kama kizidisho cha sekunde 512. Ikiwa
+bendera ya aina haijawekwa, thamani ya mfuatano inafasiriwa kama
+idadi ya vizuizi.
+
+
+Wakati wa kutafsiri mfuatano kama kufuli la muda, bits 16 tu za chini kabisa ndizo zinazingatiwa. Mara tu bendera (bits 32 na 23) zinapotathminiwa,
+thamani ya mfuatano kawaida "hufichwa" (masked) na kiingilio cha bits 16
+(mfano, +sequence+ & 0x0000FFFF). Kizidisho cha sekunde 512 kinakaribia sawa na
+kiasi cha wastani cha muda kati ya vizuizi, hivyo kufuli la muda la juu kabisa
+kwa vizuizi na sekunde kutoka kwenye bits 16 (2^16^) ni zaidi kidogo ya mwaka mmoja.
+
+<<bip_68_def_of_nseq>> inaonyesha mpangilio wa binary wa thamani ya mfuatano,
+kama ilivyoelezwa na BIP68.
+
+[[bip_68_def_of_nseq]]
+.Ufafanuzi wa BIP68 wa usimbaji wa mfuatano (Chanzo: BIP68).
+image::images/mbc3_0603.png["Ufafanuzi wa BIP68 wa usimbaji wa mfuatano"]
+
+Kumbuka kwamba muamala wowote unaoweka kufuli la muda kwa kutumia mfuatano
+pia unatoa ishara ya kubadilisha kwa ada kwa hiari ((("miamala", "ingizo", startref="transaction-input")))((("ingizo", startref="input-transaction")))((("miamala", "ingizo", "uwanja wa mfuatano", startref="transaction-input-sequence")))((("ingizo", "uwanja wa mfuatano", startref="input-transaction-sequence")))((("uwanja wa mfuatano (ingizo la muamala)", startref="sequence-field")))kama ilivyoelezwa katika
+<<sequence-bip125>>.
+
+=== Matoleo (Outputs)
+
+Uwanja wa ((("miamala", "matoleo", id="transaction-output")))((("matoleo (outputs)", id="output-transaction")))matoleo wa muamala una nyanja kadhaa zinazohusiana na
+matoleo mahususi. Kama tu tulivyofanya kwa uwanja wa ingizo, tutaanza kwa
+kuangalia bytes mahususi za uwanja wa matoleo kutoka kwenye muamala wa mfano ambapo Alice anamlipa Bob, uliyoonyeshwa kama
+ramani ya bytes hizo katika <<output-byte-map>>.
+
+[[output-byte-map]]
+.Ramani ya bytes ya uwanja wa matoleo kutoka kwa muamala wa Alice.
+image::images/mbc3_0604.png["Ramani ya bytes ya uwanja wa matoleo kutoka kwa muamala wa Alice"]
+
+==== Idadi ya Matoleo (Outputs Count)
+
+Ikishabihiana((("miamala", "matoleo", "idadi")))((("matoleo", "idadi"))) na mwanzo wa sehemu ya ingizo ya muamala, uwanja wa matoleo
+unaanza na idadi inayoashiria namba ya matoleo katika muamala huu. Ni namba nzima ya compactSize na lazima iwe kubwa kuliko sifuri.
+
+Muamala wa mfano una matoleo mawili.
+
+==== Kiasi (Amount)
+
+Uwanja wa kwanza((("miamala", "matoleo", "uwanja wa kiasi", id="transaction-output-amount")))((("matoleo", "uwanja wa kiasi", id="output-transaction-amount")))((("uwanja wa kiasi (matoleo ya muamala)", id="amount-field"))) wa toleo mahususi ni _kiasi_ chake, pia huitwa
+"thamani" (value) katika Bitcoin Core. Hii ni namba nzima yenye saini (signed integer) ya bytes 8 inayoashiria
+idadi ya satoshi za kuhamisha. Satoshi ndiyo kitengo kidogo kabisa cha
+bitcoin ambacho kinaweza kuwakilishwa katika muamala wa Bitcoin ulio kwenye mtandao (onchain).
+Kuna satoshi milioni 100 katika bitcoin moja.
+
+Sheria za makubaliano za Bitcoin zinaruhusu toleo kuwa na thamani ndogo kama
+sifuri na kubwa kama bitcoin milioni 21 (satoshi quadrillion 2.1).
+
+//TODO:describe early integer overflow problem
+
+[[uneconomical_outputs]]
+===== Matoleo yasiyo na faida kiuchumi na vumbi lisiloruhusiwa (Uneconomical outputs and disallowed dust)
+
+Licha ya kuwa ((("matoleo yasiyo na faida kiuchumi (uneconomical outputs)", id="uneconomical")))((("sera za vumbi (dust policies)", id="dust")))hayana thamani yoyote, toleo la thamani ya sifuri linaweza kutumika chini ya
+sheria sawa na toleo lingine lolote. Hata hivyo, kutumia toleo (kuli tumia kama
+ingizo katika muamala) kunaongeza ukubwa wa muamala,
+ambalo linaongeza kiasi cha ada kinachohitajika kulipwa. Ikiwa thamani
+ya toleo ni chini ya gharama ya ada ya ziada, basi haileti
+maana kiuchumi kutumia toleo hilo. Matoleo hayo yanajulikana kama
+_matoleo yasiyo na faida kiuchumi_ (uneconomical outputs).
+
+Toleo la thamani ya sifuri daima ni toleo lisilo na faida kiuchumi; lisinge
+changia thamani yoyote kwenye muamala unaolitumia hata kama
+kiwango cha ada cha muamala kilikuwa sifuri. Hata hivyo, matoleo mengine mengi yenye thamani
+ndogo yanaweza kuwa yasiyo na faida kiuchumi pia, hata bila kukusudia. Kwa mfano,
+kwa kiwango cha kawaida cha ada kwenye mtandao leo, toleo linaweza kuongeza thamani
+zaidi kwenye muamala kuliko inavyogharimu kulitumia—lakini kesho, viwango vya ada
+vinaweza kupanda na kufanya toleo hilo kuwa lisilo na faida kiuchumi.
+
+Hitaji la nodi kamili kufuatilia UTXO zote, kama ilivyoelezwa katika <<outpoints>>, linamaanisha kwamba kila UTXO inafanya iwe
+vigumu kidogo kuendesha nodi kamili. Kwa UTXO zilizo na thamani
+kubwa, kuna motisha ya kuzitumia baadaye, kwa hivyo sio
+tatizo. Lakini hakuna motisha kwa mtu anayedhibiti
+UTXO isiyo na faida kiuchumi kuitumia kamwe, uwezekano ukiifanya kuwa mzigo
+wa kudumu kwa waendeshaji wa nodi kamili. Kwa kuwa ugatuaji (decentralization) wa Bitcoin
+unategemea watu wengi kuwa tayari kuendesha nodi kamili, utekelezaji
+kadhaa wa nodi kamili kama Bitcoin Core unakatisha tamaa uundaji wa
+matoleo yasiyo na faida kiuchumi kwa kutumia sera zinazoathiri usambazaji (relay) na uchimbaji wa
+miamala ambayo haijathibitishwa.
+
+[role="less_space pagebreak-before"]
+Sera dhidi ya kusambaza au kuchimba miamala inayounda matoleo mapya
+yasiyo na faida kiuchumi inaitwa sera za _vumbi_ (dust policies), ikitegemea ulinganisho
+wa kimafumbo kati ya matoleo yenye thamani ndogo sana na chembechembe zenye
+ukubwa mdogo sana. Sera ya vumbi ya Bitcoin Core ni ngumu na ina
+namba kadhaa za kiholela (arbitrary numbers), kwa hivyo programu nyingi tunazozifahamu kwa kawaida
+huchukulia matoleo yenye chini ya satoshi 546 kama vumbi na hazita
+isambaza au kuichimba kwa chaguo-msingi. Kuna mapendekezo ya hapa na pale ya kushusha
+vikomo vya vumbi, na mapendekezo pinzani ya kuvipandisha, kwa hivyo tunawahimiza
+watengenezaji wanaotumia miamala iliyosainiwa kabla au itifaki za pande nyingi (multiparty protocols) kuangalia ikiwa sera imebadilika tangu kuchapishwa kwa kitabu hiki.
+
+[KIDOKEZO]
+====
+Tangu kuanzishwa kwa Bitcoin, kila nodi kamili imehitaji kuweka nakala ya
+kila UTXO, lakini hilo huenda lisiwe
+hivyo siku zote. Watengenezaji kadhaa wamekuwa wakifanya kazi kwenye((("Utreexo"))) Utreexo, mradi
+ambao unaruhusu nodi kamili kuhifadhi ahadi (commitment) ya seti ya UTXO badala ya
+data yenyewe. Ahadi ndogo kabisa inaweza kuwa kilobyte moja au
+mbili tu kwa ukubwa—linganisha na gigabytes zaidi ya tano ambazo Bitcoin Core inahifadhi
+kufikia wakati wa uandishi huu.
+
+Hata hivyo, Utreexo bado itahitaji baadhi ya nodi kuhifadhi data zote za UTXO,
+hasa nodi zinazowahudumia wachimbaji na operesheni nyingine zinazohitaji
+kuthibitisha vizuizi vipya kwa haraka. Hiyo inamaanisha matoleo yasiyo na faida kiuchumi bado yanaweza
+kuwa tatizo kwa nodi kamili hata katika uwezekano wa siku zijazo ambapo nodi nyingi zitatumia Utreexo.
+====
+
+Sheria za sera za Bitcoin Core kuhusu vumbi zina ubaguzi (exception) mmoja: hati za matoleo (output scripts) zinazoanza na +OP_RETURN+, zinazoitwa _matoleo ya kubeba data_ (data carrier outputs),
+zinaweza kuwa na thamani ya sifuri. Opcode ya +OP_RETURN+ inasababisha hati
+kushindwa mara moja haijalishi nini kinafuata, hivyo matoleo haya hayawezi
+kamwe kutumika. Hiyo inamaanisha nodi kamili hazihitaji kuyafuatilia,
+kipengele ambacho Bitcoin Core inakitumia kuruhusu watumiaji kuhifadhi kiasi
+kidogo cha data yoyote kwenye blockchain bila kuongeza ukubwa
+wa kanzidata yake ya UTXO. Kwa kuwa matoleo haya hayawezi kutumika (unspendable), sio
+yasiyo na faida kiuchumi—satoshi zozote zinazokabidhiwa kwayo zinakuwa
+zizoweza kutumika kabisa—hivyo kuruhusu kiasi kiwe sifuri kunahakikisha
+satoshi((("miamala", "matoleo", "uwanja wa kiasi", startref="transaction-output-amount")))((("matoleo", "uwanja wa kiasi", startref="output-transaction-amount")))((("uwanja wa kiasi (matoleo ya muamala)", startref="amount-field")))((("matoleo yasiyo na faida kiuchumi (uneconomical outputs)", startref="uneconomical")))((("sera za vumbi (dust policies)", startref="dust"))) haziharibiwi (destroyed).
+
+==== Hati za Matoleo (Output Scripts)
+
+Kiasi ((("miamala", "matoleo", "hati za matoleo", id="transaction-output-script")))((("matoleo", "hati za matoleo", id="output-transaction-script")))((("hati za matoleo (output scripts)", id="output-script2"))) cha toleo kinafuatiwa na namba nzima ya compactSize inayoashiria
+urefu wa _hati ya toleo_ (output script), hati ambayo ina
+masharti ambayo yatahitajika kutimizwa ili kutumia
+bitcoin. Kulingana na sheria za makubaliano za Bitcoin, ukubwa mdogo kabisa wa hati ya toleo ni sifuri.
+
+Ukubwa wa juu unaoruhusiwa kisheria wa hati ya toleo unatofautiana kulingana na
+wakati unapokaguliwa. Hakuna kikomo wazi cha ukubwa wa hati ya toleo katika toleo la muamala, lakini muamala wa baadaye unaweza tu
+kutumia toleo lililopita lenye hati ya bytes 10,000 au
+ndogo zaidi. Kwa njia isiyo ya moja kwa moja (implicitly), hati ya toleo inaweza kuwa karibu kubwa sawa na
+muamala unaoibeba, na muamala unaweza kuwa karibu mkubwa sawa na
+kizuizi kinachoubeba.
+
+[[anyone-can-spend]]
+[KIDOKEZO]
+====
+Hati ya toleo yenye urefu wa sifuri inaweza kutumika na hati ya ingizo yenye
+++OP_TRUE++. Yeyote anaweza kuunda hati hiyo ya ingizo, ambayo inamaanisha yeyote
+anaweza kutumia hati tupu ya toleo. Kuna idadi isiyo na kikomo ya hati ambazo yeyote anaweza kutumia, na zinajulikana kwa watengenezaji wa itifaki za Bitcoin kama _anyone can spends_ (yeyote anaweza kutumia). Maboresho kwenye lugha
+ya Hati (Script language) ya Bitcoin mara nyingi huchukua hati iliyopo ya 'anyone-can-spend' na kuongeza
+vikwazo vipya kwake, na kuifanya iweze kutumika tu chini ya masharti mapya. Watengenezaji wa programu (Application developers) hawapaswi kamwe kuhitaji kutumia
+hati ya 'anyone-can-spend', lakini ukifanya hivyo, tunapendekeza sana kwamba
+utangaze mipango yako kwa sauti kubwa kwa watumiaji na watengenezaji wa Bitcoin ili
+maboresho ya baadaye yasiingiliane kimakosa na mfumo wako.
+====
+
+Sera ya Bitcoin Core ya kusambaza na kuchimba miamala kwa ufanisi
+inawekea ukomo hati za matoleo kwenye violezo (templates) vichache tu, ((("matoleo ya muamala ya kawaida (standard transaction outputs)")))vinavyoitwa _matoleo
+ya muamala ya kawaida_ (standard transaction outputs). Hili lilitekelezwa awali baada ya
+kugunduliwa kwa matatizo (bugs) kadhaa ya mapema katika Bitcoin yanayohusiana na Lugha ya Script (Script language) na inahifadhiwa katika Bitcoin Core ya kisasa kusaidia
+maboresho ya 'anyone-can-spend' na kuhimiza taratibu bora (best practice) za kuweka
+masharti ya hati katika P2SH redeem scripts, segwit v0 witness scripts, na
+segwit v1 (taproot) leaf scripts.
+
+Tutaangalia kila kiolezo (template) cha sasa cha muamala wa kawaida na
+kujifunza jinsi ya ((("miamala", "matoleo", startref="transaction-output")))((("matoleo", startref="output-transaction")))((("miamala", "matoleo", "hati za matoleo", startref="transaction-output-script")))((("matoleo", "hati za matoleo", startref="output-transaction-script")))((("hati za matoleo (output scripts)", startref="output-script2")))kuchanganua hati katika <<c_authorization_authentication>>.
+
+[[witness_structure]]
+=== Muundo wa Mashahidi (Witness Structure)
+
+Mahakamani,((("miamala", "mashahidi", id="transaction-witness")))((("mashahidi (witnesses)", id="witness"))) shahidi ni mtu anayetoa ushahidi kwamba aliona jambo
+muhimu likitokea. Mashahidi wa kibinadamu si mara zote wa kutegemewa, hivyo mahakama
+zina michakato mbalimbali ya kuwahoji mashahidi ili (kimsingi)
+kukubali ushahidi kutoka kwa wale tu wanaoaminika.
+
+Fikiria jinsi shahidi angeonekana kwa tatizo la kihisabati. Kwa mfano,
+ikiwa tatizo muhimu lilikuwa _x + 2 == 4_ na mtu akadaia
+ameshuhudia suluhisho, tungemuuliza nini? Tungetaka
+uthibitisho wa kihisabati unaoonyesha thamani ambayo ingeweza kujumlishwa na mbili ili
+iwe sawa na nne. Tungeweza hata kuacha hitaji la mtu na tu kutumia
+thamani iliyopendekezwa kwa _x_ kama shahidi wetu. Ikiwa tungeambiwa kwamba shahidi
+alikuwa _mbili_, basi tungeweza kujaza mlinganyo, kuangalia kwamba ulikuwa sahihi, na
+kuamua kwamba tatizo muhimu limetatuliwa.
+
+Wakati wa kutumia bitcoin, tatizo muhimu tunalotaka kutatua ni
+kubainisha ikiwa matumizi yaliidhinishwa na mtu au watu ambao
+wanadhibiti bitcoin hizo. Nodi kamili elfu kadhaa zinazotekeleza
+sheria za makubaliano za Bitcoin haziwezi kuhoji mashahidi wa kibinadamu, lakini zinaweza
+kukubali _mashahidi_ ambao wanajumuisha data pekee kwa ajili ya kutatua matatizo
+ya kihisabati. Kwa mfano, shahidi wa _2_ ataruhusu kutumia bitcoin
+zinazolindwa na hati ifuatayo:
+
+----
+2 OP_ADD 4 OP_EQUAL
+----
+
+Kwa dhahiri, kuruhusu bitcoin zako kutumika na yeyote anayeweza kutatua
+mlinganyo rahisi kusingekuwa salama. Kama tutakavyoona katika <<c_signatures>>, mfumo wa
+saini ya kidijitali isiyoweza kughushiwa (unforgeable digital signature scheme) unatumia mlinganyo ambao unaweza tu
+kutatuliwa na mtu aliye na data fulani anazoweza
+kuweka siri. Anaweza kurejelea data hiyo ya siri kwa kutumia kitambulisho
+cha umma (public identifier). Kitambulisho hicho cha umma ((("funguo za umma (public keys)")))((("saini za kidijitali (digital signatures)")))((("saini (signatures)", see="digital signatures")))kinaitwa _funguo ya umma_ (public key) na
+suluhisho la mlinganyo linaitwa _saini_ (signature).
+
+Hati ifuatayo ina funguo ya umma na opcode inayohitaji
+ahadi (commit) ya saini inayolingana kwa data katika muamala wa matumizi (spending transaction). Kama
+namba _2_ katika mfano wetu rahisi, saini ni shahidi wetu:
+
+----
+<public key> OP_CHECKSIG
+----
+
+Mashahidi, thamani zinazotumika kutatua matatizo ya kihisabati yanayolinda
+bitcoin, zinahitaji kujumuishwa kwenye miamala ambako zinatumika
+ili nodi kamili zizithibitishe. Katika mpangilio wa muamala wa urithi (legacy transaction format)
+uliotumika kwa miamala yote ya awali ya Bitcoin, saini na data nyingine
+zinawekwa kwenye uwanja wa hati ya ingizo (input script field). Hata hivyo, watengenezaji walipoanza
+kutekeleza itifaki za mikataba kwenye Bitcoin, kama tulivyoona katika
+<<original_tx_replacement>>, waligundua matatizo kadhaa
+muhimu kuhusu kuweka mashahidi kwenye uwanja wa hati ya ingizo.
+
+==== Utegemezi wa Mzunguko (Circular Dependencies)
+
+Itifaki ((("miamala", "mashahidi", "utegemezi wa mzunguko", id="transaction-witness-circular")))((("mashahidi", "utegemezi wa mzunguko", id="witness-circular")))((("utegemezi wa mzunguko (circular dependencies)", id="circular")))nyingi za mikataba (contract protocols) kwa Bitcoin zinajumuisha mfululizo wa miamala
+ambayo inasainiwa bila kufuata mpangilio. Kwa mfano, Alice na Bob wanataka
+kuweka fedha kwenye hati ambayo inaweza tu kutumika kwa saini kutoka
+kwao wote wawili, lakini kila mmoja wao pia anataka kurudishiwa fedha zake ikiwa
+mtu mwingine atashindwa kuitikia. Suluhisho rahisi ni kusaini
+miamala bila kufuata mpangilio:
+
+- Tx~0~ inalipa fedha kutoka kwa Alice na fedha kutoka kwa Bob kwenye toleo (output) lenye
+  hati inayohitaji saini kutoka kwa Alice na Bob ili itumike.
+
+- Tx~1~ inatumia toleo lililopita kwenda kwenye matoleo mawili, moja likimrudishia Alice
+  fedha zake na lingine likimrudishia Bob fedha zake (kutoa kiasi kidogo kwa ajili
+  ya ada za muamala).
+
+- Ikiwa Alice na Bob watasaini Tx~1~ kabla ya kusaini Tx~0~, basi wote wawili
+  wanahakikishiwa uwezo wa kurudishiwa fedha wakati wowote. Itifaki
+  haihitaji mmoja wao kumwamini mwenzake, na ((("itifaki zisizo na uaminifu (trustless protocols)")))kuifanya kuwa _itifaki isiyohitaji uaminifu_
+  (trustless protocol).
+
+Tatizo na ujenzi huu katika mpangilio wa muamala wa urithi (legacy transaction format) ni
+kwamba kila uwanja, ikiwa ni pamoja na uwanja wa hati ya ingizo (input script) ambao una
+saini, unatumika kutokana (derive) na kitambulisho (txid) cha [.keep-together]#muamala#.
+Txid ya Tx~0~ ni sehemu ya outpoint ya ingizo katika Tx~1~. Hiyo inamaanisha
+hakuna njia kwa Alice na Bob kuunda Tx~1~ mpaka saini
+zote mbili za Tx~0~ zijulikane—lakini ikiwa wanajua saini za
+Tx~0~, mmoja wao anaweza kutangaza muamala huo kabla ya kusaini
+muamala wa kurejesha fedha, hivyo kuondoa uhakika wa kurejeshewa fedha. Huu ni
+_utegemezi wa mzunguko_ (circular dependency).
+
+==== Kubadilika kwa Muamala kwa Upande wa Tatu (Third-Party Transaction Malleability)
+
+Mfululizo ((("miamala", "mashahidi", "kubadilika kwa muamala kwa upande wa tatu", id="transaction-witness-third-party")))((("mashahidi", "kubadilika kwa muamala kwa upande wa tatu", id="witness-circular-third-party")))((("kubadilika kwa muamala kwa upande wa tatu (third-party transaction malleability)", id="third-party")))mgumu zaidi wa miamala wakati mwingine unaweza kuondoa utegemezi wa
+mzunguko, lakini itifaki nyingi zitakumbana na wasiwasi mpya: mara
+nyingi inawezekana kutatua hati ile ile kwa njia tofauti. Kwa mfano,
+fikiria hati yetu rahisi kutoka <<witness_structure>>:
+
+----
+2 OP_ADD 4 OP_EQUAL
+----
+
+Tunaweza kufanya hati hii ifaulu kwa kutoa thamani _2_ katika hati ya ingizo,
+lakini kuna njia kadhaa za kuweka thamani hiyo kwenye fungu (stack) katika Bitcoin.
+Hapa kuna chache tu:
+
+----
+OP_2
+OP_PUSH1 0x02
+OP_PUSH2 0x0002
+OP_PUSH3 0x000002
+...
+OP_PUSHDATA1 0x0102
+OP_PUSHDATA1 0x020002
+...
+OP_PUSHDATA2 0x000102
+OP_PUSHDATA2 0x00020002
+...
+OP_PUSHDATA4 0x0000000102
+OP_PUSHDATA4 0x000000020002
+...
+----
+
+Kila usimbaji mbadala wa namba _2_ katika hati ya ingizo utazalisha
+muamala tofauti kidogo na wenye txid tofauti kabisa. Kila
+toleo tofauti la muamala linatumia ingizo lile lile (outpoints)
+kama toleo jingine lolote la muamala, yakifanya yote _kugongana_
+na kila moja. Toleo moja pekee la seti ya miamala inayongongana
+ndilo linaweza kuwemo ndani ya blockchain halali.
+
+Fikiria Alice anaunda toleo moja la muamala lenye +OP_2+ katika
+hati ya ingizo na toleo linalomlipa Bob. Kisha Bob anatumia mara moja
+toleo hilo kumlipa Carol. Yeyote kwenye mtandao anaweza kubadilisha +OP_2+ na
++OP_PUSH1 0x02+, akiunda mgongano na toleo asili la Alice. Ikiwa
+muamala huo unaogongana utathibitishwa, basi hakuna njia ya
+kujumuisha toleo asili la Alice katika blockchain hiyo hiyo, jambo ambalo linamaanisha
+hakuna njia kwa muamala wa Bob kutumia toleo lake.
+Malipo ya Bob kwa Carol yamefanywa batili ingawa si Alice,
+Bob, wala Carol waliofanya jambo baya. Mtu ambaye hahusiki katika
+muamala (mhusika wa tatu - third party) aliweza kubadilisha (mutate) muamala wa
+Alice, tatizo linaloitwa _kubadilika kwa muamala kwa upande wa tatu
+kusikohitajika_ (unwanted third-party transaction malleability).
+
+[KIDOKEZO]
+====
+Kuna matukio wakati watu wanataka miamala yao ibadilike na
+Bitcoin hutoa vipengele kadhaa kusaidia hilo, hasa
+hashi za saini (sighash) ambazo tutajifunza kuzihusu katika <<sighash_types>>. Kwa
+mfano, Alice anaweza kutumia sighash kumruhusu Bob kumsaidia kulipa baadhi ya
+ada za muamala. Hili linabadilisha (mutates) muamala wa Alice lakini kwa njia tu
+ambayo Alice anataka. Kwa sababu hiyo, wakati mwingine tutaweka kiambishi awali (prefix)
+neno _kusikohitajika_ (unwanted) kwenye msemo _kubadilika kwa muamala_ (transaction malleability). Hata wakati sisi
+na waandishi wengine wa kiufundi wa Bitcoin tunapotumia msemo mfupi, tunakuwa karibu
+na uhakika tunazungumzia tofauti ya ((("miamala", "mashahidi", "kubadilika kwa muamala kwa upande wa tatu", startref="transaction-witness-third-party")))((("mashahidi", "kubadilika kwa muamala kwa upande wa tatu", startref="witness-circular-third-party")))((("kubadilika kwa muamala kwa upande wa tatu (third-party transaction malleability)", startref="third-party")))kubadilika (malleability) kusikohitajika.
+====
+
+==== Kubadilika kwa Muamala kwa Upande wa Pili (Second-Party Transaction Malleability)
+
+Wakati ((("miamala", "mashahidi", "kubadilika kwa muamala kwa upande wa pili", id="transaction-witness-second-party")))((("mashahidi", "kubadilika kwa muamala kwa upande wa pili", id="witness-circular-second-party")))((("kubadilika kwa muamala kwa upande wa pili (second-party transaction malleability)", id="second-party")))mpangilio wa muamala wa urithi (legacy transaction format) ndiyo ulikuwa mpangilio pekee wa muamala,
+watengenezaji walifanyia kazi mapendekezo ya kupunguza kubadilika kwa upande wa tatu (third-party malleability),
+kama vile BIP62. Hata hivyo, hata kama wangeweza kuondoa kabisa
+kubadilika kwa upande wa tatu, watumiaji wa itifaki za mikataba walikabiliwa na tatizo jingine:
+ikiwa walihitaji saini kutoka kwa mtu mwingine anayehusika katika itifaki,
+mtu huyo angeweza kuzalisha saini mbadala na kubadilisha txid.
+
+Kwa mfano, Alice na Bob wameweka fedha zao katika hati
+inayohitaji saini kutoka kwao wote wawili ili itumike. Pia wameunda
+muamala wa kurejesha fedha (refund transaction) unaoruhusu kila mmoja wao kupata fedha zake wakati
+wowote. Alice anaamua kwamba anataka kutumia baadhi tu ya
+fedha hizo, hivyo anashirikiana na Bob kuunda mfululizo wa miamala:
+
+- Tx~0~ inajumuisha saini kutoka kwa Alice na Bob, ikitumia
+  bitcoin zake kwenda kwenye matoleo mawili. Toleo la kwanza linatumia baadhi ya
+  fedha za Alice; toleo la pili linarudisha bitcoin zilizosalia kwenye
+  hati inayohitaji [.keep-together]#saini za Alice na Bob.# Kabla ya kusaini
+  muamala huu, wanaunda muamala mpya wa kurejesha fedha, Tx~1~.
+
+- Tx~1~ inatumia toleo la pili la Tx~0~ kwenda kwenye matoleo mawili mapya, moja kwa
+  Alice kwa fungu lake la fedha za pamoja, na moja kwa Bob kwa fungu lake.
+  Alice na Bob wote wanasaini muamala huu kabla ya kusaini Tx~0~.
+
+Hakuna utegemezi wa mzunguko (circular dependency) hapa na, ikiwa tutapuuza kubadilika
+kwa muamala kwa upande wa tatu, hii inaonekana kama inapaswa kutupatia
+itifaki isiyohitaji uaminifu (trustless protocol). Hata hivyo, ni sifa ya saini za Bitcoin kwamba
+msaini anapaswa kuchagua namba kubwa ya nasibu (random number) wakati wa kuunda
+saini yake. Kuchagua namba tofauti ya nasibu kutazalisha
+saini tofauti hata kama kila kitu kinachosainiwa kinabaki vile vile. Ni sawa
+na jinsi ambavyo, ikiwa utatoa saini iliyoandikwa kwa mkono kwa nakala mbili za
+mkataba ule ule, kila saini hizo za kifizikia zitaonekana tofauti
+kidogo.
+
+Kubadilika huku kwa saini (mutability of signatures) kunamaanisha kwamba, ikiwa Alice anajaribu kutangaza
+Tx~0~ (ambayo ina saini ya Bob), Bob anaweza kuzalisha saini
+mbadala ili kuunda muamala unaongongana na txid tofauti. Ikiwa
+toleo mbadala la Bob la Tx~0~ litathibitishwa, basi Alice hawezi kutumia
+toleo la Tx~1~ lililosainiwa kabla ili kudai marejesho yake. Aina hii ya
+ubadilishaji (mutation) ((("miamala", "mashahidi", "kubadilika kwa muamala kwa upande wa pili", startref="transaction-witness-second-party")))((("mashahidi", "kubadilika kwa muamala kwa upande wa pili", startref="witness-circular-second-party")))((("kubadilika kwa muamala kwa upande wa pili (second-party transaction malleability)", startref="second-party")))inaitwa _kubadilika kwa muamala kwa upande wa pili
+kusikohitajika_ (unwanted second-party transaction malleability).
+
+[[segwit]]
+==== Shahidi Aliyetengwa (Segregated Witness)
+
+Kama ((("miamala", "mashahidi", "shahidi aliyetengwa", id="transaction-witness-segwit")))((("mashahidi", "shahidi aliyetengwa", id="witness-segwit")))((("shahidi aliyetengwa (segwit)", id="segregated-witness-segwit")))mapema mwaka https://oreil.ly/---bp[2011],
+watengenezaji wa itifaki walijua jinsi ya kutatua matatizo ya utegemezi wa
+mzunguko (circular dependence), kubadilika kwa upande wa tatu (third-party malleability), na kubadilika kwa upande wa pili (second-party malleability). Wazo
+lilikuwa kuepuka kujumuisha hati ya ingizo (input script) katika hesabu
+inayozalisha txid ya muamala. Kumbuka kwamba jina la kufikirika (abstract name) kwa data
+inayoshikiliwa na hati ya ingizo ni _shahidi_ (witness). Wazo la kutenganisha
+data nyingine katika muamala kutoka kwa shahidi wake kwa madhumuni ya kuzalisha
+txid linaitwa _shahidi aliyetengwa_ (segregated witness - segwit).
+
+Njia iliyo wazi ya kutekeleza segwit inahitaji
+mabadiliko kwenye sheria za makubaliano za Bitcoin ambayo yasingeendana (compatible) na
+nodi kamili za zamani, mabadiliko ambayo pia ((("hard forks")))((("forks", "hard forks")))yanaitwa
+_hard fork_. Hard forks huja na changamoto nyingi, kama tutakavyo
+jadili zaidi katika <<hard_forks>>.
+
+Njia mbadala ya segwit ilielezewa mwishoni mwa 2015. Hii
+ingetumia mabadiliko yanayoendana na matoleo ya nyuma (backward-compatible) kwenye sheria za makubaliano, ambayo ((("soft forks")))((("forks", "soft forks")))yanaitwa
+_soft fork_. Kuendana na matoleo ya nyuma kunamaanisha kwamba nodi kamili zinazotekeleza
+mabadiliko hayapaswi kukubali vizuizi vyovyote ambavyo nodi kamili zisizo na mabadiliko hayo
+zingeviona ni batili (invalid). Mradi tu zinatii sheria hiyo, nodi kamili
+mpya zinaweza kukataa vizuizi ambavyo nodi kamili za zamani zingevikubali, na kuzipa
+uwezo wa kutekeleza sheria mpya za makubaliano (lakini tu ikiwa nodi kamili
+mpya zinawakilisha makubaliano ya kiuchumi miongoni mwa watumiaji wa Bitcoin—tuta
+chunguza kwa undani kuhusu kusasisha sheria za makubaliano za Bitcoin katika
+<<mining>>).
+
+Njia ya soft fork ya segwit inategemea hati za matoleo (output scripts)
+za 'anyone-can-spend'. Hati inayoanza na namba yoyote kati ya 0 hadi 16
+na kufuatiwa na bytes 2 hadi 40 za data inafafanuliwa kama kiolezo (template) cha
+hati ya toleo la segwit. Namba inaashiria toleo lake (mfano, 0 ni
+segwit toleo la 0, au _segwit v0_). Data inaitwa _programu
+ya shahidi_ (witness program). Pia inawezekana kufunika kiolezo cha segwit katika ahadi
+ya P2SH (P2SH commitment), lakini hatutashughulika na hilo katika sura hii.
+
+Kwa mtazamo wa nodi za zamani, violezo hivi vya hati za matoleo vinaweza
+kutumika kwa hati tupu ya ingizo (empty input script). Kwa mtazamo wa nodi mpya
+inayofahamu sheria mpya za segwit, malipo yoyote kwa kiolezo cha hati ya toleo la segwit
+lazima yatumike tu kwa hati tupu ya ingizo. Angalia
+tofauti hapa: nodi za zamani _zinaruhusu_ hati tupu ya ingizo; nodi mpya
+_zinahitaji_ hati tupu ya ingizo.
+
+[role="less_space pagebreak-before"]
+Hati tupu ya ingizo inazuia mashahidi kuathiri txid, hivyo kuondoa
+utegemezi wa mzunguko, kubadilika kwa muamala kwa upande wa tatu, na
+kubadilika kwa muamala kwa upande wa pili. Lakini, bila uwezo wa kuweka
+data katika hati ya ingizo, watumiaji wa violezo vya hati za matoleo ya segwit wanahitaji
+uwanja mpya. Uwanja huo unaitwa _muundo wa mashahidi_ (witness structure).
+
+Uanzishaji wa programu za mashahidi na muundo wa mashahidi unafanya Bitcoin kuwa ngumu (complicates),
+lakini unafuata mwelekeo (trend) uliopo wa kuongeza utengano (abstraction). Kumbuka kutoka
+<<ch04_keys_addresses>> kwamba waraka asili wa Bitcoin (Bitcoin whitepaper) unaelezea mfumo
+ambapo bitcoin zilipokelewa kwenye funguo za umma (pubkeys) na kutumika kwa
+saini (sigs). Funguo ya umma ilifafanua ni nani aliyeidhinishwa (_authorized_) kutumia
+bitcoin (yeyote aliyedhibiti funguo ya siri inayolingana) na
+saini ilitoa uthibitisho (_authentication_) kwamba muamala wa matumizi ulitoka
+kwa mtu anayedhibiti funguo ya siri. Ili kufanya mfumo huo kuwa rahisi zaidi
+(flexible), toleo la awali la Bitcoin lilianzisha hati zinazoruhusu
+bitcoin kupokelewa kwenye hati za matoleo na kutumika na hati za ingizo.
+Uzoefu wa baadaye na itifaki za mikataba (contract protocols) ulihamasisha kuruhusu bitcoin
+kupokelewa kwenye programu za mashahidi na kutumika kwa muundo wa mashahidi. Istilahi na nyanja zinazotumika katika matoleo tofauti ya Bitcoin((("miamala", "mashahidi", "shahidi aliyetengwa", startref="transaction-witness-segwit")))((("mashahidi", "shahidi aliyetengwa", startref="witness-segwit")))((("shahidi aliyetengwa (segwit)", startref="segregated-witness-segwit"))) zinaonyeshwa katika <<terms_used_authorization_authentication>>.
+
+++++
+<table id="terms_used_authorization_authentication">
+<caption>Istilahi zinazotumika kwa uidhinishaji na uthibitishaji (authorization and authentication) wa data katika sehemu tofauti za Bitcoin</caption>
+<thead>
+<tr>
+<th/>
+<th><p>Uidhinishaji (Authorization)</p></th>
+<th class="right"><p>Uthibitishaji (Authentication)</p></th>
+</tr></thead>
+<tbody>
+<tr>
+<td class="fakeheader"><p><strong>Whitepaper</strong></p></td>
+<td><p>Funguo ya umma (Public key)</p></td>
+<td class="right"><p>Saini (Signature)</p></td>
+</tr>
+<tr>
+<td  class="fakeheader"><p><strong>Asili (Urithi/Legacy)</strong></p></td>
+<td><p>Hati ya toleo (Output script)</p></td>
+<td class="right"><p>Hati ya ingizo (Input script)</p></td>
+</tr>
+<tr>
+<td  class="fakeheader"><p><strong>Segwit</strong></p></td>
+<td><p>Programu ya shahidi (Witness program)</p></td>
+<td class="right"><p>Muundo wa mashahidi (Witness structure)</p></td>
+</tr>
+</tbody>
+</table>
+++++
+
+==== Mpangilio wa Muundo wa Mashahidi (Witness Structure Serialization)
+
+Sawa na((("miamala", "mashahidi", "idadi", id="transaction-witness-count")))((("mashahidi", "idadi", id="witness-count"))) nyanja za ingizo na matoleo, muundo wa mashahidi una
+nyanja nyingine, hivyo tutaanza na ramani ya bytes hizo kutoka
+kwenye muamala wa Alice katika <<alice_tx_witness_map>>.
+
+[[alice_tx_witness_map]]
+.Ramani ya bytes ya muundo wa mashahidi kutoka kwa muamala wa Alice.
+image::images/mbc3_0605.png["Ramani ya bytes ya shahidi kutoka kwa muamala wa Alice"]
+
+Tofauti na nyanja za ingizo na matoleo, muundo wa jumla wa mashahidi hau
+anzi na kiashiria chochote cha jumla ya idadi ya mafungu ya mashahidi (witness stacks) inayojumuisha.
+Badala yake, hili linamaanishwa (implied) na uwanja wa ingizo—kuna fungu
+moja la mashahidi kwa kila ingizo katika muamala.
+
+Muundo wa mashahidi kwa ingizo fulani unaanza na idadi ya
+vipengele (elements) unavyojumuisha. Vipengele hivyo ((("vipengele vya shahidi (witness items)")))vinaitwa _vipengele vya
+shahidi_ (witness items). Tutavichunguza kwa undani katika
+<<c_authorization_authentication>>, lakini kwa sasa tunahitaji kujua kwamba
+kila kipengele cha shahidi kimetanguliwa na namba nzima ya compactSize inayoashiria
+ukubwa wake.
+
+Ingizo za urithi (legacy inputs) hazina vipengele vyovyote vya shahidi, hivyo fungu lao la mashahidi
+linajumuisha tu idadi ya sifuri (0x00).
+
+Muamala wa Alice una ingizo moja na ((("miamala", "mashahidi", startref="transaction-witness")))((("mashahidi", startref="witness")))((("miamala", "mashahidi", "idadi", startref="transaction-witness-count")))((("mashahidi", "idadi", startref="witness-count")))kipengele kimoja cha shahidi.
+
+[[lock_time]]
+=== Muda wa Kufunga (Lock Time)
+
+Uwanja wa ((("miamala", "muda wa kufunga (lock time)")))((("muda wa kufunga (lock time)")))mwisho katika muamala uliopangwa (serialized transaction) ni muda wake wa kufunga (lock time). Uwanja
+huu ulikuwa sehemu ya mpangilio asili wa Bitcoin, lakini
+hapo awali ulitekelezwa tu na sera ya Bitcoin ya kuchagua ni
+miamala ipi ya kuchimba (mine). Soft fork ya awali kabisa inayojulikana ya Bitcoin iliongeza sheria
+kwamba, kuanzia kizuizi cha urefu wa 31,000, inazuia ujumuishaji wa
+muamala katika kizuizi isipokuwa ukitimiza mojawapo ya sheria zifuatazo:
+
+- Muamala unaashiria kwamba unapaswa kustahiki (eligible) kujumuishwa katika
+  kizuizi chochote kwa kuweka muda wake wa kufunga kuwa 0.
+
+- Muamala unaashiria kwamba unataka kuweka kikwazo juu ya vizuizi vipi
+  unaweza kujumuishwa kwa kuweka muda wake wa kufunga kuwa thamani iliyo chini ya
+  500,000,000. Katika kesi hii, muamala unaweza tu kujumuishwa katika
+  kizuizi ambacho kina urefu sawa na muda wa kufunga au zaidi. Kwa
+  mfano, muamala wenye muda wa kufunga wa 123,456 unaweza kujumuishwa katika
+  kizuizi cha 123,456 au kizuizi chochote cha baadaye.
+
+- Muamala unaashiria kwamba unataka kuweka kikwazo juu ya lini unaweza
+  kujumuishwa kwenye blockchain kwa kuweka muda wake wa kufunga kuwa thamani ya
+  500,000,000 au zaidi. Katika kesi hii, uwanja unafasiriwa kama muda wa epoch
+  (idadi ya sekunde tangu 1970-01-01T00:00 UTC) na
+  muamala unaweza tu kujumuishwa katika ((("wakati wa kati uliopita (median time past - MTP)")))((("MTP (wakati wa kati uliopita)")))kizuizi chenye _wakati wa kati uliopita_
+  (median time past - MTP) zaidi ya muda wa kufunga. Kwa kawaida MTP huwa karibu saa moja au
+  mawili nyuma ya muda wa sasa. Sheria za MTP zimeelezwa katika
+  <<mtp>>.
+
+[[coinbase_transactions]]
+=== Miamala ya Coinbase (Coinbase Transactions)
+
+Muamala ((("miamala", "coinbase", id="transaction-coinbase2")))((("miamala ya coinbase (coinbase transactions)", id="coinbase-transaction")))((("miamala ya uzalishaji (generation transactions)")))wa kwanza katika kila kizuizi ni kesi maalum. Nyaraka nyingi za
+zamani huuita _muamala wa uzalishaji_ (generation transaction), lakini nyaraka nyingi
+mpya huuita _muamala wa coinbase_ (usichanganywe na
+miamala inayoundwa by kampuni inayoitwa "Coinbase").
+
+Miamala ya coinbase inaundwa na mchimbaji (miner) wa kizuizi
+kinachoijumuisha na inampa mchimbaji fursa ya kudai ada yoyote iliyolipwa na
+miamala katika kizuizi hicho. Zaidi ya hayo, hadi kizuizi cha 6,720,000,
+wachimbaji wanaruhusiwa kudai ruzuku inayojumuisha bitcoin ambazo
+hazijawahi kusambazwa awali, inayoitwa ((("ruzuku ya kizuizi (block subsidy)")))((("zawadi ya kizuizi (block reward)")))ruzuku ya kizuizi (_block subsidy_). Jumla ya
+kiasi ambacho mchimbaji anaweza kudai kwa ajili ya kizuizi—mjumuisho wa ada na
+ruzuku—kinaitwa zawadi ya kizuizi (_block reward_).
+
+Baadhi ya sheria maalum kwa miamala ya coinbase ni pamoja na:
+
+- Inaweza tu kuwa na ingizo moja.
+
+- Ingizo hilo moja lazima liwe na outpoint yenye txid tupu (inayojumuisha kabisa
+  sifuri) na fahirisi ya juu zaidi ya toleo (maximal output index) (0xffffffff). Hili linazuia
+  muamala wa coinbase kurejelea toleo la muamala uliopita,
+  jambo ambalo (kama si lingine) lingeleta mkanganyiko ikizingatiwa kwamba muamala wa
+  coinbase unalipa ada na ruzuku.
+
+- Uwanja ambao ungekuwa na hati ya ingizo katika muamala wa kawaida
+  unaitwa _coinbase_. Uwanja huu ndio unaoupa muamala wa
+  coinbase jina lake. Uwanja wa coinbase lazima uwe angalau bytes mbili
+  na usizidi bytes 100 kwa urefu. Hati hii haitekelezwi (not executed) lakini vikomo
+  vya miamala ya urithi (legacy transaction limits) kwenye idadi ya operesheni za kuangalia saini
+  (sigops) vinatumika kwake, kwa hivyo data yoyote ya kiholela inayowekwa ndani yake inapaswa
+  kutanguliwa na opcode inayosukuma data (data-pushing opcode). Tangu soft fork ya 2013 iliyofafanuliwa katika
+  BIP34, bytes chache za kwanza za uwanja huu lazima zifuate sheria za ziada
+  tutakazozielezea katika <<duplicate_transactions>>.
+
+- Jumla ya matoleo (outputs) haipaswi kuzidi thamani ya ada zilizokusanywa
+  kutoka kwa miamala yote katika kizuizi hicho kujumlisha na ruzuku. Ruzuku
+  ilianza kwa BTC 50 kwa kila kizuizi na hupungua nusu (halves) kila baada ya vizuizi 210,000
+  (takriban kila baada ya miaka minne). Thamani za ruzuku zinakatwa (rounded down) hadi
+  satoshi iliyo karibu zaidi.
+
+- Tangu soft fork ya segwit ya 2017 iliyofafanuliwa katika BIP141, kizuizi chochote kinachojumuisha
+  muamala unaotumia toleo la segwit lazima kijumuishe toleo kwa
+  muamala wa coinbase ambao unakabidhi (commits to) miamala yote katika
+  kizuizi (ikiwa ni pamoja na mashahidi wao). Tutachunguza ahadi hii (commitment) katika
+  <<mining>>.
+
+Muamala wa coinbase unaweza kuwa na matoleo mengine yoyote ambayo yangekuwa halali katika
+muamala wa kawaida. Hata hivyo, muamala unaotumia mojawapo ya matoleo
+hayo hauwezi kujumuishwa katika kizuizi chochote mpaka baada ya muamala wa coinbase
+kupokea uthibitisho 100. Hii inaitwa
+_sheria ya ukomavu_ (maturity rule), na ((("sheria ya ukomavu (maturity rule)")))matoleo ya muamala wa coinbase ambayo bado hayana
+uthibitisho 100 yanaitwa _yasiyokomaa_ (immature).
+
+//TODO:stretch goal to describe the reason for the maturity rule and,
+//by extension the reason for no expiring timelocks
+
+Programu nyingi za Bitcoin hazihitaji kushughulika na miamala ya coinbase,
+lakini asili yao maalum inamaanisha zinaweza mara kwa mara kuwa chanzo cha
+matatizo yasiyo ya kawaida katika programu ambazo hazijaundwa kutarajia((("miamala", "coinbase", startref="transaction-coinbase2")))((("miamala ya coinbase (coinbase transactions)", startref="coinbase-transaction"))) hizo.
+
+// Useful content deleted
+// - no input amount in transactions
+// - no balances in transactions
+//   - UTXO model theory?
+// Coin selection
+// Change
+// Inability for lightweight clients to get old UTXOs
+
+=== Uzito na Vbytes (Weight and Vbytes)
+
+Kila ((("miamala", "uzito", id="transactions-weight")))((("uzito (wa miamala)", id="weights")))((("vbytes", id="vbytes")))kizuizi cha Bitcoin kimewekewa ukomo katika kiasi cha data ya muamala kinachoweza
+kujumuisha, hivyo programu nyingi za Bitcoin zinahitaji kuwa na uwezo wa kupima
+miamala zinazoiunda au kuichakata. Kipimo cha kisasa cha kupima
+Bitcoin kinaitwa _uzito_ (weight). Toleo mbadala wa uzito ni
+_vbytes_, ambapo vitengo vinne vya uzito ni sawa na vbyte moja, na kutoa mlinganisho rahisi
+kwa kipimo asili cha _byte_ kilichotumika katika vizuizi
+vya urithi vya Bitcoin (legacy Bitcoin blocks).
+
+Vizuizi vina ukomo wa uzito wa milioni 4. Kichwa cha kizuizi (block header) kinachukua uzito
+wa 240. Uwanja wa ziada, idadi ya miamala, unatumia uzito
+wa 4 au 12. Uzito wote uliosalia unaweza kutumika kwa
+data ya muamala.
+
+Ili kuhesabu uzito wa uwanja fulani katika muamala, ukubwa
+wa uwanja huo uliopangwa (serialized field) kwa bytes unazidishwa kwa kigezo (factor). Ili
+kuhesabu uzito wa muamala, jumlisha uzito wa nyanja zake zote. Vigezo kwa kila uwanja katika muamala
+vinaonyeshwa katika <<weight_factors>>. Ili kutoa mfano, pia tunahesabu
+uzito wa kila uwanja katika muamala wa mfano wa sura hii kutoka kwa
+Alice kwenda kwa Bob.
+
+Vigezo, na nyanja ambazo vinatumika, vilichaguliwa ili
+kupunguza uzito unaotumika wakati wa kutumia UTXO. Hili linasaidia kukatisha tamaa
+uundaji wa matoleo yasiyo na faida kiuchumi kama ilivyoelezwa katika
+<<uneconomical_outputs>>.
+
+++++
+<table id="weight_factors">
+<caption>Vigezo vya uzito kwa nyanja zote katika muamala wa Bitcoin</caption>
+<thead>
+<tr>
+<th><p>Uwanja (Field)</p></th>
+<th><p>Kigezo (Factor)</p></th>
+<th><p>Uzito katika Muamala wa Alice</p></th>
+</tr> </thead>
+<tbody>
+<tr>
+<td><p>Toleo (Version)</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p>Alama &amp; Bendera (Marker &amp; Flag)</p></td>
+<td><p>1</p></td>
+<td><p>2</p></td>
+</tr>
+<tr>
+<td><p>Idadi ya Ingizo (Inputs Count)</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Uelekezi Nje (Outpoint)</p></td>
+<td><p>4</p></td>
+<td><p>144</p></td>
+</tr>
+<tr>
+<td><p>Hati ya Ingizo (Input script)</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Mfuatano (Sequence)</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p>Idadi ya Matoleo (Outputs Count)</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+</tr>
+<tr>
+<td><p>Kiasi (Amount)</p></td>
+<td><p>4</p></td>
+<td><p>64 (matoleo 2)</p></td>
+</tr>
+<tr>
+<td><p>Hati ya Toleo (Output script)</p></td>
+<td><p>4</p></td>
+<td><p>232 (matoleo 2 yenye hati tofauti)</p></td>
+</tr>
+<tr>
+<td><p>Idadi ya Mashahidi (Witness Count)</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+</tr>
+<tr>
+<td><p>Vipengele vya Shahidi (Witness items)</p></td>
+<td><p>1</p></td>
+<td><p>66</p></td>
+</tr>
+<tr>
+<td><p>Muda wa kufunga (Lock time)</p></td>
+<td><p>4</p></td>
+<td><p>16</p></td>
+</tr>
+<tr>
+<td><p><strong>Jumla (Total)</strong></p></td>
+<td><p><em>N/A</em></p></td>
+<td><p><strong>569</strong></p></td>
+</tr>
+</tbody>
+</table>
+++++
+
+[role="less_space pagebreak-before"]
+Tunaweza kuthibitisha hesabu yetu ya uzito kwa kupata jumla ya muamala wa
+Alice kutoka kwa Bitcoin Core:
+
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177 2 | jq .weight
+569
+----
+
+Muamala wa Alice kutoka <<alice_tx_serialized_reprint>> mwanzoni mwa
+sura hii unaonyeshwa ukiwakilishwa kwa vitengo vya uzito katika
+<<alice_tx_weight_map>>. Unaweza kuona kigezo kikifanya kazi kwa kulinganisha
+tofauti ya ukubwa kati ya nyanja mbalimbali katika ((("miamala", "uzito", startref="transactions-weight")))((("uzito (wa miamala)", startref="weights")))((("vbytes", startref="vbytes")))picha hizo mbili.
+
+[[alice_tx_weight_map]]
+.Ramani ya bytes ya muamala wa Alice.
+image::images/mbc3_0606.png["Ramani ya uzito ya muamala wa Alice"]
+
+[[legacy_serialization]]
+=== Mpangilio wa Urithi (Legacy Serialization)
+
+Mpangilio ((("miamala", "mpangilio wa urithi (legacy serialization)")))((("mpangilio wa urithi (legacy serialization)")))uliopangwa (serialization format) ulioelezwa katika sura hii unatumika kwa
+wingi wa miamala mipya ya Bitcoin kufikia wakati wa uandishi wa kitabu hiki, lakini
+mpangilio wa zamani bado unatumika kwa miamala mingi.
+Mpangilio huo wa zamani, unaoitwa _mpangilio wa urithi_ (legacy serialization), lazima utumike kwenye mtandao wa
+P2P wa Bitcoin kwa muamala wowote wenye muundo mtupu wa mashahidi (ambao unakuwa
+halali tu ikiwa muamala hautumii programu zozote za shahidi).
+
+Mpangilio wa urithi haujumuishi nyanja za alama (marker), bendera (flag), na muundo wa mashahidi (witness structure).
+
+++++
+<p class="fix_tracking2">
+Katika sura hii, tuliangalia kila moja ya nyanja katika muamala na
+kugundua jinsi zinavyowasiliana kwa nodi kamili kuhusu maelezo ya
+bitcoin zinazohamishwa kati ya watumiaji. Tuliangalia kwa ufupi tu
+hati ya toleo, hati ya ingizo, na muundo wa mashahidi ambao unaruhusu kubainisha na
+kutimiza masharti yanayozuia ni nani anayeweza kutumia bitcoin zipi.
+Kuelewa jinsi ya kuunda na kutumia masharti haya ni muhimu sana ili
+kuhakikisha kwamba ni Alice pekee anayeweza kutumia bitcoin zake, kwa hivyo yatakuwa
+mada ya sura ifuatayo.</p>
+++++
+
+//TODO:text long section or full chapter about psbts
+
+
