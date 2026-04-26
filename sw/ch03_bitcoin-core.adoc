@@ -1,0 +1,1030 @@
+[[ch03_bitcoin_client]]
+== Bitcoin Core: Utekelezaji wa Marejeleo
+
+Watu hukubali tu pesa badala ya bidhaa na huduma zao yenye thamani ikiwa wanaamini 
+kwamba wataweza kutumia pesa hizo baadaye. Pesa ambayo ni bandia au iliyopunguzwa 
+thamani isivyotarajiwa inaweza isitumike baadaye, kwa hivyo kila mtu anayekubali 
+bitcoin ana motisha kubwa ya kuthibitisha uaminifu wa bitcoin anazopokea. Mfumo 
+wa Bitcoin uliundwa ili iwezekane kwa programu inayojiendesha kabisa kwenye 
+kompyuta yako ya nyumbani kuzuia kikamilifu ughushi, upunguzaji thamani, na 
+matatizo mengine kadhaa muhimu. Programu inayotoa kazi hiyo inaitwa 
+_nodi kamili ya uthibitishaji_ (full verification node) kwa sababu inathibitisha 
+kila muamala wa Bitcoin uliothibitishwa dhidi ya kila sheria katika mfumo. 
+Nodi kamili ((("nodi kamili"))) za uthibitishaji, au _nodi kamili_ (full nodes) kwa 
+kifupi, zinaweza pia kutoa zana na data kwa ajili ya kuelewa jinsi Bitcoin inavyofanya 
+kazi na kile kinachotokea sasa kwenye mtandao.
+
+Katika sura hii, tutasakinisha Bitcoin Core, utekelezaji ambao waendeshaji wengi 
+wa nodi kamili wameutumia tangu mwanzo wa mtandao wa Bitcoin. Kisha tutakagua 
+vitalu, miamala, na data nyingine kutoka kwenye nodi yako, data ambayo ni 
+mamlaka kamili—si kwa sababu chombo fulani chenye nguvu kimeiteua kuwa hivyo 
+bali kwa sababu nodi yako iliithibitisha kwa uhuru. Katika sehemu iliyobaki ya 
+kitabu hiki, tutaendelea kutumia Bitcoin Core kuunda na kuchunguza data 
+inayohusiana na blockchain na mtandao.
+
+=== Kutoka Bitcoin hadi Bitcoin Core
+
+Bitcoin ((("Bitcoin Core", "maelezo", id="bitcoin-core-explain"))) ni mradi wa 
+_chanzo wazi_ (open source) na nambari ya chanzo (source code) inapatikana 
+chini ya leseni ya wazi (MIT), ikiwa huru kupakuliwa na kutumiwa kwa madhumuni 
+yoyote. Zaidi ya kuwa tu chanzo wazi, Bitcoin inatengenezwa na jumuiya ya wazi 
+ya watu wanaojitolea. Mwanzoni, jumuiya hiyo ilikuwa na ((("Nakamoto, Satoshi"))) 
+Satoshi Nakamoto pekee. Kufikia mwaka wa 2023, nambari ya chanzo ya Bitcoin 
+ilikuwa na wachangiaji zaidi ya 1,000 huku kukiwa na takriban watengenezaji kumi na 
+mbili wanaofanya kazi kwenye msimbo huo karibu wakati wote na wengine kadhaa 
+kwa muda. Yeyote anaweza kuchangia kwenye msimbo—pamoja na wewe!
+
+Wakati Bitcoin ilipoundwa na Satoshi Nakamoto, programu ilikuwa imekamilika 
+kwa kiasi kikubwa kabla ya kuchapishwa kwa karatasi nyeupe (whitepaper) (iliyoonyeshwa 
+katika <<satoshi_whitepaper>>). Satoshi alitaka kuhakikisha kuwa utekelezaji 
+unafanya kazi kabla ya kuchapisha karatasi kuhusu hilo. Utekelezaji huo wa kwanza, 
+ambao wakati huo ulijulikana tu kama "Bitcoin," umefanyiwa marekebisho makubwa 
+na kuboreshwa. Umegeuka na kuwa kile kinachojulikana kama _Bitcoin Core_, ili 
+kutofautisha na utekelezaji mwingine. Bitcoin Core ni _utekelezaji wa marejeleo_ 
+(reference implementation) wa mfumo wa Bitcoin, ikimaanisha kuwa unatoa rejeleo 
+la jinsi kila sehemu ya teknolojia inapaswa kutekelezwa. Bitcoin Core inatekeleza 
+vipengele vyote vya Bitcoin, ikiwa ni pamoja na mikoba, injini ya uthibitishaji 
+wa muamala na kitalu, zana za ujenzi wa kitalu, na sehemu zote za kisasa za 
+mawasiliano ya rika-kwa-rika ya Bitcoin.
+
+<<bitcoin_core_architecture>> inaonyesha usanifu wa Bitcoin Core.
+
+[[bitcoin_core_architecture]]
+.Usanifu wa Bitcoin Core (Chanzo: Eric Lombrozo).
+image::images/mbc3_0301.png["Bitcoin Core Architecture"]
+
+Ingawa Bitcoin Core inatumika kama utekelezaji wa marejeleo kwa sehemu nyingi 
+kubwa za mfumo, karatasi nyeupe ya Bitcoin inaelezea sehemu kadhaa za mapema 
+za mfumo. Sehemu nyingi kuu za mfumo tangu mwaka wa 2011 zimerekodiwa katika 
+seti ya https://oreil.ly/BCXAQ[Mapendekezo ya Maboresho ya Bitcoin (BIPs)]. 
+Katika((("BIPs (Mapendekezo ya Maboresho ya Bitcoin)")))((("Mapendekezo ya Maboresho ya Bitcoin", ona="BIPs"))) kitabu hiki chote, tunarejelea vipimo vya BIP kwa 
+namba zao; kwa mfano, BIP9 inaelezea utaratibu unaotumiwa kwa maboresho kadhaa 
+makubwa kwenye((("Bitcoin Core", "maelezo", startref="bitcoin-core-explain"))) Bitcoin.
+
+=== Mazingira ya Maendeleo ya Bitcoin
+
+Ikiwa wewe ni mtengenezaji, utataka kuanzisha mazingira ya maendeleo yenye zana, 
+maktaba (libraries), na programu zote za usaidizi kwa ajili ya kuandika maombi 
+ya Bitcoin. Katika sura hii ya kiufundi sana, tutapitia mchakato huo hatua kwa hatua. 
+Ikiwa nyenzo zitakuwa ngumu sana (na huweki mazingira ya maendeleo kwa sasa) 
+jisikie huru kuruka hadi sura inayofuata, ambayo haina ufundi mwingi.
+
+[[compiling_core]]
+=== Kukusanya Bitcoin Core kutoka kwenye Nambari ya Chanzo
+
+Nambari ya chanzo ya Bitcoin Core ((("Bitcoin Core", "kukusanya kutoka nambari ya chanzo", id="bitcoin-core-compile")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", id="compile-bitcoin-core")))((("nambari ya chanzo, kukusanya Bitcoin Core", id="source-code-compile"))) inaweza kupakuliwa kama hifadhi (archive) au kwa kuiga (cloning) hazina 
+ya chanzo kutoka GitHub. Kwenye https://oreil.ly/hN9g1[ukurasa wa kupakua wa 
+Bitcoin Core], chagua toleo la hivi karibuni na upakue hifadhi iliyoshinikizwa 
+ya nambari ya chanzo. Vinginevyo, tumia mstari wa amri ya Git kuunda nakala ya 
+ndani ya nambari ya chanzo kutoka kwenye https://oreil.ly/BdOwl[ukurasa wa GitHub 
+wa Bitcoin].
+
+[KIDOKEZO]
+====
+Katika mifano mingi katika sura hii, tutakuwa tukitumia kiolesura cha mstari 
+wa amri wa mfumo wa uendeshaji (unaojulikana pia kama "shell"), unaofikiwa 
+kupitia programu ya "terminal". Shell itaonyesha kishawishi (prompt), unaandika 
+amri, na shell inajibu kwa maandishi fulani na kishawishi kipya cha amri yako 
+inayofuata. Kishawishi kinaweza kuonekana tofauti kwenye mfumo wako, lakini 
+katika mifano ifuatayo, kinaonyeshwa na ishara ya +$+. Katika mifano hiyo, 
+unapoona maandishi baada ya ishara ya +$+, usiandike ishara ya +$+ bali andika 
+amri inayofuata mara moja, kisha bonyeza Enter ili kutekeleza amri hiyo. 
+Katika mifano hiyo, mistari iliyo chini ya kila amri ni majibu ya mfumo wa 
+uendeshaji kwa amri hiyo. Unapoona kiambishi awali cha +$+ kinachofuata, 
+utajua ni amri mpya na unapaswa kurudia mchakato huo.
+====
+
+Hapa, tunatumia amri ya +git+ kuunda nakala ya ndani ("clone") ya nambari ya chanzo:
+
+----
+$ git clone https://github.com/bitcoin/bitcoin.git
+Cloning into 'bitcoin'...
+remote: Enumerating objects: 245912, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 245912 (delta 1), reused 2 (delta 1), pack-reused 245909
+Receiving objects: 100% (245912/245912), 217.74 MiB | 13.05 MiB/s, done.
+Resolving deltas: 100% (175649/175649), done.
+----
+
+[KIDOKEZO]
+====
+Git ni mfumo wa udhibiti wa toleo uliosambazwa unaotumiwa zaidi, sehemu muhimu 
+ya zana ya mtengenezaji yeyote wa programu. Unaweza kuhitaji kusakinisha amri 
+ya +git+, au kiolesura cha picha cha mtumiaji cha Git, kwenye mfumo wako wa 
+uendeshaji ikiwa huna tayari.
+====
+
+Wakati operesheni ya kuiga (cloning) ya Git imekamilika, utakuwa na nakala kamili 
+ya ndani ya hazina ya nambari ya chanzo katika saraka (directory) _bitcoin_. 
+Badilisha saraka hii kwa kutumia amri ya +cd+:
+
+----
+$ cd bitcoin
+----
+
+==== Kuchagua Toleo la Bitcoin Core
+
+Kwa chaguo-msingi,((("Bitcoin Core", "kukusanya kutoka nambari ya chanzo", "kuchagua toleo la kutolewa", id="bitcoin-core-compile-release")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", "kuchagua toleo la kutolewa", id="compile-bitcoin-core-release")))((("nambari ya chanzo, kukusanya Bitcoin Core", "kuchagua toleo la kutolewa", id="source-code-compile-release")))((("toleo la kutolewa (Bitcoin Core), kuchagua", id="release-select")))((("kuchagua", "toleo la kutolewa (Bitcoin Core)", id="select-release"))) nakala ya ndani itasawazishwa (synchronized) na msimbo wa 
+hivi karibuni, ambao unaweza kuwa toleo lisilo thabiti au toleo la beta la Bitcoin. 
+Kabla ya kukusanya msimbo, chagua toleo mahususi kwa kuangalia _tag_ ya kutolewa. 
+Hii itasawazisha nakala ya ndani na picha (snapshot) mahususi ya hazina ya msimbo 
+iliyotambuliwa na tag ya neno kuu. Tag hutumiwa na watengenezaji kuashiria 
+matoleo mahususi ya msimbo kwa namba ya toleo. Kwanza, ili kupata tag 
+zinazopatikana, tunatumia amri ya +git tag+:
+
+----
+$ git tag
+v0.1.5
+v0.1.6test1
+v0.10.0
+...
+v0.11.2
+v0.11.2rc1
+v0.12.0rc1
+v0.12.0rc2
+...
+----
+
+Orodha ya tag inaonyesha matoleo yote ya Bitcoin yaliyotolewa. Kwa kawaida, 
+_release candidates_, ((("release candidates"))) ambazo zimekusudiwa kwa ajili ya 
+jaribio, zina kiambishi tamati "rc." Matoleo thabiti yanayoweza kuendeshwa kwenye 
+mifumo ya uzalishaji hayana kiambishi tamati. Kutoka kwenye orodha iliyotangulia, 
+chagua toleo la juu zaidi, ambalo wakati wa kuandika haya lilikuwa v24.0.1. 
+Ili kusawazisha msimbo wa ndani na toleo hili, tumia amri ya +git checkout+:
+
+----
+$ git checkout v24.0.1
+Note: switching to 'v24.0.1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+HEAD is now at b3f866a8d Merge bitcoin/bitcoin#26647: 24.0.1 final changes
+----
+
+Unaweza kuthibitisha kuwa una toleo unalotaka "lililoangaliwa" kwa kutoa 
+((("Bitcoin Core", "kukusanya kutoka nambari ya chanzo", "kuchagua toleo la kutolewa", startref="bitcoin-core-compile-release")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", "kuchagua toleo la kutolewa", startref="compile-bitcoin-core-release")))((("nambari ya chanzo, kukusanya Bitcoin Core", "kuchagua toleo la kutolewa", startref="source-code-compile-release")))((("toleo la kutolewa (Bitcoin Core), kuchagua", startref="release-select")))((("kuchagua", "toleo la kutolewa (Bitcoin Core)", startref="select-release"))) amri ya +git status+:
+
+----
+HEAD detached at v24.0.1
+nothing to commit, working tree clean
+----
+
+==== Kusanidi Ujenzi wa Bitcoin Core
+
+Nambari ya chanzo ((("Bitcoin Core", "kukusanya kutoka nambari ya chanzo", "kusanidi ujenzi", id="bitcoin-core-compile-configure")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", "kusanidi ujenzi", id="compile-bitcoin-core-configure")))((("nambari ya chanzo, kukusanya Bitcoin Core", "kusanidi ujenzi", id="source-code-compile-configure")))((("kusanidi", "ujenzi wa Bitcoin Core", id="configure-build"))) inajumuisha nyaraka, ambazo zinaweza kupatikana katika faili kadhaa. Pitia nyaraka kuu zinazopatikana katika _README.md_ kwenye saraka ya _bitcoin_. Katika sura hii, tutaunda daemon ya Bitcoin Core (seva), inayojulikana pia kama +bitcoind+ kwenye Linux (mfumo kama Unix). Pitia maelekezo ya kukusanya mteja wa mstari wa amri wa +bitcoind+ kwenye jukwaa lako kwa kusoma _doc/build-unix.md_. Maelekezo mbadala yanaweza kupatikana katika saraka ya _doc_; kwa mfano, _build-windows.md_ kwa maelekezo ya Windows. Wakati wa kuandika haya, maelekezo yanapatikana kwa Android, FreeBSD, NetBSD, OpenBSD, macOS (OSX), Unix, na Windows.
+
+Pitia kwa uangalifu mahitaji ya ujenzi (prerequisites), ambayo yapo katika sehemu 
+ya kwanza ya nyaraka za ujenzi. Hizi ni maktaba ambazo lazima ziwe kwenye mfumo 
+wako kabla ya kuanza kukusanya Bitcoin. Ikiwa mahitaji haya yanakosekana, mchakato 
+wa ujenzi utashindwa kwa hitilafu. Ikiwa hii itatokea kwa sababu ulikosa mahitaji, 
+unaweza kuisakinisha na kisha kuendelea na mchakato wa ujenzi kutoka pale 
+ulipoishia. Kwa kudhani kuwa mahitaji yamesakinishwa, unaanzisha mchakato wa ujenzi 
+kwa kuzalisha seti ya hati za ujenzi kwa kutumia hati ya _autogen.sh_:
+
+----
+$ ./autogen.sh
+libtoolize: putting auxiliary files in AC_CONFIG_AUX_DIR, 'build-aux'.
+libtoolize: copying file 'build-aux/ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'build-aux/m4'.
+ ...
+configure.ac:58: installing 'build-aux/missing'
+src/Makefile.am: installing 'build-aux/depcomp'
+parallel-tests: installing 'build-aux/test-driver'
+----
+
+Hati ya _autogen.sh_ inaunda seti ya hati za usanidi wa kiotomatiki ambazo 
+zitahoji mfumo wako ili kugundua mipangilio sahihi na kuhakikisha kuwa una 
+maktaba zote muhimu za kukusanya msimbo. Muhimu zaidi kati ya hizi ni hati 
+ya +configure+ inayotoa chaguzi kadhaa tofauti ili kubinafsisha mchakato wa ujenzi. 
+Tumia bendera ya +--help+ kuona chaguzi mbalimbali:
+
+----
+$ ./configure --help
+`configure' configures Bitcoin Core 24.0.1 to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+...
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-silent-rules   less verbose build output (undo: "make V=1")
+  --disable-silent-rules  verbose build output (undo: "make V=0")
+...
+----
+
+Hati ya +configure+ hukuruhusu kuwasha au kuzima vipengele fulani vya +bitcoind+ 
+kupitia matumizi ya bendera za +--enable-FEATURE+ na +--disable-FEATURE+, ambapo 
+pass:[<span class="keep-together"><code>FEATURE</code></span>] inabadilishwa na 
+jina la kipengele, kama ilivyoorodheshwa kwenye toleo la usaidizi. Katika sura 
+hii, tutaunda mteja wa +bitcoind+ mwenye vipengele vyote vya chaguo-msingi. 
+Hatutakuwa tukitumia bendera za usanidi, lakini unapaswa kuzipitia ili kuelewa 
+ni vipengele gani vya hiari vilivyomo kwa mteja. Ikiwa uko katika mazingira ya 
+kitaaluma, vikwazo vya maabara ya kompyuta vinaweza kukuhitaji kusakinisha 
+maombi kwenye saraka ya nyumbani (kwa mfano, ukitumia +--prefix=$HOME+).
+
+Hapa kuna baadhi ya chaguzi muhimu zinazobatilisha tabia ya chaguo-msingi ya 
+hati ya +configure+:
+
+++++
+<dl>
+<dt><code>--prefix=$HOME</code></dt>
+<dd><p>Hii inabatilisha eneo la usakinishaji la chaguo-msingi (ambalo ni <em>/usr/local/</em>) kwa ajili ya faili linalotekelezeka (executable). Tumia <code>$HOME</code> kuweka kila kitu kwenye saraka yako ya nyumbani, au njia nyingine.</p></dd>
+
+<dt><code>--disable-wallet</code></dt>
+<dd><p>Hii inatumiwa kuzima utekelezaji wa mkoba wa marejeleo.</p></dd>
+
+<dt><code>--with-incompatible-bdb</code></dt>
+<dd><p>Ikiwa unaunda mkoba, ruhusu matumizi ya toleo lisiloendana la maktaba ya Berkeley DB.</p></dd>
+
+<dt><code>--with-gui=no</code></dt>
+<dd><p>Usijenge kiolesura cha picha cha mtumiaji (GUI), ambacho kinahitaji maktaba ya Qt. Hii inaunda seva na mstari wa amri wa Bitcoin Core pekee.</p></dd>
+</dl>
+++++
+
+Kisha, endesha hati ya +configure+ ili kugundua kiotomatiki maktaba zote muhimu 
+na kuunda hati ya ujenzi iliyobinafsishwa kwa mfumo wako:
+
+----
+$ ./configure
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking for a BSD-compatible install... /usr/bin/install -c
+...
+[many pages of configuration tests follow]
+...
+----
+
+Ikiwa kila kitu kilienda vizuri, amri ya +configure+ itaisha kwa kuunda hati za 
+ujenzi zilizobinafsishwa ambazo zitaturuhusu kukusanya +bitcoind+. Ikiwa kuna 
+maktaba yoyote inayokosekana au hitilafu, amri ya +configure+ itaishia na hitilafu 
+badala ya kuunda hati za ujenzi. Ikiwa hitilafu itatokea, uwezekano mkubwa ni kwa 
+sababu ya maktaba inayokosekana au isiyoendana. Pitia nyaraka za ujenzi tena na 
+uhakikishe kuwa umesakinisha mahitaji yanayokosekana. Kisha endesha +configure+ 
+tena na uone ikiwa hiyo itarekebisha hitilafu ya ((("Bitcoin Core", "kukusanya 
+kutoka nambari ya chanzo", "kusanidi ujenzi", startref="bitcoin-core-compile-configure")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", "kusanidi ujenzi", startref="compile-bitcoin-core-configure")))((("nambari ya chanzo, kukusanya Bitcoin Core", "...kusanidi ujenzi", startref="source-code-compile-configure")))((("kusanidi", "ujenzi wa Bitcoin Core", startref="configure-build"))).
+
+==== Kujenga Faili Zinazotekelezeka za Bitcoin Core
+
+Sawa, sasa ((("Bitcoin Core", "kukusanya kutoka nambari ya chanzo", "kujenga faili zinazotekelezeka")))((("kukusanya Bitcoin Core kutoka nambari ya chanzo", "kujenga faili zinazotekelezeka")))((("nambari ya chanzo, kukusanya Bitcoin Core", "kujenga faili zinazotekelezeka")))((("faili zinazotekelezeka (Bitcoin Core), kujenga"))) utakusanya msimbo wa chanzo, mchakato unaoweza kuchukua hadi saa moja kukamilika, kulingana na kasi ya CPU yako na kumbukumbu inayopatikana. Ikiwa hitilafu itatokea, au mchakato wa kukusanya unakatizwa, unaweza kuanza tena wakati wowote kwa kuandika +make+ tena. Andika *+make+* ili kuanza kukusanya programu inayotekelezeka:
+
+----
+$ make
+Making all in src
+  CXX      bitcoind-bitcoind.o
+  CXX      libbitcoin_node_a-addrdb.o
+  CXX      libbitcoin_node_a-addrman.o
+  CXX      libbitcoin_node_a-banman.o
+  CXX      libbitcoin_node_a-blockencodings.o
+  CXX      libbitcoin_node_a-blockfilter.o
+[... many more compilation messages follow ...]
+----
+
+Kwenye mfumo wenye kasi na CPU zaidi ya moja, unaweza kutaka kuweka idadi ya kazi 
+za kukusanya zinazoendana (parallel compile jobs). Kwa mfano, +make -j 2+ itatumia 
+cores mbili ikiwa zinapatikana. Ikiwa kila kitu kitaenda vizuri, Bitcoin Core 
+sasa imekusanywa. Unapaswa kuendesha jaribio la kitengo (unit test suite) 
+kwa +make check+ ili kuhakikisha kuwa maktaba zilizounganishwa hazijaharibika 
+kwa njia yoyote. Hatua ya mwisho ni kusakinisha faili mbalimbali zinazotekelezeka 
+kwenye mfumo wako kwa kutumia amri ya +make install+. Unaweza kuombwa nenosiri 
+lako la mtumiaji kwa sababu hatua hii inahitaji upendeleo wa kiutawala 
+(administrative privileges):
+
+----
+$ make check && sudo make install
+Password:
+Making install in src
+ ../build-aux/install-sh -c -d '/usr/local/lib'
+libtool: install: /usr/bin/install -c bitcoind /usr/local/bin/bitcoind
+libtool: install: /usr/bin/install -c bitcoin-cli /usr/local/bin/bitcoin-cli
+libtool: install: /usr/bin/install -c bitcoin-tx /usr/local/bin/bitcoin-tx
+...
+----
+
+Usakinishaji wa chaguo-msingi wa +bitcoind+ unaiweka katika _/usr/local/bin_. 
+Unaweza kuthibitisha kuwa Bitcoin Core imesakinishwa kwa usahihi kwa kuuliza 
+mfumo njia ya faili zinazotekelezeka, ((("Bitcoin Core", "kukusanya kutoka nambari 
+ya chanzo", startref="bitcoin-core-compile")))((("kukusanya Bitcoin Core kutoka 
+nambari ya chanzo", startref="compile-bitcoin-core")))((("nambari ya chanzo, 
+kukusanya Bitcoin Core", startref="source-code-compile"))) kama ifuatavyo:
+
+----
+$ which bitcoind
+/usr/local/bin/bitcoind
+
+$ which bitcoin-cli
+/usr/local/bin/bitcoin-cli
+----
+
+=== Kuendesha Nodi ya Bitcoin Core
+
+Mtandao wa ((("Bitcoin Core", "nodi", "kuendesha", id="bitcoin-core-nodes-running")))((("nodi", "kuendesha", id="nodes-running")))((("kuendesha nodi", id="running-nodes"))) rika-kwa-rika wa Bitcoin umeundwa na "nodi" za mtandao, zinazoendeshwa zaidi na watu binafsi na baadhi ya biashara zinazotoa huduma za Bitcoin. Wale wanaendesha nodi za Bitcoin wana mtazamo wa moja kwa moja na wenye mamlaka wa blockchain ya Bitcoin, wakiwa na nakala ya ndani ya bitcoin zote zinazoweza kutumika ambazo zimethibitishwa kwa uhuru na mfumo wao wenyewe. Kwa kuendesha nodi, si lazima utegemee upande wowote wa tatu ili kuthibitisha muamala. Aidha, kwa kutumia nodi ya Bitcoin kuthibitisha kikamilifu miamala unayopokea kwenye mkoba wako, unachangia kwenye mtandao wa Bitcoin na kusaidia kuufanya uwe thabiti zaidi.
+
+Hata hivyo, kuendesha nodi kunahitaji kupakua na kuchakata zaidi ya GB 500 za data mwanzoni na takriban MB 400 za miamala ya Bitcoin kwa siku. Takwimu hizi ni za mwaka wa 2023 na uwezekano mkubwa zitaongezeka baada ya muda. Ikiwa utazima nodi yako au kukatwa kwenye mtandao kwa siku kadhaa, nodi yako itahitaji kupakua data ambayo ilikosa. Kwa mfano, ikiwa utafunga Bitcoin Core kwa siku 10, utahitaji kupakua takriban GB 4 wakati mwingine utakapoianzisha.
+
+Kulingana na iwapo utachagua kuorodhesha miamala yote na kuhifadhi nakala kamili ya blockchain, unaweza pia kuhitaji nafasi kubwa ya diski—angalau TB 1 ikiwa unapanga kuendesha Bitcoin Core kwa miaka kadhaa. Kwa chaguo-msingi, nodi za Bitcoin pia husambaza miamala na vitalu kwa nodi nyingine (zinazoitwa "rika"), ikitumia kipimo-data (bandwidth) cha kupakia cha mtandao. Ikiwa muunganisho wako wa mtandao una ukomo, una kiwango cha chini cha data, au unatozwa (unachajiwa kwa gigabit), pengine hupaswi kuendesha nodi ya Bitcoin juu yake, au uiendeshe kwa njia inayozuia kipimo-data chake (ona <<bitcoincorenode_config>>). Unaweza kuunganisha nodi yako badala yake kwenye mtandao mbadala, kama vile mtoa huduma wa data wa satelaiti wa bure kama https://oreil.ly/cIwf3[Blockstream Satellite].
+
+[KIDOKEZO]
+====
+Bitcoin Core huhifadhi nakala kamili ya blockchain kwa chaguo-msingi, na karibu kila muamala ambao umewahi kuthibitishwa kwenye mtandao wa Bitcoin tangu kuanzishwa kwake mwaka wa 2009. Seti hii ya data ina ukubwa wa mamia ya gigabytes na inapakuliwa kidogo kidogo kwa muda wa saa kadhaa au siku, kulingana na kasi ya CPU yako na muunganisho wa mtandao. Bitcoin Core haitaweza kuchakata miamala au kusasisha salio la akaunti hadi seti kamili ya data ya blockchain ipakuliwe. Hakikisha una nafasi ya kutosha ya diski, kipimo-data, na muda wa kukamilisha usawazishaji (synchronization) wa kwanza. Unaweza kusanidi Bitcoin Core ili kupunguza ukubwa wa blockchain kwa kutupa vitalu vya zamani, lakini bado itapakua seti nzima ya data.
+====
+
+Licha ya mahitaji haya ya rasilimali, maelfu ya watu huendesha nodi za Bitcoin. Baadhi yao wanaendesha kwenye mifumo rahisi kama Raspberry Pi (kompyuta ya dola 35 za Kimarekani yenye ukubwa wa pakiti ya kadi).
+
+[role="less_space pagebreak-before"]
+Kwa nini ungetaka kuendesha nodi? Hapa kuna baadhi ya sababu za kawaida:
+
+- Hutaki kutegemea upande wowote wa tatu kuthibitisha miamala unayopokea.
+
+- Hutaki kufichua kwa watu wa tatu ni miamala gani inayomilikiwa na mkoba wako.
+
+- Unatengeneza programu ya Bitcoin na unahitaji kutegemea nodi ya Bitcoin kwa ajili ya ufikiaji wa mtandao na blockchain kupitia programu (API).
+
+- Unaunda programu ambazo lazima zithibitishe miamala kulingana na sheria za makubaliano za Bitcoin. Kwa kawaida, kampuni za programu za Bitcoin huendesha nodi kadhaa.
+
+- Unataka kusaidia Bitcoin. Kuendesha nodi unayoitumia kuthibitisha miamala unayopokea kwenye mkoba wako hufanya mtandao uwe thabiti zaidi.
+
+Ikiwa unasoma kitabu hiki na unavutiwa na usalama madhubuti, faragha ya hali ya juu, au kutengeneza programu za Bitcoin, unapaswa kuwa unaendesha ((("Bitcoin Core", "nodi", "kuendesha", startref="bitcoin-core-nodes-running")))((("nodi", "kuendesha", startref="nodes-running")))((("kuendesha nodi", startref="running-nodes"))) nodi yako mwenyewe.
+
+[[bitcoincorenode_config]]
+=== Kusanidi Nodi ya Bitcoin Core
+
+Bitcoin Core ((("Bitcoin Core", "nodi", "kusanidi", id="bitcoin-core-nodes-configure")))((("nodi", "kusanidi", id="nodes-configure")))((("kusanidi", "nodi", id="configure-nodes"))) itatafuta faili la usanidi (configuration file) katika saraka ya data kila inapoanzishwa. Katika sehemu hii tutachunguza chaguzi mbalimbali za usanidi na kuweka faili la usanidi. Ili kupata faili la usanidi, endesha +bitcoind -printtoconsole+ kwenye terminal yako na utafute mistari ya kwanza:
+
+----
+$ bitcoind -printtoconsole
+2023-01-28T03:21:42Z Bitcoin Core version v24.0.1
+2023-01-28T03:21:42Z Using the 'x86_shani(1way,2way)' SHA256 implementation
+2023-01-28T03:21:42Z Using RdSeed as an additional entropy source
+2023-01-28T03:21:42Z Using RdRand as an additional entropy source
+2023-01-28T03:21:42Z Default data directory /home/harding/.bitcoin
+2023-01-28T03:21:42Z Using data directory /home/harding/.bitcoin
+2023-01-28T03:21:42Z Config file: /home/harding/.bitcoin/bitcoin.conf
+...
+[a lot more debug output]
+...
+----
+
+Unaweza kubonyeza Ctrl-C ili kuzima nodi mara tu unapojua eneo la faili la usanidi. Kwa kawaida faili la usanidi liko ndani ya saraka ya data ya _.bitcoin_ chini ya saraka ya nyumbani ya mtumiaji wako. Fungua faili la usanidi katika kihariri unachokipenda.
+
+Bitcoin Core inatoa chaguzi zaidi ya 100 za usanidi ambazo hurekebisha tabia ya nodi ya mtandao, uhifadhi wa blockchain, na nyanja nyingine nyingi za utendaji wake. Ili kuona orodha ya chaguzi hizi, endesha +bitcoind --help+:
+
+----
+$ bitcoind --help
+Bitcoin Core version v24.0.1
+
+Usage:  bitcoind [options]                     Start Bitcoin Core
+
+Options:
+
+  -?
+       Print this help message and exit
+
+  -alertnotify=<cmd>
+       Execute command when an alert is raised (%s in cmd is replaced by
+       message)
+...
+[many more options]
+----
+
+Hapa kuna baadhi ya chaguzi muhimu zaidi ambazo unaweza kuweka kwenye faili la usanidi, au kama vigezo vya mstari wa amri kwa +bitcoind+:
+
+++alertnotify++:: Endesha ((("chaguo la alertnotify (chaguo la bitcoind)"))) amri au hati maalum ili kutuma arifa za dharura kwa mmiliki wa nodi hii.
+
+++conf++:: Eneo ((("chaguo la conf (chaguo la bitcoind)"))) mbadala la faili la usanidi. Hii ina mantiki tu kama kigezo cha mstari wa amri kwa +bitcoind+, kwani haiwezi kuwa ndani ya faili la usanidi ambalo inairejelea.
+
+++datadir++:: Chagua ((("chaguo la datadir (chaguo la bitcoind)"))) saraka na mfumo wa faili wa kuweka data zote za blockchain. Kwa chaguo-msingi hii ni saraka ndogo ya _.bitcoin_ ya saraka yako ya nyumbani. Kulingana na usanidi wako, hii inaweza kutumia kutoka takriban GB 10 hadi karibu TB 1 wakati wa kuandika haya, huku ukubwa wa juu ukitarajiwa kuongezeka kwa mamia ya gigabytes kwa mwaka.
+
+++prune++:: Punguza ((("chaguo la prune (chaguo la bitcoind)"))) mahitaji ya nafasi ya diski ya blockchain hadi megabytes hizi kwa kufuta vitalu vya zamani. Tumia hii kwenye nodi yenye rasilimali chache ambayo haiwezi kutoshea blockchain nzima. Sehemu nyingine za mfumo zitatumia nafasi nyingine ya diski ambayo haiwezi kupunguzwa kwa sasa, kwa hivyo bado utahitaji angalau kiasi cha chini cha nafasi kilichotajwa kwenye chaguo la +datadir+.
+
+++txindex++:: Hifadhi ((("chaguo la txindex (chaguo la bitcoind)"))) faharisi (index) ya miamala yote. Hii inakuwezesha kupata muamala wowote kwa ID yake kupitia programu mradi tu kitalu kilicho na muamala huo hakijapunguzwa (pruned).
+
+[role="less_space pagebreak-before"]
+++dbcache++:: Ukubwa ((("chaguo la dbcache (chaguo la bitcoind)"))) wa kache (cache) ya UTXO. Chaguo-msingi ni mebibytes 450 (MiB). Ongeza ukubwa huu kwenye maunzi (hardware) ya hali ya juu ili kusoma na kuandika kutoka kwenye diski yako mara chache zaidi, au upunguze ukubwa kwenye maunzi ya hali ya chini ili kuokoa kumbukumbu kwa gharama ya kutumia diski yako mara kwa mara zaidi.
+
+++blocksonly++:: Punguza ((("chaguo la blocksonly (chaguo la bitcoind)"))) matumizi yako ya kipimo-data kwa kukubali tu vitalu vya miamala iliyothibitishwa kutoka kwa rika zako badala ya kusambaza miamala ambayo haijathibitishwa.
+
+++maxmempool++:: Weka ukomo ((("chaguo la maxmempool (chaguo la bitcoind)"))) wa hifadhi ya kumbukumbu ya muamala (transaction memory pool) kuwa kiasi hiki cha megabytes. Itumie kupunguza matumizi ya kumbukumbu kwenye nodi zenye ukomo wa kumbukumbu.
+
+[[txindex]]
+.Faharisi ya Kanzi-data ya Muamala na Chaguo la txindex
+****
+Kwa chaguo-msingi, Bitcoin Core inaunda ((("chaguo la txindex (chaguo la bitcoind)")))((("miamala", "kujenga faharisi kamili"))) kanzi-data (database) yenye miamala inayohusiana na mkoba wa mtumiaji _pekee_. Ikiwa unataka kuweza kufikia muamala _wowote_ kwa amri kama +getrawtransaction+ (ona <<exploring_and_decoding_transactions>>), unahitaji kusanidi Bitcoin Core kujenga faharisi kamili ya miamala, jambo ambalo linaweza kufikiwa kwa chaguo la +txindex+. Weka +txindex=1+ katika faili la usanidi la Bitcoin Core. Ikiwa hutaweka chaguo hili mwanzoni na baadaye ukaamua kuweka faharisi kamili, utahitaji kusubiri ili ijenge upya faharisi hiyo.
+****
+
+<<full_index_node>> inaonyesha jinsi unavyoweza kuunganisha chaguzi zilizotangulia na nodi yenye faharisi kamili, inayojiendesha kama API ya nyuma (backend) ya programu ya bitcoin.
+
+[[full_index_node]]
+.Mfano wa usanidi wa nodi yenye faharisi kamili
+====
+----
+alertnotify=myemailscript.sh "Alert: %s"
+datadir=/lotsofspace/bitcoin
+txindex=1
+----
+====
+
+<<constrained_resources>> inaonyesha nodi yenye rasilimali chache inayojiendesha kwenye seva ndogo.
+
+[[constrained_resources]]
+.Mfano wa usanidi wa mfumo wenye rasilimali chache
+====
+----
+alertnotify=myemailscript.sh "Alert: %s"
+blocksonly=1
+prune=5000
+dbcache=150
+maxmempool=150
+----
+====
+
+Baada ya kuhariri faili la usanidi na kuweka chaguzi zinazowakilisha vyema mahitaji yako, unaweza kujaribu +bitcoind+ kwa usanidi huu. Endesha Bitcoin Core kwa chaguo la +printtoconsole+ ili kujiendesha mbele (foreground) na toleo kwenye koni (console):
+
+----
+$ bitcoind -printtoconsole
+2023-01-28T03:43:39Z Bitcoin Core version v24.0.1
+2023-01-28T03:43:39Z Using the 'x86_shani(1way,2way)' SHA256 implementation
+2023-01-28T03:43:39Z Using RdSeed as an additional entropy source
+2023-01-28T03:43:39Z Using RdRand as an additional entropy source
+2023-01-28T03:43:39Z Default data directory /home/harding/.bitcoin
+2023-01-28T03:43:39Z Using data directory /lotsofspace/bitcoin
+2023-01-28T03:43:39Z Config file: /home/harding/.bitcoin/bitcoin.conf
+...
+[many more messages]
+----
+
+Unaweza kubonyeza Ctrl-C ili kukatiza mchakato mara tu unapotosheka kuwa unapakia mipangilio sahihi na kujiendesha kama unavyotarajia.
+
+Ili kuendesha Bitcoin Core kama mchakato wa nyuma (background process), ianzishe kwa chaguo la +daemon+, kama +bitcoind -daemon+.
+
+Ili kufuatilia maendeleo na hali ya utendaji ya nodi yako ya Bitcoin, ianzishe katika hali ya daemon na kisha utumie amri ya +bitcoin-cli getblockchaininfo+:
+
+----
+$ bitcoin-cli getblockchaininfo
+----
+
+[source,json]
+----
+{
+  "chain": "main",
+  "blocks": 0,
+  "headers": 83999,
+  "bestblockhash": "[...]19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+  "difficulty": 1,
+  "time": 1673379796,
+  "mediantime": 1231006505,
+  "verificationprogress": 3.783041623201835e-09,
+  "initialblockdownload": true,
+  "chainwork": "[...]000000000000000000000000000000000000000000000100010001",
+  "size_on_disk": 89087,
+  "pruned": false,
+  "warnings": ""
+}
+----
+
+Hii inaonyesha nodi yenye kimo cha blockchain cha vitalu 0 na vichwa (headers) 83,999. Nodi kwanza inachukua vichwa vya kitalu kutoka kwa rika zake ili kupata blockchain yenye thibitisho-ya-kazi (proof of work) kubwa zaidi na baadaye inaendelea kupakua vitalu kamili, ikivithibitisha inapoendelea.
+
+Mara tu unapofurahishwa na chaguzi za usanidi ulizochagua, unapaswa kuongeza Bitcoin Core kwenye hati za kuanzia (startup scripts) katika mfumo wako wa uendeshaji, ili ijiendeshe mfululizo na kuanza upya mfumo wa uendeshaji unapojianzia upya. Utapata idadi ya mifano ya hati za kuanzia kwa mifumo mbalimbali ya uendeshaji katika saraka ya chanzo ya Bitcoin Core chini ya _contrib/init_ na faili la _README.md_ linaloonyesha ni mfumo gani unaotumia ((("Bitcoin Core", "nodi", "kusanidi", startref="bitcoin-core-nodes-configure")))((("nodi", "kusanidi", startref="nodes-configure")))((("kusanidi", "nodi", startref="configure-nodes"))) hati gani.
+
+=== API ya Bitcoin Core
+
+Bitcoin Core ((("Bitcoin Core", "kiolesura cha mstari wa amri", "amri ya msaada", id="bitcoin-core-command-help")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "amri ya msaada", id="command-help")))((("amri ya msaada (Bitcoin Core)", id="help")))((("amri za RPC", ona="kiolesura cha mstari wa amri (Bitcoin Core)")))((("amri ya bitcoin-cli", ona="kiolesura cha mstari wa amri (Bitcoin Core)"))) inatekeleza kiolesura cha JSON-RPC ambacho kinaweza pia kufikiwa kwa kutumia kisaidizi cha mstari wa amri cha +bitcoin-cli+. Mstari wa amri huturuhusu kufanya majaribio ya mwingiliano (interactively) na uwezo ambao pia unapatikana kupitia programu kupitia API. Ili kuanza, tumia amri ya +help+ kuona orodha ya amri za RPC za Bitcoin Core zinazopatikana:
+
+[[bitcoind_commands]]
+
+----
+$ bitcoin-cli help
++== Blockchain ==
+getbestblockhash
+getblock "blockhash" ( verbosity )
+getblockchaininfo
+...
+walletpassphrase "passphrase" timeout
+walletpassphrasechange "oldpassphrase" "newpassphrase"
+walletprocesspsbt "psbt" ( sign "sighashtype" bip32derivs finalize )
+----
+
+Kila moja ya amri hizi inaweza kuchukua idadi fulani ya vigezo (parameters). Ili kupata msaada zaidi, maelezo ya kina, na habari kuhusu vigezo, ongeza jina la amri baada ya +help+. Kwa mfano, kuona msaada kwenye amri ya RPC ya +getblockhash+:
+
+----
+$ bitcoin-cli help getblockhash
+getblockhash height
+
+Returns hash of block in best-block-chain at height provided.
+
+Arguments:
+1. height    (numeric, required) The height index
+
+Result:
+"hex"    (string) The block hash
+
+Examples:
+> bitcoin-cli getblockhash 1000
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id": "curltest",
+  "method": "getblockhash", 
+  "params": [1000]}' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+----
+
+Mwishoni mwa habari ya msaada utaona mifano miwili ya amri ya RPC, ukitumia kisaidizi cha +bitcoin-cli+ au mteja wa HTTP +curl+. Mifano hii inaonyesha jinsi unavyoweza kuita amri hiyo. Nakili mfano wa kwanza na uone matokeo:
+
+----
+$ bitcoin-cli getblockhash 1000
+00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09
+----
+
+Matokeo yake ni hashi ya kitalu (block hash), ambayo imeelezewa kwa undani zaidi katika sura zinazofuata. Lakini kwa sasa, amri hii inapaswa kurudisha matokeo yale yale kwenye mfumo wako, ikionyesha kuwa nodi yako ya Bitcoin Core inajiendesha, inakubali amri, na ina habari kuhusu kitalu namba 1,000 ya kukurudishia.
+
+Katika sehemu zinazofuata tutaonyesha baadhi ya amri muhimu sana za RPC na ((("Bitcoin Core", "kiolesura cha mstari wa amri", "amri ya msaada", startref="bitcoin-core-command-help")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "amri ya msaada", startref="command-help")))((("amri ya msaada (Bitcoin Core)", startref="help"))) matokeo yake yanayotarajiwa.
+
+==== Kupata Habari kuhusu Hali ya Bitcoin Core
+
+Bitcoin Core ((("Bitcoin Core", "kiolesura cha mstari wa amri", "habari za hali", id="bitcoin-core-command-status")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "habari za hali", id="command-status")))((("habari za hali (Bitcoin Core)", id="status-bitcoin-core"))) inatoa ripoti za hali kwenye moduli tofauti kupitia kiolesura cha JSON-RPC. Amri muhimu zaidi ni pamoja na +getblockchaininfo+, +getmempoolinfo+, +getnetworkinfo+, na +getwalletinfo+.
+
+Amri ya RPC ya Bitcoin ya +getblockchaininfo+ ilianzishwa hapo awali. Amri ya +getnetworkinfo+ inaonyesha habari za kimsingi kuhusu hali ya nodi ya mtandao wa Bitcoin. Tumia +bitcoin-cli+ kuiendesha:
+
+----
+$ bitcoin-cli getnetworkinfo
+----
+[source,json]
+----
+{
+  "version": 240001,
+  "subversion": "/Satoshi:24.0.1/",
+  "protocolversion": 70016,
+  "localservices": "0000000000000409",
+  "localservicesnames": [
+    "NETWORK",
+    "WITNESS",
+    "NETWORK_LIMITED"
+  ],
+  "localrelay": true,
+  "timeoffset": -1,
+  "networkactive": true,
+  "connections": 10,
+  "connections_in": 0,
+  "connections_out": 10,
+  "networks": [
+    "...detailed information about all networks..."
+  ],
+  "relayfee": 0.00001000,
+  "incrementalfee": 0.00001000,
+  "localaddresses": [
+  ],
+  "warnings": ""
+}
+----
+Amri ya RPC ya Bitcoin ya +getblockchaininfo+ ilianzishwa hapo awali. Amri ya +getnetworkinfo+ inaonyesha habari za kimsingi kuhusu hali ya nodi ya mtandao wa Bitcoin. Tumia +bitcoin-cli+ kuiendesha:
+
+----
+$ bitcoin-cli getnetworkinfo
+----
+[source,json]
+----
+{
+  "version": 240001,
+  "subversion": "/Satoshi:24.0.1/",
+  "protocolversion": 70016,
+  "localservices": "0000000000000409",
+  "localservicesnames": [
+    "NETWORK",
+    "WITNESS",
+    "NETWORK_LIMITED"
+  ],
+  "localrelay": true,
+  "timeoffset": -1,
+  "networkactive": true,
+  "connections": 10,
+  "connections_in": 0,
+  "connections_out": 10,
+  "networks": [
+    "...detailed information about all networks..."
+  ],
+  "relayfee": 0.00001000,
+  "incrementalfee": 0.00001000,
+  "localaddresses": [
+  ],
+  "warnings": ""
+}
+----
+
+Data inarudishwa katika Maandishi ya Kitu cha JavaScript (JSON), muundo ambao unaweza "kutumiwa" kwa urahisi na lugha zote za programu lakini pia unasomeka kabisa na binadamu. Miongoni mwa data hii tunaona namba za toleo la programu ya Bitcoin Core na itifaki ya Bitcoin. Tunaona idadi ya sasa ya miunganisho na habari mbalimbali kuhusu mtandao wa Bitcoin na mipangilio inayohusiana na nodi hii.
+
+[KIDOKEZO]
+====
+Itachukua muda, pengine zaidi ya siku moja, kwa +bitcoind+ kufikia kimo cha sasa cha blockchain inapopakua vitalu kutoka kwa nodi nyingine za Bitcoin na kuthibitisha kila muamala katika vitalu hivyo—karibu miamala bilioni moja wakati wa kuandika haya. Unaweza kuangalia maendeleo yake ukitumia +getblockchaininfo+ kuona idadi ya vitalu vinavyojulikana. Mifano katika sehemu iliyobaki ya sura hii inadhani kuwa uko angalau kwenye kitalu namba 775,072. Kwa sababu usalama wa miamala ya Bitcoin unategemea vitalu, baadhi ya habari katika mifano ifuatayo itabadilika kidogo kulingana na idadi ya vitalu ambavyo ((("Bitcoin Core", "kiolesura cha mstari wa amri", "habari za hali", startref="bitcoin-core-command-status")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "habari za hali", startref="command-status")))((("habari za hali (Bitcoin Core)", startref="status-bitcoin-core"))) nodi yako inayo.
+====
+
+[[exploring_and_decoding_transactions]]
+==== Kuchunguza na Kufasiri Miamala
+
+Katika <<spending_bitcoin>>, Alice ((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza/kufasiri miamala", id="bitcoin-core-command-transaction")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza/kufasiri miamala", id="command-transaction")))((("miamala", "kuchunguza/kufasiri", id="transactions-explore-decode")))((("kuchunguza", "miamala", id="explore-transaction")))((("kufasiri", "miamala", id="decode-transaction"))) alinunua bidhaa kutoka kwenye duka la Bob. Muamala wake ulirekodiwa kwenye blockchain. Hebu tutumie API kupata na kukagua muamala huo kwa kupitisha ID ya muamala (txid) kama kigezo:
+
+[[alice_tx_serialized]]
+.Muamala wa Alice uliowekwa mfululizo (serialized)
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177
+
+01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da13569
+8679268041c54a0100000000ffffffff02204e0000000000002251203b41daba
+4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068f8240100
+0000001600147752c165ea7be772b2c0acb7f4d6047ae6f4768e0141cf5efe
+2d8ef13ed0af21d4f4cb82422d6252d70324f6f4576b727b7d918e521c00b51b
+e739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc83e81713010000
+0000
+----
+
+[KIDOKEZO]
+====
+ID ya muamala (txid) ((("ID za miamala (txid)"))) haina mamlaka kamili. Kukosekana kwa txid kwenye blockchain haimaanishi kuwa muamala haukufanyika. Muamala unaweza kuwa haujathibitishwa ukisubiri kwenye mempool ya mchimbuaji, au txid yenyewe inaweza kuwa imebadilishwa, hali inayojulikana kama _malleability_ (ona <<malleability>>).
+====
+
+Amri +getrawtransaction+ inarudisha mfululizo wa herufi za hexadecimal. Ili kuweza kuisoma, tunahitaji kuiuliza nodi kui-decode kwa kutumia amri ya +decoderawtransaction+. Unaweza kunakili mfululizo wa herufi za hexadecimal uliorudishwa na +getrawtransaction+ na kuupitisha kama kigezo kwa +decoderawtransaction+:
+
+----
+$ bitcoin-cli decoderawtransaction 01000000000101eb3ae38f27191aa5f3850dc9ca\
+d00492b88b72404f9da135698679268041c54a0100000000ffffffff02204e00000000000022\
+51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068f8240100\
+0000001600147752c165ea7be772b2c0acb7f4d6047ae6f4768e0141cf5efe2d8ef13ed0af21\
+d4f4cb82422d6252d70324f6f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad280\
+aca6dab0d2fa2b42a45182fc83e817130100000000
+----
+
+[source,json]
+----
+{
+  "txid": "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+  "hash": "82424f131783fce88351a4422bfa2db0da6adc0c7c26dc499c892fdf39e71bb5",
+  "version": 1,
+  "size": 222,
+  "vsize": 141,
+  "weight": 561,
+  "locktime": 0,
+  "vin": [
+    {
+      "txid": "4ac541802679866935a19d4f40728bb89204adc90d85f3a519278fe3e33aeb01",
+      "vout": 1,
+      "scriptSig": {
+        "asm": "",
+        "hex": ""
+      },
+      "txinwitness": [
+        "304402202d6252d70324f6f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad2\
+80aca6dab0d2fa2b42a45182fc83e8171301"
+      ],
+      "sequence": 4294967295
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.00020000,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "1 3b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068",
+        "desc": "raw(51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c70\
+61e07068)#v069qpxv",
+        "hex": "51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061\
+e07068",
+        "type": "witness_v1_taproot"
+      }
+    },
+    {
+      "value": 0.00074872,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "0 7752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "desc": "addr(bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w3uxsqz)#f93k3m6j",
+        "hex": "00147752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "address": "bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w3uxsqz",
+        "type": "witness_v0_keyhash"
+      }
+    }
+  ]
+}
+----
+
+Muamala uliotafsiriwa (ona <<alice_tx_serialized>>) unaonyesha pembejeo (input) na matokeo (outputs) ya muamala wa Alice. Hebu tuangalie kila sehemu kwa zamu. Sehemu ya kwanza ya toleo la JSON ni metadata ya muamala wenyewe:
+
+[source,json]
+----
+  "txid": "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+  "hash": "82424f131783fce88351a4422bfa2db0da6adc0c7c26dc499c892fdf39e71bb5",
+  "version": 1,
+  "size": 222,
+  "vsize": 141,
+  "weight": 561,
+  "locktime": 0,
+----
+
+++txid++ na ++hash++ ni vitambulisho vya muamala. Namba ya ++version++, ambayo ni 1 katika kesi hii, inabainisha muundo wa muamala. ++size++ ya muamala (bytes 222), ++vsize++ (vbytes 141), na ++weight++ (units 561) yanahusiana na hesabu ya ada na athari kwenye blockchain. ++locktime++ (0) ni kigezo kinachotumiwa kufunga muamala kwa muda (time-lock) ili usiweze kuthibitishwa kabla ya muda fulani au kimo cha kitalu (0 inamaanisha inatumika mara moja).
+
+Kisha tunaona safu (array) ya ++vin++, ambayo ina pembejeo za muamala. Muamala wa Alice una pembejeo moja:
+
+[source,json]
+----
+  "vin": [
+    {
+      "txid": "4ac541802679866935a19d4f40728bb89204adc90d85f3a519278fe3e33aeb01",
+      "vout": 1,
+      "scriptSig": {
+        "asm": "",
+        "hex": ""
+      },
+      "txinwitness": [
+        "304402202d6252d70324f6f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad2\
+80aca6dab0d2fa2b42a45182fc83e8171301"
+      ],
+      "sequence": 4294967295
+    }
+  ],
+----
+
+Pembejeo ina ++txid++ na ++vout++, ambazo zinaashiria matokeo ya muamala uliopita unaotumiwa. Katika kesi hii, Alice anatumia matokeo ya pili (index 1) ya muamala unaoanza na ++4ac54180...++. ++scriptSig++ ni tupu kwa sababu muamala huu unatumia Segregated Witness (SegWit), na data ya shahidi (witness data) imo katika sehemu ya ++txinwitness++. Tutajifunza zaidi kuhusu SegWit na data ya shahidi katika <<segwit>>.
+
+Mwishowe, tunaona safu ya ++vout++, ambayo ina matokeo ya muamala. Muamala wa Alice una matokeo mawili:
+
+[source,json]
+----
+  "vout": [
+    {
+      "value": 0.00020000,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "1 3b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061e07068",
+        "desc": "raw(51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c70\
+61e07068)#v069qpxv",
+        "hex": "51203b41daba4c9ace578369740f15e5ec880c28279ee7f51b07dca69c7061\
+e07068",
+        "type": "witness_v1_taproot"
+      }
+    },
+    {
+      "value": 0.00074872,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "0 7752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "desc": "addr(bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w3uxsqz)#f93k3m6j",
+        "hex": "00147752c165ea7be772b2c0acb7f4d6047ae6f4768e",
+        "address": "bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w3uxsqz",
+        "type": "witness_v0_keyhash"
+      }
+    }
+  ]
+----
+
+Matokeo ya kwanza (index 0) yana thamani ya 0.0002 BTC (satoshis 20,000) na ni matokeo ya Taproot (aina ya ++witness_v1_taproot++). Taproot ni uboreshaji wa hivi karibuni wa Bitcoin unaoboresha faragha na ufanisi, kama tutakavyojifunza katika <<taproot>>. Matokeo ya pili (index 1) yana thamani ya 0.00074872 BTC (satoshis 74,872) na ni matokeo ya SegWit (aina ya ++witness_v0_keyhash++), kama tutakavyojifunza katika <<segwit>>.
+
+==== Kuchunguza Vitalu
+
+Sasa kwa kuwa ((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza vitalu", id="bitcoin-core-command-block")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza vitalu", id="command-block")))((("vitalu", "kuchunguza", id="blocks-explore")))((("kuchunguza", "vitalu", id="explore-block"))) tumekagua muamala, hebu tuangalie kitalu kilicho na muamala huo. Ili kupata kitalu hicho, kwanza tunahitaji kujua ni kitalu gani kilichojumuisha muamala huo. Tunaweza kupata habari hii kwa kuangalia ++txid++ katika kivinjari cha kitalu (block explorer) au kwa kutumia amri ya ++getrawtransaction++ yenye bendera ya ++verbose++:
+
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177 1
+----
+
+[source,json]
+----
+{
+  "in_active_chain": true,
+  "txid": "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+  "hash": "82424f131783fce88351a4422bfa2db0da6adc0c7c26dc499c892fdf39e71bb5",
+  "version": 1,
+  "size": 222,
+  "vsize": 141,
+  "weight": 561,
+  "locktime": 0,
+  "vin": [ ... ],
+  "vout": [ ... ],
+  "hex": "01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da13569\
+8679268041c54a0100000000ffffffff02204e0000000000002251203b41daba4c9ace578369\
+740f15e5ec880c28279ee7f51b07dca69c7061e07068f82401000000001600147752c165ea7b\
+e772b2c0acb7f4d6047ae6f4768e0141cf5efe2d8ef13ed0af21d4f4cb82422d6252d70324f6\
+f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc\
+83e817130100000000",
+  "blockhash": "0000000000000000000498a964344e51859737f5d60c498801f91d0f81d11598",
+  "confirmations": 13190,
+  "blocktime": 1673379796,
+  "time": 1673379796Sasa kwa kuwa ((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza vitalu", id="bitcoin-core-command-block")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza vitalu", id="command-block")))((("vitalu", "kuchunguza", id="blocks-explore")))((("kuchunguza", "vitalu", id="explore-block"))) tumekagua muamala, hebu tuangalie kitalu kilicho na muamala huo. Ili kupata kitalu hicho, kwanza tunahitaji kujua ni kitalu gani kilichojumuisha muamala huo. Tunaweza kupata habari hii kwa kuangalia ++txid++ katika kivinjari cha kitalu (block explorer) au kwa kutumia amri ya ++getrawtransaction++ yenye bendera ya ++verbose++:
+
+----
+$ bitcoin-cli getrawtransaction 466200308696215bbc949d5141a49a41\
+38ecdfdfaa2a8029c1f9bcecd1f96177 1
+----
+
+[source,json]
+----
+{
+  "in_active_chain": true,
+  "txid": "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+  "hash": "82424f131783fce88351a4422bfa2db0da6adc0c7c26dc499c892fdf39e71bb5",
+  "version": 1,
+  "size": 222,
+  "vsize": 141,
+  "weight": 561,
+  "locktime": 0,
+  "vin": [ ... ],
+  "vout": [ ... ],
+  "hex": "01000000000101eb3ae38f27191aa5f3850dc9cad00492b88b72404f9da13569\
+8679268041c54a0100000000ffffffff02204e0000000000002251203b41daba4c9ace578369\
+740f15e5ec880c28279ee7f51b07dca69c7061e07068f82401000000001600147752c165ea7b\
+e772b2c0acb7f4d6047ae6f4768e0141cf5efe2d8ef13ed0af21d4f4cb82422d6252d70324f6\
+f4576b727b7d918e521c00b51be739df2f899c49dc267c0ad280aca6dab0d2fa2b42a45182fc\
+83e817130100000000",
+  "blockhash": "0000000000000000000498a964344e51859737f5d60c498801f91d0f81d11598",
+  "confirmations": 13190,
+  "blocktime": 1673379796,
+  "time": 1673379796
+}
+----
+
+Sehemu ya ++blockhash++ inatuambia kuwa muamala huu ulijumuishwa kwenye kitalu chenye hashi ++0000000000000000000498a964344e51859737f5d60c498801f91d0f81d11598++. Hebu tutumie amri ya ++getblock++ kukagua kitalu hicho:
+
+----
+$ bitcoin-cli getblock 0000000000000000000498a964344e51859737\
+f5d60c498801f91d0f81d11598
+----
+
+[source,json]
+----
+{
+  "hash": "0000000000000000000498a964344e51859737f5d60c498801f91d0f81d11598",
+  "confirmations": 13190,
+  "size": 1133379,
+  "strippedsize": 813735,
+  "weight": 3574584,
+  "height": 771032,
+  "version": 732938240,
+  "versionHex": "2bb1a000",
+  "merkleroot": "7f0989f66714088a82643a677324ef28986c757c9a416b2512f451f22146f345",
+  "tx": [
+    "5c179c23b207df8b99144866b8893d9804e3391741f23793e84601438995a5f1",
+    "734a7ef11843df99723ecb05934149021e102f99f18299df431807b2239c175c",
+    ...
+    "466200308696215bbc949d5141a49a4138ecdfdfaa2a8029c1f9bcecd1f96177",
+    ...
+    "3505872895697283626992683838634591461413854347738361738495058371"
+  ],
+  "time": 1673379796,
+  "mediantime": 1673376757,
+  "nonce": 3816654030,
+  "bits": "170460d0",
+  "difficulty": 34094191330366.18,
+  "chainwork": "00000000000000000000000000000000000000004523c1033e4b30172605f631",
+  "nTx": 2981,
+  "previousblockhash": "000000000000000000021c176378e9b0e7a177e77a64195155f464098679f1ec",
+  "nextblockhash": "00000000000000000001099617b07040445d07004f2104085ae165831e934ff"
+}
+----
+
+Kwa msingi (default), ++getblock++ hutoa muhtasari wa kitalu, lakini pia unaweza kupata maelezo kamili yaliyofafanuliwa (decoded) kwa kila muamala katika kitalu kwa kuongeza ++2++ kama hoja ya pili:
+
+----
+$ bitcoin-cli getblock 0000000000000000000498a964344e51859737\
+f5d60c498801f91d0f81d11598 2
+----
+
+Matokeo ya amri hii ni makubwa sana, kwa hivyo hatutayaonyesha hapa. Lakini ikiwa utaiendesha, utaona kila mmoja wa miamala 2,981 katika kitalu hiki!
+
+=== Ufikiaji wa API kutoka kwa Programu
+
+Kiolesura cha JSON-RPC cha Bitcoin Core((("Bitcoin Core", "ufikiaji wa API", id="bitcoin-core-command-api")))((("ufikiaji wa API", id="api")))((("JSON-RPC", "ufikiaji wa API")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "ufikiaji wa API", id="command-api"))) kina nguvu sana, lakini si njia rahisi zaidi ya kuingiliana na Bitcoin Core kutoka ndani ya programu yako mwenyewe.
+
+Kama tulivyoona katika <<sehemu_ya_uthibitisho_wa_kuki>>, Bitcoin Core hutengeneza nywila ya nasibu kila wakati inapozinduliwa isipokuwa uwe umesanidi nywila tuli (static password). Hii ni kwa ajili ya usalama, ili kuzuia programu nyingine kwenye kompyuta yako kufanya simu za RPC bila idhini yako.
+
+Bitcoin Core huhifadhi nywila hii katika faili la muda kila inapozinduliwa na kuiweka katika saraka ya data (data directory) chini ya jina +.cookie+. Msaidizi wa +bitcoin-cli+ anaweza kusoma faili hili la nywila akipatiwa saraka ya data. Vile vile, unaweza kunakili nywila hiyo na kuipitisha kwa +curl+ (au vifuniko vingine vya ngazi ya juu vya Bitcoin Core RPC), ((("Bitcoin Core", "uthibitisho")))((("uthibitisho"))) kama inavyoonekana katika <<uthibitisho_wa_kuki>>.
+
+[[uthibitisho_wa_kuki]]
+.Kutumia uthibitisho unaotegemea kuki na Bitcoin Core
+====
+----
+$ cat .bitcoin/.cookie
+  __cookie__:17c9b71cef21b893e1a019f4bc071950c7942f49796ed061b274031b17b19cd0
+
+$ curl 
+  --user __cookie__:17c9b71cef21b893e1a019f4bc071950c7942f49796ed061b274031b17b19cd0 
+  --data-binary '{"jsonrpc": "1.0", "id":"curltest", 
+  "method": "getblockchaininfo", 
+  "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+
+{"result":{"chain":"main","blocks":799278,"headers":799278,
+"bestblockhash":"000000000000000000018387c50988ec705a95d6f765b206b6629971e6978879",
+"difficulty":53911173001054.59,"time":1689703111,"mediantime":1689701260,
+"verificationprogress":0.9999979206082515,"initialblockdownload":false,
+"chainwork":"00000000000000000000000000000000000000004523c1033e4b30172605f631",
+"size_on_disk":563894577967,"pruned":false,"warnings":""},"error":null,
+"id":"curltest"}
+----
+====
+
+Vinginevyo, unaweza kuunda nywila tuli kwa kutumia hati ya msaidizi iliyotolewa katika [.keep-together]#_./share/rpcauth/rpcauth.py_# kwenye saraka ya chanzo ya Bitcoin Core.
+
+Ikiwa unatekeleza wito wa JSON-RPC katika programu yako mwenyewe, unaweza kutumia maktaba ya HTTP ya kawaida kuunda wito huo, sawa na inavyoonekana katika mfano uliopita wa +curl+.
+
+Hata hivyo, kuna ((("Bitcoin Core", "makubala ya maktaba")))((("makubala ya maktaba"))) maktaba katika lugha nyingi maarufu za programu ambazo "hufunika" API ya Bitcoin Core kwa njia inayofanya jambo hili kuwa rahisi zaidi. Tutatumia maktaba ya +python-bitcoinlib+ kurahisisha ufikiaji wa API. Maktaba hii si sehemu ya mradi wa Bitcoin Core na inahitaji kusakinishwa kwa njia ya kawaida unayozisakinisha maktaba za Python. Kumbuka, hii inahitaji uwe na mfano wa Bitcoin Core unaojiendesha, ambao utatumika kufanya simu za JSON-RPC.
+
+Hati ya Python katika <<mfano_wa_rpc>> inafanya wito rahisi wa +getblockchaininfo+ na kuchapisha parameter ya +block+ kutoka kwa data inayorejeshwa na Bitcoin Core.
+
+[[mfano_wa_rpc]]
+.Kuendesha +getblockchaininfo+ kupitia API ya JSON-RPC ya Bitcoin Core
+====
+[source,python]
+----
+include::code/rpc_example.py[]
+----
+====
+
+Kuiendesha inatupa matokeo yafuatayo:
+
+----
+$ python rpc_example.py
+773973
+----
+
+Inatuambia ni vitalu vingapi nodi yetu ya ndani ya Bitcoin Core inayo katika blockchain yake. Si matokeo ya kustaajabisha, lakini inaonyesha matumizi ya msingi ya maktaba kama kiolesura kilichorahisishwa kwa API ya JSON-RPC ya Bitcoin Core.
+
+Kisha, hebu((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza/kufafanua miamala", id="bitcoin-core-command-transaction2")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza/kufafanua miamala", id="command-transaction2")))((("miamala", "kuchunguza/kufafanua", id="transactions-explore-decode2")))((("kuchunguza", "miamala", id="explore-transaction2")))((("kufafanua", "miamala", id="decode-transaction2"))) tutumie wito wa +getrawtransaction+ na +decodetransaction+ kupata maelezo ya malipo ya Alice kwa Bob. Katika <<muamala_wa_rpc>>, tunapata muamala wa Alice na kuorodhesha matoleo ya muamala huo. Kwa kila toleo, tunaonyesha anwani ya mpokeaji na thamani. Kama ukumbusho, muamala wa Alice ulikuwa na toleo moja lililomlipa Bob na toleo moja la chenji kurudi kwa Alice.
+
+[[muamala_wa_rpc]]
+.Kupata muamala na kupitia matoleo yake
+====
+[source,python]
+----
+include::code/rpc_transaction.py[]
+----
+====
+
+Kuendesha msimbo huu, tunapata:
+
+----
+$ python rpc_transaction.py
+bc1p8dqa4wjvnt890qmfws83te0v3qxzsfu7ul63kp7u56w8qc0qwp5qv995qn 0.00020000
+bc1qwafvze0200nh9vkq4jmlf4sy0tn0ga5w0zpkpg 0.00075000
+----
+
+Mifano yote miwili ya ((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza/kufafanua miamala", startref="bitcoin-core-command-transaction2")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza/kufafanua miamala", startref="command-transaction2")))((("miamala", "kuchunguza/kufafanua", startref="transactions-explore-decode2")))((("kuchunguza", "miamala", startref="explore-transaction2")))((("kufafanua", "miamala", startref="decode-transaction2"))) hapo juu ni rahisi sana. Huhitaji programu kuziendeleza; unaweza kutumia msaidizi wa +bitcoin-cli+ kwa urahisi vile vile. Mfano unaofuata, hata hivyo, unahitaji mamia ya simu za RPC na unaonyesha wazi zaidi matumizi ya kiolesura cha kiprogramu.
+
+Katika <<kitalu_cha_rpc>>, kwanza ((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza vitalu", id="bitcoin-core-command-blocks2")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza vitalu", id="command-blocks2")))((("vitalu", "kuchunguza", id="blocks-explore2")))((("kuchunguza", "vitalu", id="explore-blocks2"))) tunapata kitalu, kisha tunapata kila muamala uliomo ndani yake kwa kurejelea kila kitambulisho cha muamala (txid). Kisha, tunapitia kila toleo la muamala na kujumlisha thamani yake.
+
+[[kitalu_cha_rpc]]
+.Kupata kitalu na kujumlisha matoleo yote ya miamala
+====
+[source,python]
+----
+include::code/rpc_block.py[]
+----
+====
+
+Kuendesha msimbo huu, tunapata:
+
+----
+$ python rpc_block.py
+
+Jumla ya thamani katika kitalu:  10322.07722534
+----
+
+Msimbo wetu wa mfano unakokotoa kuwa jumla ya thamani iliyofanyiwa muamala katika kitalu hiki ni 10322.07722534 BTC (ikijumuisha tuzo ya 25 BTC na 0.0909 BTC kama ada). Linganisha hilo na kiasi kilichoripotiwa na tovuti ya kifungua blockchain kwa kutafuata hashi au urefu wa kitalu (block height). Baadhi ya vifungua blockchain huripoti jumla ya thamani bila kujumuisha tuzo na bila kujumuisha ada. Angalia kama unaweza kuona ((("Bitcoin Core", "kiolesura cha mstari wa amri", "ufikiaji wa API", startref="bitcoin-core-command-api")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "ufikiaji wa API", startref="command-api")))((("ufikiaji wa API", startref="api")))((("Bitcoin Core", "kiolesura cha mstari wa amri", "kuchunguza vitalu", startref="bitcoin-core-command-blocks2")))((("kiolesura cha mstari wa amri (Bitcoin Core)", "kuchunguza vitalu", startref="command-blocks2")))((("vitalu", "kuchunguza", startref="blocks-explore2")))((("kuchunguza", "vitalu", startref="explore-blocks2"))) tofauti hiyo.
+
+[[maktaba_mbadala]]
+=== Wateja, Maktaba, na Zana Mbadala
+
+Kuna wateja mbadala wengi, maktaba, zana, na hata utekelezaji wa nodi kamili katika mfumo wa Bitcoin. Hizi zimetekelezwa katika lugha mbalimbali za programu, zikiwapa watengenezaji violesura asilia katika lugha wanayopendelea.
+
+Sehemu zifuatazo zinaorodhesha baadhi ya maktaba bora, wateja, na zana, zilizopangwa kwa lugha za programu.
+
+==== C/C++
+https://oreil.ly/BdOwl[Bitcoin Core] :: Utekelezaji wa ((("C/C++ toolkits")))((("Bitcoin Core"))) marejeleo ya Bitcoin
+
+==== JavaScript
+https://bcoin.io[bcoin]:: Utekelezaji wa nodi kamili ((("JavaScript toolkits")))((("bcoin")))((("Bitcore"))) wa moduli na unaoweza kupanuka wenye API
+https://bitcore.io[Bitcore] :: Nodi kamili, API, na maktaba kutoka Bitpay
+https://oreil.ly/4iqf2[BitcoinJS] :: Maktaba safi ya JavaScript ya Bitcoin kwa ajili ya node.js na vivinjari
+
+==== Java
+https://bitcoinj.github.io[bitcoinj]:: Maktaba ya mteja ya ((("Java toolkits")))((("bitcoinj"))) nodi kamili ya Java
+
+==== Python
+https://oreil.ly/xn_rg[python-bitcoinlib]:: Maktaba ya ((("Python toolkits")))((("python-bitcoinlib")))((("pycoin"))) Bitcoin ya Python, maktaba ya makubaliano (consensus), na nodi kutoka kwa Peter Todd
+https://oreil.ly/wcpXP[pycoin]:: Maktaba ya Bitcoin ya Python kutoka kwa Richard Kiss
+
+==== Go
+https://oreil.ly/h5MEI[btcd]:: Mteja wa Bitcoin wa nodi kamili ((("Go toolkits")))((("btcd"))) kwa lugha ya Go
+
+==== Rust
+https://oreil.ly/me6gf[rust-bitcoin]:: Maktaba ya ((("Rust toolkits")))((("rust-bitcoin"))) Bitcoin ya Rust kwa ajili ya kuserialishwa, kuchambuliwa, na simu za API
+
+==== Scala
+https://bitcoin-s.org[bitcoin-s]:: Utekelezaji wa ((("Scala toolkits")))((("bitcoin-s"))) Bitcoin katika Scala
+
+==== C#
+https://oreil.ly/Qfjgq[NBitcoin]:: Maktaba pana ya ((("C# toolkits")))((("NBitcoin"))) Bitcoin kwa ajili ya mfumo wa .NET
+
+Maktaba nyingine nyingi zipo katika lugha nyingine mbalimbali za programu, na nyingine zaidi zinaundwa kila wakati.
+
+Ikiwa ulifuata maelekezo katika sura hii, sasa una Bitcoin Core inayojiendesha na umeanza kuchunguza mtandao na blockchain ukitumia nodi yako kamili. Kuanzia sasa unaweza kutumia programu unayoidhibiti—kwenye kompyuta unayoidhibiti—ili kuthibitisha kwamba kila bitcoin unazopokea zinafuata kila sheria katika mfumo wa Bitcoin bila kulazimika kuamini mamlaka yoyote ya nje. Katika sura zinazokuja, tutajifunza zaidi kuhusu sheria za mfumo na jinsi nodi yako na mkoba wako unavyozitumia kulinda pesa zako, kulinda faragha yako, na kufanya matumizi na upokeaji uwe [.keep-together]#rahisi.#
