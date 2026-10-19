@@ -9,7 +9,7 @@ This book is developed collaboratively and openly, here on GitHub. We accept com
 
 ## License and attribution
 
-All contributions must be properly licensed and attributed. If you are contributing your own original work, then you are offering it under a CC-BY license (Creative Commons Attribution). You are responsible for adding your own name or pseudonym in the [Github Contributors](github_contrib.asciidoc) section, as attribution for your contribution.
+All contributions must be properly licensed and attributed. If you are contributing your own original work, then you are offering it under a CC-BY license (Creative Commons Attribution). You are responsible for adding your own name or pseudonym in the [Github Contributors](meta/github_contrib.adoc) section, as attribution for your contribution.
 
 If you are sourcing a contribution from somewhere else, it must carry a compatible license. The book will initially be released under a CC-BY-NC-ND license which means that contributions must be licensed under open licenses such as MIT, CC0, CC-BY, etc. You need to indicate the original source and original license, by including an asciidoc markup comment above your contribution, like this:
 
